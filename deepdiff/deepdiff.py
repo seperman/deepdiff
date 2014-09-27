@@ -45,7 +45,7 @@ class DeepDiff(object):
         >>> t2 = {1:1, 2:"2", 3:3}
         >>> ddiff = DeepDiff(t1, t2)
         >>> print (ddiff.changes)
-        {'type_changes': ["root[2] 2=<type 'int'> vs. 2=<type 'str'>"]}
+        {'type_changes': ["root[2]: 2=<type 'int'> vs. 2=<type 'str'>"]}
 
 
     Value of an item has changed
@@ -53,7 +53,7 @@ class DeepDiff(object):
         >>> t2 = {1:1, 2:4, 3:3}
         >>> ddiff = DeepDiff(t1, t2)
         >>> print (ddiff.changes)
-        {'values_changed': ['root[2] 2 ====>> 4']}
+        {'values_changed': ['root[2]: 2 ====>> 4']}
 
 
     Item added and/or removed
@@ -63,7 +63,7 @@ class DeepDiff(object):
         >>> pprint (ddiff.changes)
         {'dic_item_added': ['root[5, 6]'],
          'dic_item_removed': ['root[4]'],
-         'values_changed': ['root[2] 2 ====>> 4']}
+         'values_changed': ['root[2]: 2 ====>> 4']}
 
 
     String difference
@@ -71,7 +71,7 @@ class DeepDiff(object):
         >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { 'values_changed': [ 'root[2] 2 ====>> 4',
+        { 'values_changed': [ 'root[2]: 2 ====>> 4',
                               "root[4]['b']:\n--- \n+++ \n@@ -1 +1 @@\n-world\n+world!"]}
         >>>
         >>> print (ddiff.changes['values_changed'][1])
@@ -108,7 +108,7 @@ class DeepDiff(object):
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { 'type_changes': [ "root[4]['b'] [1, 2, 3]=<type 'list'> vs. world\n\n\nEnd=<type 'str'>"]}
+        { 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> vs. world\n\n\nEnd=<type 'str'>"]}
 
     List difference
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
@@ -132,7 +132,7 @@ class DeepDiff(object):
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
         { 'dic_item_removed': ["root[4]['b'][2][2]"],
-          'values_changed': ["root[4]['b'][2][1] 1 ====>> 3"]}
+          'values_changed': ["root[4]['b'][2][1]: 1 ====>> 3"]}
 
     """
 
@@ -179,7 +179,7 @@ class DeepDiff(object):
     def diffit(self, t1, t2, parent="root"):
 
         if type(t1) != type(t2):
-            self.changes["type_changes"].append("%s %s=%s vs. %s=%s" % (parent, t1, type(t1), t2, type(t2)))
+            self.changes["type_changes"].append("%s: %s=%s vs. %s=%s" % (parent, t1, type(t1), t2, type(t2)))
 
         elif isinstance(t1, basestring):
             diff = difflib.unified_diff(t1.splitlines(), t2.splitlines(), lineterm='')
@@ -190,7 +190,7 @@ class DeepDiff(object):
 
         elif isinstance(t1, (int, long, float, complex, datetime.datetime)):
             if t1 != t2:
-                self.changes["values_changed"].append("%s %s ====>> %s" % (parent, t1, t2))
+                self.changes["values_changed"].append("%s: %s ====>> %s" % (parent, t1, t2))
             
         
         elif isinstance(t1, dict):
