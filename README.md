@@ -18,6 +18,7 @@ Install from PyPi:
 
 
 Same object returns empty
+
     >>> t1 = {1:1, 2:2, 3:3}
     >>> t2 = t1
     >>> ddiff = DeepDiff(t1, t2)
@@ -26,6 +27,7 @@ Same object returns empty
 
 
 Type of an item has changed
+
     >>> t1 = {1:1, 2:2, 3:3}
     >>> t2 = {1:1, 2:"2", 3:3}
     >>> ddiff = DeepDiff(t1, t2)
@@ -34,6 +36,7 @@ Type of an item has changed
 
 
 Value of an item has changed
+
     >>> t1 = {1:1, 2:2, 3:3}
     >>> t2 = {1:1, 2:4, 3:3}
     >>> ddiff = DeepDiff(t1, t2)
@@ -42,6 +45,7 @@ Value of an item has changed
 
 
 Item added and/or removed
+
     >>> t1 = {1:1, 2:2, 3:3, 4:4}
     >>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
     >>> ddiff = DeepDiff(t1, t2)
@@ -52,6 +56,7 @@ Item added and/or removed
 
 
 String difference
+
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
     >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
     >>> ddiff = DeepDiff(t1, t2)
@@ -69,6 +74,7 @@ String difference
 
 
 String difference 2        
+
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world!\nGoodbye!\n1\n2\nEnd"}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n1\n2\nEnd"}}
     >>> ddiff = DeepDiff(t1, t2)
@@ -89,6 +95,7 @@ String difference 2
 
 
 Type change
+
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
     >>> ddiff = DeepDiff(t1, t2)
@@ -96,6 +103,7 @@ Type change
         { 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> vs. world\n\n\nEnd=<type 'str'>"]}
 
 List difference
+
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
     >>> ddiff = DeepDiff(t1, t2)
@@ -103,6 +111,7 @@ List difference
         { 'list_removed': ["root[4]['b']: [3]"]}
 
 List difference 2: Note that it DOES NOT take order into account
+
     >>> # Note that it DOES NOT take order into account
     ... t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
@@ -112,6 +121,7 @@ List difference 2: Note that it DOES NOT take order into account
 
 
 List that contains dictionary:
+
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
     >>> ddiff = DeepDiff(t1, t2)
