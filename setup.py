@@ -1,13 +1,13 @@
 from setuptools import setup #, find_packages
 
 try:
-    with open('README.md') as file:
+    with open('README.txt') as file:
         long_description = file.read()
 except:
     long_description = "Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes."
 
 setup(name='deepdiff',
-      version='0.1',
+      version='0.1.1',
       description='Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.',
       url='https://github.com/erasmose/deepdiff',
       download_url='https://github.com/erasmose/deepdiff/tarball/master',
