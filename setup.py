@@ -15,6 +15,7 @@ setup(name='deepdiff',
       author_email='sep@zepworks.com',
       license='MIT',
       packages=['deepdiff'],
+      install_requires=['future', 'six'],
       zip_safe=False,
       long_description=long_description,
       classifiers=[
