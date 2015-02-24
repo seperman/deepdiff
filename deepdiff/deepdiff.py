@@ -4,7 +4,10 @@ from __future__ import print_function
 
 import difflib
 import datetime
+from builtins import int
 from collections import Iterable
+from past.builtins import basestring
+from six import iteritems
 
 class DeepDiff(object):
     r"""
@@ -142,7 +145,7 @@ class DeepDiff(object):
         
         self.diffit(t1, t2)
 
-        self.changes = dict((k, v) for k, v in self.changes.iteritems() if v)
+        self.changes = dict((k, v) for k, v in iteritems(self.changes) if v)
 
 
     # @property
@@ -188,7 +191,7 @@ class DeepDiff(object):
                 diff = '\n'.join(diff)
                 self.changes["values_changed"].append("%s:\n%s" % (parent, diff))
 
-        elif isinstance(t1, (int, long, float, complex, datetime.datetime)):
+        elif isinstance(t1, (int, float, complex, datetime.datetime)):
             if t1 != t2:
                 self.changes["values_changed"].append("%s: %s ====>> %s" % (parent, t1, t2))
             
