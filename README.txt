@@ -1,4 +1,4 @@
-deepdiff v 0.1
+deepdiff v 0.2
 ========
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
@@ -9,6 +9,10 @@ Deep Difference of dictionaries, iterables, strings and other objects. It will r
 Install from PyPi:
 
     pip install deepdiff
+
+If you are Python3 you need to also install:
+
+    pip install future six
 
 ##Example usage
 
@@ -138,8 +142,10 @@ http://deepdiff.readthedocs.org/en/latest/
 
 ##Author
 
-Erasmose (Sep Dehpour)
-Github:  https://github.com/erasmose
+Seperman
+Github:  https://github.com/seperman
 Linkedin:  http://www.linkedin.com/in/sepehr
 ZepWorks:   http://www.zepworks.com
 
+Thanks to:
+brbsix for Py3 porting

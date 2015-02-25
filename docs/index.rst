@@ -16,8 +16,12 @@ Install from PyPi::
 
     pip install deepdiff
 
+If you are Python3 you need to also install future and six::
+
+    pip install future six
+
 *************
-DeepDiff 0.1
+DeepDiff 0.2
 *************
 
 .. toctree::
@@ -41,7 +45,10 @@ Indices and tables
 Author
 ==================
 
-Erasmose (Sep Dehpour)
-`Github <https://github.com/erasmose>`_
+Seperman
+`Github <https://github.com/seperman>`_
 `ZepWorks <http://www.zepworks.com>`_
 `Linkedin <http://www.linkedin.com/in/sepehr>`_
+
+Thanks to:
+brbsix for Py3 porting
