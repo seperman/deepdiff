@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''note: this library is now Python 3 first, so run the tests in Python 3 since pprint output has changed and cause the docstrings to fail.'''
 
 from __future__ import print_function
 
@@ -23,30 +22,27 @@ from collections import Iterable
 class DeepDiff(dict):
 
     r"""
-    DeepDiff v 0.5
-    --------------
+    **DeepDiff v 0.5**
 
-    Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+    Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
-    Parameters
-    ----------
+    **Parameters**
+
     t1 : A dictionary, list, string or any python object that has __dict__
         This is the first item to be compared to the second item
 
     t2 : dictionary, list, string or almost any python object that has __dict__
         The second item is to be compared to the first one
 
-    Returns
-    -------
+    **Returns**
+
         A DeepDiff object that has already calculated the difference of the 2 items.
 
-    Supported data types:
-    ---------------------
+    **Supported data types**
 
     int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
 
-    Examples
-    --------
+    **Examples**
 
     Importing
         >>> from deepdiff import DeepDiff
@@ -190,7 +186,7 @@ class DeepDiff(dict):
             del self[k]
 
     @staticmethod
-    def typestr(obj):
+    def __typestr(obj):
         '''
         python 3 returns <class 'something'> instead of <type 'something'>.
         For backward compatibility, we replace class with type.
@@ -287,7 +283,7 @@ class DeepDiff(dict):
     def __diffit(self, t1, t2, parent="root"):
 
         if type(t1) != type(t2):
-            self["type_changes"].append("%s: %s=%s ===> %s=%s" % (parent, t1, self.typestr(t1), t2, self.typestr(t2)))
+            self["type_changes"].append("%s: %s=%s ===> %s=%s" % (parent, t1, self.__typestr(t1), t2, self.__typestr(t2)))
 
         elif isinstance(t1, basestring):
             self.__diffstr(t1, t2, parent)
@@ -320,7 +316,12 @@ class DeepDiff(dict):
 
     @property
     def changes(self):
-        ''' This is for backward compatibility with previous versions of DeepDiff '''
+        '''
+        This is for backward compatibility with previous versions of DeepDiff.
+        You don't need this anymore since you can access the result dictionary of changes directly from DeepDiff now:
+
+        `DeepDiff(t1,t2) == DeepDiff(t1, t2).changes`
+        '''
         return self
 
 if __name__ == "__main__":

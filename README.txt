@@ -1,27 +1,24 @@
-DeepDiff v 0.5
---------------
+**DeepDiff v 0.5**
 
-Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
-Parameters
-----------
+**Parameters**
+
 t1 : A dictionary, list, string or any python object that has __dict__
     This is the first item to be compared to the second item
 
 t2 : dictionary, list, string or almost any python object that has __dict__
     The second item is to be compared to the first one
 
-Returns
--------
+**Returns**
+
     A DeepDiff object that has already calculated the difference of the 2 items.
 
-Supported data types:
----------------------
+**Supported data types**
 
 int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
 
-Examples
---------
+**Examples**
 
 Importing
     >>> from deepdiff import DeepDiff
