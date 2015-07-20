@@ -18,11 +18,10 @@ else:
 
 from collections import Iterable
 
-
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5**
+    **DeepDiff v 0.5.2**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -130,7 +129,7 @@ class DeepDiff(dict):
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff, indent = 2)
-        {'list_removed': ["root[4]['b']: [3]"]}
+        {'iterable_item_removed': ["root[4]['b']: [3]"]}
 
     List difference 2: Note that it DOES NOT take order into account
         >>> # Note that it DOES NOT take order into account
@@ -168,12 +167,18 @@ class DeepDiff(dict):
         >>> print(DeepDiff(t1, t2))
         {'values_changed': ['root.b: 1 ===> 2']}
 
+    Object attribute added:
+        >>> t2.c = "new attribute"
+        >>> print(DeepDiff(t1, t2))
+        {'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
+
     """
 
     def __init__(self, t1, t2):
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
-                     "values_changed": [], "unprocessed": [], "list_added": [], "list_removed": []})
+                     "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
+                     "attribute_added":[], "attribute_removed":[] })
 
         self.__diffit(t1, t2)
 
@@ -220,10 +225,16 @@ class DeepDiff(dict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         if t_keys_added:
-            self[item_added_key].append("%s%s" % (parent, list(t_keys_added)))
+            if attributes_mode:
+                self[item_added_key].append("%s.%s" % (parent, ','.join(t_keys_added)))
+            else:
+                self[item_added_key].append("%s%s" % (parent, list(t_keys_added)))
 
         if t_keys_removed:
-            self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
+            if attributes_mode:
+                self[item_removed_key].append("%s%s" % (parent, ','.join(t_keys_removed)))
+            else:
+                self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
 
         for item in t_keys_intersect:
             if not attributes_mode and isinstance(item, basestring):
@@ -262,10 +273,10 @@ class DeepDiff(dict):
             items_removed = list(t1_set - t2_set)
 
         if items_added:
-            self["list_added"].append("%s: %s" % (parent, items_added))
+            self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
         if items_removed:
-            self["list_removed"].append("%s: %s" % (parent, items_removed))
+            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
 
     def __diffstr(self, t1, t2, parent):
         '''

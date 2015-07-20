@@ -106,7 +106,7 @@ List difference
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    {'list_removed': ["root[4]['b']: [3]"]}
+    {'iterable_item_removed': ["root[4]['b']: [3]"]}
 
 List difference 2: Note that it DOES NOT take order into account
     >>> # Note that it DOES NOT take order into account

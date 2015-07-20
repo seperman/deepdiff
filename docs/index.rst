@@ -17,9 +17,9 @@ Install from PyPi::
     pip install deepdiff
 
 
-*************
-DeepDiff 0.5
-*************
+**************
+DeepDiff 0.5.2
+**************
 
 .. toctree::
    :maxdepth: 2

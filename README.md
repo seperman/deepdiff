@@ -1,4 +1,4 @@
-# deepdiff v 0.5
+# deepdiff v 0.5.2
 
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 
@@ -132,7 +132,7 @@ root[4]['b']:
 >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
 >>> ddiff = DeepDiff(t1, t2)
 >>> pprint (ddiff, indent = 2)
-{'list_removed': ["root[4]['b']: [3]"]}
+{'iterable_item_removed': ["root[4]['b']: [3]"]}
 ```
 
 ### List difference 2: Note that it DOES NOT take order into account
@@ -181,6 +181,14 @@ root[4]['b']:
 >>>
 >>> print(DeepDiff(t1, t2))
 {'values_changed': ['root.b: 1 ===> 2']}
+```
+
+### Object attribute added:
+
+```python
+>>> t2.c = "new attribute"
+>>> print(DeepDiff(t1, t2))
+{'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
 ```
 
 
