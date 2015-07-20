@@ -1,4 +1,10 @@
+import os
 from setuptools import setup
+
+# if you are not using vagrant, just delete os.link directly,
+# The hard link only saves a little disk space, so you should not care
+if os.environ.get('USER','') == 'vagrant':
+    del os.link
 
 try:
     with open('README.txt') as file:
