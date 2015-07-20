@@ -7,7 +7,7 @@ except:
     long_description = "Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes."
 
 setup(name='deepdiff',
-      version='0.2.0',
+      version='0.5.0',
       description='Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.',
       url='https://github.com/erasmose/deepdiff',
       download_url='https://github.com/erasmose/deepdiff/tarball/master',
@@ -15,7 +15,6 @@ setup(name='deepdiff',
       author_email='sep@zepworks.com',
       license='MIT',
       packages=['deepdiff'],
-      # install_requires=['future', 'six'], # only when python 3
       zip_safe=False,
       long_description=long_description,
       classifiers=[
@@ -24,6 +23,7 @@ setup(name='deepdiff',
           "Topic :: Software Development",
           "Programming Language :: Python :: 2.7",
           "Programming Language :: Python :: 3.4",
-          "Development Status :: 4 - Beta"
+          "Development Status :: 5 - Production/Stable",
+          "License :: OSI Approved :: MIT License"
       ],
       )

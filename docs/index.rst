@@ -21,7 +21,7 @@ If you are Python3 you need to also install future and six::
     pip install future six
 
 *************
-DeepDiff 0.2
+DeepDiff 0.5
 *************
 
 .. toctree::

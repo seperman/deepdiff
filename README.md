@@ -1,151 +1,198 @@
-deepdiff v 0.2
-========
+# deepdiff v 0.5
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
-
+Tested on Python 2.7 and 3.4
 
 ##Installation
 
-Install from PyPi:
+###Install from PyPi:
 
     pip install deepdiff
 
-If you are Python3 you need to also install:
+### Importing
 
-    pip install future six
+```python
+>>> from deepdiff import DeepDiff
+```
 
-##Example usage
+## Supported data types
 
-    >>> from deepdiff import DeepDiff
-    >>> from pprint import pprint
-    >>> from __future__ import print_function
-
-
-Same object returns empty
-
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = t1
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print (ddiff.changes)
-        {}
+int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
 
 
-Type of an item has changed
+## Examples
 
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:"2", 3:3}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print (ddiff.changes)
-        {'type_changes': ["root[2]: 2=<type 'int'> vs. 2=<type 'str'>"]}
+### Same object returns empty
+
+```python
+>>> t1 = {1:1, 2:2, 3:3}
+>>> t2 = t1
+>>> ddiff = DeepDiff(t1, t2)
+>>> ddiff
+{}
+```
+
+### Type of an item has changed
+
+```python
+>>> t1 = {1:1, 2:2, 3:3}
+>>> t2 = {1:1, 2:"2", 3:3}
+>>> ddiff = DeepDiff(t1, t2)
+>>> print (ddiff)
+{'type_changes': ["root[2]: 2=<type 'int'> ===> 2=<type 'str'>"]}
+```
+
+### Value of an item has changed
+
+```python
+>>> t1 = {1:1, 2:2, 3:3}
+>>> t2 = {1:1, 2:4, 3:3}
+>>> ddiff = DeepDiff(t1, t2)
+>>> print (ddiff)
+{'values_changed': ['root[2]: 2 ===> 4']}
+```
+
+### Item added and/or removed
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:4}
+>>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff)
+{'dic_item_added': ['root[5, 6]'],
+ 'dic_item_removed': ['root[4]'],
+ 'values_changed': ['root[2]: 2 ===> 4']}
+```
+
+### String difference
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
+>>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> from pprint import pprint
+>>> pprint (ddiff, indent = 2)
+{ 'values_changed': [ 'root[2]: 2 ===> 4',
+                      "root[4]['b']: 'world' ===> 'world!'"]}
+>>>
+>>> print (ddiff['values_changed'][1])
+root[4]['b']: 'world' ===> 'world!'
+```
+
+###String difference 2
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world!\nGoodbye!\n1\n2\nEnd"}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n1\n2\nEnd"}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff, indent = 2)
+{ 'values_changed': [ "root[4]['b']:\n"
+                      '--- \n'
+                      '+++ \n'
+                      '@@ -1,5 +1,4 @@\n'
+                      '-world!\n'
+                      '-Goodbye!\n'
+                      '+world\n'
+                      ' 1\n'
+                      ' 2\n'
+                      ' End']}
+>>>
+>>> print (ddiff['values_changed'][0])
+root[4]['b']:
+--- 
++++ 
+@@ -1,5 +1,4 @@
+-world!
+-Goodbye!
++world
+ 1
+ 2
+ End
+```
+
+### Type change
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff, indent = 2)
+{ 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> ===> world\n"
+                    '\n'
+                    '\n'
+                    "End=<type 'str'>"]}
+```
+
+### List difference
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff, indent = 2)
+{'list_removed': ["root[4]['b']: [3]"]}
+```
+
+### List difference 2: Note that it DOES NOT take order into account
+
+```python
+>>> # Note that it DOES NOT take order into account
+... t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff, indent = 2)
+{}
+```
+
+### List that contains dictionary:
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint (ddiff, indent = 2)
+{ 'dic_item_removed': ["root[4]['b'][2][2]"],
+  'values_changed': ["root[4]['b'][2][1]: 1 ===> 3"]}
+```
+
+### Named Tuples:
+
+```python
+>>> from collections import namedtuple
+>>> Point = namedtuple('Point', ['x', 'y'])
+>>> t1 = Point(x=11, y=22)
+>>> t2 = Point(x=11, y=23)
+>>> print (DeepDiff(t1, t2))
+{'values_changed': ['root.y: 22 ===> 23']}
+```
+
+### Custom objects:
+
+```python
+>>> class ClassA(object):
+...     a = 1
+...     def __init__(self, b):
+...         self.b = b
+...
+>>> t1 = ClassA(1)
+>>> t2 = ClassA(2)
+>>>
+>>> print(DeepDiff(t1, t2))
+{'values_changed': ['root.b: 1 ===> 2']}
+```
 
 
-Value of an item has changed
+##Documentation
 
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:4, 3:3}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print (ddiff.changes)
-        {'values_changed': ['root[2]: 2 ====>> 4']}
-
-
-Item added and/or removed
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:4}
-    >>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes)
-        {'dic_item_added': ['root[5, 6]'],
-         'dic_item_removed': ['root[4]'],
-         'values_changed': ['root[2]: 2 ====>> 4']}
-
-
-String difference
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
-    >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { 'values_changed': [ 'root[2]: 2 ====>> 4',
-                              "root[4]['b']:\n--- \n+++ \n@@ -1 +1 @@\n-world\n+world!"]}
-    >>>
-    >>> print (ddiff.changes['values_changed'][1])
-        root[4]['b']:
-        --- 
-        +++ 
-        @@ -1 +1 @@
-        -world
-        +world!
-
-
-String difference 2        
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world!\nGoodbye!\n1\n2\nEnd"}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n1\n2\nEnd"}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { 'values_changed': [ "root[4]['b']:\n--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End"]}
-    >>>
-    >>> print (ddiff.changes['values_changed'][0])
-        root[4]['b']:
-        --- 
-        +++ 
-        @@ -1,5 +1,4 @@
-        -world!
-        -Goodbye!
-        +world
-         1
-         2
-         End
-
-
-Type change
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> vs. world\n\n\nEnd=<type 'str'>"]}
-
-List difference
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { 'list_removed': ["root[4]['b']: [3]"]}
-
-List difference 2: Note that it DOES NOT take order into account
-
-    >>> # Note that it DOES NOT take order into account
-    ... t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { }
-
-
-List that contains dictionary:
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff.changes, indent = 2)
-        { 'dic_item_removed': ["root[4]['b'][2][2]"],
-          'values_changed': ["root[4]['b'][2][1]: 1 ====>> 3"]}
-
-
-##Documents
-
-http://deepdiff.readthedocs.org/en/latest/
-
-
+<http://deepdiff.readthedocs.org/en/latest/>
 
 ##Author
 
 Seperman
-Github:  https://github.com/seperman
-Linkedin:  http://www.linkedin.com/in/sepehr
-ZepWorks:   http://www.zepworks.com
+
+Github:  <https://github.com/seperman>
+Linkedin:  <http://www.linkedin.com/in/sepehr>
+ZepWorks:   <http://www.zepworks.com>
 
 Thanks to:
-brbsix for Py3 porting
+brbsix for initial Py3 porting
