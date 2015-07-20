@@ -6,25 +6,24 @@ import difflib
 import datetime
 from sys import version
 
-if version[0] == '2':
-    six_builtins = False
+py3 = version[0] == '3'
+
+if py3:
+    from builtins import int
+    basestring = str
+    numbers = (int, float, complex, datetime.datetime)
+else:
     numbers = (int, float, long, complex, datetime.datetime)
-elif version[0] == '3':
-    try:
-        from builtins import int
-        from past.builtins import basestring
-        from six import iteritems
-        six_builtins = True
-        numbers = (int, float, complex, datetime.datetime)
-    except:
-        print ("Please make sure you have 'future' and 'six' python packages installed.")
 
 from collections import Iterable
 
 
-class DeepDiff(object):
+class DeepDiff(dict):
 
     r"""
+    DeepDiff v 0.5
+    --------------
+
     Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
     Parameters
@@ -48,14 +47,12 @@ class DeepDiff(object):
         >>> from pprint import pprint
         >>> from __future__ import print_function
 
-
     Same object returns empty
         >>> t1 = {1:1, 2:2, 3:3}
         >>> t2 = t1
         >>> ddiff = DeepDiff(t1, t2)
-        >>> print (ddiff.changes)
+        >>> print (ddiff)
         {}
-
 
     Type of an item has changed
         >>> t1 = {1:1, 2:2, 3:3}
@@ -64,14 +61,12 @@ class DeepDiff(object):
         >>> print (ddiff.changes)
         {'type_changes': ["root[2]: 2=<type 'int'> ===> 2=<type 'str'>"]}
 
-
     Value of an item has changed
         >>> t1 = {1:1, 2:2, 3:3}
         >>> t2 = {1:1, 2:4, 3:3}
         >>> ddiff = DeepDiff(t1, t2)
         >>> print (ddiff.changes)
         {'values_changed': ['root[2]: 2 ===> 4']}
-
 
     Item added and/or removed
         >>> t1 = {1:1, 2:2, 3:3, 4:4}
@@ -82,14 +77,18 @@ class DeepDiff(object):
          'dic_item_removed': ['root[4]'],
          'values_changed': ['root[2]: 2 ===> 4']}
 
-
     String difference
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
         >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
         { 'values_changed': [ 'root[2]: 2 ===> 4',
-                              "root[4]['b']:\n--- \n+++ \n@@ -1 +1 @@\n-world\n+world!"]}
+                              "root[4]['b']:\n"
+                              '--- \n'
+                              '+++ \n'
+                              '@@ -1 +1 @@\n'
+                              '-world\n'
+                              '+world!']}
         >>>
         >>> print (ddiff.changes['values_changed'][1])
         root[4]['b']:
@@ -99,13 +98,21 @@ class DeepDiff(object):
         -world
         +world!
 
-
     String difference 2
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world!\nGoodbye!\n1\n2\nEnd"}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n1\n2\nEnd"}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { 'values_changed': [ "root[4]['b']:\n--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End"]}
+        { 'values_changed': [ "root[4]['b']:\n"
+                              '--- \n'
+                              '+++ \n'
+                              '@@ -1,5 +1,4 @@\n'
+                              '-world!\n'
+                              '-Goodbye!\n'
+                              '+world\n'
+                              ' 1\n'
+                              ' 2\n'
+                              ' End']}
         >>>
         >>> print (ddiff.changes['values_changed'][0])
         root[4]['b']:
@@ -119,20 +126,22 @@ class DeepDiff(object):
          2
          End
 
-
     Type change
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> ===> world\n\n\nEnd=<type 'str'>"]}
+        { 'type_changes': [ "root[4]['b']: [1, 2, 3]=<type 'list'> ===> world\n"
+                            '\n'
+                            '\n'
+                            "End=<type 'str'>"]}
 
     List difference
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { 'list_removed': ["root[4]['b']: [3]"]}
+        {'list_removed': ["root[4]['b']: [3]"]}
 
     List difference 2: Note that it DOES NOT take order into account
         >>> # Note that it DOES NOT take order into account
@@ -140,8 +149,7 @@ class DeepDiff(object):
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff.changes, indent = 2)
-        { }
-
+        {}
 
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
@@ -155,17 +163,31 @@ class DeepDiff(object):
 
     def __init__(self, t1, t2):
 
-        self.changes = {"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
-                        "values_changed": [], "unprocessed": [], "list_added": [], "list_removed": []}
+        self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
+                     "values_changed": [], "unprocessed": [], "list_added": [], "list_removed": []})
 
-        self.diffit(t1, t2)
+        self.__diffit(t1, t2)
 
-        if six_builtins:
-            self.changes = dict((k, v) for k, v in iteritems(self.changes) if v)
+        # import ipdb
+        # ipdb.set_trace()
+
+        if py3:
+            empty_keys = [k for k, v in self.items() if not v]
         else:
-            self.changes = dict((k, v) for k, v in self.changes.iteritems() if v)
+            empty_keys = [k for k, v in self.iteritems() if not v]
 
-    def diffdict(self, t1, t2, parent):
+        for k in empty_keys:
+            del self[k]
+
+    @staticmethod
+    def typestr(obj):
+        '''
+        python 3 returns <class 'something'> instead of <type 'something'>.
+        For backward compatibility, we replace class with type.
+        '''
+        return str(type(obj)).replace('class', 'type')
+
+    def __diffdict(self, t1, t2, parent):
 
         t2_keys, t1_keys = [
             set(d.keys()) for d in (t2, t1)
@@ -177,77 +199,102 @@ class DeepDiff(object):
         t_keys_removed = t1_keys - t_keys_intersect
 
         if t_keys_added:
-            self.changes["dic_item_added"].append("%s%s" % (parent, list(t_keys_added)))
+            self["dic_item_added"].append("%s%s" % (parent, list(t_keys_added)))
 
         if t_keys_removed:
-            self.changes["dic_item_removed"].append("%s%s" % (parent, list(t_keys_removed)))
+            self["dic_item_removed"].append("%s%s" % (parent, list(t_keys_removed)))
 
         for item in t_keys_intersect:
             if isinstance(item, basestring):
                 item_str = "'%s'" % item
             else:
                 item_str = item
-            self.diffit(t1[item], t2[item], parent="%s[%s]" % (parent, item_str))
+            self.__diffit(t1[item], t2[item], parent="%s[%s]" % (parent, item_str))
 
-    def diffit(self, t1, t2, parent="root"):
+    def __diffiterable(self, t1, t2, parent="root"):
+        '''
+        difference of iterables except dictionaries
+        '''
+        try:
+            t1_set = set(t1)
+            t2_set = set(t2)
+        # When we can't make a set since the iterable has unhashable items
+        except TypeError:
+
+            for i, (x, y) in enumerate(zip(t1, t2)):
+
+                self.__diffit(x, y, "%s[%s]" % (parent, i))
+
+            if len(t1) != len(t2):
+                items_added = [item for item in t2 if item not in t1]
+                items_removed = [item for item in t1 if item not in t2]
+            else:
+                items_added = None
+                items_removed = None
+        else:
+            items_added = list(t2_set - t1_set)
+            items_removed = list(t1_set - t2_set)
+
+        if items_added:
+            self["list_added"].append("%s: %s" % (parent, items_added))
+
+        if items_removed:
+            self["list_removed"].append("%s: %s" % (parent, items_removed))
+
+    def __diffit(self, t1, t2, parent="root"):
+
+        # import ipdb
+        # ipdb.set_trace()
 
         if type(t1) != type(t2):
-            self.changes["type_changes"].append("%s: %s=%s ===> %s=%s" % (parent, t1, type(t1), t2, type(t2)))
+            self["type_changes"].append("%s: %s=%s ===> %s=%s" % (parent, t1, self.typestr(t1), t2, self.typestr(t2)))
 
         elif isinstance(t1, basestring):
             diff = difflib.unified_diff(t1.splitlines(), t2.splitlines(), lineterm='')
             diff = list(diff)
             if diff:
                 diff = '\n'.join(diff)
-                self.changes["values_changed"].append("%s:\n%s" % (parent, diff))
+                self["values_changed"].append("%s:\n%s" % (parent, diff))
 
         elif isinstance(t1, numbers):
             if t1 != t2:
-                self.changes["values_changed"].append("%s: %s ===> %s" % (parent, t1, t2))
+                self["values_changed"].append("%s: %s ===> %s" % (parent, t1, t2))
 
         elif isinstance(t1, dict):
-            self.diffdict(t1, t2, parent)
+            self.__diffdict(t1, t2, parent)
 
         elif isinstance(t1, Iterable):
-
-            try:
-                t1_set = set(t1)
-                t2_set = set(t2)
-            # When we can't make a set since the iterable has unhashable items
-            except TypeError:
-
-                for i, (x, y) in enumerate(zip(t1, t2)):
-
-                    self.diffit(x, y, "%s[%s]" % (parent, i))
-
-                if len(t1) != len(t2):
-                    items_added = [item for item in t2 if item not in t1]
-                    items_removed = [item for item in t1 if item not in t2]
-                else:
-                    items_added = None
-                    items_removed = None
-            else:
-                items_added = list(t2_set - t1_set)
-                items_removed = list(t1_set - t2_set)
-
-            if items_added:
-                self.changes["list_added"].append("%s: %s" % (parent, items_added))
-
-            if items_removed:
-                self.changes["list_removed"].append("%s: %s" % (parent, items_removed))
+            self.__diffiterable(t1, t2, parent)
 
         else:
             try:
                 t1_dict = t1.__dict__
                 t2_dict = t2.__dict__
             except AttributeError:
-                pass
+                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
             else:
-                self.diffdict(t1_dict, t2_dict, parent)
+                self.__diffdict(t1_dict, t2_dict, parent)
 
         return
 
+    @property
+    def changes(self):
+        ''' This is for backward compatibility with previous versions of DeepDiff '''
+        return self
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+
+# t1 = {1:1, 2:2, 3:3}
+# t2 = t1
+# ddiff = DeepDiff(t1, t2)
+
+
+# import ipdb
+# ipdb.set_trace()
+
+
+# print (ddiff.changes)
+# print (ddiff)
