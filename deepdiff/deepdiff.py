@@ -18,6 +18,7 @@ else:
 
 from collections import Iterable
 
+
 class DeepDiff(dict):
 
     r"""
@@ -288,7 +289,7 @@ class DeepDiff(dict):
             if diff:
                 diff = '\n'.join(diff)
                 self["values_changed"].append("%s:\n%s" % (parent, diff))
-        elif t1 is not t2:
+        elif t1 != t2:
             self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
 
     def __diffit(self, t1, t2, parent="root"):

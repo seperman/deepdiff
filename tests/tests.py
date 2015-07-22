@@ -10,6 +10,7 @@ import unittest
 
 from deepdiff import DeepDiff
 
+
 class DeepDiffTestCase(unittest.TestCase):
 
     def test_same_objects(self):
