@@ -71,18 +71,34 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_list_difference(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 'to_be_removed', 'to_be_removed2']}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'iterable_item_removed': ["root[4]['b']: [3]"]}
+        result = {'iterable_item_removed': ["root[4]['b']: ['to_be_removed', 'to_be_removed2']"]}
+        self.assertEqual(ddiff, result)
+
+    def test_list_difference_add(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        ddiff = DeepDiff(t1, t2)
+        result = {'iterable_item_added': ["root: [3, 5]"]}
         self.assertEqual(ddiff, result)
 
     def test_list_difference2(self):
-        # Note that it DOES NOT take order into account
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3, 3, 4]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2]}}
         ddiff = DeepDiff(t1, t2)
-        self.assertEqual(ddiff, {})
+        self.assertEqual(ddiff, {'values_changed': [
+                         "root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"],
+                         'iterable_item_removed': ["root[4]['b']: [3, 4]"]})
+
+    def test_list_difference3(self):
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2, 3]}}
+        ddiff = DeepDiff(t1, t2)
+        self.assertEqual(ddiff, {'values_changed': [
+                         "root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"],
+                         'iterable_item_added': ["root[4]['b']: [3]"]})
 
     def test_list_that_contains_dictionary(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
@@ -90,6 +106,13 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'dic_item_removed': ["root[4]['b'][2][2]"],
                   'values_changed': ["root[4]['b'][2][1]: 1 ===> 3"]}
+        self.assertEqual(ddiff, result)
+
+    def test_set(self):
+        t1 = {1, 2, 8}
+        t2 = {1, 2, 3, 5}
+        ddiff = DeepDiff(t1, t2)
+        result = {'set_item_added': ["root: [3, 5]"], 'set_item_removed': ["root: [8]"]}
         self.assertEqual(ddiff, result)
 
     def test_named_tuples(self):

@@ -13,16 +13,23 @@ if py3:
     from builtins import int
     basestring = str
     numbers = (int, float, complex, datetime.datetime)
+    from itertools import zip_longest
 else:
     numbers = (int, float, long, complex, datetime.datetime)
+    from itertools import izip_longest
+    zip_longest = izip_longest
 
 from collections import Iterable
+
+
+class ListItemRemovedOrAdded(object):
+    pass
 
 
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.2**
+    **DeepDiff v 0.5.3**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -126,19 +133,19 @@ class DeepDiff(dict):
                             "End=<type 'str'>"]}
 
     List difference
-        >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+        >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff, indent = 2)
-        {'iterable_item_removed': ["root[4]['b']: [3]"]}
+        {'iterable_item_removed': ["root[4]['b']: [3, 4]"]}
 
-    List difference 2: Note that it DOES NOT take order into account
-        >>> # Note that it DOES NOT take order into account
-        ... t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-        >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
+    List difference 2:
+        >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+        >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff, indent = 2)
-        {}
+        { 'iterable_item_added': ["root[4]['b']: [3]"],
+          'values_changed': ["root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"]}
 
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
@@ -147,6 +154,13 @@ class DeepDiff(dict):
         >>> pprint (ddiff, indent = 2)
         { 'dic_item_removed': ["root[4]['b'][2][2]"],
           'values_changed': ["root[4]['b'][2][1]: 1 ===> 3"]}
+
+    Sets:
+        >>> t1 = {1, 2, 8}
+        >>> t2 = {1, 2, 3, 5}
+        >>> ddiff = DeepDiff(t1, t2)
+        >>> print (DeepDiff(t1, t2))
+        {'set_item_added': ['root: [3, 5]'], 'set_item_removed': ['root: [8]']}
 
     Named Tuples:
         >>> from collections import namedtuple
@@ -179,7 +193,7 @@ class DeepDiff(dict):
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
-                     "attribute_added": [], "attribute_removed": []})
+                     "attribute_added": [], "attribute_removed": [], "set_item_removed": [], "set_item_added": []})
 
         self.__diffit(t1, t2)
 
@@ -244,40 +258,44 @@ class DeepDiff(dict):
                 item_str = item
             self.__diffit(t1[item], t2[item], parent=parent_text % (parent, item_str))
 
-    def __diff_iterable(self, t1, t2, parent="root"):
-        '''
-        difference of iterables except dictionaries and strings.
-        '''
-        try:
-            if not isinstance(t1, set):
-                t1_set = set(t1)
-                t2_set = set(t2)
+    def __diff_sets(self, t1, t2, parent="root"):
+        items_added = list(t2 - t1)
+        items_removed = list(t1 - t2)
+
+        if items_removed:
+            self["set_item_removed"].append("%s: %s" % (parent, items_removed))
+
+        if items_added:
+            self["set_item_added"].append("%s: %s" % (parent, items_added))
+
+    def __diff_other_iterable(self, t1, t2, parent="root"):
+        items_removed = []
+        items_added = []
+
+        for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
+
+            if y is ListItemRemovedOrAdded:
+                items_removed.append(x)
+            elif x is ListItemRemovedOrAdded:
+                items_added.append(y)
             else:
-                t1_set = t1
-                t2_set = t2
-
-        # When we can't make a set since the iterable has unhashable items
-        except TypeError:
-
-            for i, (x, y) in enumerate(zip(t1, t2)):
-
                 self.__diffit(x, y, "%s[%s]" % (parent, i))
 
-            if len(t1) != len(t2):
-                items_added = [item for item in t2 if item not in t1]
-                items_removed = [item for item in t1 if item not in t2]
-            else:
-                items_added = None
-                items_removed = None
-        else:
-            items_added = list(t2_set - t1_set)
-            items_removed = list(t1_set - t2_set)
+        if items_removed:
+            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
 
         if items_added:
             self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
-        if items_removed:
-            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
+    def __diff_iterable(self, t1, t2, parent="root"):
+        '''
+        difference of iterables except dictionaries and strings.
+        '''
+
+        if isinstance(t1, set):
+            self.__diff_sets(t1, t2, parent=parent)
+        else:
+            self.__diff_other_iterable(t1, t2, parent=parent)
 
     def __diffstr(self, t1, t2, parent):
         '''

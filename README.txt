@@ -102,19 +102,19 @@ Type change
                         "End=<type 'str'>"]}
 
 List difference
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    {'iterable_item_removed': ["root[4]['b']: [3]"]}
+    {'iterable_item_removed': ["root[4]['b']: [3, 4]"]}
 
-List difference 2: Note that it DOES NOT take order into account
-    >>> # Note that it DOES NOT take order into account
-    ... t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2]}}
+List difference 2:
+    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    {}
+    { 'iterable_item_added': ["root[4]['b']: [3]"],
+      'values_changed': ["root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"]}
 
 List that contains dictionary:
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
@@ -123,6 +123,13 @@ List that contains dictionary:
     >>> pprint (ddiff, indent = 2)
     { 'dic_item_removed': ["root[4]['b'][2][2]"],
       'values_changed': ["root[4]['b'][2][1]: 1 ===> 3"]}
+
+Sets:
+    >>> t1 = {1, 2, 8}
+    >>> t2 = {1, 2, 3, 5}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> print (DeepDiff(t1, t2))
+    {'set_item_added': ['root: [3, 5]'], 'set_item_removed': ['root: [8]']}
 
 Named Tuples:
     >>> from collections import namedtuple
@@ -143,3 +150,8 @@ Custom objects:
     >>>
     >>> print(DeepDiff(t1, t2))
     {'values_changed': ['root.b: 1 ===> 2']}
+
+Object attribute added:
+    >>> t2.c = "new attribute"
+    >>> print(DeepDiff(t1, t2))
+    {'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
