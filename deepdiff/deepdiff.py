@@ -179,7 +179,7 @@ class DeepDiff(dict):
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
-                     "attribute_added":[], "attribute_removed":[] })
+                     "attribute_added": [], "attribute_removed": []})
 
         self.__diffit(t1, t2)
 
@@ -295,7 +295,8 @@ class DeepDiff(dict):
     def __diffit(self, t1, t2, parent="root"):
 
         if type(t1) != type(t2):
-            self["type_changes"].append("%s: %s=%s ===> %s=%s" % (parent, t1, self.__typestr(t1), t2, self.__typestr(t2)))
+            self["type_changes"].append(
+                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__typestr(t1), t2, self.__typestr(t2)))
 
         elif isinstance(t1, basestring):
             self.__diffstr(t1, t2, parent)
