@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-To run the test:
+To run the test, run this in the root of repo:
 python -m unittest discover
 """
 
@@ -163,4 +163,17 @@ class DeepDiffTestCase(unittest.TestCase):
         t2.c = "new attribute"
         ddiff = DeepDiff(t1, t2)
         result = {'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
+        self.assertEqual(ddiff, result)
+
+    def test_loop(self):
+        class LoopTest(object):
+            def __init__(self, a):
+                self.loop = self
+                self.a = a
+
+        t1 = LoopTest(1)
+        t2 = LoopTest(2)
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root.a: 1 ===> 2']}
         self.assertEqual(ddiff, result)

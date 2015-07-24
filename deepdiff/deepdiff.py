@@ -25,6 +25,10 @@ class ListItemRemovedOrAdded(object):
     pass
 
 
+class RootItem(object):
+    pass
+
+
 class DeepDiff(dict):
 
     r"""
@@ -212,7 +216,7 @@ class DeepDiff(dict):
         '''
         return str(type(obj)).replace('class', 'type')
 
-    def __diffdict(self, t1, t2, parent, attributes_mode=False):
+    def __diffdict(self, t1, t2, parent, parents=None, attributes_mode=False):
 
         if attributes_mode:
             try:
@@ -255,7 +259,16 @@ class DeepDiff(dict):
                 item_str = "'%s'" % item
             else:
                 item_str = item
-            self.__diffit(t1[item], t2[item], parent=parent_text % (parent, item_str))
+
+            t1_item = t1[item]
+            t2_item = t2[item]
+
+            if id(item) in parents:
+                print ("Warning, a loop is detected.")
+                return
+            parents = frozenset(set(parents).add(id(item)))
+
+            self.__diffit(t1_item, t2_item, parent=parent_text % (parent, item_str), parents=parents)
 
     def __diff_set(self, t1, t2, parent="root"):
         items_added = list(t2 - t1)
@@ -267,7 +280,7 @@ class DeepDiff(dict):
         if items_added:
             self["set_item_added"].append("%s: %s" % (parent, items_added))
 
-    def __diff_other_iterable(self, t1, t2, parent="root"):
+    def __diff_other_iterable(self, t1, t2, parent="root", parents=None):
         items_removed = []
         items_added = []
 
@@ -278,7 +291,7 @@ class DeepDiff(dict):
             elif x is ListItemRemovedOrAdded:
                 items_added.append(y)
             else:
-                self.__diffit(x, y, "%s[%s]" % (parent, i))
+                self.__diffit(x, y, "%s[%s]" % (parent, i), parents)
 
         if items_removed:
             self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
@@ -286,15 +299,15 @@ class DeepDiff(dict):
         if items_added:
             self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
-    def __diff_iterable(self, t1, t2, parent="root"):
+    def __diff_iterable(self, t1, t2, parent="root", parents=None):
         '''
         difference of iterables except dictionaries and strings.
         '''
 
         if isinstance(t1, set) or isinstance(t1, frozenset):
-            self.__diff_set(t1, t2, parent=parent)
+            self.__diff_set(t1, t2, parent=parent, parents=parents)
         else:
-            self.__diff_other_iterable(t1, t2, parent=parent)
+            self.__diff_other_iterable(t1, t2, parent=parent, parents=parents)
 
     def __diffstr(self, t1, t2, parent):
         '''
@@ -309,7 +322,10 @@ class DeepDiff(dict):
         elif t1 != t2:
             self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
 
-    def __diffit(self, t1, t2, parent="root"):
+    def __diffit(self, t1, t2, parent="root", parents=None):
+
+        if t1 is t2:
+            return
 
         if type(t1) != type(t2):
             self["type_changes"].append(
@@ -323,7 +339,7 @@ class DeepDiff(dict):
                 self["values_changed"].append("%s: %s ===> %s" % (parent, t1, t2))
 
         elif isinstance(t1, dict):
-            self.__diffdict(t1, t2, parent)
+            self.__diffdict(t1, t2, parent, parents)
 
         elif isinstance(t1, tuple):
             # Checking to see if it has _fields. Which probably means it is a named tuple.
@@ -331,16 +347,16 @@ class DeepDiff(dict):
                 t1._fields
             # It must be a normal tuple
             except:
-                self.__diff_iterable(t1, t2, parent)
+                self.__diff_iterable(t1, t2, parent, parents)
             # We assume it is a namedtuple then
             else:
-                self.__diffdict(t1, t2, parent, attributes_mode=True)
+                self.__diffdict(t1, t2, parent, parents, attributes_mode=True)
 
         elif isinstance(t1, Iterable):
-            self.__diff_iterable(t1, t2, parent)
+            self.__diff_iterable(t1, t2, parent, parents)
 
         else:
-            self.__diffdict(t1, t2, parent, attributes_mode=True)
+            self.__diffdict(t1, t2, parent, parents, attributes_mode=True)
 
         return
 
@@ -350,7 +366,7 @@ class DeepDiff(dict):
         This is for backward compatibility with previous versions of DeepDiff.
         You don't need this anymore since you can access the result dictionary of changes directly from DeepDiff now:
 
-        `DeepDiff(t1,t2) == DeepDiff(t1, t2).changes`
+        DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
         '''
         return self
 
