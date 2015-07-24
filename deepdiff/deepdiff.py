@@ -16,8 +16,7 @@ if py3:
     from itertools import zip_longest
 else:
     numbers = (int, float, long, complex, datetime.datetime)
-    from itertools import izip_longest
-    zip_longest = izip_longest
+    from itertools import izip_longest as zip_longest
 
 from collections import Iterable
 
@@ -29,7 +28,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.3**
+    **DeepDiff v 0.5.4**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -258,7 +257,7 @@ class DeepDiff(dict):
                 item_str = item
             self.__diffit(t1[item], t2[item], parent=parent_text % (parent, item_str))
 
-    def __diff_sets(self, t1, t2, parent="root"):
+    def __diff_set(self, t1, t2, parent="root"):
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 
@@ -292,8 +291,8 @@ class DeepDiff(dict):
         difference of iterables except dictionaries and strings.
         '''
 
-        if isinstance(t1, set):
-            self.__diff_sets(t1, t2, parent=parent)
+        if isinstance(t1, set) or isinstance(t1, frozenset):
+            self.__diff_set(t1, t2, parent=parent)
         else:
             self.__diff_other_iterable(t1, t2, parent=parent)
 

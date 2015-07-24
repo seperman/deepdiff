@@ -18,7 +18,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 0.5.3
+DeepDiff 0.5.4
 **************
 
 .. toctree::

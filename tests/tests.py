@@ -115,6 +115,20 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'set_item_added': ["root: [3, 5]"], 'set_item_removed': ["root: [8]"]}
         self.assertEqual(ddiff, result)
 
+    def test_frozenset(self):
+        t1 = frozenset([1, 2, 8])
+        t2 = frozenset([1, 2, 3, 5])
+        ddiff = DeepDiff(t1, t2)
+        result = {'set_item_added': ["root: [3, 5]"], 'set_item_removed': ["root: [8]"]}
+        self.assertEqual(ddiff, result)
+
+    def test_tuple(self):
+        t1 = (1, 2, 8)
+        t2 = (1, 2, 3, 5)
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root[2]: 8 ===> 3'], 'iterable_item_added': ['root: [5]']}
+        self.assertEqual(ddiff, result)
+
     def test_named_tuples(self):
         from collections import namedtuple
         Point = namedtuple('Point', ['x', 'y'])
