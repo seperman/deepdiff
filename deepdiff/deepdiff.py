@@ -188,13 +188,11 @@ class DeepDiff(dict):
 
     """
 
-    def __init__(self, t1, t2, debug=False):
+    def __init__(self, t1, t2):
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
                      "attribute_added": [], "attribute_removed": [], "set_item_removed": [], "set_item_added": []})
-
-        self.debug = debug
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
@@ -272,8 +270,7 @@ class DeepDiff(dict):
             item_id = id(t1_child)
 
             if parents_ids and item_id in parents_ids:
-                if self.debug:
-                    print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
+                # print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
                 continue
 
             parents_added = set(parents_ids)
