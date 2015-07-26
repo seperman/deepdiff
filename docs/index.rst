@@ -55,5 +55,5 @@ Seperman
 - `Linkedin <http://www.linkedin.com/in/sepehr>`_
 
 Thanks to:
-brbsix for Py3 porting
+brbsix for initial Py3 porting
 
