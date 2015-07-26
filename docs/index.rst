@@ -18,7 +18,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 0.5.4
+DeepDiff 0.5.5
 **************
 
 .. toctree::
@@ -39,8 +39,14 @@ Indices and tables
 * :ref:`search`
 
 
+Changelog
+=========
+
+- v0-5-5: Adding loop detection
+
+
 Author
-==================
+======
 
 Seperman
 

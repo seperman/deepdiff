@@ -1,4 +1,4 @@
-# deepdiff v 0.5.4
+# deepdiff v 0.5.5
 
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 
@@ -205,6 +205,10 @@ root[4]['b']:
 ##Documentation
 
 <http://deepdiff.readthedocs.org/en/latest/>
+
+##Changelog
+
+v0-5-5: Adding loop detection
 
 ##Author
 

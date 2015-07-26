@@ -1,4 +1,4 @@
-**DeepDiff v 0.5**
+**DeepDiff v 0.5.5**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -155,3 +155,14 @@ Object attribute added:
     >>> t2.c = "new attribute"
     >>> print(DeepDiff(t1, t2))
     {'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
+
+**Changelog**
+
+v0-5-5: Adding loop detection
+
+**Author**
+Seperman
+
+Github:  <https://github.com/seperman>
+Linkedin:  <http://www.linkedin.com/in/sepehr>
+ZepWorks:   <http://www.zepworks.com>

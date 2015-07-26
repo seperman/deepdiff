@@ -25,14 +25,10 @@ class ListItemRemovedOrAdded(object):
     pass
 
 
-class RootItem(object):
-    pass
-
-
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.4**
+    **DeepDiff v 0.5.5**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -200,7 +196,7 @@ class DeepDiff(dict):
 
         self.debug = debug
 
-        self.__diffit(t1, t2, parents_ids=frozenset({id(t1)}))
+        self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
         if py3:
             empty_keys = [k for k, v in self.items() if not v]
@@ -211,15 +207,19 @@ class DeepDiff(dict):
             del self[k]
 
     @staticmethod
-    def __typestr(obj):
+    def __gettype(obj):
         '''
         python 3 returns <class 'something'> instead of <type 'something'>.
         For backward compatibility, we replace class with type.
         '''
         return str(type(obj)).replace('class', 'type')
 
-    def __diffdict(self, t1, t2, parent, parents_ids={}, attributes_mode=False):
+    def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
+        ''' difference of 2 objects '''
+        self.__diff_dict(t1, t2, parent, parents_ids, attributes_mode=True)
 
+    def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), attributes_mode=False):
+        ''' difference of 2 dictionaries '''
         if attributes_mode:
             try:
                 t1 = t1.__dict__
@@ -256,6 +256,10 @@ class DeepDiff(dict):
             else:
                 self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
 
+        self.__diff_common_children(t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text)
+
+    def __diff_common_children(self, t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text):
+        ''' difference between common attributes of objects or values of common keys of dictionaries '''
         for item_key in t_keys_intersect:
             if not attributes_mode and isinstance(item_key, basestring):
                 item_key_str = "'%s'" % item_key
@@ -267,20 +271,19 @@ class DeepDiff(dict):
 
             item_id = id(t1_child)
 
-            if self.debug:
-                print (parents_ids, parent_text % (parent, item_key_str), item_id, item_key)
             if parents_ids and item_id in parents_ids:
                 if self.debug:
-                    print ("Warning, a loop is detected.\n")
+                    print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
                 continue
 
             parents_added = set(parents_ids)
             parents_added.add(item_id)
             parents_added = frozenset(parents_added)
 
-            self.__diffit(t1_child, t2_child, parent=parent_text % (parent, item_key_str), parents_ids=parents_added)
+            self.__diff(t1_child, t2_child, parent=parent_text % (parent, item_key_str), parents_ids=parents_added)
 
     def __diff_set(self, t1, t2, parent="root"):
+        ''' difference of sets '''
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 
@@ -290,7 +293,10 @@ class DeepDiff(dict):
         if items_added:
             self["set_item_added"].append("%s: %s" % (parent, items_added))
 
-    def __diff_other_iterable(self, t1, t2, parent="root", parents_ids={}):
+    def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
+        '''
+        difference of iterables except dictionaries, sets and strings.
+        '''
         items_removed = []
         items_added = []
 
@@ -301,7 +307,7 @@ class DeepDiff(dict):
             elif x is ListItemRemovedOrAdded:
                 items_added.append(y)
             else:
-                self.__diffit(x, y, "%s[%s]" % (parent, i), parents_ids)
+                self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids)
 
         if items_removed:
             self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
@@ -309,17 +315,7 @@ class DeepDiff(dict):
         if items_added:
             self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
-    def __diff_iterable(self, t1, t2, parent="root", parents_ids={}):
-        '''
-        difference of iterables except dictionaries and strings.
-        '''
-
-        if isinstance(t1, set) or isinstance(t1, frozenset):
-            self.__diff_set(t1, t2, parent=parent)
-        else:
-            self.__diff_other_iterable(t1, t2, parent=parent, parents_ids=parents_ids)
-
-    def __diffstr(self, t1, t2, parent):
+    def __diff_str(self, t1, t2, parent):
         '''
         compares strings
         '''
@@ -332,41 +328,48 @@ class DeepDiff(dict):
         elif t1 != t2:
             self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
 
-    def __diffit(self, t1, t2, parent="root", parents_ids={}):
+    def __diff_tuple(self, t1, t2, parent, parents_ids):
+        # Checking to see if it has _fields. Which probably means it is a named tuple.
+        try:
+            t1._fields
+        # It must be a normal tuple
+        except:
+            self.__diff_iterable(t1, t2, parent, parents_ids)
+        # We assume it is a namedtuple then
+        else:
+            self.__diff_obj(t1, t2, parent, parents_ids)
+
+    def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
+        ''' The main diff method '''
 
         if t1 is t2:
             return
 
         if type(t1) != type(t2):
             self["type_changes"].append(
-                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__typestr(t1), t2, self.__typestr(t2)))
+                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__gettype(t1), t2, self.__gettype(t2)))
 
         elif isinstance(t1, basestring):
-            self.__diffstr(t1, t2, parent)
+            self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
             if t1 != t2:
                 self["values_changed"].append("%s: %s ===> %s" % (parent, t1, t2))
 
         elif isinstance(t1, dict):
-            self.__diffdict(t1, t2, parent, parents_ids)
+            self.__diff_dict(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, tuple):
-            # Checking to see if it has _fields. Which probably means it is a named tuple.
-            try:
-                t1._fields
-            # It must be a normal tuple
-            except:
-                self.__diff_iterable(t1, t2, parent, parents_ids)
-            # We assume it is a namedtuple then
-            else:
-                self.__diffdict(t1, t2, parent, parents_ids, attributes_mode=True)
+            self.__diff_tuple(t1, t2, parent, parents_ids)
+
+        elif isinstance(t1, (set, frozenset)):
+            self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
             self.__diff_iterable(t1, t2, parent, parents_ids)
 
         else:
-            self.__diffdict(t1, t2, parent, parents_ids, attributes_mode=True)
+            self.__diff_obj(t1, t2, parent, parents_ids)
 
         return
 
