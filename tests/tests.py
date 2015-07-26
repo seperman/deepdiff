@@ -177,3 +177,34 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'values_changed': ['root.a: 1 ===> 2']}
         self.assertEqual(ddiff, result)
+
+    def test_loop2(self):
+        class LoopTestA(object):
+            def __init__(self, a):
+                self.loop = LoopTestB
+                self.a = a
+
+        class LoopTestB(object):
+            def __init__(self, a):
+                self.loop = LoopTestA
+                self.a = a
+
+        t1 = LoopTestA(1)
+        t2 = LoopTestA(2)
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root.a: 1 ===> 2']}
+        self.assertEqual(ddiff, result)
+
+    def test_loop3(self):
+        class LoopTest(object):
+            def __init__(self, a):
+                self.loop = LoopTest
+                self.a = a
+
+        t1 = LoopTest(1)
+        t2 = LoopTest(2)
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root.a: 1 ===> 2']}
+        self.assertEqual(ddiff, result)

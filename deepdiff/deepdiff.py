@@ -192,13 +192,15 @@ class DeepDiff(dict):
 
     """
 
-    def __init__(self, t1, t2):
+    def __init__(self, t1, t2, debug=False):
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
                      "attribute_added": [], "attribute_removed": [], "set_item_removed": [], "set_item_added": []})
 
-        self.__diffit(t1, t2, parents_ids=frozenset({id(t1),}))
+        self.debug = debug
+
+        self.__diffit(t1, t2, parents_ids=frozenset({id(t1)}))
 
         if py3:
             empty_keys = [k for k, v in self.items() if not v]
@@ -254,24 +256,29 @@ class DeepDiff(dict):
             else:
                 self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
 
-        for item in t_keys_intersect:
-            if not attributes_mode and isinstance(item, basestring):
-                item_str = "'%s'" % item
+        for item_key in t_keys_intersect:
+            if not attributes_mode and isinstance(item_key, basestring):
+                item_key_str = "'%s'" % item_key
             else:
-                item_str = item
+                item_key_str = item_key
 
-            item_id = id(item)
+            t1_child = t1[item_key]
+            t2_child = t2[item_key]
 
+            item_id = id(t1_child)
+
+            if self.debug:
+                print (parents_ids, parent_text % (parent, item_key_str), item_id, item_key)
             if parents_ids and item_id in parents_ids:
-                # print (parents_ids, item)
-                print ("Warning, a loop is detected.")
-                return
+                if self.debug:
+                    print ("Warning, a loop is detected.\n")
+                continue
 
             parents_added = set(parents_ids)
             parents_added.add(item_id)
             parents_added = frozenset(parents_added)
 
-            self.__diffit(t1[item], t2[item], parent=parent_text % (parent, item_str), parents_ids=parents_added)
+            self.__diffit(t1_child, t2_child, parent=parent_text % (parent, item_key_str), parents_ids=parents_added)
 
     def __diff_set(self, t1, t2, parent="root"):
         items_added = list(t2 - t1)
@@ -376,12 +383,3 @@ class DeepDiff(dict):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-
-# t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
-# t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 3}]}}
-# ddiff = DeepDiff(t1, t2)
-# result = {'dic_item_removed': ["root[4]['b'][2][2]"],
-#           'values_changed': ["root[4]['b'][2][1]: 1 ===> 3"]}
-
-# print (ddiff)
