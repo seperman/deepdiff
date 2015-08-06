@@ -151,6 +151,20 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'values_changed': ['root.b: 1 ===> 2']}
         self.assertEqual(ddiff, result)
 
+    def test_custom_objects_slot_change(self):
+        class ClassA(object):
+            __slots__ = ['x', 'y']
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        t1 = ClassA(1, 1)
+        t2 = ClassA(1, 2)
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root.y: 1 ===> 2']}
+        self.assertEqual(ddiff, result)
+
     def test_custom_objects_add(self):
         class ClassA(object):
             a = 1

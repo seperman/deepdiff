@@ -34,10 +34,10 @@ class DeepDiff(dict):
 
     **Parameters**
 
-    t1 : A dictionary, list, string or any python object that has __dict__
+    t1 : A dictionary, list, string or any python object that has __dict__ or __slots__
         This is the first item to be compared to the second item
 
-    t2 : dictionary, list, string or almost any python object that has __dict__
+    t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
 
     **Returns**
@@ -218,24 +218,35 @@ class DeepDiff(dict):
 
     def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), attributes_mode=False):
         ''' difference of 2 dictionaries '''
+        slot_mode = False
         if attributes_mode:
             try:
                 t1 = t1.__dict__
                 t2 = t2.__dict__
-                item_added_key = "attribute_added"
-                item_removed_key = "attribute_removed"
-                parent_text = "%s.%s"
             except AttributeError:
-                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
-                return
+                try:
+                    t1 = t1.__slots__
+                    t2 = t2.__slots__
+                except AttributeError:
+                    self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+                    return
+                else:
+                    slot_mode = True
+            item_added_key = "attribute_added"
+            item_removed_key = "attribute_removed"
+            parent_text = "%s.%s"
         else:
             item_added_key = "dic_item_added"
             item_removed_key = "dic_item_removed"
             parent_text = "%s[%s]"
 
-        t2_keys, t1_keys = [
-            set(d.keys()) for d in (t2, t1)
-        ]
+        if slot_mode:
+            t1_keys = set(t1)
+            t2_keys = set(t2)
+        else:
+            t1_keys, t2_keys = [
+                set(d.keys()) for d in (t1, t2)
+            ]
 
         t_keys_intersect = t2_keys.intersection(t1_keys)
 
@@ -254,7 +265,10 @@ class DeepDiff(dict):
             else:
                 self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
 
-        self.__diff_common_children(t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text)
+        if slot_mode:
+            self.__diff_iterable(t1_keys, t2_keys, parent, parents_ids)
+        else:
+            self.__diff_common_children(t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text)
 
     def __diff_common_children(self, t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text):
         ''' difference between common attributes of objects or values of common keys of dictionaries '''
