@@ -208,6 +208,7 @@ root[4]['b']:
 
 ##Changelog
 
+v0-5-6: Adding slots support
 v0-5-5: Adding loop detection
 
 ##Author
