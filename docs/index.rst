@@ -42,6 +42,8 @@ Indices and tables
 Changelog
 =========
 
+- v0-5-7: Adding ignore order support
+- v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
 
