@@ -1,4 +1,4 @@
-# deepdiff v 0.5.5
+# deepdiff v 0.5.6
 
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 

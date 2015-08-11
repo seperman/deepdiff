@@ -28,7 +28,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.5**
+    **DeepDiff v 0.5.6**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -214,24 +214,24 @@ class DeepDiff(dict):
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         ''' difference of 2 objects '''
-        self.__diff_dict(t1, t2, parent, parents_ids, attributes_mode=True)
 
-    def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), attributes_mode=False):
-        ''' difference of 2 dictionaries '''
-        slot_mode = False
-        if attributes_mode:
+        try:
+            t1 = t1.__dict__
+            t2 = t2.__dict__
+        except AttributeError:
             try:
-                t1 = t1.__dict__
-                t2 = t2.__dict__
+                t1 = {i: getattr(t1, i) for i in t1.__slots__}
+                t2 = {i: getattr(t2, i) for i in t2.__slots__}
             except AttributeError:
-                try:
-                    t1 = t1.__slots__
-                    t2 = t2.__slots__
-                except AttributeError:
-                    self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
-                    return
-                else:
-                    slot_mode = True
+                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+                return
+
+        self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
+
+    def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), print_as_attribute=False):
+        ''' difference of 2 dictionaries '''
+
+        if print_as_attribute:
             item_added_key = "attribute_added"
             item_removed_key = "attribute_removed"
             parent_text = "%s.%s"
@@ -240,13 +240,9 @@ class DeepDiff(dict):
             item_removed_key = "dic_item_removed"
             parent_text = "%s[%s]"
 
-        if slot_mode:
-            t1_keys = set(t1)
-            t2_keys = set(t2)
-        else:
-            t1_keys, t2_keys = [
-                set(d.keys()) for d in (t1, t2)
-            ]
+        t1_keys, t2_keys = [
+            set(d.keys()) for d in (t1, t2)
+        ]
 
         t_keys_intersect = t2_keys.intersection(t1_keys)
 
@@ -254,26 +250,23 @@ class DeepDiff(dict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         if t_keys_added:
-            if attributes_mode:
+            if print_as_attribute:
                 self[item_added_key].append("%s.%s" % (parent, ','.join(t_keys_added)))
             else:
                 self[item_added_key].append("%s%s" % (parent, list(t_keys_added)))
 
         if t_keys_removed:
-            if attributes_mode:
+            if print_as_attribute:
                 self[item_removed_key].append("%s%s" % (parent, ','.join(t_keys_removed)))
             else:
                 self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
 
-        if slot_mode:
-            self.__diff_iterable(t1_keys, t2_keys, parent, parents_ids)
-        else:
-            self.__diff_common_children(t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text)
+        self.__diff_common_children(t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
 
-    def __diff_common_children(self, t1, t2, t_keys_intersect, attributes_mode, parents_ids, parent, parent_text):
+    def __diff_common_children(self, t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text):
         ''' difference between common attributes of objects or values of common keys of dictionaries '''
         for item_key in t_keys_intersect:
-            if not attributes_mode and isinstance(item_key, basestring):
+            if not print_as_attribute and isinstance(item_key, (basestring, bytes)):
                 item_key_str = "'%s'" % item_key
             else:
                 item_key_str = item_key
@@ -360,7 +353,7 @@ class DeepDiff(dict):
             self["type_changes"].append(
                 "%s: %s=%s ===> %s=%s" % (parent, t1, self.__gettype(t1), t2, self.__gettype(t2)))
 
-        elif isinstance(t1, basestring):
+        elif isinstance(t1, (basestring, bytes)):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
