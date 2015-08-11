@@ -1,4 +1,4 @@
-**DeepDiff v 0.5.6**
+**DeepDiff v 0.5.7**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -158,6 +158,7 @@ Object attribute added:
 
 **Changelog**
 
+v0-5-7: Adding ignore order support
 v0-5-6: Adding slots support
 v0-5-5: Adding loop detection
 

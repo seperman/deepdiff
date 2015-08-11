@@ -100,6 +100,12 @@ class DeepDiffTestCase(unittest.TestCase):
                          "root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"],
                          'iterable_item_added': ["root[4]['b']: [3]"]})
 
+    def test_list_difference_ignore_order(self):
+        t1 = {1: 1, 4: {"a": "hello", "b": [1, 2, 3]}}
+        t2 = {1: 1, 4: {"a": "hello", "b": [1, 3, 2, 3]}}
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
     def test_list_that_contains_dictionary(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 3}]}}

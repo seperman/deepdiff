@@ -28,7 +28,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.6**
+    **DeepDiff v 0.5.7**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -39,6 +39,8 @@ class DeepDiff(dict):
 
     t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
+
+    ignore_order : Boolean, defalt=False igonres orders and duplicates for iterables if it they have hashable items
 
     **Returns**
 
@@ -146,6 +148,13 @@ class DeepDiff(dict):
         { 'iterable_item_added': ["root[4]['b']: [3]"],
           'values_changed': ["root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"]}
 
+    List difference ignoring order or duplicates: (with the same dictionaries as above)
+        >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+        >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
+        >>> ddiff = DeepDiff(t1, t2, ignore_order=True)
+        >>> print (ddiff)
+        {}
+
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
@@ -188,7 +197,9 @@ class DeepDiff(dict):
 
     """
 
-    def __init__(self, t1, t2):
+    def __init__(self, t1, t2, ignore_order=False):
+
+        self.ignore_order = ignore_order
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
@@ -370,7 +381,17 @@ class DeepDiff(dict):
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
-            self.__diff_iterable(t1, t2, parent, parents_ids)
+            if self.ignore_order:
+                try:
+                    t1 = set(t1)
+                    t2 = set(t2)
+                # When we can't make a set since the iterable has unhashable items
+                except TypeError:
+                    self.__diff_iterable(t1, t2, parent, parents_ids)
+                else:
+                    self.__diff_set(t1, t2, parent=parent)
+            else:
+                self.__diff_iterable(t1, t2, parent, parents_ids)
 
         else:
             self.__diff_obj(t1, t2, parent, parents_ids)
