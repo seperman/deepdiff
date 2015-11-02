@@ -43,7 +43,9 @@ class DeepDiff(dict):
     t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
 
-    ignore_order : Boolean, defalt=False igonres orders and duplicates for iterables. Note that if you have iterables contatining any unhashable, ignoring order is very expensive.
+    ignore_order : Boolean, defalt=False ignores orders for iterables. Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
+        Ignoring order for an iterable containing any unhashable will include duplicates if there are any in the iterable.
+        Ignoring order for an iterable containing only hashables, will not include duplicates in the iterable.
 
     **Returns**
 

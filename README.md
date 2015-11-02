@@ -201,6 +201,18 @@ root[4]['b']:
 {'attribute_added': ['root.c'], 'values_changed': ['root.b: 1 ===> 2']}
 ```
 
+### Ignoring order:
+
+**Note: If your objects include iterable containing any unhashable item, ignoring the order can be expensive.**
+
+```python
+>>> t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
+>>> t2 = [{"b": [3, 4, {1: 1}]}, {"a": 2}]
+ddiff = DeepDiff(t1, t2, ignore_order=True)
+>>>
+>>> print(DeepDiff(t1, t2))
+{}
+```
 
 ##Documentation
 
@@ -208,7 +220,7 @@ root[4]['b']:
 
 ##Changelog
 
-- v0-5-8: Adding ignore order for unhashables support
+- v0-5-8: Adding ignore order of unhashables support
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
