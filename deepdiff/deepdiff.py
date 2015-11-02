@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import difflib
 import datetime
+import json
 from sys import version
 
 py3 = version[0] == '3'
@@ -14,9 +15,11 @@ if py3:
     basestring = str
     numbers = (int, float, complex, datetime.datetime)
     from itertools import zip_longest
+    items = 'items'
 else:
     numbers = (int, float, long, complex, datetime.datetime)
     from itertools import izip_longest as zip_longest
+    items = 'iteritems'
 
 from collections import Iterable
 
@@ -28,7 +31,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.7**
+    **DeepDiff v 0.5.8**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -40,7 +43,7 @@ class DeepDiff(dict):
     t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
 
-    ignore_order : Boolean, defalt=False igonres orders and duplicates for iterables if it they have hashable items
+    ignore_order : Boolean, defalt=False igonres orders and duplicates for iterables. Note that if you have iterables contatining any unhashable, ignoring order is very expensive.
 
     **Returns**
 
@@ -207,10 +210,7 @@ class DeepDiff(dict):
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
-        if py3:
-            empty_keys = [k for k, v in self.items() if not v]
-        else:
-            empty_keys = [k for k, v in self.iteritems() if not v]
+        empty_keys = [k for k, v in getattr(self, items)() if not v]
 
         for k in empty_keys:
             del self[k]
@@ -222,6 +222,16 @@ class DeepDiff(dict):
         For backward compatibility, we replace class with type.
         '''
         return str(type(obj)).replace('class', 'type')
+
+    def __freeze(self, obj):
+        '''
+        Recursively freezes the object. This is necessary when order should be ignored while dealing with unhashable items
+        '''
+        if isinstance(obj, dict):
+            return frozenset((key, self.__freeze(value)) for key, value in getattr(obj, items)())
+        elif isinstance(obj, (list, tuple)):
+            return set(self.__freeze(value) for value in obj)
+        return obj
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         ''' difference of 2 objects '''
@@ -387,6 +397,12 @@ class DeepDiff(dict):
                     t2 = set(t2)
                 # When we can't make a set since the iterable has unhashable items
                 except TypeError:
+                    try:
+                        # This is very expensive but we need to calculate the hash based on the serialized object
+                        t1.sort(key=lambda x: hash(json.dumps(x)))
+                        t2.sort(key=lambda x: hash(json.dumps(x)))
+                    except:
+                        print ("Warning: Can not ignore order for an item in %s" % parent)
                     self.__diff_iterable(t1, t2, parent, parents_ids)
                 else:
                     self.__diff_set(t1, t2, parent=parent)

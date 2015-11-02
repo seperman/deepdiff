@@ -1,4 +1,4 @@
-# deepdiff v 0.5.7
+# deepdiff v 0.5.8
 
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 
@@ -208,6 +208,7 @@ root[4]['b']:
 
 ##Changelog
 
+- v0-5-8: Adding ignore order for unhashables support
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection

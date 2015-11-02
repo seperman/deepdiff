@@ -18,7 +18,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 0.5.7
+DeepDiff 0.5.8
 **************
 
 .. toctree::
@@ -42,6 +42,7 @@ Indices and tables
 Changelog
 =========
 
+- v0-5-8: Adding ignore order for unhashables support
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
