@@ -1,4 +1,4 @@
-# deepdiff v 0.5.8
+# deepdiff v 0.5.9
 
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 
@@ -220,6 +220,7 @@ ddiff = DeepDiff(t1, t2, ignore_order=True)
 
 ##Changelog
 
+- v0-5-9: Adding decimal support
 - v0-5-8: Adding ignore order of unhashables support
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support

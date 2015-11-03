@@ -7,6 +7,7 @@ python -m unittest discover
 """
 
 import unittest
+from decimal import Decimal
 
 from deepdiff import DeepDiff
 
@@ -234,3 +235,18 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'values_changed': ['root.a: 1 ===> 2']}
         self.assertEqual(ddiff, result)
+
+    def test_decimal(self):
+        t1 = {1: Decimal('10.1')}
+        t2 = {1: Decimal('2.2')}
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root[1]: 10.1 ===> 2.2']}
+        self.assertEqual(ddiff, result)
+
+    def test_decimal_ignore_order(self):
+        t1 = [{1: Decimal('10.1')}, {2: Decimal('10.2')}]
+        t2 = [{2: Decimal('10.2')}, {1: Decimal('10.1')}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {}
+        self.assertEqual(ddiff, result)
+

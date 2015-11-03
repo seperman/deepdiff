@@ -6,6 +6,7 @@ from __future__ import print_function
 import difflib
 import datetime
 import json
+from decimal import Decimal
 from sys import version
 
 py3 = version[0] == '3'
@@ -13,11 +14,11 @@ py3 = version[0] == '3'
 if py3:
     from builtins import int
     basestring = str
-    numbers = (int, float, complex, datetime.datetime)
+    numbers = (int, float, complex, datetime.datetime, Decimal)
     from itertools import zip_longest
     items = 'items'
 else:
-    numbers = (int, float, long, complex, datetime.datetime)
+    numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
 
@@ -31,7 +32,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.8**
+    **DeepDiff v 0.5.9**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -391,8 +392,8 @@ class DeepDiff(dict):
                 except TypeError:
                     try:
                         # This is very expensive but we need to calculate the hash based on the serialized object
-                        t1.sort(key=lambda x: hash(json.dumps(x)))
-                        t2.sort(key=lambda x: hash(json.dumps(x)))
+                        t1.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
+                        t2.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
                     except:
                         print ("Warning: Can not ignore order for an item in %s" % parent)
                     self.__diff_iterable(t1, t2, parent, parents_ids)
@@ -415,6 +416,13 @@ class DeepDiff(dict):
         DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
         '''
         return self
+
+
+def json_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    else:
+        raise TypeError
 
 if __name__ == "__main__":
     import doctest
