@@ -225,16 +225,6 @@ class DeepDiff(dict):
         '''
         return str(type(obj)).replace('class', 'type')
 
-    def __freeze(self, obj):
-        '''
-        Recursively freezes the object. This is necessary when order should be ignored while dealing with unhashable items
-        '''
-        if isinstance(obj, dict):
-            return frozenset((key, self.__freeze(value)) for key, value in getattr(obj, items)())
-        elif isinstance(obj, (list, tuple)):
-            return set(self.__freeze(value) for value in obj)
-        return obj
-
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         ''' difference of 2 objects '''
 
