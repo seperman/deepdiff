@@ -5,6 +5,8 @@ from __future__ import print_function
 
 import difflib
 import datetime
+import json
+from decimal import Decimal
 from sys import version
 
 py3 = version[0] == '3'
@@ -12,11 +14,13 @@ py3 = version[0] == '3'
 if py3:
     from builtins import int
     basestring = str
-    numbers = (int, float, complex, datetime.datetime)
+    numbers = (int, float, complex, datetime.datetime, Decimal)
     from itertools import zip_longest
+    items = 'items'
 else:
-    numbers = (int, float, long, complex, datetime.datetime)
+    numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
+    items = 'iteritems'
 
 from collections import Iterable
 
@@ -28,7 +32,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.6**
+    **DeepDiff v 0.5.9**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -39,6 +43,10 @@ class DeepDiff(dict):
 
     t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
+
+    ignore_order : Boolean, defalt=False ignores orders for iterables. Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
+        Ignoring order for an iterable containing any unhashable will include duplicates if there are any in the iterable.
+        Ignoring order for an iterable containing only hashables, will not include duplicates in the iterable.
 
     **Returns**
 
@@ -111,8 +119,8 @@ class DeepDiff(dict):
         >>>
         >>> print (ddiff['values_changed'][0])
         root[4]['b']:
-        --- 
-        +++ 
+        ---
+        +++
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
@@ -145,6 +153,13 @@ class DeepDiff(dict):
         >>> pprint (ddiff, indent = 2)
         { 'iterable_item_added': ["root[4]['b']: [3]"],
           'values_changed': ["root[4]['b'][1]: 2 ===> 3", "root[4]['b'][2]: 3 ===> 2"]}
+
+    List difference ignoring order or duplicates: (with the same dictionaries as above)
+        >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+        >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
+        >>> ddiff = DeepDiff(t1, t2, ignore_order=True)
+        >>> print (ddiff)
+        {}
 
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
@@ -188,7 +203,9 @@ class DeepDiff(dict):
 
     """
 
-    def __init__(self, t1, t2):
+    def __init__(self, t1, t2, ignore_order=False):
+
+        self.ignore_order = ignore_order
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
                      "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
@@ -196,13 +213,19 @@ class DeepDiff(dict):
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
-        if py3:
-            empty_keys = [k for k, v in self.items() if not v]
-        else:
-            empty_keys = [k for k, v in self.iteritems() if not v]
+        empty_keys = [k for k, v in getattr(self, items)() if not v]
 
         for k in empty_keys:
             del self[k]
+
+    @staticmethod
+    def __getvalue(obj):
+        '''
+        if obj is Unicode str, it maybe throw UnicodeDecodeError when *print* the value
+        '''
+        if isinstance(obj, str):
+            return obj.decode('ascii', 'replace')
+        return obj
 
     @staticmethod
     def __gettype(obj):
@@ -330,7 +353,7 @@ class DeepDiff(dict):
                 diff = '\n'.join(diff)
                 self["values_changed"].append("%s:\n%s" % (parent, diff))
         elif t1 != t2:
-            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
+            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, self.__getvalue(t1), self.__getvalue(t2)))
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named tuple.
@@ -351,7 +374,7 @@ class DeepDiff(dict):
 
         if type(t1) != type(t2):
             self["type_changes"].append(
-                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__gettype(t1), t2, self.__gettype(t2)))
+                "%s: %s=%s ===> %s=%s" % (parent, self.__getvalue(t1), self.__gettype(t1), self.__getvalue(t2), self.__gettype(t2)))
 
         elif isinstance(t1, (basestring, bytes)):
             self.__diff_str(t1, t2, parent)
@@ -370,7 +393,23 @@ class DeepDiff(dict):
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
-            self.__diff_iterable(t1, t2, parent, parents_ids)
+            if self.ignore_order:
+                try:
+                    t1 = set(t1)
+                    t2 = set(t2)
+                # When we can't make a set since the iterable has unhashable items
+                except TypeError:
+                    try:
+                        # This is very expensive but we need to calculate the hash based on the serialized object
+                        t1.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
+                        t2.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
+                    except:
+                        print ("Warning: Can not ignore order for an item in %s" % parent)
+                    self.__diff_iterable(t1, t2, parent, parents_ids)
+                else:
+                    self.__diff_set(t1, t2, parent=parent)
+            else:
+                self.__diff_iterable(t1, t2, parent, parents_ids)
 
         else:
             self.__diff_obj(t1, t2, parent, parents_ids)
@@ -386,6 +425,13 @@ class DeepDiff(dict):
         DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
         '''
         return self
+
+
+def json_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    else:
+        raise TypeError
 
 if __name__ == "__main__":
     import doctest
