@@ -119,8 +119,8 @@ class DeepDiff(dict):
         >>>
         >>> print (ddiff['values_changed'][0])
         root[4]['b']:
-        --- 
-        +++ 
+        ---
+        +++
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
@@ -217,6 +217,15 @@ class DeepDiff(dict):
 
         for k in empty_keys:
             del self[k]
+
+    @staticmethod
+    def __getvalue(obj):
+        '''
+        if obj is Unicode str, it maybe throw UnicodeDecodeError when *print* the value
+        '''
+        if isinstance(obj, str):
+            return obj.decode('ascii', 'replace')
+        return obj
 
     @staticmethod
     def __gettype(obj):
@@ -344,7 +353,7 @@ class DeepDiff(dict):
                 diff = '\n'.join(diff)
                 self["values_changed"].append("%s:\n%s" % (parent, diff))
         elif t1 != t2:
-            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
+            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, self.__getvalue(t1), self.__getvalue(t2)))
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named tuple.
@@ -365,7 +374,7 @@ class DeepDiff(dict):
 
         if type(t1) != type(t2):
             self["type_changes"].append(
-                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__gettype(t1), t2, self.__gettype(t2)))
+                "%s: %s=%s ===> %s=%s" % (parent, self.__getvalue(t1), self.__gettype(t1), self.__getvalue(t2), self.__gettype(t2)))
 
         elif isinstance(t1, (basestring, bytes)):
             self.__diff_str(t1, t2, parent)
