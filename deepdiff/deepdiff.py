@@ -221,10 +221,15 @@ class DeepDiff(dict):
     @staticmethod
     def __getvalue(obj):
         '''
-        if obj is Unicode str, it maybe throw UnicodeDecodeError when *print* the value
+        In python2, if str is not unicode but contains unicode chars, it maybe throw UnicodeDecodeError when *print* the value
+        In python3, as every str is unicode, there is no problem.
         '''
         if isinstance(obj, str):
-            return obj.decode('ascii', 'replace')
+            try:
+                # Python3 will throw exception as str has no decode attr
+                return obj.decode('ascii', 'replace')
+            except AttributeError:
+                return obj
         return obj
 
     @staticmethod
@@ -353,7 +358,7 @@ class DeepDiff(dict):
                 diff = '\n'.join(diff)
                 self["values_changed"].append("%s:\n%s" % (parent, diff))
         elif t1 != t2:
-            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, self.__getvalue(t1), self.__getvalue(t2)))
+            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named tuple.

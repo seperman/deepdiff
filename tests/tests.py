@@ -250,3 +250,44 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ddiff, result)
 
+    def test_unicode_string_type_changes(self):
+        unicodeString = {"hello": u"你好"}
+        asciiString = {"hello": "你好"}
+        ddiff = DeepDiff(unicodeString, asciiString)
+        if type(unicodeString["hello"]) == str:
+            # In python3, all string is unicode, so diff is empty
+            result = {}
+        else:
+            # In python2, these are 2 different type of strings
+            result = {'type_changes': [u"root['hello']: \u4f60\u597d=<type 'unicode'> ===> \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd=<type 'str'>"]}
+        self.assertEqual(ddiff, result)
+
+    def test_unicode_string_value_changes(self):
+        unicodeString = {"hello": u"你好"}
+        asciiString = {"hello": u"你好hello"}
+        ddiff = DeepDiff(unicodeString, asciiString)
+        if type(unicodeString["hello"]) == str:
+            result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
+        else:
+            result = {'values_changed': [u"root['hello']: '\u4f60\u597d' ===> '\u4f60\u597dhello'"]}
+        self.assertEqual(ddiff, result)
+
+    def test_unicode_string_value_and_type_changes(self):
+        unicodeString = {"hello": u"你好"}
+        asciiString = {"hello": "你好hello"}
+        ddiff = DeepDiff(unicodeString, asciiString)
+        if type(unicodeString["hello"]) == str:
+            # In python3, all string is unicode, so these 2 strings only diff in values
+            result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
+        else:
+            # In python2, these are 2 different type of strings
+            result = {'type_changes': [u"root['hello']: \u4f60\u597d=<type 'unicode'> ===> \ufffd\ufffd\ufffd\ufffd\ufffd\ufffdhello=<type 'str'>"]}
+        self.assertEqual(ddiff, result)
+
+    def test_unicode_string_value_and_type_not_changes(self):
+        unicodeString = {"hello": u"你好"}
+        asciiString = {"hello": u"你好"}
+        ddiff = DeepDiff(unicodeString, asciiString)
+        result = {}
+        self.assertEqual(ddiff, result)
+
