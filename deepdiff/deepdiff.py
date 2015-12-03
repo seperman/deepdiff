@@ -119,8 +119,8 @@ class DeepDiff(dict):
         >>>
         >>> print (ddiff['values_changed'][0])
         root[4]['b']:
-        ---
-        +++
+        --- 
+        +++ 
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!

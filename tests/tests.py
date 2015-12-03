@@ -8,6 +8,8 @@ python -m unittest discover
 
 import unittest
 from decimal import Decimal
+from sys import version
+py3 = version[0] == '3'
 
 from deepdiff import DeepDiff
 
@@ -254,7 +256,7 @@ class DeepDiffTestCase(unittest.TestCase):
         unicodeString = {"hello": u"你好"}
         asciiString = {"hello": "你好"}
         ddiff = DeepDiff(unicodeString, asciiString)
-        if type(unicodeString["hello"]) == str:
+        if py3:
             # In python3, all string is unicode, so diff is empty
             result = {}
         else:
@@ -266,7 +268,7 @@ class DeepDiffTestCase(unittest.TestCase):
         unicodeString = {"hello": u"你好"}
         asciiString = {"hello": u"你好hello"}
         ddiff = DeepDiff(unicodeString, asciiString)
-        if type(unicodeString["hello"]) == str:
+        if py3:
             result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
         else:
             result = {'values_changed': [u"root['hello']: '\u4f60\u597d' ===> '\u4f60\u597dhello'"]}
@@ -276,7 +278,7 @@ class DeepDiffTestCase(unittest.TestCase):
         unicodeString = {"hello": u"你好"}
         asciiString = {"hello": "你好hello"}
         ddiff = DeepDiff(unicodeString, asciiString)
-        if type(unicodeString["hello"]) == str:
+        if py3:
             # In python3, all string is unicode, so these 2 strings only diff in values
             result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
         else:
