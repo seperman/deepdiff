@@ -219,6 +219,20 @@ class DeepDiff(dict):
             del self[k]
 
     @staticmethod
+    def __getvalue(obj):
+        '''
+        In python2, if str is not unicode but contains unicode chars, it maybe throw UnicodeDecodeError when *print* the value
+        In python3, as every str is unicode, there is no problem.
+        '''
+        if isinstance(obj, str):
+            try:
+                # Python3 will throw exception as str has no decode attr
+                return obj.decode('ascii', 'replace')
+            except AttributeError:
+                return obj
+        return obj
+
+    @staticmethod
     def __gettype(obj):
         '''
         python 3 returns <class 'something'> instead of <type 'something'>.
@@ -365,7 +379,7 @@ class DeepDiff(dict):
 
         if type(t1) != type(t2):
             self["type_changes"].append(
-                "%s: %s=%s ===> %s=%s" % (parent, t1, self.__gettype(t1), t2, self.__gettype(t2)))
+                "%s: %s=%s ===> %s=%s" % (parent, self.__getvalue(t1), self.__gettype(t1), self.__getvalue(t2), self.__gettype(t2)))
 
         elif isinstance(t1, (basestring, bytes)):
             self.__diff_str(t1, t2, parent)
