@@ -220,8 +220,7 @@ class DeepDiff(dict):
     @staticmethod
     def __get_value_when_type_change(t1, t2):
         '''
-        In python2, if str is not unicode but contains unicode chars, it maybe throw UnicodeDecodeError when *print* the value
-        In python3, as every str is unicode, there is no problem.
+        Dealing with python unicode issues.
         '''
         try:
             obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
@@ -257,10 +256,11 @@ class DeepDiff(dict):
                     except UnicodeEncodeError:
                         t2 = 'Unable to Encode/Decode'
 
-        try:
-            obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            obj = "%s: Unable to Encode/Decode=%s ===> Unable to Encode/Decode=%s"
+            try:
+                obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                obj = "%s: Unable to Encode/Decode=%s ===> Unable to Encode/Decode=%s"
+
         return obj
 
     @staticmethod
@@ -471,8 +471,3 @@ def json_default(obj):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-
-# unicodeString = {"hello": u"你好"}
-# asciiString = {"hello": "你好hello"}
-
-# print (DeepDiff(unicodeString, asciiString))
