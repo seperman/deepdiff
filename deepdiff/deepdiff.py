@@ -204,7 +204,6 @@ class DeepDiff(dict):
     """
 
     def __init__(self, t1, t2, ignore_order=False):
-
         self.ignore_order = ignore_order
 
         self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
@@ -219,17 +218,49 @@ class DeepDiff(dict):
             del self[k]
 
     @staticmethod
-    def __getvalue(obj):
+    def __get_value_when_type_change(t1, t2):
         '''
         In python2, if str is not unicode but contains unicode chars, it maybe throw UnicodeDecodeError when *print* the value
         In python3, as every str is unicode, there is no problem.
         '''
-        if isinstance(obj, str):
-            try:
-                # Python3 will throw exception as str has no decode attr
-                return obj.decode('ascii', 'replace')
-            except AttributeError:
-                return obj
+        try:
+            obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            if isinstance(t1, (str, unicode)) and isinstance(t2, (str, unicode)):
+                try:
+                    t1 = t1.decode('utf-8')
+                except UnicodeEncodeError:
+                    try:
+                        t2 = t2.decode('utf-8')
+                    except UnicodeEncodeError:
+                        try:
+                            t1 = t1.encode('utf-8')
+                        except UnicodeDecodeError:
+                            try:
+                                t2 = t2.encode('utf-8')
+                            except UnicodeDecodeError:
+                                t1 = t2 = 'Unable to Encode/Decode'
+            elif isinstance(t1, (str, unicode)):
+                try:
+                    t1 = t1.decode('utf-8')
+                except UnicodeEncodeError:
+                    try:
+                        t1 = t1.encode('utf-8')
+                    except UnicodeEncodeError:
+                        t1 = 'Unable to Encode/Decode'
+            elif isinstance(t2, (str, unicode)):
+                try:
+                    t2 = t2.decode('utf-8')
+                except UnicodeEncodeError:
+                    try:
+                        t2 = t2.encode('utf-8')
+                    except UnicodeEncodeError:
+                        t2 = 'Unable to Encode/Decode'
+
+        try:
+            obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            obj = "%s: Unable to Encode/Decode=%s ===> Unable to Encode/Decode=%s"
         return obj
 
     @staticmethod
@@ -373,13 +404,12 @@ class DeepDiff(dict):
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         ''' The main diff method '''
-
         if t1 is t2:
             return
 
         if type(t1) != type(t2):
             self["type_changes"].append(
-                "%s: %s=%s ===> %s=%s" % (parent, self.__getvalue(t1), self.__gettype(t1), self.__getvalue(t2), self.__gettype(t2)))
+                self.__get_value_when_type_change(t1, t2) % (parent, self.__gettype(t1), self.__gettype(t2)))
 
         elif isinstance(t1, (basestring, bytes)):
             self.__diff_str(t1, t2, parent)
@@ -441,3 +471,8 @@ def json_default(obj):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
+# unicodeString = {"hello": u"你好"}
+# asciiString = {"hello": "你好hello"}
+
+# print (DeepDiff(unicodeString, asciiString))
