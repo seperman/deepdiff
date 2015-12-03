@@ -18,7 +18,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 0.5.9
+DeepDiff 0.6.0
 **************
 
 .. toctree::
@@ -42,6 +42,7 @@ Indices and tables
 Changelog
 =========
 
+- v0-6-0: Adding unicode support
 - v0-5-9: Adding decimal support
 - v0-5-8: Adding ignore order for unhashables support
 - v0-5-7: Adding ignore order support

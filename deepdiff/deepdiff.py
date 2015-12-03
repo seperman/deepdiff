@@ -32,7 +32,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.5.9**
+    **DeepDiff v 0.6.0**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 

@@ -13,10 +13,10 @@ except:
     long_description = "Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes."
 
 setup(name='deepdiff',
-      version='0.5.9',
+      version='0.6.0',
       description='Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.',
-      url='https://github.com/erasmose/deepdiff',
-      download_url='https://github.com/erasmose/deepdiff/tarball/master',
+      url='https://github.com/seperman/deepdiff',
+      download_url='https://github.com/seperman/deepdiff/tarball/master',
       author='Seperman',
       author_email='sep@zepworks.com',
       license='MIT',

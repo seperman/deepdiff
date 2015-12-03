@@ -1,4 +1,4 @@
-**DeepDiff v 0.5.9**
+**DeepDiff v 0.6.0**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -167,6 +167,7 @@ Ignoring order:
 
 **Changelog**
 
+v0-6-0: Adding unicode support
 v0-5-9: Adding decimal support
 v0-5-8: Adding ignore order of unhashables support
 v0-5-7: Adding ignore order support
