@@ -4,3 +4,4 @@ Primary Author:
 
 Thanks to:
     * brbsix for initial Py3 porting
+    * WangFenjin for unicode support

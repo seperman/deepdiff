@@ -237,3 +237,5 @@ ZepWorks:   <http://www.zepworks.com>
 
 Thanks to:
 brbsix for initial Py3 porting
+WangFenjin for unicode support
+
