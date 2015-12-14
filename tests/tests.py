@@ -118,6 +118,13 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+    def test_list_of_unhashable_difference_ignore_order2(self):
+        t1 = [1, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
+        t2 = [{"b": [3, 4, {1: 1}]}, {"a": 2}, {1: 1}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {'iterable_item_removed': ["root: [1, 'B']"],
+                                 'iterable_item_added': ['root: [{1: 1}]']})
+
     def test_list_that_contains_dictionary(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 3}]}}

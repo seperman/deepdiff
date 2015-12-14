@@ -32,7 +32,7 @@ class ListItemRemovedOrAdded(object):
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 0.6.0**
+    **DeepDiff v 0.6.1**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -402,6 +402,43 @@ class DeepDiff(dict):
         else:
             self.__diff_obj(t1, t2, parent, parents_ids)
 
+    @staticmethod
+    def __create_hashtable(t, parent):
+        '''
+        Creates hashtable of {item_hash: item}
+        '''
+        hashes = {}
+        for item in t:
+            try:
+                item_hash = hash(item)
+            except TypeError:
+                try:
+                    item_hash = hash(json.dumps(item, default=json_default))
+                except:
+                    print ("Warning: Can not produce a hash for %s item in %s" % (item, parent))
+                else:
+                    hashes[item_hash] = item
+            else:
+                hashes[item_hash] = item
+        return hashes
+
+    def __diff_unhashable_iterable(self, t1, t2, parent):
+        '''
+        diff of unhashable iterables
+        '''
+
+        t1_hashtable = self.__create_hashtable(t1, parent)
+        t2_hashtable = self.__create_hashtable(t2, parent)
+
+        items_added = [t2_hashtable[i] for i in t2_hashtable if i not in t1_hashtable]
+        items_removed = [t1_hashtable[i] for i in t1_hashtable if i not in t2_hashtable]
+
+        if items_removed:
+            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
+
+        if items_added:
+            self["iterable_item_added"].append("%s: %s" % (parent, items_added))
+
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         ''' The main diff method '''
         if t1 is t2:
@@ -434,13 +471,7 @@ class DeepDiff(dict):
                     t2 = set(t2)
                 # When we can't make a set since the iterable has unhashable items
                 except TypeError:
-                    try:
-                        # This is very expensive but we need to calculate the hash based on the serialized object
-                        t1.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
-                        t2.sort(key=lambda x: hash(json.dumps(x, default=json_default)))
-                    except:
-                        print ("Warning: Can not ignore order for an item in %s" % parent)
-                    self.__diff_iterable(t1, t2, parent, parents_ids)
+                    self.__diff_unhashable_iterable(t1, t2, parent)
                 else:
                     self.__diff_set(t1, t2, parent=parent)
             else:
