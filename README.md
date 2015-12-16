@@ -1,5 +1,6 @@
 # deepdiff v 0.6.1
 
+![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
