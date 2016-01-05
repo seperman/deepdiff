@@ -5,12 +5,8 @@
 To run the test, run this in the root of repo:
 python -m unittest discover
 """
-# from __future__ import unicode_literals
 import unittest
 from decimal import Decimal
-from sys import version
-py3 = version[0] == '3'
-
 from deepdiff import DeepDiff
 
 from sys import version
