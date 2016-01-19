@@ -8,6 +8,8 @@ Welcome to DeepDiff's documentation!
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
 
+DeepDiff works with Python 2.7 and 3.4
+
 ************
 Installation
 ************

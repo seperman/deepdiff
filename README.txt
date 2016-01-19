@@ -2,6 +2,8 @@
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
+DeepDiff works with Python 2.7 and 3.4
+
 **Parameters**
 
 t1 : A dictionary, list, string or any python object that has __dict__
