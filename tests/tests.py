@@ -329,3 +329,12 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ddiff, result)
 
+
+    def test_pct_type_bug(self):
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "50%"}}
+        t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": None}}
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root[2]: 2 ===> 4'],
+                  'type_changes': [u"root[4]['b']: 50%=<type 'str'> ===> None=<type 'NoneType'>"]}
+        self.assertEqual(ddiff, result)
+

@@ -6,6 +6,7 @@ from __future__ import print_function
 import difflib
 import datetime
 import json
+import re
 from decimal import Decimal
 from sys import version
 
@@ -223,6 +224,10 @@ class DeepDiff(dict):
         '''
         Dealing with python unicode issues.
         '''
+        if isinstance(t1, (str, unicode)):
+            t1 = re.sub("%", "%%", t1)
+        if isinstance(t2, (str, unicode)):
+            t2 = re.sub("%", "%%", t2)
         try:
             obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
         except (UnicodeDecodeError, UnicodeEncodeError):
