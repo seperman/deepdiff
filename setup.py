@@ -3,7 +3,7 @@ from setuptools import setup
 
 # if you are not using vagrant, just delete os.link directly,
 # The hard link only saves a little disk space, so you should not care
-if os.environ.get('USER','') == 'vagrant':
+if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
 try:
@@ -28,7 +28,9 @@ setup(name='deepdiff',
           "Operating System :: OS Independent",
           "Topic :: Software Development",
           "Programming Language :: Python :: 2.7",
+          "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"
       ],
