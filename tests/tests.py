@@ -8,12 +8,14 @@ python -m unittest discover
 import unittest
 from decimal import Decimal
 from deepdiff import DeepDiff
-
 from sys import version
+
 py3 = version[0] == '3'
 
 
 class DeepDiffTestCase(unittest.TestCase):
+
+    """DeepDiff Tests"""
 
     def test_same_objects(self):
         t1 = {1: 1, 2: 2, 3: 3}
@@ -265,9 +267,9 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_type_changes(self):
-        unicodeString = {"hello": u"你好"}
-        asciiString = {"hello": "你好"}
-        ddiff = DeepDiff(unicodeString, asciiString)
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": "你好"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
         if py3:
             # In python3, all string is unicode, so diff is empty
             result = {}
@@ -277,9 +279,9 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_value_changes(self):
-        unicodeString = {"hello": u"你好"}
-        asciiString = {"hello": u"你好hello"}
-        ddiff = DeepDiff(unicodeString, asciiString)
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": u"你好hello"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
         if py3:
             result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
         else:
@@ -287,9 +289,9 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_value_and_type_changes(self):
-        unicodeString = {"hello": u"你好"}
-        asciiString = {"hello": "你好hello"}
-        ddiff = DeepDiff(unicodeString, asciiString)
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": "你好hello"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
         if py3:
             # In python3, all string is unicode, so these 2 strings only diff in values
             result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
@@ -300,8 +302,8 @@ class DeepDiffTestCase(unittest.TestCase):
 
     def test_int_to_unicode_string(self):
         t1 = 1
-        asciiString = "你好"
-        ddiff = DeepDiff(t1, asciiString)
+        ascii_string = "你好"
+        ddiff = DeepDiff(t1, ascii_string)
         if py3:
             # In python3, all string is unicode, so these 2 strings only diff in values
             result = {'type_changes': ["root: 1=<type 'int'> ===> 你好=<type 'str'>"]}
@@ -312,8 +314,8 @@ class DeepDiffTestCase(unittest.TestCase):
 
     def test_int_to_unicode(self):
         t1 = 1
-        unicodeString = u"你好"
-        ddiff = DeepDiff(t1, unicodeString)
+        unicode_string = u"你好"
+        ddiff = DeepDiff(t1, unicode_string)
         if py3:
             # In python3, all string is unicode, so these 2 strings only diff in values
             result = {'type_changes': ["root: 1=<type 'int'> ===> 你好=<type 'str'>"]}
@@ -323,9 +325,29 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_value_and_type_not_changes(self):
-        unicodeString = {"hello": u"你好"}
-        asciiString = {"hello": u"你好"}
-        ddiff = DeepDiff(unicodeString, asciiString)
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": u"你好"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
         result = {}
         self.assertEqual(ddiff, result)
 
+    def test_percent_in_string_type_change(self):
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "50%"}}
+        t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": None}}
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': ['root[2]: 2 ===> 4'],
+                  'type_changes': [u"root[4]['b']: 50%=<type 'str'> ===> None=<type 'NoneType'>"]}
+        self.assertEqual(ddiff, result)
+
+    def test_curly_brackets_in_string_type_change(self):
+        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "{}"}}
+        t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": None}}
+        ddiff = DeepDiff(t1, t2)
+        if py3:
+            type_change_string = "root[4]['b']: {0}=<type 'str'> ===> None=<type 'NoneType'>"
+        else:
+            type_change_string = "root[4]['b']: {}=<type 'str'> ===> None=<type 'NoneType'>"
+
+        result = {'values_changed': ['root[2]: 2 ===> 4'],
+                  'type_changes': [type_change_string]}
+        self.assertEqual(ddiff, result)

@@ -6,27 +6,61 @@ from __future__ import print_function
 import difflib
 import datetime
 import json
+import string
 from decimal import Decimal
 from sys import version
+from collections import Iterable
 
-py3 = version[0] == '3'
+py_major_version = version[0]
+py_minor_version = version[2]
+
+py3 = py_major_version == '3'
+
+if (py_major_version, py_minor_version) == (2.6):
+    from sys import exit
+    exit('Python 2.6 is not supported.')
 
 if py3:
     from builtins import int
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, Decimal)
     from itertools import zip_longest
+    from _string import formatter_field_name_split
     items = 'items'
 else:
     strings = (str, unicode)
     numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
+    formatter_field_name_split = str._formatter_field_name_split
 
-from collections import Iterable
+
+class PartialFormatter(string.Formatter):
+
+    '''
+    Partial string formatting.
+
+    Modified from: http://stackoverflow.com/a/15728287/1497443
+    '''
+
+    def get_field(self, field_name, args, kwargs):
+        try:
+            val = super(PartialFormatter, self).get_field(field_name, args, kwargs)
+        except (IndexError, KeyError, AttributeError):
+            first, _ = formatter_field_name_split(field_name)
+            val = '{' + field_name + '}', first
+        return val
+
+    def __call__(self, the_string, *args, **kwargs):
+        return self.vformat(the_string, args, kwargs)
+
+formatter = PartialFormatter()
 
 
 class ListItemRemovedOrAdded(object):
+
+    '''Class of conditions to be checked'''
+
     pass
 
 
@@ -35,7 +69,8 @@ class DeepDiff(dict):
     r"""
     **DeepDiff v 0.6.1**
 
-    Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
+    Deep Difference of dictionaries, iterables, strings and almost any other object.
+    It will recursively look for all the changes.
 
     **Parameters**
 
@@ -45,9 +80,12 @@ class DeepDiff(dict):
     t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
         The second item is to be compared to the first one
 
-    ignore_order : Boolean, defalt=False ignores orders for iterables. Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
-        Ignoring order for an iterable containing any unhashable will include duplicates if there are any in the iterable.
-        Ignoring order for an iterable containing only hashables, will not include duplicates in the iterable.
+    ignore_order : Boolean, defalt=False ignores orders for iterables.
+        Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
+        Ignoring order for an iterable containing any unhashable
+        will include duplicates if there are any in the iterable.
+        Ignoring order for an iterable containing only hashables
+        will not include duplicates in the iterable.
 
     **Returns**
 
@@ -220,11 +258,10 @@ class DeepDiff(dict):
 
     @staticmethod
     def __get_value_when_type_change(t1, t2):
-        '''
-        Dealing with python unicode issues.
-        '''
+        '''Dealing with python unicode issues.'''
         try:
-            obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
+            # Adding {{}} lets you reformat those parts later
+            obj = formatter("{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
         except (UnicodeDecodeError, UnicodeEncodeError):
             if isinstance(t1, (str, unicode)) and isinstance(t2, (str, unicode)):
                 try:
@@ -258,23 +295,23 @@ class DeepDiff(dict):
                         t2 = 'Unable to Encode/Decode'
 
             try:
-                obj = u"%s: {}=%s ===> {}=%s".format(t1, t2)
+                obj = u"{{}}: {t1}={{}} ===> {t2}={{}}".format(t1=t1, t2=t2)
             except (UnicodeDecodeError, UnicodeEncodeError):
-                obj = "%s: Unable to Encode/Decode=%s ===> Unable to Encode/Decode=%s"
+                obj = "{}: Unable to Encode/Decode={} ===> Unable to Encode/Decode={}"
 
         return obj
 
     @staticmethod
     def __gettype(obj):
         '''
-        python 3 returns <class 'something'> instead of <type 'something'>.
+        Python 3 returns <class 'something'> instead of <type 'something'>.
+
         For backward compatibility, we replace class with type.
         '''
         return str(type(obj)).replace('class', 'type')
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
-        ''' difference of 2 objects '''
-
+        '''Difference of 2 objects'''
         try:
             t1 = t1.__dict__
             t2 = t2.__dict__
@@ -289,8 +326,7 @@ class DeepDiff(dict):
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
 
     def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), print_as_attribute=False):
-        ''' difference of 2 dictionaries '''
-
+        '''Difference of 2 dictionaries'''
         if print_as_attribute:
             item_added_key = "attribute_added"
             item_removed_key = "attribute_removed"
@@ -324,7 +360,7 @@ class DeepDiff(dict):
         self.__diff_common_children(t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
 
     def __diff_common_children(self, t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text):
-        ''' difference between common attributes of objects or values of common keys of dictionaries '''
+        '''Difference between common attributes of objects or values of common keys of dictionaries'''
         for item_key in t_keys_intersect:
             if not print_as_attribute and isinstance(item_key, strings):
                 item_key_str = "'%s'" % item_key
@@ -347,7 +383,7 @@ class DeepDiff(dict):
             self.__diff(t1_child, t2_child, parent=parent_text % (parent, item_key_str), parents_ids=parents_added)
 
     def __diff_set(self, t1, t2, parent="root"):
-        ''' difference of sets '''
+        '''Difference of sets'''
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 
@@ -358,9 +394,7 @@ class DeepDiff(dict):
             self["set_item_added"].append("%s: %s" % (parent, items_added))
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
-        '''
-        difference of iterables except dictionaries, sets and strings.
-        '''
+        '''Difference of iterables except dictionaries, sets and strings.'''
         items_removed = []
         items_added = []
 
@@ -380,9 +414,7 @@ class DeepDiff(dict):
             self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
     def __diff_str(self, t1, t2, parent):
-        '''
-        compares strings
-        '''
+        '''Compare strings'''
         if '\n' in t1 or '\n' in t2:
             diff = difflib.unified_diff(t1.splitlines(), t2.splitlines(), lineterm='')
             diff = list(diff)
@@ -405,9 +437,7 @@ class DeepDiff(dict):
 
     @staticmethod
     def __create_hashtable(t, parent):
-        '''
-        Creates hashtable of {item_hash: item}
-        '''
+        '''Create hashtable of {item_hash: item}'''
         hashes = {}
         for item in t:
             try:
@@ -424,10 +454,7 @@ class DeepDiff(dict):
         return hashes
 
     def __diff_unhashable_iterable(self, t1, t2, parent):
-        '''
-        diff of unhashable iterables
-        '''
-
+        '''Diff of unhashable iterables'''
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
 
@@ -441,13 +468,15 @@ class DeepDiff(dict):
             self["iterable_item_added"].append("%s: %s" % (parent, items_added))
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
-        ''' The main diff method '''
+        '''The main diff method'''
         if t1 is t2:
             return
 
         if type(t1) != type(t2):
+            type_change_kwargs = dict(parent=parent, type1=self.__gettype(t1), type2=self.__gettype(t2))
             self["type_changes"].append(
-                self.__get_value_when_type_change(t1, t2) % (parent, self.__gettype(t1), self.__gettype(t2)))
+                formatter(self.__get_value_when_type_change(t1, t2), **type_change_kwargs)
+            )
 
         elif isinstance(t1, strings):
             self.__diff_str(t1, t2, parent)
@@ -486,15 +515,16 @@ class DeepDiff(dict):
     @property
     def changes(self):
         '''
-        This is for backward compatibility with previous versions of DeepDiff.
-        You don't need this anymore since you can access the result dictionary of changes directly from DeepDiff now:
+        For backward compatibility with previous versions of DeepDiff.
 
+        You don't need this anymore since you can access the result dictionary of changes directly from DeepDiff now:
         DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
         '''
         return self
 
 
 def json_default(obj):
+    '''Dealing with unserializable objects'''
     if isinstance(obj, Decimal):
         return float(obj)
     else:
