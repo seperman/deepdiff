@@ -25,34 +25,56 @@ if py3:
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, Decimal)
     from itertools import zip_longest
-    from _string import formatter_field_name_split
+    # from _string import formatter_field_name_split
     items = 'items'
 else:
     strings = (str, unicode)
     numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
-    formatter_field_name_split = str._formatter_field_name_split
+    # formatter_field_name_split = str._formatter_field_name_split
+
+
+class MappingWithDefault(dict):
+    '''Returns missing keys as {key}'''
+
+    def __missing__(self, key):
+        return u"{{}}".format(key)
+
+
+class ListWithDefault(object):
+    '''Returns list values as {}'''
+
+    def __init__(self, *args):
+        self.items = args
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, key):
+        try:
+            item = self.items[key]
+        except IndexError:
+            item = '{}'
+        return item
+
+    def __setitem__(self, key, value):
+        self.items[key] = value
+
+    def __repr__(self):
+        return str(self.items)
 
 
 class PartialFormatter(string.Formatter):
 
-    '''
-    Partial string formatting.
-
-    Modified from: http://stackoverflow.com/a/15728287/1497443
-    '''
-
-    def get_field(self, field_name, args, kwargs):
-        try:
-            val = super(PartialFormatter, self).get_field(field_name, args, kwargs)
-        except (IndexError, KeyError, AttributeError):
-            first, _ = formatter_field_name_split(field_name)
-            val = '{' + field_name + '}', first
-        return val
+    '''Partial string formatting.'''
 
     def __call__(self, the_string, *args, **kwargs):
+        import ipdb; ipdb.set_trace()
+        kwargs = MappingWithDefault(**kwargs)
+        args = ListWithDefault()
         return self.vformat(the_string, args, kwargs)
+
 
 formatter = PartialFormatter()
 
@@ -261,7 +283,7 @@ class DeepDiff(dict):
         '''Dealing with python unicode issues.'''
         try:
             # Adding {{}} lets you reformat those parts later
-            obj = formatter("{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
+            obj = formatter(u"{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
         except (UnicodeDecodeError, UnicodeEncodeError):
             if isinstance(t1, (str, unicode)) and isinstance(t2, (str, unicode)):
                 try:
