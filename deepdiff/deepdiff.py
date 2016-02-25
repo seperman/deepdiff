@@ -70,7 +70,6 @@ class PartialFormatter(string.Formatter):
     '''Partial string formatting.'''
 
     def __call__(self, the_string, *args, **kwargs):
-        import ipdb; ipdb.set_trace()
         kwargs = MappingWithDefault(**kwargs)
         args = ListWithDefault()
         return self.vformat(the_string, args, kwargs)
@@ -84,6 +83,8 @@ class ListItemRemovedOrAdded(object):
     '''Class of conditions to be checked'''
 
     pass
+
+INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 
 class DeepDiff(dict):
@@ -267,8 +268,8 @@ class DeepDiff(dict):
     def __init__(self, t1, t2, ignore_order=False):
         self.ignore_order = ignore_order
 
-        self.update({"type_changes": [], "dic_item_added": [], "dic_item_removed": [],
-                     "values_changed": [], "unprocessed": [], "iterable_item_added": [], "iterable_item_removed": [],
+        self.update({"type_changes": {}, "dic_item_added": [], "dic_item_removed": [],
+                     "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
                      "attribute_added": [], "attribute_removed": [], "set_item_removed": [], "set_item_added": []})
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
@@ -277,6 +278,12 @@ class DeepDiff(dict):
 
         for k in empty_keys:
             del self[k]
+
+    @staticmethod
+    def __extend_with_keys(keys, parent, extend_obj, print_as_attribute=False):
+        key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
+        formatted_items = [key_text % (parent, i) for i in keys]
+        extend_obj.extend(formatted_items)
 
     @staticmethod
     def __get_value_when_type_change(t1, t2):
@@ -323,14 +330,14 @@ class DeepDiff(dict):
 
         return obj
 
-    @staticmethod
-    def __gettype(obj):
-        '''
-        Python 3 returns <class 'something'> instead of <type 'something'>.
+    # @staticmethod
+    # def __gettype(obj):
+    #     '''
+    #     Python 3 returns <class 'something'> instead of <type 'something'>.
 
-        For backward compatibility, we replace class with type.
-        '''
-        return str(type(obj)).replace('class', 'type')
+    #     For backward compatibility, we replace class with type.
+    #     '''
+    #     return str(type(obj)).replace('class', 'type')
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         '''Difference of 2 objects'''
@@ -358,9 +365,8 @@ class DeepDiff(dict):
             item_removed_key = "dic_item_removed"
             parent_text = "%s[%s]"
 
-        t1_keys, t2_keys = [
-            set(d.keys()) for d in (t1, t2)
-        ]
+        t1_keys = set(t1.keys())
+        t2_keys = set(t2.keys())
 
         t_keys_intersect = t2_keys.intersection(t1_keys)
 
@@ -368,16 +374,12 @@ class DeepDiff(dict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         if t_keys_added:
-            if print_as_attribute:
-                self[item_added_key].append("%s.%s" % (parent, ','.join(t_keys_added)))
-            else:
-                self[item_added_key].append("%s%s" % (parent, list(t_keys_added)))
+            self.__extend_with_keys(keys=t_keys_added, parent=parent,
+                                    extend_obj=self[item_added_key], print_as_attribute=print_as_attribute)
 
         if t_keys_removed:
-            if print_as_attribute:
-                self[item_removed_key].append("%s%s" % (parent, ','.join(t_keys_removed)))
-            else:
-                self[item_removed_key].append("%s%s" % (parent, list(t_keys_removed)))
+            self.__extend_with_keys(keys=t_keys_removed, parent=parent,
+                                    extend_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
 
         self.__diff_common_children(t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
 
@@ -410,10 +412,10 @@ class DeepDiff(dict):
         items_removed = list(t1 - t2)
 
         if items_removed:
-            self["set_item_removed"].append("%s: %s" % (parent, items_removed))
+            self.__extend_with_keys(keys=items_removed, parent=parent, extend_obj=self["set_item_removed"])
 
         if items_added:
-            self["set_item_added"].append("%s: %s" % (parent, items_added))
+            self.__extend_with_keys(keys=items_added, parent=parent, extend_obj=self["set_item_added"])
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         '''Difference of iterables except dictionaries, sets and strings.'''
@@ -423,17 +425,19 @@ class DeepDiff(dict):
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
 
             if y is ListItemRemovedOrAdded:
-                items_removed.append(x)
+                items_removed.append(("%s[%s]" % (parent, i), x))
             elif x is ListItemRemovedOrAdded:
-                items_added.append(y)
+                items_added.append(("%s[%s]" % (parent, i), y))
             else:
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids)
 
         if items_removed:
-            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
+            result = dict(items_removed)
+            self["iterable_item_removed"].update(result)
 
         if items_added:
-            self["iterable_item_added"].append("%s: %s" % (parent, items_added))
+            result = dict(items_added)
+            self["iterable_item_added"].update(result)
 
     def __diff_str(self, t1, t2, parent):
         '''Compare strings'''
@@ -442,9 +446,9 @@ class DeepDiff(dict):
             diff = list(diff)
             if diff:
                 diff = '\n'.join(diff)
-                self["values_changed"].append("%s:\n%s" % (parent, diff))
+                self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2, "diff": diff}
         elif t1 != t2:
-            self["values_changed"].append("%s: '%s' ===> '%s'" % (parent, t1, t2))
+            self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2}
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named tuple.
@@ -484,10 +488,10 @@ class DeepDiff(dict):
         items_removed = [t1_hashtable[i] for i in t1_hashtable if i not in t2_hashtable]
 
         if items_removed:
-            self["iterable_item_removed"].append("%s: %s" % (parent, items_removed))
+            self.__extend_with_keys(keys=items_removed, parent=parent, extend_obj=self["iterable_item_removed"])
 
         if items_added:
-            self["iterable_item_added"].append("%s: %s" % (parent, items_added))
+            self.__extend_with_keys(keys=items_added, parent=parent, extend_obj=self["iterable_item_added"])
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         '''The main diff method'''
@@ -495,17 +499,14 @@ class DeepDiff(dict):
             return
 
         if type(t1) != type(t2):
-            type_change_kwargs = dict(parent=parent, type1=self.__gettype(t1), type2=self.__gettype(t2))
-            self["type_changes"].append(
-                formatter(self.__get_value_when_type_change(t1, t2), **type_change_kwargs)
-            )
+            self["type_changes"][parent] = {"oldvalue": t1, "newvalue": t2, "oldtype": type(t1), "newtype": type(t2)}
 
         elif isinstance(t1, strings):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
             if t1 != t2:
-                self["values_changed"].append("%s: %s ===> %s" % (parent, t1, t2))
+                self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2}
 
         elif isinstance(t1, dict):
             self.__diff_dict(t1, t2, parent, parents_ids)
