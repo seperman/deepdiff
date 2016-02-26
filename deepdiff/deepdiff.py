@@ -6,7 +6,6 @@ from __future__ import print_function
 import difflib
 import datetime
 import json
-import string
 from decimal import Decimal
 from sys import version
 from collections import Iterable
@@ -36,51 +35,6 @@ else:
     # formatter_field_name_split = str._formatter_field_name_split
 
 IndexedHash = namedtuple('IndexedHash', 'index item')
-
-
-class MappingWithDefault(dict):
-
-    '''Returns missing keys as {key}'''
-
-    def __missing__(self, key):
-        return u"{{}}".format(key)
-
-
-class ListWithDefault(object):
-
-    '''Returns list values as {}'''
-
-    def __init__(self, *args):
-        self.items = args
-
-    def __len__(self):
-        return len(self.items)
-
-    def __getitem__(self, key):
-        try:
-            item = self.items[key]
-        except IndexError:
-            item = '{}'
-        return item
-
-    def __setitem__(self, key, value):
-        self.items[key] = value
-
-    def __repr__(self):
-        return str(self.items)
-
-
-class PartialFormatter(string.Formatter):
-
-    '''Partial string formatting.'''
-
-    def __call__(self, the_string, *args, **kwargs):
-        kwargs = MappingWithDefault(**kwargs)
-        args = ListWithDefault()
-        return self.vformat(the_string, args, kwargs)
-
-
-formatter = PartialFormatter()
 
 
 class ListItemRemovedOrAdded(object):
@@ -287,63 +241,11 @@ class DeepDiff(dict):
     @staticmethod
     def __extend_result_list(keys, parent, result_obj, print_as_attribute=False):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
-        formatted_items = [key_text % (parent, i) for i in keys]
+        formatted_items = []
+        for i in keys:
+            i = "'%s'" % i if isinstance(i, strings) else i
+            formatted_items.append(key_text % (parent, i))
         result_obj.extend(formatted_items)
-
-    @staticmethod
-    def __get_value_when_type_change(t1, t2):
-        '''Dealing with python unicode issues.'''
-        try:
-            # Adding {{}} lets you reformat those parts later
-            obj = formatter(
-                u"{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            if isinstance(t1, (str, unicode)) and isinstance(t2, (str, unicode)):
-                try:
-                    t1 = t1.decode('utf-8')
-                except UnicodeEncodeError:
-                    try:
-                        t2 = t2.decode('utf-8')
-                    except UnicodeEncodeError:
-                        try:
-                            t1 = t1.encode('utf-8')
-                        except UnicodeDecodeError:
-                            try:
-                                t2 = t2.encode('utf-8')
-                            except UnicodeDecodeError:
-                                t1 = t2 = 'Unable to Encode/Decode'
-            elif isinstance(t1, (str, unicode)):
-                try:
-                    t1 = t1.decode('utf-8')
-                except UnicodeEncodeError:
-                    try:
-                        t1 = t1.encode('utf-8')
-                    except UnicodeEncodeError:
-                        t1 = 'Unable to Encode/Decode'
-            elif isinstance(t2, (str, unicode)):
-                try:
-                    t2 = t2.decode('utf-8')
-                except UnicodeEncodeError:
-                    try:
-                        t2 = t2.encode('utf-8')
-                    except UnicodeEncodeError:
-                        t2 = 'Unable to Encode/Decode'
-
-            try:
-                obj = u"{{}}: {t1}={{}} ===> {t2}={{}}".format(t1=t1, t2=t2)
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                obj = "{}: Unable to Encode/Decode={} ===> Unable to Encode/Decode={}"
-
-        return obj
-
-    # @staticmethod
-    # def __gettype(obj):
-    #     '''
-    #     Python 3 returns <class 'something'> instead of <type 'something'>.
-
-    #     For backward compatibility, we replace class with type.
-    #     '''
-    #     return str(type(obj)).replace('class', 'type')
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         '''Difference of 2 objects'''
