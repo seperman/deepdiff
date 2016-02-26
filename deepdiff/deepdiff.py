@@ -10,6 +10,7 @@ import string
 from decimal import Decimal
 from sys import version
 from collections import Iterable
+from collections import namedtuple
 
 py_major_version = version[0]
 py_minor_version = version[2]
@@ -34,8 +35,11 @@ else:
     items = 'iteritems'
     # formatter_field_name_split = str._formatter_field_name_split
 
+IndexedHash = namedtuple('IndexedHash', 'index item')
+
 
 class MappingWithDefault(dict):
+
     '''Returns missing keys as {key}'''
 
     def __missing__(self, key):
@@ -43,6 +47,7 @@ class MappingWithDefault(dict):
 
 
 class ListWithDefault(object):
+
     '''Returns list values as {}'''
 
     def __init__(self, *args):
@@ -280,17 +285,18 @@ class DeepDiff(dict):
             del self[k]
 
     @staticmethod
-    def __extend_with_keys(keys, parent, extend_obj, print_as_attribute=False):
+    def __extend_result_list(keys, parent, result_obj, print_as_attribute=False):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         formatted_items = [key_text % (parent, i) for i in keys]
-        extend_obj.extend(formatted_items)
+        result_obj.extend(formatted_items)
 
     @staticmethod
     def __get_value_when_type_change(t1, t2):
         '''Dealing with python unicode issues.'''
         try:
             # Adding {{}} lets you reformat those parts later
-            obj = formatter(u"{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
+            obj = formatter(
+                u"{parent}: {t1}={type1} ===> {t2}={type2}", t1=t1, t2=t2)
         except (UnicodeDecodeError, UnicodeEncodeError):
             if isinstance(t1, (str, unicode)) and isinstance(t2, (str, unicode)):
                 try:
@@ -374,14 +380,15 @@ class DeepDiff(dict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         if t_keys_added:
-            self.__extend_with_keys(keys=t_keys_added, parent=parent,
-                                    extend_obj=self[item_added_key], print_as_attribute=print_as_attribute)
+            self.__extend_result_list(keys=t_keys_added, parent=parent,
+                                      result_obj=self[item_added_key], print_as_attribute=print_as_attribute)
 
         if t_keys_removed:
-            self.__extend_with_keys(keys=t_keys_removed, parent=parent,
-                                    extend_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
+            self.__extend_result_list(keys=t_keys_removed, parent=parent,
+                                      result_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
 
-        self.__diff_common_children(t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
+        self.__diff_common_children(
+            t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
 
     def __diff_common_children(self, t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text):
         '''Difference between common attributes of objects or values of common keys of dictionaries'''
@@ -404,7 +411,8 @@ class DeepDiff(dict):
             parents_added.add(item_id)
             parents_added = frozenset(parents_added)
 
-            self.__diff(t1_child, t2_child, parent=parent_text % (parent, item_key_str), parents_ids=parents_added)
+            self.__diff(t1_child, t2_child, parent=parent_text %
+                        (parent, item_key_str), parents_ids=parents_added)
 
     def __diff_set(self, t1, t2, parent="root"):
         '''Difference of sets'''
@@ -412,46 +420,46 @@ class DeepDiff(dict):
         items_removed = list(t1 - t2)
 
         if items_removed:
-            self.__extend_with_keys(keys=items_removed, parent=parent, extend_obj=self["set_item_removed"])
+            self.__extend_result_list(
+                keys=items_removed, parent=parent, result_obj=self["set_item_removed"])
 
         if items_added:
-            self.__extend_with_keys(keys=items_added, parent=parent, extend_obj=self["set_item_added"])
+            self.__extend_result_list(
+                keys=items_added, parent=parent, result_obj=self["set_item_added"])
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         '''Difference of iterables except dictionaries, sets and strings.'''
-        items_removed = []
-        items_added = []
+        items_removed = {}
+        items_added = {}
 
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
 
             if y is ListItemRemovedOrAdded:
-                items_removed.append(("%s[%s]" % (parent, i), x))
+                items_removed["%s[%s]" % (parent, i)] = x
             elif x is ListItemRemovedOrAdded:
-                items_added.append(("%s[%s]" % (parent, i), y))
+                items_added["%s[%s]" % (parent, i)] = y
             else:
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids)
 
-        if items_removed:
-            result = dict(items_removed)
-            self["iterable_item_removed"].update(result)
-
-        if items_added:
-            result = dict(items_added)
-            self["iterable_item_added"].update(result)
+        self["iterable_item_removed"].update(items_removed)
+        self["iterable_item_added"].update(items_added)
 
     def __diff_str(self, t1, t2, parent):
         '''Compare strings'''
         if '\n' in t1 or '\n' in t2:
-            diff = difflib.unified_diff(t1.splitlines(), t2.splitlines(), lineterm='')
+            diff = difflib.unified_diff(
+                t1.splitlines(), t2.splitlines(), lineterm='')
             diff = list(diff)
             if diff:
                 diff = '\n'.join(diff)
-                self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2, "diff": diff}
+                self["values_changed"][parent] = {
+                    "oldvalue": t1, "newvalue": t2, "diff": diff}
         elif t1 != t2:
             self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2}
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
-        # Checking to see if it has _fields. Which probably means it is a named tuple.
+        # Checking to see if it has _fields. Which probably means it is a named
+        # tuple.
         try:
             t1._fields
         # It must be a normal tuple
@@ -465,33 +473,40 @@ class DeepDiff(dict):
     def __create_hashtable(t, parent):
         '''Create hashtable of {item_hash: item}'''
         hashes = {}
-        for item in t:
+        for (i, item) in enumerate(t):
             try:
                 item_hash = hash(item)
             except TypeError:
                 try:
                     item_hash = hash(json.dumps(item, default=json_default))
-                except:
-                    print ("Warning: Can not produce a hash for %s item in %s" % (item, parent))
+                except Exception as e:
+                    print ("Warning: Can not produce a hash for %s item in %s and\
+                        thus not counting this object. %s" % (item, parent, e))
                 else:
-                    hashes[item_hash] = item
+                    hashes[item_hash] = IndexedHash(i, item)
             else:
-                hashes[item_hash] = item
+                hashes[item_hash] = IndexedHash(i, item)
         return hashes
 
     def __diff_unhashable_iterable(self, t1, t2, parent):
-        '''Diff of unhashable iterables'''
+        '''Diff of unhashable iterables. Only used when ignoring the order.'''
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
 
-        items_added = [t2_hashtable[i] for i in t2_hashtable if i not in t1_hashtable]
-        items_removed = [t1_hashtable[i] for i in t1_hashtable if i not in t2_hashtable]
+        t1_hashes = set(t1_hashtable.keys())
+        t2_hashes = set(t2_hashtable.keys())
 
-        if items_removed:
-            self.__extend_with_keys(keys=items_removed, parent=parent, extend_obj=self["iterable_item_removed"])
+        hashes_added = t2_hashes - t1_hashes
+        hashes_removed = t1_hashes - t2_hashes
 
-        if items_added:
-            self.__extend_with_keys(keys=items_added, parent=parent, extend_obj=self["iterable_item_added"])
+        items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].index): t2_hashtable[
+            hash_value].item for hash_value in hashes_added}
+
+        items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].index): t1_hashtable[
+            hash_value].item for hash_value in hashes_removed}
+
+        self["iterable_item_removed"].update(items_removed)
+        self["iterable_item_added"].update(items_added)
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         '''The main diff method'''
@@ -499,14 +514,16 @@ class DeepDiff(dict):
             return
 
         if type(t1) != type(t2):
-            self["type_changes"][parent] = {"oldvalue": t1, "newvalue": t2, "oldtype": type(t1), "newtype": type(t2)}
+            self["type_changes"][parent] = {
+                "oldvalue": t1, "newvalue": t2, "oldtype": type(t1), "newtype": type(t2)}
 
         elif isinstance(t1, strings):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
             if t1 != t2:
-                self["values_changed"][parent] = {"oldvalue": t1, "newvalue": t2}
+                self["values_changed"][parent] = {
+                    "oldvalue": t1, "newvalue": t2}
 
         elif isinstance(t1, dict):
             self.__diff_dict(t1, t2, parent, parents_ids)
@@ -522,7 +539,8 @@ class DeepDiff(dict):
                 try:
                     t1 = set(t1)
                     t2 = set(t2)
-                # When we can't make a set since the iterable has unhashable items
+                # When we can't make a set since the iterable has unhashable
+                # items
                 except TypeError:
                     self.__diff_unhashable_iterable(t1, t2, parent)
                 else:
