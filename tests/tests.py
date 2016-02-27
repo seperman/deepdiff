@@ -26,13 +26,14 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: "2", 3: 3}
         self.assertEqual(DeepDiff(t1, t2), {'type_changes': {"root[2]":
-                                            {"oldvalue": 2, "oldtype": int,
-                                             "newvalue": "2", "newtype": str}}})
+                                                             {"oldvalue": 2, "oldtype": int,
+                                                              "newvalue": "2", "newtype": str}}})
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: 4, 3: 3}
-        result = {'values_changed': {'root[2]': {"oldvalue": 2, "newvalue": 4}}}
+        result = {
+            'values_changed': {'root[2]': {"oldvalue": 2, "newvalue": 4}}}
         self.assertEqual(DeepDiff(t1, t2), result)
 
     def test_item_added_and_removed(self):
@@ -52,7 +53,8 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_string_difference2(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world!\nGoodbye!\n1\n2\nEnd"}}
+        t1 = {1: 1, 2: 2, 3: 3, 4: {
+            "a": "hello", "b": "world!\nGoodbye!\n1\n2\nEnd"}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n1\n2\nEnd"}}
         ddiff = DeepDiff(t1, t2)
         result = {'values_changed': {"root[4]['b']": {
@@ -65,14 +67,16 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
         result = {'type_changes': {"root[4]['b']": {'oldtype': list,
-                  'newvalue': 'world\n\n\nEnd', 'oldvalue': [1, 2, 3], 'newtype': str}}}
+                                                    'newvalue': 'world\n\n\nEnd', 'oldvalue': [1, 2, 3], 'newtype': str}}}
         self.assertEqual(ddiff, result)
 
     def test_list_difference(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 'to_be_removed', 'to_be_removed2']}}
+        t1 = {1: 1, 2: 2, 3: 3, 4: {
+            "a": "hello", "b": [1, 2, 'to_be_removed', 'to_be_removed2']}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'iterable_item_removed': {"root[4]['b'][2]": "to_be_removed", "root[4]['b'][3]": 'to_be_removed2'}}
+        result = {'iterable_item_removed': {
+            "root[4]['b'][2]": "to_be_removed", "root[4]['b'][3]": 'to_be_removed2'}}
         self.assertEqual(ddiff, result)
 
     def test_list_difference_add(self):
@@ -86,7 +90,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3, 10, 12]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2]}}
         result = {'values_changed': {"root[4]['b'][2]": {'newvalue': 2, 'oldvalue': 3},
-                  "root[4]['b'][1]": {'newvalue': 3, 'oldvalue': 2}},
+                                     "root[4]['b'][1]": {'newvalue': 3, 'oldvalue': 2}},
                   'iterable_item_removed': {"root[4]['b'][3]": 10, "root[4]['b'][4]": 12}}
         ddiff = DeepDiff(t1, t2)
         self.assertEqual(ddiff, result)
@@ -131,14 +135,16 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {1, 2, 8}
         t2 = {1, 2, 3, 5}
         ddiff = DeepDiff(t1, t2)
-        result = {'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ['root[8]']}
+        result = {
+            'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ['root[8]']}
         self.assertEqual(ddiff, result)
 
     def test_frozenset(self):
         t1 = frozenset([1, 2, 'B'])
         t2 = frozenset([1, 2, 3, 5])
         ddiff = DeepDiff(t1, t2)
-        result = {'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ["root['B']"]}
+        result = {
+            'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ["root['B']"]}
         self.assertEqual(ddiff, result)
 
     def test_tuple(self):
@@ -155,7 +161,8 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = Point(x=11, y=22)
         t2 = Point(x=11, y=23)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.y': {'oldvalue': 22, 'newvalue': 23}}}
+        result = {
+            'values_changed': {'root.y': {'oldvalue': 22, 'newvalue': 23}}}
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_change(self):
@@ -202,6 +209,7 @@ class DeepDiffTestCase(unittest.TestCase):
 
     def test_loop(self):
         class LoopTest(object):
+
             def __init__(self, a):
                 self.loop = self
                 self.a = a
@@ -215,11 +223,13 @@ class DeepDiffTestCase(unittest.TestCase):
 
     def test_loop2(self):
         class LoopTestA(object):
+
             def __init__(self, a):
                 self.loop = LoopTestB
                 self.a = a
 
         class LoopTestB(object):
+
             def __init__(self, a):
                 self.loop = LoopTestA
                 self.a = a
@@ -233,6 +243,7 @@ class DeepDiffTestCase(unittest.TestCase):
 
     def test_loop3(self):
         class LoopTest(object):
+
             def __init__(self, a):
                 self.loop = LoopTest
                 self.a = a
@@ -249,7 +260,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = {1: Decimal('2.2')}
         ddiff = DeepDiff(t1, t2)
         result = {'values_changed': {'root[1]': {'newvalue': Decimal('2.2'),
-                  'oldvalue': Decimal('10.1')}}}
+                                                 'oldvalue': Decimal('10.1')}}}
         self.assertEqual(ddiff, result)
 
     def test_decimal_ignore_order(self):
@@ -275,80 +286,70 @@ class DeepDiffTestCase(unittest.TestCase):
                       'newtype': str}}}
         self.assertEqual(ddiff, result)
 
-    # def test_unicode_string_value_changes(self):
-    #     unicode_string = {"hello": u"你好"}
-    #     ascii_string = {"hello": u"你好hello"}
-    #     ddiff = DeepDiff(unicode_string, ascii_string)
-    #     if py3:
-    #         result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
-    #     else:
-    #         result = {'values_changed': [u"root['hello']: '\u4f60\u597d' ===> '\u4f60\u597dhello'"]}
-    #     self.assertEqual(ddiff, result)
+    def test_unicode_string_value_changes(self):
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": u"你好hello"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
+        if py3:
+            result = {
+                'values_changed': {"root['hello']": {'oldvalue': '你好', 'newvalue': '你好hello'}}}
+        else:
+            result = {'values_changed': {"root['hello']":
+                                         {'newvalue': u'\u4f60\u597dhello', 'oldvalue': u'\u4f60\u597d'}}}
+        self.assertEqual(ddiff, result)
 
-    # def test_unicode_string_value_and_type_changes(self):
-    #     unicode_string = {"hello": u"你好"}
-    #     ascii_string = {"hello": "你好hello"}
-    #     ddiff = DeepDiff(unicode_string, ascii_string)
-    #     if py3:
-    #         # In python3, all string is unicode, so these 2 strings only diff in values
-    #         result = {'values_changed': ["root['hello']: '你好' ===> '你好hello'"]}
-    #     else:
-    #         # In python2, these are 2 different type of strings
-    #         result = {'type_changes': [u"root['hello']: \u4f60\u597d=<type 'unicode'> ===> \u4f60\u597dhello=<type 'str'>"]}
-    #     self.assertEqual(ddiff, result)
+    def test_unicode_string_value_and_type_changes(self):
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": "你好hello"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
+        if py3:
+            # In python3, all string is unicode, so these 2 strings only diff
+            # in values
+            result = {
+                'values_changed': {"root['hello']": {'newvalue': '你好hello', 'oldvalue': '你好'}}}
+        else:
+            # In python2, these are 2 different type of strings
+            result = {'type_changes': {"root['hello']": {
+                      'oldtype': unicode,
+                      'newvalue': '\xe4\xbd\xa0\xe5\xa5\xbdhello',
+                      'oldvalue': u'\u4f60\u597d', 'newtype': str}}}
+        self.assertEqual(ddiff, result)
 
-    # def test_int_to_unicode_string(self):
-    #     t1 = 1
-    #     ascii_string = "你好"
-    #     ddiff = DeepDiff(t1, ascii_string)
-    #     if py3:
-    #         # In python3, all string is unicode, so these 2 strings only diff in values
-    #         result = {'type_changes': ["root: 1=<type 'int'> ===> 你好=<type 'str'>"]}
-    #     else:
-    #         # In python2, these are 2 different type of strings
-    #         result = {'type_changes': ["root: 1=<type 'int'> ===> \xe4\xbd\xa0\xe5\xa5\xbd=<type 'str'>"]}
-    #     self.assertEqual(ddiff, result)
+    def test_int_to_unicode_string(self):
+        t1 = 1
+        ascii_string = "你好"
+        ddiff = DeepDiff(t1, ascii_string)
+        if py3:
+            # In python3, all string is unicode, so these 2 strings only diff
+            # in values
+            result = {'type_changes': {'root':
+                                       {'oldtype': int, 'newtype': str, 'oldvalue': 1, 'newvalue': '你好'}}}
+        else:
+            # In python2, these are 2 different type of strings
+            result = {'type_changes': {'root':
+                                       {'oldtype': int, 'newvalue': '\xe4\xbd\xa0\xe5\xa5\xbd', 'oldvalue': 1,
+                                        'newtype': str}}}
+        self.assertEqual(ddiff, result)
 
-    # def test_int_to_unicode(self):
-    #     t1 = 1
-    #     unicode_string = u"你好"
-    #     ddiff = DeepDiff(t1, unicode_string)
-    #     if py3:
-    #         # In python3, all string is unicode, so these 2 strings only diff in values
-    #         result = {'type_changes': ["root: 1=<type 'int'> ===> 你好=<type 'str'>"]}
-    #     else:
-    #         # In python2, these are 2 different type of strings
-    #         result = {'type_changes': [u"root: 1=<type 'int'> ===> \u4f60\u597d=<type 'unicode'>"]}
-    #     self.assertEqual(ddiff, result)
+    def test_int_to_unicode(self):
+        t1 = 1
+        unicode_string = u"你好"
+        ddiff = DeepDiff(t1, unicode_string)
+        if py3:
+            # In python3, all string is unicode, so these 2 strings only diff
+            # in values
+            result = {'type_changes': {'root':
+                                       {'oldtype': int, 'newtype': str, 'oldvalue': 1, 'newvalue': '你好'}}}
+        else:
+            # In python2, these are 2 different type of strings
+            result = {'type_changes': {'root':
+                                       {'oldtype': int, 'newvalue': u'\u4f60\u597d',
+                                        'oldvalue': 1, 'newtype': unicode}}}
+        self.assertEqual(ddiff, result)
 
-    # def test_unicode_string_value_and_type_not_changes(self):
-    #     unicode_string = {"hello": u"你好"}
-    #     ascii_string = {"hello": u"你好"}
-    #     ddiff = DeepDiff(unicode_string, ascii_string)
-    #     result = {}
-    #     self.assertEqual(ddiff, result)
-
-    # def test_percent_in_string_type_change(self):
-    #     t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "50%"}}
-    #     t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": None}}
-    #     ddiff = DeepDiff(t1, t2)
-    #     result = {'values_changed': ['root[2]: 2 ===> 4'],
-    #               'type_changes': [u"root[4]['b']: 50%=<type 'str'> ===> None=<type 'NoneType'>"]}
-    #     self.assertEqual(ddiff, result)
-
-    # def test_percent_in_string(self):
-    #     t1 = {"a": "hello", "b": "50%"}
-    #     t2 = {"a": "hello", "b": "%s"}
-    #     ddiff = DeepDiff(t1, t2)
-    #     result = {'values_changed': ["root['b']: '50%' ===> '%s'"]}
-    #     self.assertEqual(ddiff, result)
-
-    # def test_curly_brackets_in_string_type_change(self):
-    #     t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "{}"}}
-    #     t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": None}}
-    #     ddiff = DeepDiff(t1, t2)
-
-    #     result = {'values_changed': ['root[2]: 2 ===> 4'],
-    #               'type_changes': ["root[4]['b']: {}=<type 'str'> ===> None=<type 'NoneType'>"]}
-
-    #     self.assertEqual(ddiff, result)
+    def test_unicode_string_value_and_type_not_changes(self):
+        unicode_string = {"hello": u"你好"}
+        ascii_string = {"hello": u"你好"}
+        ddiff = DeepDiff(unicode_string, ascii_string)
+        result = {}
+        self.assertEqual(ddiff, result)
