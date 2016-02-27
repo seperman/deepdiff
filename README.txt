@@ -1,4 +1,4 @@
-**DeepDiff v 0.6.1**
+**DeepDiff v 1.0.0**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
