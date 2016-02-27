@@ -3,5 +3,6 @@ Primary Author:
 
 
 Thanks to:
+    * nfvs for Travis-CI setup script
     * brbsix for initial Py3 porting
     * WangFenjin for unicode support
