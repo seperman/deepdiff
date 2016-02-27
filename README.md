@@ -235,13 +235,14 @@ ddiff = DeepDiff(t1, t2, ignore_order=True)
 
 ##Author
 
-Seperman
+Seperman (Sep Ehr)
 
 Github:  <https://github.com/seperman>
 Linkedin:  <http://www.linkedin.com/in/sepehr>
 ZepWorks:   <http://www.zepworks.com>
 
 Thanks to:
-brbsix for initial Py3 porting
-WangFenjin for unicode support
 
+- brbsix for initial Py3 porting
+- WangFenjin for unicode support
+- nfvs for Travis-CI setup script

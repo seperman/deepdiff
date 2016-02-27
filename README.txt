@@ -194,3 +194,9 @@ Seperman
 Github:  <https://github.com/seperman>
 Linkedin:  <http://www.linkedin.com/in/sepehr>
 ZepWorks:   <http://www.zepworks.com>
+
+Thanks to:
+
+- brbsix for initial Py3 porting
+- WangFenjin for unicode support
+- nfvs for Travis-CI setup script
