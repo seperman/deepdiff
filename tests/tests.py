@@ -203,7 +203,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = ClassA(2)
         t2.c = "new attribute"
         ddiff = DeepDiff(t1, t2)
-        result = {'attribute_added': ["root.'c'"], 'values_changed':
+        result = {'attribute_added': ["root.c"], 'values_changed':
                   {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
         self.assertEqual(ddiff, result)
 

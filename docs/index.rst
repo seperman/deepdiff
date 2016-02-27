@@ -44,7 +44,8 @@ Indices and tables
 Changelog
 =========
 
-- v0-6-1: fixing iterables with unhashable when order is ignored
+- v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
+- v0-6-1: Fixiing iterables with unhashable when order is ignored
 - v0-6-0: Adding unicode support
 - v0-5-9: Adding decimal support
 - v0-5-8: Adding ignore order for unhashables support

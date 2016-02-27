@@ -202,7 +202,7 @@ class DeepDiff(dict):
         >>> t1 = {1, 2, 8}
         >>> t2 = {1, 2, 3, 5}
         >>> ddiff = DeepDiff(t1, t2)
-        >>> print (DeepDiff(t1, t2))
+        >>> pprint (DeepDiff(t1, t2))
         {'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ['root[8]']}
 
     Named Tuples:
@@ -210,8 +210,8 @@ class DeepDiff(dict):
         >>> Point = namedtuple('Point', ['x', 'y'])
         >>> t1 = Point(x=11, y=22)
         >>> t2 = Point(x=11, y=23)
-        >>> print (DeepDiff(t1, t2))
-        {'values_changed': {'root.y': {'oldvalue': 22, 'newvalue': 23}}}
+        >>> pprint (DeepDiff(t1, t2))
+        {'values_changed': {'root.y': {'newvalue': 23, 'oldvalue': 22}}}
 
     Custom objects:
         >>> class ClassA(object):
@@ -222,14 +222,14 @@ class DeepDiff(dict):
         >>> t1 = ClassA(1)
         >>> t2 = ClassA(2)
         >>> 
-        >>> print(DeepDiff(t1, t2))
-        {'values_changed': {'root.b': {'oldvalue': 1, 'newvalue': 2}}}
+        >>> pprint(DeepDiff(t1, t2))
+        {'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 
     Object attribute added:
         >>> t2.c = "new attribute"
-        >>> print(DeepDiff(t1, t2))
-        {'values_changed': {'root.b': {'oldvalue': 1, 'newvalue': 2}}, 'attribute_added': ["root.c"]}
-
+        >>> pprint(DeepDiff(t1, t2))
+        {'attribute_added': ['root.c'],
+         'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
     """
 
     def __init__(self, t1, t2, ignore_order=False):
@@ -251,7 +251,7 @@ class DeepDiff(dict):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         formatted_items = []
         for i in keys:
-            i = "'%s'" % i if isinstance(i, strings) else i
+            i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
             formatted_items.append(key_text % (parent, i))
         result_obj.extend(formatted_items)
 
