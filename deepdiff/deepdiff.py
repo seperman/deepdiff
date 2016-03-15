@@ -5,7 +5,10 @@ from __future__ import print_function
 
 import difflib
 import datetime
-import json
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from decimal import Decimal
 from sys import version
 from collections import Iterable
@@ -49,7 +52,7 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 1.0.0**
+    **DeepDiff v 1.0.1**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
@@ -388,7 +391,7 @@ class DeepDiff(dict):
                 item_hash = hash(item)
             except TypeError:
                 try:
-                    item_hash = hash(json.dumps(item, default=json_default))
+                    item_hash = hash(pickle.dumps(item))
                 except Exception as e:
                     print ("Warning: Can not produce a hash for %s item in %s and\
                         thus not counting this object. %s" % (item, parent, e))
@@ -473,13 +476,6 @@ class DeepDiff(dict):
         '''
         return self
 
-
-def json_default(obj):
-    '''Dealing with unserializable objects'''
-    if isinstance(obj, Decimal):
-        return float(obj)
-    else:
-        raise TypeError
 
 if __name__ == "__main__":
     import doctest

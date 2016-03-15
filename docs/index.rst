@@ -20,7 +20,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 1.0.0
+DeepDiff 1.0.1
 **************
 
 .. toctree::
@@ -44,6 +44,7 @@ Indices and tables
 Changelog
 =========
 
+- v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
 - v0-6-1: Fixiing iterables with unhashable when order is ignored
 - v0-6-0: Adding unicode support

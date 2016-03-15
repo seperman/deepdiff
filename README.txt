@@ -1,4 +1,4 @@
-**DeepDiff v 1.0.0**
+**DeepDiff v 1.0.1**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -179,6 +179,7 @@ Object attribute added:
 
 **Changelog**
 
+- v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
 - v0-6-1: Fixiing iterables with unhashable when order is ignored
 - v0-6-0: Adding unicode support

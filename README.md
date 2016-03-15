@@ -1,4 +1,4 @@
-# deepdiff v 1.0.0
+# deepdiff v 1.0.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -233,6 +233,7 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 
 ##Changelog
 
+- v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
 - v0-6-1: Fixiing iterables with unhashable when order is ignored
 - v0-6-0: Adding unicode support

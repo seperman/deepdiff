@@ -6,3 +6,4 @@ Thanks to:
     * nfvs for Travis-CI setup script
     * brbsix for initial Py3 porting
     * WangFenjin for unicode support
+    * timoilya for comparing list of sets when ignoring order

@@ -4,6 +4,9 @@
 """
 To run the test, run this in the root of repo:
 python -m unittest discover
+
+To run a specific test, run this from the root of repo:
+python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
 """
 import unittest
 from decimal import Decimal
@@ -121,6 +124,13 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         result = {'iterable_item_added': {'root[2]': {1: 1}},
                   'iterable_item_removed': {'root[3]': 'B', 'root[0]': 1}}
+        self.assertEqual(ddiff, result)
+
+    def test_list_of_sets_difference_ignore_order(self):
+        t1 = [{1}, {2}, {3}]
+        t2 = [{4}, {1}, {2}, {3}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {'iterable_item_added': {'root[0]': {4}}}
         self.assertEqual(ddiff, result)
 
     def test_list_that_contains_dictionary(self):
