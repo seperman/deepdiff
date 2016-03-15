@@ -5,7 +5,6 @@ from __future__ import print_function
 
 import difflib
 import datetime
-import json
 from decimal import Decimal
 from sys import version
 from collections import Iterable
@@ -388,7 +387,7 @@ class DeepDiff(dict):
                 item_hash = hash(item)
             except TypeError:
                 try:
-                    item_hash = hash(json.dumps(item, default=json_default))
+                    item_hash = hash(frozenset(item))
                 except Exception as e:
                     print ("Warning: Can not produce a hash for %s item in %s and\
                         thus not counting this object. %s" % (item, parent, e))
@@ -472,14 +471,6 @@ class DeepDiff(dict):
         DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
         '''
         return self
-
-
-def json_default(obj):
-    '''Dealing with unserializable objects'''
-    if isinstance(obj, Decimal):
-        return float(obj)
-    else:
-        raise TypeError
 
 if __name__ == "__main__":
     import doctest
