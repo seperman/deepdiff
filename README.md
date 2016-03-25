@@ -227,6 +227,24 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
  'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 ```
 
+## Difference with Json Patch
+
+Unlike [Json Patch](https://tools.ietf.org/html/rfc6902) which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
+
+Example in Json Patch for replacing:
+
+`{ "op": "replace", "path": "/a/b/c", "value": 42 }`
+
+Example in DeepDiff for the same operation:
+
+```python
+>>> item1 = {'a':{'b':{'c':'foo'}}}
+>>> item2 = {'a':{'b':{'c':42}}}
+>>> DeepDiff(item1, item2)
+{'type_changes': {"root['a']['b']['c']": {'oldtype': <type 'str'>, 'newvalue': 42, 'oldvalue': 'foo', 'newtype': <type 'int'>}}}
+```
+
+
 ##Documentation
 
 <http://deepdiff.readthedocs.org/en/latest/>
