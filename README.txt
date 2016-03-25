@@ -1,4 +1,4 @@
-**DeepDiff v 1.0.0**
+**DeepDiff v 1.0.2**
 
 Deep Difference of dictionaries, iterables, strings and almost any other object. It will recursively look for all the changes.
 
@@ -176,9 +176,24 @@ Object attribute added:
      'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 
 
+**Difference with Json Patch**
+
+Unlike Json Patch https://tools.ietf.org/html/rfc6902 which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
+
+Example in Json Patch for replacing:
+    { "op": "replace", "path": "/a/b/c", "value": 42 }
+
+Example in DeepDiff for the same operation:
+    >>> item1 = {'a':{'b':{'c':'foo'}}}
+    >>> item2 = {'a':{'b':{'c':42}}}
+    >>> DeepDiff(item1, item2)
+    {'type_changes': {"root['a']['b']['c']": {'oldtype': <type 'str'>, 'newvalue': 42, 'oldvalue': 'foo', 'newtype': <type '
+
 
 **Changelog**
 
+- v1-0-2: Checking for ImmutableMapping type instead of dict
+- v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
 - v0-6-1: Fixiing iterables with unhashable when order is ignored
 - v0-6-0: Adding unicode support
