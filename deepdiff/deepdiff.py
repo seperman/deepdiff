@@ -13,6 +13,7 @@ from decimal import Decimal
 from sys import version
 from collections import Iterable
 from collections import namedtuple
+from collections import MutableMapping
 
 py_major_version = version[0]
 py_minor_version = version[2]
@@ -52,7 +53,7 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 1.0.1**
+    **DeepDiff v 1.0.2**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
@@ -438,7 +439,7 @@ class DeepDiff(dict):
                 self["values_changed"][parent] = {
                     "oldvalue": t1, "newvalue": t2}
 
-        elif isinstance(t1, dict):
+        elif isinstance(t1, MutableMapping):
             self.__diff_dict(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, tuple):
