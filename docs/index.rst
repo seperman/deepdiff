@@ -8,7 +8,7 @@ Welcome to DeepDiff's documentation!
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
 
-DeepDiff works with Python 2.7, 3.3, 3.4, 3.5
+DeepDiff works with Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
 ************
 Installation
@@ -20,7 +20,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 1.0.2
+DeepDiff 1.1.0
 **************
 
 .. toctree::
@@ -44,6 +44,7 @@ Indices and tables
 Changelog
 =========
 
+- v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
 - v1-0-2: Checking for ImmutableMapping type instead of dict
 - v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.

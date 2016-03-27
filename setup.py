@@ -13,7 +13,7 @@ except:
     long_description = "Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes."
 
 setup(name='deepdiff',
-      version='1.0.2',
+      version='1.1.0',
       description='Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.',
       url='https://github.com/seperman/deepdiff',
       download_url='https://github.com/seperman/deepdiff/tarball/master',
@@ -31,6 +31,7 @@ setup(name='deepdiff',
           "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"
       ],
