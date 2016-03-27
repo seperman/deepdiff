@@ -43,8 +43,9 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3, 4: 4}
         t2 = {1: 1, 2: 4, 3: 3, 5: 5, 6: 6}
         ddiff = DeepDiff(t1, t2)
-        result = {'dic_item_added': ['root[5]', 'root[6]'], 'dic_item_removed': [
-            'root[4]'], 'values_changed': {'root[2]': {"oldvalue": 2, "newvalue": 4}}}
+        result = {'dic_item_added': {'root[5]', 'root[6]'}, 'dic_item_removed': {
+            'root[4]'}, 'values_changed': {'root[2]': {"oldvalue": 2, "newvalue": 4}}
+        }
         self.assertEqual(ddiff, result)
 
     def test_string_difference(self):
@@ -137,7 +138,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 3}]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'dic_item_removed': ["root[4]['b'][2][2]"],
+        result = {'dic_item_removed': {"root[4]['b'][2][2]"},
                   'values_changed': {"root[4]['b'][2][1]": {'oldvalue': 1, 'newvalue': 3}}}
         self.assertEqual(ddiff, result)
 
@@ -146,7 +147,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = {1, 2, 3, 5}
         ddiff = DeepDiff(t1, t2)
         result = {
-            'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ['root[8]']}
+            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
         self.assertEqual(ddiff, result)
 
     def test_frozenset(self):
@@ -154,7 +155,7 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = frozenset([1, 2, 3, 5])
         ddiff = DeepDiff(t1, t2)
         result = {
-            'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ["root['B']"]}
+            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {"root['B']"}}
         self.assertEqual(ddiff, result)
 
     def test_tuple(self):
@@ -202,19 +203,44 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'values_changed': {'root.y': {'oldvalue': 1, 'newvalue': 2}}}
         self.assertEqual(ddiff, result)
 
-    def test_custom_objects_add(self):
+    def test_custom_objects_add_and_remove(self):
         class ClassA(object):
             a = 1
 
             def __init__(self, b):
                 self.b = b
+                self.d = 10
 
         t1 = ClassA(1)
         t2 = ClassA(2)
         t2.c = "new attribute"
+        del t2.d
         ddiff = DeepDiff(t1, t2)
-        result = {'attribute_added': ["root.c"], 'values_changed':
-                  {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
+        result = {'attribute_added': {'root.c'}, 'values_changed': {
+            'root.b': {'newvalue': 2, 'oldvalue': 1}}, 'attribute_removed': {'root.d'}}
+        self.assertEqual(ddiff, result)
+
+    def test_custom_objects_add_and_remove_method(self):
+        class ClassA(object):
+
+            def method_a(self):
+                pass
+
+        t1 = ClassA()
+        t2 = ClassA()
+
+        def method_b(self):
+            pass
+
+        def method_c(self):
+            return "hello"
+
+        t2.method_b = method_b
+        t2.method_a = method_c
+        ddiff = DeepDiff(t1, t2)
+        # Note that we are comparing ClassA instances. method_a originally was in ClassA
+        # But we also added another version of it to t2. So it comes up as added attribute.
+        result = {'attribute_added': {'root.method_a', 'root.method_b'}}
         self.assertEqual(ddiff, result)
 
     def test_loop(self):

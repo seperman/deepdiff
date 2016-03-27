@@ -1,4 +1,4 @@
-# deepdiff v 1.0.2
+# deepdiff v 1.1.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -7,7 +7,7 @@
 [![Build Status](https://travis-ci.org/seperman/deepdiff.svg?branch=master)](https://travis-ci.org/seperman/deepdiff)
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
-Tested on Python 2.7, 3.3, 3.4, 3.5
+Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
 ##Installation
 
@@ -251,6 +251,7 @@ Example in DeepDiff for the same operation:
 
 ##Changelog
 
+- v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
 - v1-0-2: Checking for ImmutableMapping type instead of dict
 - v1-0-1: Better ignore order support
 - v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
