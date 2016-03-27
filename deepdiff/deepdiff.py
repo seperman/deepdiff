@@ -114,8 +114,8 @@ class DeepDiff(dict):
         >>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff)
-        {'dic_item_added': ['root[5]', 'root[6]'],
-         'dic_item_removed': ['root[4]'],
+        {'dic_item_added': {'root[5]', 'root[6]'},
+         'dic_item_removed': {'root[4]'},
          'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 2}}}
 
     String difference
@@ -199,7 +199,7 @@ class DeepDiff(dict):
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff, indent = 2)
-        { 'dic_item_removed': ["root[4]['b'][2][2]"],
+        { 'dic_item_removed': {"root[4]['b'][2][2]"},
           'values_changed': {"root[4]['b'][2][1]": {'newvalue': 3, 'oldvalue': 1}}}
 
     Sets:
@@ -207,7 +207,7 @@ class DeepDiff(dict):
         >>> t2 = {1, 2, 3, 5}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (DeepDiff(t1, t2))
-        {'set_item_added': ['root[3]', 'root[5]'], 'set_item_removed': ['root[8]']}
+        {'set_item_added': {'root[5]', 'root[3]'}, 'set_item_removed': {'root[8]'}}
 
     Named Tuples:
         >>> from collections import namedtuple
@@ -232,16 +232,17 @@ class DeepDiff(dict):
     Object attribute added:
         >>> t2.c = "new attribute"
         >>> pprint(DeepDiff(t1, t2))
-        {'attribute_added': ['root.c'],
+        {'attribute_added': {'root.c'},
          'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
     """
 
     def __init__(self, t1, t2, ignore_order=False):
         self.ignore_order = ignore_order
 
-        self.update({"type_changes": {}, "dic_item_added": [], "dic_item_removed": [],
+        self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": [], "attribute_removed": [], "set_item_removed": [], "set_item_added": []})
+                     "attribute_added": set([]), "attribute_removed": set([]), "set_item_removed": set([]),
+                     "set_item_added": set([])})
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
@@ -253,11 +254,9 @@ class DeepDiff(dict):
     @staticmethod
     def __extend_result_list(keys, parent, result_obj, print_as_attribute=False):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
-        formatted_items = []
         for i in keys:
             i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
-            formatted_items.append(key_text % (parent, i))
-        result_obj.extend(formatted_items)
+            result_obj.add(key_text % (parent, i))
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
         '''Difference of 2 objects'''
@@ -479,5 +478,8 @@ class DeepDiff(dict):
 
 
 if __name__ == "__main__":
+    if not py3:
+        from sys import exit
+        exit("Please run with Python 3 to check for doc strings.")
     import doctest
     doctest.testmod()
