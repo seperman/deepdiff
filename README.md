@@ -1,6 +1,6 @@
 # deepdiff v 1.1.0
 
-![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
+<!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 ![License](https://img.shields.io/pypi/l/deepdiff.svg?version=latest)
@@ -169,6 +169,28 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 >>> ddiff = DeepDiff(t1, t2, ignore_order=True)
 >>> print (ddiff)
 {}
+```
+
+### List difference ignoring order or duplicates for objects that have hash collision (Advanced)
+
+It might rarely happen that Python objects have hash collision using the built-in hash function:
+
+```python
+>>> a='\0B'
+>>> hash(a)
+64
+>>> b='\0\0C'
+>>> hash(b)
+64
+```
+
+Although `ignore_order` flag uses hash of items to calculate what is added or removed, we still get the right answer.
+
+```python
+>>> list1=[a,b]
+>>> list2=[a,a]
+>>> DeepDiff(list1,list2, ignore_order=True)
+{'set_item_removed': set(["root['\x00\x00C']"])}
 ```
 
 ### List that contains dictionary:
