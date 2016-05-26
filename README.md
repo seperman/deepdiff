@@ -9,6 +9,13 @@
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
+## Pycon 2016
+
+I am honored to be giving a talk about how DeepDiff does what it does at Pycon 2016. Please check it out and let me know what you think:
+
+[Diff It To Dig It](https://us.pycon.org/2016/schedule/presentation/1862/)
+
+
 ##Installation
 
 ###Install from PyPi:
