@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-
+import sys
 import difflib
 import datetime
 try:
@@ -39,6 +39,11 @@ else:
     # formatter_field_name_split = str._formatter_field_name_split
 
 IndexedHash = namedtuple('IndexedHash', 'index item')
+
+
+def eprint(*args, **kwargs):
+    "print to stdout written by @MarcH"
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class ListItemRemovedOrAdded(object):
@@ -236,8 +241,9 @@ class DeepDiff(dict):
          'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
     """
 
-    def __init__(self, t1, t2, ignore_order=False):
+    def __init__(self, t1, t2, ignore_order=False, report_repetition=False):
         self.ignore_order = ignore_order
+        self.report_repetition = report_repetition
 
         self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
@@ -327,7 +333,6 @@ class DeepDiff(dict):
             item_id = id(t1_child)
 
             if parents_ids and item_id in parents_ids:
-                # print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
                 continue
 
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
@@ -353,7 +358,6 @@ class DeepDiff(dict):
         items_removed = {}
         items_added = {}
 
-        # import ipdb; ipdb.set_trace()
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
 
             if y is ListItemRemovedOrAdded:
@@ -363,7 +367,6 @@ class DeepDiff(dict):
             else:
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
-                    # print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
                     continue
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
@@ -399,6 +402,13 @@ class DeepDiff(dict):
     @staticmethod
     def __create_hashtable(t, parent):
         '''Create hashtable of {item_hash: item}'''
+
+        def add_hash(hashes, item_hash, item, i):
+            if item_hash in hashes:
+                hashes[item_hash].index.append(i)
+            else:
+                hashes[item_hash] = IndexedHash([i], item)
+
         hashes = {}
         for (i, item) in enumerate(t):
             try:
@@ -407,12 +417,12 @@ class DeepDiff(dict):
                 try:
                     item_hash = hash(pickle.dumps(item))
                 except Exception as e:
-                    print ("Warning: Can not produce a hash for %s item in %s and\
+                    eprint("Can not produce a hash for %s item in %s and\
                         thus not counting this object. %s" % (item, parent, e))
                 else:
-                    hashes[item_hash] = IndexedHash(i, item)
+                    add_hash(hashes, item_hash, item, i)
             else:
-                hashes[item_hash] = IndexedHash(i, item)
+                add_hash(hashes, item_hash, item, i)
         return hashes
 
     def __diff_unhashable_iterable(self, t1, t2, parent):
@@ -426,11 +436,18 @@ class DeepDiff(dict):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].index): t2_hashtable[
-            hash_value].item for hash_value in hashes_added}
+        if self.report_repetition:
+            items_added = {"%s[%s]" % (parent, i): t2_hashtable[
+                hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].index}
 
-        items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].index): t1_hashtable[
-            hash_value].item for hash_value in hashes_removed}
+            items_removed = {"%s[%s]" % (parent, i): t1_hashtable[
+                hash_value].item for hash_value in hashes_removed for i in t1_hashtable[hash_value].index}
+        else:
+            items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].index[0]): t2_hashtable[
+                hash_value].item for hash_value in hashes_added}
+
+            items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].index[0]): t1_hashtable[
+                hash_value].item for hash_value in hashes_removed}
 
         self["iterable_item_removed"].update(items_removed)
         self["iterable_item_added"].update(items_added)
@@ -463,15 +480,18 @@ class DeepDiff(dict):
 
         elif isinstance(t1, Iterable):
             if self.ignore_order:
-                try:
-                    t1 = set(t1)
-                    t2 = set(t2)
-                # When we can't make a set since the iterable has unhashable
-                # items
-                except TypeError:
+                if self.report_repetition:
                     self.__diff_unhashable_iterable(t1, t2, parent)
                 else:
-                    self.__diff_set(t1, t2, parent=parent)
+                    try:
+                        t1 = set(t1)
+                        t2 = set(t2)
+                    # When we can't make a set since the iterable has unhashable
+                    # items
+                    except TypeError:
+                        self.__diff_unhashable_iterable(t1, t2, parent)
+                    else:
+                        self.__diff_set(t1, t2, parent=parent)
             else:
                 self.__diff_iterable(t1, t2, parent, parents_ids)
 
