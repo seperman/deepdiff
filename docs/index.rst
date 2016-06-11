@@ -20,7 +20,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 1.1.0
+DeepDiff 1.2.0
 **************
 
 .. toctree::
