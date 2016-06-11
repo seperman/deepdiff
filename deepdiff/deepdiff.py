@@ -38,7 +38,7 @@ else:
     items = 'iteritems'
     # formatter_field_name_split = str._formatter_field_name_split
 
-IndexedHash = namedtuple('IndexedHash', 'index item')
+IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
 
 def eprint(*args, **kwargs):
@@ -248,7 +248,7 @@ class DeepDiff(dict):
         self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
                      "attribute_added": set([]), "attribute_removed": set([]), "set_item_removed": set([]),
-                     "set_item_added": set([])})
+                     "set_item_added": set([]), "repetition_change": {}})
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
@@ -405,7 +405,7 @@ class DeepDiff(dict):
 
         def add_hash(hashes, item_hash, item, i):
             if item_hash in hashes:
-                hashes[item_hash].index.append(i)
+                hashes[item_hash].indexes.append(i)
             else:
                 hashes[item_hash] = IndexedHash([i], item)
 
@@ -438,15 +438,34 @@ class DeepDiff(dict):
 
         if self.report_repetition:
             items_added = {"%s[%s]" % (parent, i): t2_hashtable[
-                hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].index}
+                hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].indexes}
 
             items_removed = {"%s[%s]" % (parent, i): t1_hashtable[
-                hash_value].item for hash_value in hashes_removed for i in t1_hashtable[hash_value].index}
+                hash_value].item for hash_value in hashes_removed for i in t1_hashtable[hash_value].indexes}
+
+            items_intersect = t2_hashes.intersection(t1_hashes)
+
+            for key in items_intersect:
+                t1_indexes = t1_hashtable[key].indexes
+                t2_indexes = t2_hashtable[key].indexes
+                t1_indexes_len = len(t1_indexes)
+                t2_indexes_len = len(t2_indexes)
+                if t1_indexes_len != t2_indexes_len:
+                    t1_item_and_index = t1_hashtable[key]
+                    repetition_change = {"%s[%s]" % (parent, t1_item_and_index.indexes[0]): {
+                        'oldrepeat_times': t1_indexes_len,
+                        'newrepeat_times': t2_indexes_len,
+                        'oldindexes': t1_indexes,
+                        'newindexes': t2_indexes,
+                        'value': t1_item_and_index.item
+                    }}
+                    self['repetition_change'].update(repetition_change)
+
         else:
-            items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].index[0]): t2_hashtable[
+            items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].indexes[0]): t2_hashtable[
                 hash_value].item for hash_value in hashes_added}
 
-            items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].index[0]): t1_hashtable[
+            items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].indexes[0]): t1_hashtable[
                 hash_value].item for hash_value in hashes_removed}
 
         self["iterable_item_removed"].update(items_removed)

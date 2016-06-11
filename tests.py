@@ -148,19 +148,19 @@ class DeepDiffTestCase(unittest.TestCase):
                   'iterable_item_removed': {'root[4]': 'B', 'root[0]': 1, 'root[1]': {'a': 2}, 'root[2]': {'a': 2}}}
         self.assertEqual(ddiff, result)
 
-    # def test_list_of_unhashable_difference_ignore_order4(self):
-    #     t1 = [{"a": 2}, {"a": 2}]
-    #     t2 = [{"a": 2}]
-    #     ddiff = DeepDiff(t1, t2, ignore_order=True)
-    #     result = {}
-    #     self.assertEqual(ddiff, result)
+    def test_list_of_unhashable_difference_ignore_order4(self):
+        t1 = [{"a": 2}, {"a": 2}]
+        t2 = [{"a": 2}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {}
+        self.assertEqual(ddiff, result)
 
-    # def test_list_of_unhashable_difference_ignore_order_report_repetition2(self):
-    #     t1 = [{"a": 2}, {"a": 2}]
-    #     t2 = [{"a": 2}]
-    #     ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-    #     result = {}
-    #     self.assertEqual(ddiff, result)
+    def test_list_of_unhashable_difference_ignore_order_report_repetition2(self):
+        t1 = [{"a": 2}, {"a": 2}]
+        t2 = [{"a": 2}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        result = {'repetition_change': {'root[0]': {'oldrepeat_times': 2, 'newindexes': [0], 'oldindexes': [0, 1], 'value': {'a': 2}, 'newrepeat_times': 1}}}
+        self.assertEqual(ddiff, result)
 
     def test_list_of_sets_difference_ignore_order(self):
         t1 = [{1}, {2}, {3}]
