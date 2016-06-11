@@ -258,11 +258,21 @@ class DeepDiff(dict):
             i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
             result_obj.add(key_text % (parent, i))
 
-    def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({})):
+    @staticmethod
+    def __add_to_frozen_set(parents_ids, item_id):
+        parents_ids = set(parents_ids)
+        parents_ids.add(item_id)
+        return frozenset(parents_ids)
+
+    def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({}), is_namedtuple=False):
         '''Difference of 2 objects'''
         try:
-            t1 = t1.__dict__
-            t2 = t2.__dict__
+            if is_namedtuple:
+                t1 = t1._asdict()
+                t2 = t2._asdict()
+            else:
+                t1 = t1.__dict__
+                t2 = t2.__dict__
         except AttributeError:
             try:
                 t1 = {i: getattr(t1, i) for i in t1.__slots__}
@@ -320,12 +330,10 @@ class DeepDiff(dict):
                 # print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
                 continue
 
-            parents_added = set(parents_ids)
-            parents_added.add(item_id)
-            parents_added = frozenset(parents_added)
+            parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
 
             self.__diff(t1_child, t2_child, parent=parent_text %
-                        (parent, item_key_str), parents_ids=parents_added)
+                        (parent, item_key_str), parents_ids=parents_ids_added)
 
     def __diff_set(self, t1, t2, parent="root"):
         '''Difference of sets'''
@@ -345,6 +353,7 @@ class DeepDiff(dict):
         items_removed = {}
         items_added = {}
 
+        # import ipdb; ipdb.set_trace()
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
 
             if y is ListItemRemovedOrAdded:
@@ -352,7 +361,12 @@ class DeepDiff(dict):
             elif x is ListItemRemovedOrAdded:
                 items_added["%s[%s]" % (parent, i)] = y
             else:
-                self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids)
+                item_id = id(x)
+                if parents_ids and item_id in parents_ids:
+                    # print ("Warning, a loop is detected in {}.\n".format(parent_text % (parent, item_key_str)))
+                    continue
+                parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+                self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
         self["iterable_item_removed"].update(items_removed)
         self["iterable_item_added"].update(items_added)
@@ -374,13 +388,13 @@ class DeepDiff(dict):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
-            t1._fields
+            t1._asdict
         # It must be a normal tuple
-        except:
+        except AttributeError:
             self.__diff_iterable(t1, t2, parent, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__diff_obj(t1, t2, parent, parents_ids)
+            self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
 
     @staticmethod
     def __create_hashtable(t, parent):

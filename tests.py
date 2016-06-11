@@ -17,7 +17,6 @@ py3 = version[0] == '3'
 
 
 class DeepDiffTestCase(unittest.TestCase):
-
     """DeepDiff Tests."""
 
     def test_same_objects(self):
@@ -291,6 +290,28 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'values_changed': {'root.a': {'oldvalue': 1, 'newvalue': 2}}}
         self.assertEqual(ddiff, result)
 
+    def test_loop_in_lists(self):
+        t1 = [1, 2, 3]
+        t1.append(t1)
+
+        t2 = [1, 2, 4]
+        t2.append(t2)
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 3}}}
+        self.assertEqual(ddiff, result)
+
+    def test_loop_in_lists2(self):
+        t1 = [1, 2, [3]]
+        t1[2].append(t1)
+
+        t2 = [1, 2, [4]]
+        t2[2].append(t2)
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root[2][0]': {'oldvalue': 3, 'newvalue': 4}}}
+        self.assertEqual(ddiff, result)
+
     def test_decimal(self):
         t1 = {1: Decimal('10.1')}
         t2 = {1: Decimal('2.2')}
@@ -381,11 +402,4 @@ class DeepDiffTestCase(unittest.TestCase):
             result = {'type_changes': {'root':
                                        {'oldtype': int, 'newvalue': u'\u4f60\u597d',
                                         'oldvalue': 1, 'newtype': unicode}}}
-        self.assertEqual(ddiff, result)
-
-    def test_unicode_string_value_and_type_not_changes(self):
-        unicode_string = {"hello": u"你好"}
-        ascii_string = {"hello": u"你好"}
-        ddiff = DeepDiff(unicode_string, ascii_string)
-        result = {}
         self.assertEqual(ddiff, result)
