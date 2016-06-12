@@ -199,6 +199,25 @@ class DeepDiff(dict):
         >>> print (ddiff)
         {}
 
+    List difference ignoring order but reporting repetitions:
+        >>> from deepdiff import DeepDiff
+        >>> from pprint import pprint
+        >>> t1 = [1, 3, 1, 4]
+        >>> t2 = [4, 4, 1]
+        >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        >>> pprint(ddiff, indent=2)
+        { 'iterable_item_removed': {'root[1]': 3},
+          'repetition_change': { 'root[0]': { 'newindexes': [2],
+                                              'newrepeat': 1,
+                                              'oldindexes': [0, 2],
+                                              'oldrepeat': 2,
+                                              'value': 1},
+                                 'root[3]': { 'newindexes': [0, 1],
+                                              'newrepeat': 2,
+                                              'oldindexes': [3],
+                                              'oldrepeat': 1,
+                                              'value': 4}}}
+
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
@@ -453,8 +472,8 @@ class DeepDiff(dict):
                 if t1_indexes_len != t2_indexes_len:
                     t1_item_and_index = t1_hashtable[key]
                     repetition_change = {"%s[%s]" % (parent, t1_item_and_index.indexes[0]): {
-                        'oldrepeat_times': t1_indexes_len,
-                        'newrepeat_times': t2_indexes_len,
+                        'oldrepeat': t1_indexes_len,
+                        'newrepeat': t2_indexes_len,
                         'oldindexes': t1_indexes,
                         'newindexes': t2_indexes,
                         'value': t1_item_and_index.item
