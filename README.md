@@ -295,12 +295,11 @@ Example in DeepDiff for the same operation:
 
 ##Author
 
-Seperman (Sep Ehr)
+Seperman (Sep Dehpour)
 
-Github:  <https://github.com/seperman>
-Linkedin:  <http://www.linkedin.com/in/sepehr>
-ZepWorks:   <http://www.zepworks.com>
-Article about Deepdiff: <http://zepworks.com/blog/diff-it-to-digg-it/>
+- Github:  <https://github.com/seperman>
+- Linkedin:  <http://www.linkedin.com/in/sepehr>
+- ZepWorks:   <http://www.zepworks.com>
 
 Thanks to:
 

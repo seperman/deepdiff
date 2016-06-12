@@ -61,11 +61,12 @@ Changelog
 Author
 ======
 
-Seperman
+Sep Dehpour
 
 - `Github <https://github.com/seperman>`_
 - `ZepWorks <http://www.zepworks.com>`_
 - `Linkedin <http://www.linkedin.com/in/sepehr>`_
+- `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
 
 Thanks to:
 brbsix for initial Py3 porting

@@ -10,7 +10,8 @@ I was honored to give a talk about how DeepDiff does what it does at Pycon 2016.
 
 Diff It To Dig It Video
 https://www.youtube.com/watch?v=J5r99eJIxF4
-
+And here is more info:
+http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Parameters**
 
@@ -214,7 +215,7 @@ Example in DeepDiff for the same operation:
 - v0-5-5: Adding loop detection
 
 **Author**
-Seperman
+Sep Dehpour
 
 Github:  https://github.com/seperman
 Linkedin:  http://www.linkedin.com/in/sepehr
