@@ -63,6 +63,12 @@ class DeepDiff(dict):
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
 
+    **Pycon 2016 Talk**
+    I gave a talk about how DeepDiff does what it does at Pycon 2016.
+    `Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
+
+    And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
+
     **Parameters**
 
     t1 : A dictionary, list, string or any python object that has __dict__ or __slots__
@@ -73,10 +79,11 @@ class DeepDiff(dict):
 
     ignore_order : Boolean, defalt=False ignores orders for iterables.
         Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
-        Ignoring order for an iterable containing any unhashable
-        will include duplicates if there are any in the iterable.
-        Ignoring order for an iterable containing only hashables
-        will not include duplicates in the iterable.
+        Normally ignore_order does not report duplicates and repetition changes.
+        In order to report repetitions, set report_repetition=True in addition to ignore_order=True
+
+    report_repetition : Boolean, defalt=False reports repetitions when set True
+        ONLY when ignore_order is set True too. This works for iterables.
 
     **Returns**
 
