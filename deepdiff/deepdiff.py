@@ -86,7 +86,7 @@ class DeepDiff(dict):
         ONLY when ignore_order is set True too. This works for iterables.
 
 
-    significant_digits: None or in`>=0. If it is an int, compare only that many digits after 
+    significant_digits: None or int>=0. If it is an int, compare only that many digits after 
         the decimal point. This only affects floats, decimal.Decimal and complex.
         
     **Returns**
