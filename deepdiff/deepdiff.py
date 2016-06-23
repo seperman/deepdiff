@@ -285,8 +285,9 @@ class DeepDiff(dict):
     def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None):
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
-        if significant_digits is not None and significant_digits<0:
-            raise ValueError("significant_digits must be None or a non-negative integer")
+        if significant_digits is not None:
+            if significant_digits<0:
+                raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits=significant_digits
 
         self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),

@@ -483,3 +483,40 @@ class DeepDiffTestCase(unittest.TestCase):
                                        {'oldtype': int, 'newvalue': u'\u4f60\u597d',
                                         'oldvalue': 1, 'newtype': unicode}}}
         self.assertEqual(ddiff, result)
+
+    def test_significant_digits_for_decimals(self):
+        t1=Decimal('2.5')
+        t2=Decimal('1.5')
+        ddiff = DeepDiff(t1, t2, significant_digits=0)
+        self.assertEqual(ddiff, {})
+
+    def test_significant_digits_for_complex_imaginary_part(self):
+        t1=1.23+1.222254j
+        t2=1.23+1.222256j
+        ddiff = DeepDiff(t1, t2, significant_digits=4)
+        self.assertEqual(ddiff, {})
+        result = {'values_changed': {'root': {'newvalue': (1.23+1.222256j), 'oldvalue': (1.23+1.222254j)}}}
+        ddiff = DeepDiff(t1, t2, significant_digits=5)
+        self.assertEqual(ddiff, result)
+    def test_significant_digits_for_complex_real_part(self):
+        t1=1.23446879+1.22225j
+        t2=1.23446764+1.22225j
+        ddiff = DeepDiff(t1, t2, significant_digits=5)
+        self.assertEqual(ddiff, {})
+
+    def test_significant_digits_for_list_of_floats(self):
+        t1=[1.2344, 5.67881, 6.778879]
+        t2=[1.2343, 5.67882, 6.778878]
+        ddiff = DeepDiff(t1, t2, significant_digits=3)
+        self.assertEqual(ddiff, {})
+        ddiff = DeepDiff(t1, t2, significant_digits=4)
+        result= {'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344}}}
+        self.assertEqual(ddiff, result)
+        ddiff = DeepDiff(t1, t2, significant_digits=5)
+        result= {'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344}, 
+                                    'root[1]': {'newvalue': 5.67882, 'oldvalue': 5.67881}}}
+        self.assertEqual(ddiff, result)
+        ddiff = DeepDiff(t1, t2)
+        ddiff2 = DeepDiff(t1, t2, significant_digits=6)
+        self.assertEqual(ddiff, ddiff2)
+
