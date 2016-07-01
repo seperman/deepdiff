@@ -7,3 +7,5 @@ Thanks to:
     * brbsix for initial Py3 porting
     * WangFenjin for unicode support
     * timoilya for comparing list of sets when ignoring order
+    * Bernhard10 for significant digits comparison
+

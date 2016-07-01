@@ -1,4 +1,4 @@
-**DeepDiff v 1.2.0**
+**DeepDiff v 1.5.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -201,7 +201,7 @@ Example in DeepDiff for the same operation:
 
 **Changelog**
 
-- v1-2-0: Adding repetition report option when ignoring order
+- v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
 - v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
 - v1-0-2: Checking for ImmutableMapping type instead of dict
 - v1-0-1: Better ignore order support
@@ -224,6 +224,8 @@ Article about Deepdiff: http://zepworks.com/blog/diff-it-to-digg-it/
 
 Thanks to:
 
+- nfvs for Travis-CI setup script
 - brbsix for initial Py3 porting
 - WangFenjin for unicode support
-- nfvs for Travis-CI setup script
+- timoilya for comparing list of sets when ignoring order
+- Bernhard10 for significant digits comparison

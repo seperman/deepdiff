@@ -72,7 +72,7 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 class DeepDiff(dict):
 
     r"""
-    **DeepDiff v 1.2.0**
+    **DeepDiff v 1.5.0**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
@@ -99,10 +99,9 @@ class DeepDiff(dict):
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
 
-
-    significant_digits: None or int>=0. If it is an int, compare only that many digits after 
+    significant_digits: int>=0, default=None. If it is an int, compare only that many digits after
         the decimal point. This only affects floats, decimal.Decimal and complex.
-        
+
     **Returns**
 
         A DeepDiff object that has already calculated the difference of the 2 items.
@@ -545,7 +544,7 @@ class DeepDiff(dict):
 
         elif isinstance(t1, numbers):
             if isinstance(t1, (float, complex, Decimal)) and self.significant_digits is not None:
-                # I use string formatting for comparison, to be consistent with usecases where 
+                # I use string formatting for comparison, to be consistent with usecases where
                 # data is read from files that were previousely written from python and
                 # to be consistent with on-screen representation of numbers.
                 # Other options would be abs(t1-t2)<10**-self.significant_digits
@@ -553,16 +552,15 @@ class DeepDiff(dict):
                 # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
                 # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
                 # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-                t1_s=("{:."+str(self.significant_digits)+"f}").format(t1)
-                t2_s=("{:."+str(self.significant_digits)+"f}").format(t2)
-                if t1_s!=t2_s:
+                t1_s = ("{:."+str(self.significant_digits)+"f}").format(t1)
+                t2_s = ("{:."+str(self.significant_digits)+"f}").format(t2)
+                if t1_s != t2_s:
                     self["values_changed"][parent] = {
                         "oldvalue": t1, "newvalue": t2}
             else:
                 if t1 != t2:
                     self["values_changed"][parent] = {
                         "oldvalue": t1, "newvalue": t2}
-
 
         elif isinstance(t1, MutableMapping):
             self.__diff_dict(t1, t2, parent, parents_ids)
@@ -594,16 +592,6 @@ class DeepDiff(dict):
             self.__diff_obj(t1, t2, parent, parents_ids)
 
         return
-
-    @property
-    def changes(self):
-        '''
-        For backward compatibility with previous versions of DeepDiff.
-
-        You don't need this anymore since you can access the result dictionary of changes directly from DeepDiff now:
-        DeepDiff(t1,t2) == DeepDiff(t1, t2).changes
-        '''
-        return self
 
 
 if __name__ == "__main__":

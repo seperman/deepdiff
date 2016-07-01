@@ -208,13 +208,119 @@ class DeepDiffTestCase(unittest.TestCase):
                   'values_changed': {"root[4]['b'][2][1]": {'oldvalue': 1, 'newvalue': 3}}}
         self.assertEqual(ddiff, result)
 
-    def test_set(self):
-        t1 = {1, 2, 8}
-        t2 = {1, 2, 3, 5}
-        ddiff = DeepDiff(t1, t2)
-        result = {
-            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
-        self.assertEqual(ddiff, result)
+    def test_dictionary_of_list_of_dictionary_ignore_order(self):
+        t1 = {
+            'item': [
+                {'title': 1,
+                    'http://purl.org/rss/1.0/modules/content/:encoded': '1'},
+                {'title': 2,
+                    'http://purl.org/rss/1.0/modules/content/:encoded': '2'}
+            ]
+        }
+
+        t2 = {
+            'item': [
+                {'http://purl.org/rss/1.0/modules/content/:encoded':
+                    '1', 'title': 1},
+                {'http://purl.org/rss/1.0/modules/content/:encoded':
+                    '2', 'title': 2}
+            ]
+        }
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
+    def test_comprehensive_ignore_order(self):
+
+        t1 = {
+            'key1': 'val1',
+            'key2': [
+                {
+                    'key3': 'val3',
+                    'key4': 'val4',
+                },
+                {
+                    'key5': 'val5',
+                    'key6': 'val6',
+                },
+            ],
+        }
+
+        t2 = {
+            'key1': 'val1',
+            'key2': [
+                {
+                    'key5': 'val5',
+                    'key6': 'val6',
+                },
+                {
+                    'key3': 'val3',
+                    'key4': 'val4',
+                },
+            ],
+        }
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
+    def test_ignore_order_when_objects_similar(self):
+        """
+        The current design can't recognize that
+
+        {
+            'key5': 'val5,
+            'key6': 'val6',
+        }
+
+        at index 1
+
+        has become
+
+        {
+            'key5': 'CHANGE',
+            'key6': 'val6',
+        }
+
+        at index 0.
+
+        Further thought needs to go into designing
+        an algorithm that can identify the modified objects when ignoring order.
+
+        The current algorithm computes the hash of the objects and since the hashes
+        are different, it assumes an object is removed and another one is added.
+        """
+
+        t1 = {
+            'key1': 'val1',
+            'key2': [
+                {
+                    'key3': 'val3',
+                    'key4': 'val4',
+                },
+                {
+                    'key5': 'val5',
+                    'key6': 'val6',
+                },
+            ],
+        }
+
+        t2 = {
+            'key1': 'val1',
+            'key2': [
+                {
+                    'key5': 'CHANGE',
+                    'key6': 'val6',
+                },
+                {
+                    'key3': 'val3',
+                    'key4': 'val4',
+                },
+            ],
+        }
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {'iterable_item_removed': {"root['key2'][1]": {
+                         'key5': 'val5', 'key6': 'val6'}}, 'iterable_item_added': {"root['key2'][0]": {'key5': 'CHANGE', 'key6': 'val6'}}})
 
     def test_set_ignore_order_report_repetition(self):
         """"
@@ -225,6 +331,14 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = {2, 1, 8}
         t2 = {1, 2, 3, 5}
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        result = {
+            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
+        self.assertEqual(ddiff, result)
+
+    def test_set(self):
+        t1 = {1, 2, 8}
+        t2 = {1, 2, 3, 5}
+        ddiff = DeepDiff(t1, t2)
         result = {
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
         self.assertEqual(ddiff, result)
@@ -318,7 +432,8 @@ class DeepDiffTestCase(unittest.TestCase):
         t2.method_a = method_c
         ddiff = DeepDiff(t1, t2)
         # Note that we are comparing ClassA instances. method_a originally was in ClassA
-        # But we also added another version of it to t2. So it comes up as added attribute.
+        # But we also added another version of it to t2. So it comes up as
+        # added attribute.
         result = {'attribute_added': {'root.method_a', 'root.method_b'}}
         self.assertEqual(ddiff, result)
 
@@ -378,7 +493,8 @@ class DeepDiffTestCase(unittest.TestCase):
         t2.append(t2)
 
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 3}}}
+        result = {
+            'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 3}}}
         self.assertEqual(ddiff, result)
 
     def test_loop_in_lists2(self):
@@ -389,7 +505,8 @@ class DeepDiffTestCase(unittest.TestCase):
         t2[2].append(t2)
 
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root[2][0]': {'oldvalue': 3, 'newvalue': 4}}}
+        result = {
+            'values_changed': {'root[2][0]': {'oldvalue': 3, 'newvalue': 4}}}
         self.assertEqual(ddiff, result)
 
     def test_decimal(self):
@@ -485,38 +602,40 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_significant_digits_for_decimals(self):
-        t1=Decimal('2.5')
-        t2=Decimal('1.5')
+        t1 = Decimal('2.5')
+        t2 = Decimal('1.5')
         ddiff = DeepDiff(t1, t2, significant_digits=0)
         self.assertEqual(ddiff, {})
 
     def test_significant_digits_for_complex_imaginary_part(self):
-        t1=1.23+1.222254j
-        t2=1.23+1.222256j
+        t1 = 1.23+1.222254j
+        t2 = 1.23+1.222256j
         ddiff = DeepDiff(t1, t2, significant_digits=4)
         self.assertEqual(ddiff, {})
-        result = {'values_changed': {'root': {'newvalue': (1.23+1.222256j), 'oldvalue': (1.23+1.222254j)}}}
+        result = {'values_changed': {
+            'root': {'newvalue': (1.23+1.222256j), 'oldvalue': (1.23+1.222254j)}}}
         ddiff = DeepDiff(t1, t2, significant_digits=5)
         self.assertEqual(ddiff, result)
+
     def test_significant_digits_for_complex_real_part(self):
-        t1=1.23446879+1.22225j
-        t2=1.23446764+1.22225j
+        t1 = 1.23446879+1.22225j
+        t2 = 1.23446764+1.22225j
         ddiff = DeepDiff(t1, t2, significant_digits=5)
         self.assertEqual(ddiff, {})
 
     def test_significant_digits_for_list_of_floats(self):
-        t1=[1.2344, 5.67881, 6.778879]
-        t2=[1.2343, 5.67882, 6.778878]
+        t1 = [1.2344, 5.67881, 6.778879]
+        t2 = [1.2343, 5.67882, 6.778878]
         ddiff = DeepDiff(t1, t2, significant_digits=3)
         self.assertEqual(ddiff, {})
         ddiff = DeepDiff(t1, t2, significant_digits=4)
-        result= {'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344}}}
+        result = {
+            'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344}}}
         self.assertEqual(ddiff, result)
         ddiff = DeepDiff(t1, t2, significant_digits=5)
-        result= {'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344}, 
-                                    'root[1]': {'newvalue': 5.67882, 'oldvalue': 5.67881}}}
+        result = {'values_changed': {'root[0]': {'newvalue': 1.2343, 'oldvalue': 1.2344},
+                                     'root[1]': {'newvalue': 5.67882, 'oldvalue': 5.67881}}}
         self.assertEqual(ddiff, result)
         ddiff = DeepDiff(t1, t2)
         ddiff2 = DeepDiff(t1, t2, significant_digits=6)
         self.assertEqual(ddiff, ddiff2)
-
