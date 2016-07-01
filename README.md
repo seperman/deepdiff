@@ -256,6 +256,31 @@ Although `ignore_order` flag uses hash of items to calculate what is added or re
  'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 ```
 
+### Significant Digits
+
+```python
+>>> t1 = Decimal('1.52')
+>>> t2 = Decimal('1.57')
+>>> DeepDiff(t1, t2, significant_digits=0)
+{}
+>>> DeepDiff(t1, t2, significant_digits=1)
+{'values_changed': {'root': {'oldvalue': Decimal('1.52'), 'newvalue': Decimal('1.57')}}}
+```
+
+Approximate float comparison:
+
+```python
+>>> t1 = [ 1.1129, 1.3359 ]
+>>> t2 = [ 1.113, 1.3362 ]
+>>> pprint(DeepDiff(t1, t2, significant_digits=3))
+{}
+>>> pprint(DeepDiff(t1, t2))
+{'values_changed': {'root[0]': {'newvalue': 1.113, 'oldvalue': 1.1129},
+                    'root[1]': {'newvalue': 1.3362, 'oldvalue': 1.3359}}}
+>>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
+{'values_changed': {'root': {'newvalue': 1.24e+20, 'oldvalue': 1.23e+20}}}
+```
+
 ## Difference with Json Patch
 
 Unlike [Json Patch](https://tools.ietf.org/html/rfc6902) which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.

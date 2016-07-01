@@ -5,7 +5,10 @@ from __future__ import print_function
 import sys
 import difflib
 import datetime
-from pickle import dumps
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from decimal import Decimal
 from sys import version
 from collections import Iterable
@@ -283,6 +286,14 @@ class DeepDiff(dict):
         {'attribute_added': {'root.c'},
          'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 
+    Significant digits:
+        >>> t1 = Decimal('1.52')
+        >>> t2 = Decimal('1.57')
+        >>> DeepDiff(t1, t2, significant_digits=0)
+        {}
+        >>> DeepDiff(t1, t2, significant_digits=1)
+        {'values_changed': {'root': {'oldvalue': Decimal('1.52'), 'newvalue': Decimal('1.57')}}}
+
     Approximate float comparison:
         >>> t1 = [ 1.1129, 1.3359 ]
         >>> t2 = [ 1.113, 1.3362 ]
@@ -474,7 +485,7 @@ class DeepDiff(dict):
             except TypeError:
                 try:
                     cleaned_item = order_unordered(item)
-                    item_hash = hash(dumps(cleaned_item))
+                    item_hash = hash(pickle.dumps(cleaned_item))
                 except Exception as e:
                     eprint("Can not produce a hash for %s item in %s and\
                         thus not counting this object. %s" % (item, parent, e))
