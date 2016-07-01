@@ -96,9 +96,13 @@ class DeepDiff(dict):
         Normally ignore_order does not report duplicates and repetition changes.
         In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
-    report_repetition : Boolean, defalt=False reports repetitions when set True
+    report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
 
+
+    significant_digits: None or int>=0. If it is an int, compare only that many digits after 
+        the decimal point. This only affects floats, decimal.Decimal and complex.
+        
     **Returns**
 
         A DeepDiff object that has already calculated the difference of the 2 items.
@@ -279,11 +283,26 @@ class DeepDiff(dict):
         >>> pprint(DeepDiff(t1, t2))
         {'attribute_added': {'root.c'},
          'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
+
+    Approximate float comparison:
+        >>> t1 = [ 1.1129, 1.3359 ]
+        >>> t2 = [ 1.113, 1.3362 ]
+        >>> pprint(DeepDiff(t1, t2, significant_digits=3))
+        {}
+        >>> pprint(DeepDiff(t1, t2))
+        {'values_changed': {'root[0]': {'newvalue': 1.113, 'oldvalue': 1.1129},
+                            'root[1]': {'newvalue': 1.3362, 'oldvalue': 1.3359}}}
+        >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
+        {'values_changed': {'root': {'newvalue': 1.24e+20, 'oldvalue': 1.23e+20}}}
     """
 
-    def __init__(self, t1, t2, ignore_order=False, report_repetition=False):
+    def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None):
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
+        if significant_digits is not None:
+            if significant_digits<0:
+                raise ValueError("significant_digits must be None or a non-negative integer")
+        self.significant_digits=significant_digits
 
         self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
@@ -525,9 +544,25 @@ class DeepDiff(dict):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
-            if t1 != t2:
-                self["values_changed"][parent] = {
-                    "oldvalue": t1, "newvalue": t2}
+            if isinstance(t1, (float, complex, Decimal)) and self.significant_digits is not None:
+                # I use string formatting for comparison, to be consistent with usecases where 
+                # data is read from files that were previousely written from python and
+                # to be consistent with on-screen representation of numbers.
+                # Other options would be abs(t1-t2)<10**-self.significant_digits
+                # or math.is_close (python3.5+)
+                # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
+                # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
+                # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
+                t1_s=("{:."+str(self.significant_digits)+"f}").format(t1)
+                t2_s=("{:."+str(self.significant_digits)+"f}").format(t2)
+                if t1_s!=t2_s:
+                    self["values_changed"][parent] = {
+                        "oldvalue": t1, "newvalue": t2}
+            else:
+                if t1 != t2:
+                    self["values_changed"][parent] = {
+                        "oldvalue": t1, "newvalue": t2}
+
 
         elif isinstance(t1, MutableMapping):
             self.__diff_dict(t1, t2, parent, parents_ids)
