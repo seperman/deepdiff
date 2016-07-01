@@ -5,10 +5,7 @@ from __future__ import print_function
 import sys
 import difflib
 import datetime
-try:
-    import cPickle as pickle
-except:
-    import pickle
+from pickle import dumps
 from decimal import Decimal
 from sys import version
 from collections import Iterable
@@ -44,6 +41,23 @@ IndexedHash = namedtuple('IndexedHash', 'indexes item')
 def eprint(*args, **kwargs):
     "print to stdout written by @MarcH"
     print(*args, file=sys.stderr, **kwargs)
+
+
+def order_unordered(data):
+    """
+    orders unordered data.
+    We use it in pickling so that serializations are consistent
+    since pickle serializes data inconsistently for unordered iterables
+    such as dictionary and set.
+    """
+    if isinstance(data, MutableMapping):
+        data = sorted(data.items(), key=lambda x: x[0])
+        for i, item in enumerate(data):
+            data[i] = (item[0], order_unordered(item[1]))
+    elif isinstance(data, (set, frozenset)):
+        data = sorted(data)
+
+    return data
 
 
 class ListItemRemovedOrAdded(object):
@@ -441,7 +455,8 @@ class DeepDiff(dict):
                 item_hash = hash(item)
             except TypeError:
                 try:
-                    item_hash = hash(pickle.dumps(item))
+                    cleaned_item = order_unordered(item)
+                    item_hash = hash(dumps(cleaned_item))
                 except Exception as e:
                     eprint("Can not produce a hash for %s item in %s and\
                         thus not counting this object. %s" % (item, parent, e))
