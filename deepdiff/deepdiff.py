@@ -10,19 +10,17 @@ try:
 except:
     import pickle
 from decimal import Decimal
-from sys import version
 from collections import Iterable
 from collections import namedtuple
 from collections import MutableMapping
 
-py_major_version = version[0]
-py_minor_version = version[2]
+py_major_version = sys.version[0]
+py_minor_version = sys.version[2]
 
 py3 = py_major_version == '3'
 
 if (py_major_version, py_minor_version) == (2.6):
-    from sys import exit
-    exit('Python 2.6 is not supported.')
+    sys.exit('Python 2.6 is not supported.')
 
 if py3:
     from builtins import int
@@ -102,8 +100,17 @@ class DeepDiff(dict):
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
 
-    significant_digits: int>=0, default=None. If it is an int, compare only that many digits after
-        the decimal point. This only affects floats, decimal.Decimal and complex.
+    significant_digits : int >= 0, default=None.
+        If it is a non negative integer, it compares only that many digits AFTER
+        the decimal point.
+
+        This only affects floats, decimal.Decimal and complex.
+
+        Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
+
+        Note that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
+
+        For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
     **Returns**
 
@@ -286,7 +293,7 @@ class DeepDiff(dict):
         {'attribute_added': {'root.c'},
          'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
 
-    Significant digits:
+    Approximate decimals comparison (Significant digits after the point):
         >>> t1 = Decimal('1.52')
         >>> t2 = Decimal('1.57')
         >>> DeepDiff(t1, t2, significant_digits=0)
@@ -294,7 +301,7 @@ class DeepDiff(dict):
         >>> DeepDiff(t1, t2, significant_digits=1)
         {'values_changed': {'root': {'oldvalue': Decimal('1.52'), 'newvalue': Decimal('1.57')}}}
 
-    Approximate float comparison:
+    Approximate float comparison (Significant digits after the point):
         >>> t1 = [ 1.1129, 1.3359 ]
         >>> t2 = [ 1.113, 1.3362 ]
         >>> pprint(DeepDiff(t1, t2, significant_digits=3))
@@ -306,12 +313,14 @@ class DeepDiff(dict):
         {'values_changed': {'root': {'newvalue': 1.24e+20, 'oldvalue': 1.23e+20}}}
     """
 
-    def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None):
+    def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None, **kwargs):
+        if kwargs:
+            raise ValueError("The following parameter(s) are not valid: %s\nThe valid parameters are ignore_order, report_repetition and significant_digits" % ', '.join(kwargs.keys()))
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
-        if significant_digits is not None:
-            if significant_digits<0:
-                raise ValueError("significant_digits must be None or a non-negative integer")
+
+        if significant_digits is not None and significant_digits < 0:
+            raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits=significant_digits
 
         self.update({"type_changes": {}, "dic_item_added": set([]), "dic_item_removed": set([]),
@@ -554,8 +563,8 @@ class DeepDiff(dict):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
-            if isinstance(t1, (float, complex, Decimal)) and self.significant_digits is not None:
-                # I use string formatting for comparison, to be consistent with usecases where
+            if self.significant_digits is not None and isinstance(t1, (float, complex, Decimal)):
+                # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
                 # data is read from files that were previousely written from python and
                 # to be consistent with on-screen representation of numbers.
                 # Other options would be abs(t1-t2)<10**-self.significant_digits
@@ -607,7 +616,6 @@ class DeepDiff(dict):
 
 if __name__ == "__main__":
     if not py3:
-        from sys import exit
-        exit("Please run with Python 3 to check for doc strings.")
+        sys.exit("Please run with Python 3 to check for doc strings.")
     import doctest
     doctest.testmod()
