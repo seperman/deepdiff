@@ -52,7 +52,7 @@ EXPANDED_KEY_MAP = {
 
 
 def eprint(*args, **kwargs):
-    "print to stdout written by @MarcH"
+    """print to stdout written by @MarcH"""
     print(*args, file=sys.stderr, **kwargs)
 
 
@@ -75,7 +75,7 @@ def order_unordered(data):
 
 class ListItemRemovedOrAdded(object):
 
-    '''Class of conditions to be checked'''
+    """Class of conditions to be checked"""
 
     pass
 
@@ -344,7 +344,7 @@ class DeepDiff(RemapDict):
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
-        self.significant_digits=significant_digits
+        self.significant_digits = significant_digits
 
         self.update({"type_changes": {}, "dictionary_item_added": set([]), "dictionary_item_removed": set([]),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
@@ -372,7 +372,7 @@ class DeepDiff(RemapDict):
         return frozenset(parents_ids)
 
     def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({}), is_namedtuple=False):
-        '''Difference of 2 objects'''
+        """Difference of 2 objects"""
         try:
             if is_namedtuple:
                 t1 = t1._asdict()
@@ -391,7 +391,7 @@ class DeepDiff(RemapDict):
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
 
     def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), print_as_attribute=False):
-        '''Difference of 2 dictionaries'''
+        """Difference of 2 dictionaries"""
         if print_as_attribute:
             item_added_key = "attribute_added"
             item_removed_key = "attribute_removed"
@@ -421,7 +421,7 @@ class DeepDiff(RemapDict):
             t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
 
     def __diff_common_children(self, t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text):
-        '''Difference between common attributes of objects or values of common keys of dictionaries'''
+        """Difference between common attributes of objects or values of common keys of dictionaries"""
         for item_key in t_keys_intersect:
             if not print_as_attribute and isinstance(item_key, strings):
                 item_key_str = "'%s'" % item_key
@@ -442,7 +442,7 @@ class DeepDiff(RemapDict):
                         (parent, item_key_str), parents_ids=parents_ids_added)
 
     def __diff_set(self, t1, t2, parent="root"):
-        '''Difference of sets'''
+        """Difference of sets"""
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 
@@ -455,7 +455,7 @@ class DeepDiff(RemapDict):
                 keys=items_added, parent=parent, result_obj=self["set_item_added"])
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
-        '''Difference of iterables except dictionaries, sets and strings.'''
+        """Difference of iterables except dictionaries, sets and strings."""
         items_removed = {}
         items_added = {}
 
@@ -476,7 +476,7 @@ class DeepDiff(RemapDict):
         self["iterable_item_added"].update(items_added)
 
     def __diff_str(self, t1, t2, parent):
-        '''Compare strings'''
+        """Compare strings"""
         if '\n' in t1 or '\n' in t2:
             diff = difflib.unified_diff(
                 t1.splitlines(), t2.splitlines(), lineterm='')
@@ -502,7 +502,7 @@ class DeepDiff(RemapDict):
 
     @staticmethod
     def __create_hashtable(t, parent):
-        '''Create hashtable of {item_hash: item}'''
+        """Create hashtable of {item_hash: item}"""
 
         def add_hash(hashes, item_hash, item, i):
             if item_hash in hashes:
@@ -528,7 +528,7 @@ class DeepDiff(RemapDict):
         return hashes
 
     def __diff_unhashable_iterable(self, t1, t2, parent):
-        '''Diff of unhashable iterables. Only used when ignoring the order.'''
+        """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
 
@@ -574,7 +574,7 @@ class DeepDiff(RemapDict):
         self["iterable_item_added"].update(items_added)
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
-        '''The main diff method'''
+        """The main diff method"""
         if t1 is t2:
             return
 

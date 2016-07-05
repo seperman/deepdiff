@@ -323,7 +323,7 @@ class DeepDiffTestCase(unittest.TestCase):
                          'key5': 'val5', 'key6': 'val6'}}, 'iterable_item_added': {"root['key2'][0]": {'key5': 'CHANGE', 'key6': 'val6'}}})
 
     def test_set_ignore_order_report_repetition(self):
-        """"
+        """
         If this test fails, it means that DeepDiff is not checking
         for set types before general iterables.
         So it forces creating the hashtable because of report_repetition=True.
