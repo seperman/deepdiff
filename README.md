@@ -318,7 +318,7 @@ Example in DeepDiff for the same operation:
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
-##Author
+## Primary Author
 
 Seperman (Sep Dehpour)
 
@@ -326,10 +326,13 @@ Seperman (Sep Dehpour)
 - Linkedin:  <http://www.linkedin.com/in/sepehr>
 - ZepWorks:   <http://www.zepworks.com>
 
+## Contributors
+
 Thanks to:
 
-- nfvs for Travis-CI setup script
-- brbsix for initial Py3 porting
-- WangFenjin for unicode support
-- timoilya for comparing list of sets when ignoring order
-- Bernhard10 for significant digits comparison
+- nfvs for Travis-CI setup script.
+- brbsix for initial Py3 porting.
+- WangFenjin for unicode support.
+- timoilya for comparing list of sets when ignoring order.
+- Bernhard10 for significant digits comparison.
+- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.

@@ -214,13 +214,15 @@ Example in DeepDiff for the same operation:
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
-**Author**
+**Primary Author**
 Sep Dehpour
 
 Github:  https://github.com/seperman
 Linkedin:  http://www.linkedin.com/in/sepehr
 ZepWorks:   http://www.zepworks.com
 Article about Deepdiff: http://zepworks.com/blog/diff-it-to-digg-it/
+
+**Contributors**
 
 Thanks to:
 
@@ -229,3 +231,4 @@ Thanks to:
 - WangFenjin for unicode support
 - timoilya for comparing list of sets when ignoring order
 - Bernhard10 for significant digits comparison
+- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
