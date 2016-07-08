@@ -16,6 +16,12 @@ from sys import version
 py3 = version[0] == '3'
 
 
+class CustomClass:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+
 class DeepDiffTestCase(unittest.TestCase):
 
     """DeepDiff Tests."""
@@ -341,6 +347,15 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
+        self.assertEqual(ddiff, result)
+
+    def test_set_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {member1}
+        t2 = {member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
         self.assertEqual(ddiff, result)
 
     def test_frozenset(self):
