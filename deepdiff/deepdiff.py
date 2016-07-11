@@ -9,6 +9,8 @@ except:
     import pickle
 from collections import Iterable
 
+from .deepset import DeepSet
+
 from .helpers import *
 
 
@@ -362,6 +364,9 @@ class DeepDiff(RemapDict):
 
     def __diff_set(self, t1, t2, parent="root"):
         """Difference of sets"""
+        t1 = DeepSet(t1)
+        t2 = DeepSet(t2)
+
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 

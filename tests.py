@@ -10,10 +10,25 @@ python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_or
 """
 import unittest
 from decimal import Decimal
-from deepdiff import DeepDiff
 from sys import version
+from copy import copy
+
+from deepdiff.deepdiff import DeepDiff
+from deepdiff.deepset import DeepSet
 
 py3 = version[0] == '3'
+
+
+class CustomClass:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __str__(self):
+        return "(" + str(self.a) + ", " + str(self.b) + ")"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class DeepDiffTestCase(unittest.TestCase):
@@ -341,6 +356,15 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
+        self.assertEqual(ddiff, result)
+
+    def test_set_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {member1}
+        t2 = {member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
         self.assertEqual(ddiff, result)
 
     def test_frozenset(self):
@@ -678,3 +702,70 @@ class DeepDiffTestCase(unittest.TestCase):
                          ddiff['type_changes']['root[2]']['old_type'])
         self.assertEqual(ddiff['type_changes']['root[2]']['oldvalue'],
                          ddiff['type_changes']['root[2]']['old_value'])
+
+
+class DeepSetTestCase(unittest.TestCase):
+    def test_eq_same_object(self):
+        t1 = DeepSet({"vegan", "for", "life"})
+        self.assertEqual(t1, t1)
+
+    def test_eq_copied_object(self):
+        t1 = DeepSet({"vegan", "for", "life"})
+        t2 = copy(t1)
+        self.assertEqual(t1, t2)
+
+    def test_eq_values_added_in_different_order(self):
+        t1 = DeepSet({"meat", "is", "murder"})
+        t2 = DeepSet({"murder", "is", "meat"})
+        self.assertEqual(t1, t2)
+
+    def test_eq_default_set(self):
+        t1 = DeepSet({"meat", "is", "murder"})
+        t2 = {"meat", "is", "murder"}
+        self.assertEqual(t1, t2)
+
+    def test_eq_different_values(self):
+        t1 = DeepSet({"vegan", "for", "life"})
+        t2 = DeepSet({"meat", "is", "murder"})
+        self.assertNotEqual(t1, t2)
+
+    def test_eq_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = DeepSet({member1})
+        t2 = DeepSet({member2})
+        self.assertEqual(t1, t2)
+
+    def test_custom_object_in_deepset(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = DeepSet({member1})
+        self.assertTrue(member2 in t1)
+
+    def test_custom_object_not_in_deepset(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 38)
+        t1 = DeepSet({member1})
+        self.assertTrue(member2 not in t1)
+
+    def test_diff_trivial(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        self.assertEqual(fibonacci - fibonacci, {})
+
+    def test_diff_copy(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        fibonacci_copy = copy(fibonacci)
+        self.assertEqual(fibonacci - fibonacci_copy, {})
+
+    def test_diff_basic(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        primes =    DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertEqual(fibonacci - primes, {1, 8})
+
+    def test_diff_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(47, 11)
+        member3 = CustomClass(47, 11)
+        t1 = DeepSet({member1, member2})
+        t2 = DeepSet({member3})
+        self.assertEqual(t1 - t2, {member1})

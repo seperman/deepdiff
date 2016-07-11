@@ -1,0 +1,135 @@
+from copy import copy
+
+# TODO: remove dependency on DeepDiff objects
+
+
+class DeepSet(set):
+
+    # First, some of the basic Object methods
+
+    def __str__(self):
+        output = "{"
+
+        first_elem = True
+        for elem in self:
+            if first_elem:
+                first_elem = False
+            else:
+                output += ", "
+            output += str(elem)
+
+        output += "}"
+        return output
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        from .deepdiff import DeepDiff
+        if id(self) == id(other):
+            return True
+
+        # TODO optimize: this whole build-a-dict-and-throw-it-away approach doesn't make much sense
+        for my_elem in self:         # compare each of my elements...
+
+            is_included = False
+            for other_elem in other: # ...to each of the other elements
+                #print("Comparing " + str(my_elem) + " with " + str(other_elem) + ".")
+                diff = DeepDiff(my_elem, other_elem)
+                if diff == {}:
+                    is_included = True
+                    break
+                else:
+                    continue
+
+            if not is_included:
+                return False
+        return True
+
+
+    # methods in the order they are documented at https://docs.python.org/3.5/library/stdtypes.html#set
+
+    # len() can be inherited
+
+    # x in s
+
+    # First, here's our custom method that return the *actual contained* object if it is equal to item.
+    # Notice this is a special case a regular set doesn't need to handle
+    def __contains_return__(self, item):
+        from .deepdiff import DeepDiff
+        for element in self:
+            diff = DeepDiff(element, item)
+            if diff == {}:
+                #print(str(self) + " DOES contain " + str(item))
+                return element
+        #print(str(self) + " does not contain " + str(item))
+        return False
+
+    # now implement the actual __contains__ method
+    def __contains__(self, item):
+        if self.__contains_return__(item) == False:
+            return False
+        else:
+            return True
+
+    # "x not in s" is the inversion of the above
+
+    # TODO: isdisjoint() ?!
+
+    # TODO: issubset(), <= ?!
+
+    # TODO: < ?!
+
+    # TODO: issuperset, >= ?!
+
+    # TODO: < ?!
+
+    # TODO: union?!
+
+    # TODO: intersection, & ?!
+
+    # difference(), -
+    def __sub__(self, other):
+        if id(self) == id(other):
+            return DeepSet({})
+
+        result = copy(self)
+        for other_elem in other:
+            if other_elem in self:
+                result.remove(other_elem)
+        #print(str(self) + " - " + str(other) + " = " + str(result))
+        return result
+
+
+    # TODO: symmetric_difference, ^ ?!
+
+    # copy() can be inherited
+
+    # TODO: update() can be inherited?!
+
+    # TODO: intersection_update() ?!
+
+    # TODO: difference_update() ?!
+
+    # TODO: symmetric_difference_update() ?!
+
+    # add() can be inherited
+
+    # remove()
+    def remove(self, elem):
+        to_remove = self.__contains_return__(elem)
+        if to_remove:
+            return super(DeepSet, self).remove(to_remove)
+        else:
+            raise KeyError
+
+    # discard()
+    def discard(self, elem):
+        try:
+            return self.remove(elem)
+        except KeyError:
+            return False
+
+    # pop() can be inherited
+
+    # clear() can be inherited
