@@ -14,6 +14,8 @@ from collections import Iterable
 from collections import namedtuple
 from collections import MutableMapping
 
+from .deepset import DeepSet
+
 py_major_version = sys.version[0]
 py_minor_version = sys.version[2]
 
@@ -443,6 +445,9 @@ class DeepDiff(RemapDict):
 
     def __diff_set(self, t1, t2, parent="root"):
         """Difference of sets"""
+        t1 = DeepSet(t1)
+        t2 = DeepSet(t2)
+
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
 
