@@ -51,6 +51,8 @@ class DeepSetTestCase(unittest.TestCase):
         t2 = DeepSet({member2})
         self.assertEqual(t1, t2)
 
+
+
     def test_custom_object_in_deepset(self):
         member1 = CustomClass(13, 37)
         member2 = CustomClass(13, 37)
@@ -62,6 +64,55 @@ class DeepSetTestCase(unittest.TestCase):
         member2 = CustomClass(13, 38)
         t1 = DeepSet({member1})
         self.assertTrue(member2 not in t1)
+
+
+
+    def test_disjoint_basic_true(self):
+        t1 = DeepSet({"vegan", "for", "life"})
+        t2 = DeepSet({"meat", "is", "murder"})
+        self.assertTrue(t1.isdisjoint(t2))
+
+    def test_disjoint_basic_false(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        primes =    DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertFalse(fibonacci.isdisjoint(primes))
+
+    def test_disjoint_custom_objects_true(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(14, 37)
+        t1 = DeepSet({member1})
+        t2 = DeepSet({member2})
+        self.assertTrue(t1.isdisjoint(t2))
+
+    def test_disjoint_custom_objects_false(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = DeepSet({member1})
+        t2 = DeepSet({member2})
+        self.assertFalse(t1.isdisjoint(t2))
+
+
+
+    def test_intersection_basic(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        primes =    DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertEqual(fibonacci & primes, {2, 3, 5, 13})
+        self.assertEqual(primes & fibonacci, {2, 3, 5, 13})
+
+    def test_intersection_custom_objects(self):
+        member1a = CustomClass(13, 37)
+        member1b = CustomClass(13, 37)
+        member2 = CustomClass(8, 15)
+        member3 = CustomClass(47, 11)
+        t1 = DeepSet({member1a, member2})
+        t2 = DeepSet({member1b, member2})
+        t3 = DeepSet({member2, member3})
+        self.assertEqual(t1.intersection(t2), {member1a, member2})
+        self.assertEqual(t1 & t2, {member1a, member2})
+        self.assertEqual(t1 & t3, {member2})
+        self.assertEqual(t2 & t3, {member2})
+
+
 
     def test_sub_trivial(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
@@ -89,6 +140,39 @@ class DeepSetTestCase(unittest.TestCase):
         fibonacci = {1, 2, 3, 5, 8, 13}
         primes =    DeepSet({2, 3, 5, 7, 11, 13})
         self.assertEqual(fibonacci - primes, {1, 8})
+
+
+
+    def test_remove_basic_good(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        fibonacci.remove(13)
+        self.assertEqual(fibonacci, {1, 2, 3, 5, 8})
+
+    def test_remove_basic_error(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        with self.assertRaises(KeyError):
+            fibonacci.remove(14)
+        self.assertEqual(fibonacci, {1, 2, 3, 5, 8, 13})
+
+    def test_remove_custom_object(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = DeepSet({member1})
+        t1.remove(member2)
+        self.assertEqual(t1, {})
+
+
+
+    def test_discard_basic_good(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        fibonacci.discard(13)
+        self.assertEqual(fibonacci, {1, 2, 3, 5, 8})
+
+    def test_discard_basic_error(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        fibonacci.discard(14)
+        self.assertEqual(fibonacci, {1, 2, 3, 5, 8, 13})
+
 
     def test_diff_basic(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})

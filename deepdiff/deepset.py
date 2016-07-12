@@ -74,7 +74,12 @@ class DeepSet(set):
 
     # "x not in s" is the inversion of the above
 
-    # TODO: isdisjoint() ?!
+    # isdisjoint()
+    def isdisjoint(self, other):
+        if (self & other) == {}:
+            return True
+        else:
+            return False
 
     # TODO: issubset(), <= ?!
 
@@ -86,7 +91,16 @@ class DeepSet(set):
 
     # TODO: union?!
 
-    # TODO: intersection, & ?!
+    # intersection, operator &
+    def intersection(self, other):
+        result = DeepSet()
+        for element in self:
+            if element in other:
+                result.add(element)
+        return result
+
+    def __and__(self, other):
+        return self.intersection(other)
 
     # difference(), -
     def __sub__(self, other):
