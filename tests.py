@@ -748,24 +748,34 @@ class DeepSetTestCase(unittest.TestCase):
         t1 = DeepSet({member1})
         self.assertTrue(member2 not in t1)
 
-    def test_diff_trivial(self):
+    def test_sub_trivial(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
         self.assertEqual(fibonacci - fibonacci, {})
 
-    def test_diff_copy(self):
+    def test_sub_copy(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
         fibonacci_copy = copy(fibonacci)
         self.assertEqual(fibonacci - fibonacci_copy, {})
 
-    def test_diff_basic(self):
+    def test_sub_basic(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
         primes =    DeepSet({2, 3, 5, 7, 11, 13})
         self.assertEqual(fibonacci - primes, {1, 8})
 
-    def test_diff_custom_objects(self):
+    def test_sub_custom_objects(self):
         member1 = CustomClass(13, 37)
         member2 = CustomClass(47, 11)
         member3 = CustomClass(47, 11)
         t1 = DeepSet({member1, member2})
         t2 = DeepSet({member3})
         self.assertEqual(t1 - t2, {member1})
+
+    def test_rsub_basic(self):
+        fibonacci = {1, 2, 3, 5, 8, 13}
+        primes =    DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertEqual(fibonacci - primes, {1, 8})
+
+    def test_diff_basic(self):
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        primes =    DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertEqual(fibonacci.diff(primes), {'set_item_added': {'root[11]', 'root[7]'}, 'set_item_removed': {'root[1]', 'root[8]'}})

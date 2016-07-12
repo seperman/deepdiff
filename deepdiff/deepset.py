@@ -100,6 +100,10 @@ class DeepSet(set):
         #print(str(self) + " - " + str(other) + " = " + str(result))
         return result
 
+    def __rsub__(self, other):
+        #print("RSUB!")
+        return other.__sub__(self)
+
 
     # TODO: symmetric_difference, ^ ?!
 
@@ -133,3 +137,14 @@ class DeepSet(set):
     # pop() can be inherited
 
     # clear() can be inherited
+
+
+    # Finally, some additional functionality
+
+    def diff(self, other):
+        """
+        Compare this set to another one and return a dictionary of all changes.
+        See deepdiff for details.
+        """
+        from .deepdiff import DeepDiff
+        return DeepDiff(self, other)
