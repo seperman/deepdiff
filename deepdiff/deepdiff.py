@@ -99,7 +99,7 @@ class RemapDict(dict):
 class DeepDiff(RemapDict):
 
     r"""
-    **DeepDiff v 1.5.0**
+    **DeepDiff v 1.6.0**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
