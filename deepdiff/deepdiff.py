@@ -5,6 +5,7 @@ from __future__ import print_function
 import sys
 import difflib
 import datetime
+import logging
 try:
     import cPickle as pickle
 except:
@@ -33,6 +34,9 @@ else:
     numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
+
+logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
+logger = logging.getLogger()
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
@@ -85,9 +89,14 @@ class RemapDict(dict):
     For keys that have a new, longer name, remap the old key to the new key.
     Other keys that don't have a new name are handled as before.
     """
+    show_warning = True
 
     def __getitem__(self, old_key):
         new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
+        if self.show_warning and new_key != old_key:
+            self.show_warning = False
+            logger.warning("DeepDiff Deprecation: %s is renamed to %s. Please start using\
+ the new unified naming convention.", old_key, new_key)
         if new_key in self:
             return self.get(new_key)
         else:
@@ -336,6 +345,8 @@ class DeepDiff(RemapDict):
         >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
         {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
     """
+
+    show_warning = True
 
     def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None, **kwargs):
         if kwargs:

@@ -185,6 +185,14 @@ Object attribute added:
      'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
 
+Using DeepDiff in unit tests
+result is the output of the function that is being tests.
+expected is the expected output of the function.
+    >>> assertEqual(DeepDiff(result, expected), {})
+
+
+
+
 **Difference with Json Patch**
 
 Unlike Json Patch https://tools.ietf.org/html/rfc6902 which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
@@ -201,6 +209,7 @@ Example in DeepDiff for the same operation:
 
 **Changelog**
 
+- v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
 - v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
 - v1-0-2: Checking for ImmutableMapping type instead of dict

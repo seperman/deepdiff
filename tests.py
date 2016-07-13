@@ -12,6 +12,8 @@ import unittest
 from decimal import Decimal
 from deepdiff import DeepDiff
 from sys import version
+import logging
+logging.disable(logging.CRITICAL)
 
 py3 = version[0] == '3'
 
