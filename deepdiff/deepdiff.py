@@ -90,7 +90,10 @@ class RemapDict(dict):
 
     def __getitem__(self, old_key):
         new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
-        return self.get(new_key)
+        if new_key in self:
+            return self.get(new_key)
+        else:
+            raise KeyError(new_key)
 
 
 class DeepDiff(RemapDict):

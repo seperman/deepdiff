@@ -47,34 +47,34 @@ Type of an item has changed
     >>> t1 = {1:1, 2:2, 3:3}
     >>> t2 = {1:1, 2:"2", 3:3}
     >>> pprint(DeepDiff(t1, t2), indent=2)
-    { 'type_changes': { 'root[2]': { 'newtype': <class 'str'>,
-                                     'newvalue': '2',
-                                     'oldtype': <class 'int'>,
-                                     'oldvalue': 2}}}
+    { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
+                                     'new_value': '2',
+                                     'old_type': <class 'int'>,
+                                     'old_value': 2}}}
 
 Value of an item has changed
     >>> t1 = {1:1, 2:2, 3:3}
     >>> t2 = {1:1, 2:4, 3:3}
     >>> pprint(DeepDiff(t1, t2), indent=2)
-    {'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 2}}}
+    {'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
 
 Item added and/or removed
     >>> t1 = {1:1, 2:2, 3:3, 4:4}
     >>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff)
-    {'dic_item_added': ['root[5]', 'root[6]'],
-     'dic_item_removed': ['root[4]'],
-     'values_changed': {'root[2]': {'newvalue': 4, 'oldvalue': 2}}}
+    {'dictionary_item_added': ['root[5]', 'root[6]'],
+     'dictionary_item_removed': ['root[4]'],
+     'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
 
 String difference
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
     >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    { 'values_changed': { 'root[2]': {'newvalue': 4, 'oldvalue': 2},
-                          "root[4]['b']": { 'newvalue': 'world!',
-                                            'oldvalue': 'world'}}}
+    { 'values_changed': { 'root[2]': {'new_value': 4, 'old_value': 2},
+                          "root[4]['b']": { 'new_value': 'world!',
+                                            'old_value': 'world'}}}
 
 
 String difference 2
@@ -91,8 +91,8 @@ String difference 2
                                                     ' 1\n'
                                                     ' 2\n'
                                                     ' End',
-                                            'newvalue': 'world\n1\n2\nEnd',
-                                            'oldvalue': 'world!\n'
+                                            'new_value': 'world\n1\n2\nEnd',
+                                            'old_value': 'world!\n'
                                                         'Goodbye!\n'
                                                         '1\n'
                                                         '2\n'
@@ -115,10 +115,10 @@ Type change
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    { 'type_changes': { "root[4]['b']": { 'newtype': <class 'str'>,
-                                          'newvalue': 'world\n\n\nEnd',
-                                          'oldtype': <class 'list'>,
-                                          'oldvalue': [1, 2, 3]}}}
+    { 'type_changes': { "root[4]['b']": { 'new_type': <class 'str'>,
+                                          'new_value': 'world\n\n\nEnd',
+                                          'old_type': <class 'list'>,
+                                          'old_value': [1, 2, 3]}}}
 
 List difference
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
@@ -133,8 +133,8 @@ List difference 2:
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
     { 'iterable_item_added': {"root[4]['b'][3]": 3},
-      'values_changed': { "root[4]['b'][1]": {'newvalue': 3, 'oldvalue': 2},
-                          "root[4]['b'][2]": {'newvalue': 2, 'oldvalue': 3}}}
+      'values_changed': { "root[4]['b'][1]": {'new_value': 3, 'old_value': 2},
+                          "root[4]['b'][2]": {'new_value': 2, 'old_value': 3}}}
 
 List difference ignoring order or duplicates: (with the same dictionaries as above)
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
@@ -148,8 +148,8 @@ List that contains dictionary:
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    { 'dic_item_removed': ["root[4]['b'][2][2]"],
-      'values_changed': {"root[4]['b'][2][1]": {'newvalue': 3, 'oldvalue': 1}}}
+    { 'dictionary_item_removed': ["root[4]['b'][2][2]"],
+      'values_changed': {"root[4]['b'][2][1]": {'new_value': 3, 'old_value': 1}}}
 
 Sets:
     >>> t1 = {1, 2, 8}
@@ -164,7 +164,7 @@ Named Tuples:
     >>> t1 = Point(x=11, y=22)
     >>> t2 = Point(x=11, y=23)
     >>> pprint (DeepDiff(t1, t2))
-    {'values_changed': {'root.y': {'newvalue': 23, 'oldvalue': 22}}}
+    {'values_changed': {'root.y': {'new_value': 23, 'old_value': 22}}}
 
 Custom objects:
     >>> class ClassA(object):
@@ -176,13 +176,13 @@ Custom objects:
     >>> t2 = ClassA(2)
     >>> 
     >>> pprint(DeepDiff(t1, t2))
-    {'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
+    {'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
 Object attribute added:
     >>> t2.c = "new attribute"
     >>> pprint(DeepDiff(t1, t2))
     {'attribute_added': ['root.c'],
-     'values_changed': {'root.b': {'newvalue': 2, 'oldvalue': 1}}}
+     'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
 
 **Difference with Json Patch**
@@ -196,7 +196,7 @@ Example in DeepDiff for the same operation:
     >>> item1 = {'a':{'b':{'c':'foo'}}}
     >>> item2 = {'a':{'b':{'c':42}}}
     >>> DeepDiff(item1, item2)
-    {'type_changes': {"root['a']['b']['c']": {'oldtype': <type 'str'>, 'newvalue': 42, 'oldvalue': 'foo', 'newtype': <type '
+    {'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type '
 
 
 **Changelog**
