@@ -258,6 +258,8 @@ Although `ignore_order` flag uses hash of items to calculate what is added or re
 
 ### Significant Digits
 
+Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
+
 ```python
 >>> t1 = Decimal('1.52')
 >>> t2 = Decimal('1.57')
