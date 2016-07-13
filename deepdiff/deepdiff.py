@@ -27,14 +27,12 @@ if py3:
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, Decimal)
     from itertools import zip_longest
-    # from _string import formatter_field_name_split
     items = 'items'
 else:
     strings = (str, unicode)
     numbers = (int, float, long, complex, datetime.datetime, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
-    # formatter_field_name_split = str._formatter_field_name_split
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
@@ -582,7 +580,6 @@ class DeepDiff(RemapDict):
             return
 
         if type(t1) != type(t2):
-            # TODO: is there a unit test for this?
             self["type_changes"][parent] = RemapDict(
                 old_value=t1, new_value=t2, old_type=type(t1), new_type=type(t2))
 
