@@ -17,7 +17,7 @@ class DeepSet(set):
                 super().__init__(args[0])
 
     def __init_direct_values(self, *args):
-        self.update(args)
+        self.update(*args)
 
     # First, some of the basic Object methods
 
@@ -98,8 +98,8 @@ class DeepSet(set):
     # issubset(), <= ?!
     def issubset(self, other):
         for element in self:
-            if not (element in other):
-                print(str(element) + " is not in " + str(other))
+            if element not in other:
+                #print(str(element) + " is not in " + str(other))
                 return False
         return True
 
