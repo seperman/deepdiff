@@ -1,7 +1,5 @@
 from copy import copy
 
-# TODO: remove dependency on DeepDiff objects
-
 
 class DeepSet(set):
 
@@ -97,7 +95,16 @@ class DeepSet(set):
         else:
             return False
 
-    # TODO: issubset(), <= ?!
+    # issubset(), <= ?!
+    def issubset(self, other):
+        for element in self:
+            if not (element in other):
+                print(str(element) + " is not in " + str(other))
+                return False
+        return True
+
+    def __le__(self, other):
+        return self.issubset(other)
 
 
     # TODO: < ?!

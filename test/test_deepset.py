@@ -94,6 +94,38 @@ class DeepSetTestCase(unittest.TestCase):
 
 
 
+    # issubset(), <=
+
+    def test_issubset_basic(self):
+        fibonacci    = DeepSet({1, 2, 3, 5, 8, 13})
+        first_primes = DeepSet({2, 3, 5})
+        self.assertTrue(first_primes.issubset(fibonacci))
+        self.assertTrue(first_primes <= fibonacci)
+
+        fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
+        primes = DeepSet({2, 3, 5, 7, 11, 13})
+        self.assertFalse(primes.issubset(fibonacci))
+        self.assertFalse(primes <= fibonacci)
+
+    def test_issubset_custom_objects(self):
+        member1a = CustomClass(13, 37)
+        member1b = CustomClass(13, 37)
+        member2a = CustomClass(47, 11)
+        member2b = CustomClass(47, 11)
+
+        t1 = DeepSet(member1a, member2a)
+        t2 = DeepSet(member1b, member2b)
+        t3 = DeepSet(member1b)
+
+        self.assertTrue(t2.issubset(t1))
+        self.assertTrue(t3.issubset(t1))
+        self.assertTrue(t3 <= t1)
+        self.assertFalse(t3 < t1)
+
+
+
+    # intersection, operator &
+
     def test_intersection_basic(self):
         fibonacci = DeepSet({1, 2, 3, 5, 8, 13})
         primes =    DeepSet({2, 3, 5, 7, 11, 13})
