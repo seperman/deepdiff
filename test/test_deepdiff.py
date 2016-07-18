@@ -10,10 +10,13 @@ python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_or
 """
 import unittest
 from decimal import Decimal
+from sys import version
+from copy import copy
 
 from deepdiff.deepdiff import DeepDiff
 
-from .setup import *
+from . import CustomClass
+from . import py3
 
 
 class DeepDiffTestCase(unittest.TestCase):
