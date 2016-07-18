@@ -5,6 +5,22 @@ from copy import copy
 
 class DeepSet(set):
 
+    def __init__(self, *args):
+        if len(args) == 0:
+            pass
+        elif len(args) > 1:
+            self.__init_direct_values(args)
+        else:
+            try: # is it iterable or a direct value?
+                test = iter(args[0])
+            except TypeError:
+                self.__init_direct_values(args)
+            else:
+                super().__init__(args[0])
+
+    def __init_direct_values(self, *args):
+        self.update(args)
+
     # First, some of the basic Object methods
 
     def __str__(self):
@@ -82,6 +98,7 @@ class DeepSet(set):
             return False
 
     # TODO: issubset(), <= ?!
+
 
     # TODO: < ?!
 
