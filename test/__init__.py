@@ -8,24 +8,9 @@ python -m unittest discover
 To run a specific test, run this from the root of repo:
 python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
 """
-import unittest
-from decimal import Decimal
-from sys import version
-from copy import copy
 
 from deepdiff.deepdiff import DeepDiff
 from deepdiff.deepset import DeepSet
 
-py3 = version[0] == '3'
-
-
-class CustomClass:
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-
-    def __str__(self):
-        return "(" + str(self.a) + ", " + str(self.b) + ")"
-
-    def __repr__(self):
-        return self.__str__()
+from .test_deepdiff import *
+from .test_deepset import *
