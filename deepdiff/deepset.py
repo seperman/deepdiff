@@ -133,8 +133,6 @@ class DeepSet(set):
 
     # TODO: issuperset, >= ?!
 
-    # TODO: < ?!
-
     # TODO: union?!
 
     # intersection, operator &
