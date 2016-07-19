@@ -17,7 +17,7 @@ from .helpers import *
 class DeepDiff(RemapDict):
 
     r"""
-    **DeepDiff v 1.5.0**
+    **DeepDiff v 1.6.0**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
@@ -256,6 +256,8 @@ class DeepDiff(RemapDict):
         >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
         {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
     """
+
+    show_warning = True
 
     def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None, **kwargs):
         if kwargs:
@@ -503,7 +505,6 @@ class DeepDiff(RemapDict):
             return
 
         if type(t1) != type(t2):
-            # TODO: is there a unit test for this?
             self["type_changes"][parent] = RemapDict(
                 old_value=t1, new_value=t2, old_type=type(t1), new_type=type(t2))
 
