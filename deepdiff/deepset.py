@@ -38,11 +38,26 @@ class DeepSet(set):
         return self.__str__()
 
     def __eq__(self, other):
-        from .deepdiff import DeepDiff
+        # Get rid of some trivial cases
+
         if id(self) == id(other):
             return True
 
+        if len(self) != len(other):
+            return False
+
+
         # TODO optimize: this whole build-a-dict-and-throw-it-away approach doesn't make much sense
+
+        # I'm equal to thas other set if:
+        # - all of my elements are included in that other set; and
+        # - thas other set contains nothing else
+        # This "double" comparison is necessary because our deep comparison logic is not always bijective,
+        # e.g. I may contain different elements that are both "equal" to an element of thas other set.
+
+        from .deepdiff import DeepDiff
+        other = other.copy() # just our working copy
+
         for my_elem in self:         # compare each of my elements...
 
             is_included = False
@@ -51,13 +66,21 @@ class DeepSet(set):
                 diff = DeepDiff(my_elem, other_elem)
                 if diff == {}:
                     is_included = True
+                    other.discard(my_elem) # remove from our working copy of "other"
                     break
                 else:
                     continue
 
             if not is_included:
                 return False
-        return True
+
+        if len(other) == 0: # we're only equal if there are no additional elements in that other set
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
 
 
     # methods in the order they are documented at https://docs.python.org/3.5/library/stdtypes.html#set
@@ -105,8 +128,8 @@ class DeepSet(set):
     def __le__(self, other):
         return self.issubset(other)
 
-
-    # TODO: < ?!
+    def __lt__(self, other):
+        return self <= other and self != other
 
     # TODO: issuperset, >= ?!
 

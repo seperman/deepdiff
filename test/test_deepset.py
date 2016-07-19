@@ -51,6 +51,36 @@ class DeepSetTestCase(unittest.TestCase):
         t2 = DeepSet({member2})
         self.assertEqual(t1, t2)
 
+    def test_eq_ne_custom_object_different_elem_count(self):
+        member1a = CustomClass(13, 37)
+        member1b = CustomClass(13, 37)
+        member2a = CustomClass(47, 11)
+        member2b = CustomClass(47, 11)
+        t1 = DeepSet(member1a, member2a)
+        t2 = DeepSet(member1b)
+        t3 = DeepSet(member1a)
+        t4 = DeepSet(member1b, member2a)
+
+        self.assertTrue(t2 == t3)
+        self.assertFalse(t2 != t3)
+
+        self.assertTrue(t1 != t2)
+        self.assertFalse(t1 == t2)
+
+        self.assertTrue(t3 != t1)
+        self.assertFalse(t3 == t1)
+
+        self.assertTrue(t4 == t1)
+        self.assertFalse(t4 != t1)
+
+
+    def test_ne_custom_object(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = DeepSet({member1})
+        t2 = DeepSet({member2})
+        self.assertFalse(t1 != t2)
+
 
 
     def test_custom_object_in_deepset(self):
@@ -93,7 +123,7 @@ class DeepSetTestCase(unittest.TestCase):
 
 
 
-    # issubset(), <=
+    # issubset(), <=, <
 
     def test_issubset_basic(self):
         fibonacci    = DeepSet({1, 2, 3, 5, 8, 13})
@@ -117,9 +147,12 @@ class DeepSetTestCase(unittest.TestCase):
         t3 = DeepSet(member1b)
 
         self.assertTrue(t2.issubset(t1))
+        self.assertTrue(t2 <= t1)
+        self.assertFalse(t2 < t1)
+
         self.assertTrue(t3.issubset(t1))
         self.assertTrue(t3 <= t1)
-        self.assertFalse(t3 < t1)
+        self.assertTrue(t3 < t1)
 
 
 
