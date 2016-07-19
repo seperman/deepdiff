@@ -346,15 +346,6 @@ class DeepDiffTestCase(unittest.TestCase):
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
         self.assertEqual(ddiff, result)
 
-    def test_set_of_custom_objects(self):
-        member1 = CustomClass(13, 37)
-        member2 = CustomClass(13, 37)
-        t1 = {member1}
-        t2 = {member2}
-        ddiff = DeepDiff(t1, t2)
-        result = {}
-        self.assertEqual(ddiff, result)
-
     def test_frozenset(self):
         t1 = frozenset([1, 2, 'B'])
         t2 = frozenset([1, 2, 3, 5])
@@ -690,5 +681,15 @@ class DeepDiffTestCase(unittest.TestCase):
                          ddiff['type_changes']['root[2]']['old_type'])
         self.assertEqual(ddiff['type_changes']['root[2]']['oldvalue'],
                          ddiff['type_changes']['root[2]']['old_value'])
+
+    def test_set_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {member1}
+        t2 = {member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
+        self.assertEqual(ddiff, result)
+
 
 
