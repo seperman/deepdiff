@@ -364,8 +364,8 @@ class DeepDiff(RemapDict):
 
     def __diff_set(self, t1, t2, parent="root"):
         """Difference of sets"""
-        t1 = DeepSet(t1)
-        t2 = DeepSet(t2)
+        if not isinstance(t1, DeepSet): t1 = DeepSet(t1)
+        if not isinstance(t2, DeepSet): t2 = DeepSet(t2)
 
         items_added = list(t2 - t1)
         items_removed = list(t1 - t2)
@@ -545,8 +545,8 @@ class DeepDiff(RemapDict):
                     self.__diff_unhashable_iterable(t1, t2, parent)
                 else:
                     try:
-                        t1 = set(t1)
-                        t2 = set(t2)
+                        t1 = DeepSet(t1)
+                        t2 = DeepSet(t2)
                     # When we can't make a set since the iterable has unhashable
                     # items
                     except TypeError:
