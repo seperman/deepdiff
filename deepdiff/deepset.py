@@ -56,7 +56,7 @@ class DeepSet(set):
         # e.g. I may contain different elements that are both "equal" to an element of thas other set.
 
         from .deepdiff import DeepDiff
-        other = other.copy() # just our working copy
+        other = DeepSet(other) # just our working copy
 
         for my_elem in self:         # compare each of my elements...
 
