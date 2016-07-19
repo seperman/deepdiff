@@ -10,12 +10,11 @@ python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_or
 """
 import unittest
 from decimal import Decimal
-from deepdiff import DeepDiff
-from sys import version
-import logging
-logging.disable(logging.CRITICAL)
 
-py3 = version[0] == '3'
+from deepdiff.deepdiff import DeepDiff
+
+from . import CustomClass
+from . import py3
 
 
 class DeepDiffTestCase(unittest.TestCase):
@@ -680,3 +679,15 @@ class DeepDiffTestCase(unittest.TestCase):
                          ddiff['type_changes']['root[2]']['old_type'])
         self.assertEqual(ddiff['type_changes']['root[2]']['oldvalue'],
                          ddiff['type_changes']['root[2]']['old_value'])
+
+    def test_set_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {member1}
+        t2 = {member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
+        self.assertEqual(ddiff, result)
+
+
+
