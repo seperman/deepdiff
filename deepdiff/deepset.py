@@ -2,7 +2,6 @@ from copy import copy
 
 
 class DeepSet(set):
-
     def __init__(self, *args):
         if len(args) == 0:
             pass
@@ -14,7 +13,7 @@ class DeepSet(set):
             except TypeError:
                 self.__init_direct_values(args)
             else:
-                super().__init__(args[0])
+                super(DeepSet, self).__init__(args[0])
 
     def __init_direct_values(self, *args):
         self.update(*args)
