@@ -9,8 +9,6 @@ To run a specific test, run this from the root of repo:
 python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
 """
 import unittest
-from decimal import Decimal
-from sys import version
 from copy import copy
 
 from deepdiff.deepset import DeepSet
