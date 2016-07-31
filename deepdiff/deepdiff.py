@@ -53,11 +53,6 @@ EXPANDED_KEY_MAP = {
     'oldvalue': 'old_value'}
 
 
-def eprint(*args, **kwargs):
-    """print to stdout written by @MarcH"""
-    print(*args, file=sys.stderr, **kwargs)
-
-
 def order_unordered(data):
     """
     orders unordered data.
@@ -106,7 +101,7 @@ class RemapDict(dict):
 class DeepDiff(RemapDict):
 
     r"""
-    **DeepDiff v 1.6.0**
+    **DeepDiff v 1.7.0**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
@@ -536,9 +531,9 @@ class DeepDiff(RemapDict):
             try:
                 cleaned_item = order_unordered(item)
                 item_hash = hash(pickle.dumps(cleaned_item))
-            except Exception as e:
-                eprint("Can not produce a hash for %s item in %s and\
-                    thus not counting this object. %s" % (item, parent, e))
+            except:
+                logger.error("Can not produce a hash for %s item in %s and\
+                    thus not counting this object." % (item, parent), exc_info=True)
             else:
                 add_hash(hashes, item_hash, item, i)
         return hashes

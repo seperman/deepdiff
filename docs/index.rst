@@ -20,7 +20,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 1.6.0
+DeepDiff 1.7.0
 **************
 
 .. toctree::
@@ -77,3 +77,5 @@ Thanks to:
 - WangFenjin for unicode support
 - timoilya for comparing list of sets when ignoring order
 - Bernhard10 for significant digits comparison
+- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
+- Victor Hahn Castell @ Flexoptix for deep set comparison
