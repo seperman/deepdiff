@@ -18,6 +18,18 @@ logging.disable(logging.CRITICAL)
 py3 = version[0] == '3'
 
 
+class CustomClass:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __str__(self):
+        return "({}, {})".format(self.a, self.b)
+
+    def __repr__(self):
+        return self.__str__()
+
+
 class DeepDiffTestCase(unittest.TestCase):
 
     """DeepDiff Tests."""
@@ -437,6 +449,24 @@ class DeepDiffTestCase(unittest.TestCase):
         # But we also added another version of it to t2. So it comes up as
         # added attribute.
         result = {'attribute_added': {'root.method_a', 'root.method_b'}}
+        self.assertEqual(ddiff, result)
+
+    def test_set_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {member1}
+        t2 = {member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_dictionary_of_custom_objects(self):
+        member1 = CustomClass(13, 37)
+        member2 = CustomClass(13, 37)
+        t1 = {1: member1}
+        t2 = {1: member2}
+        ddiff = DeepDiff(t1, t2)
+        result = {}
         self.assertEqual(ddiff, result)
 
     def test_loop(self):

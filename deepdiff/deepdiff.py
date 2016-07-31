@@ -455,8 +455,17 @@ class DeepDiff(RemapDict):
 
     def __diff_set(self, t1, t2, parent="root"):
         """Difference of sets"""
-        items_added = list(t2 - t1)
-        items_removed = list(t1 - t2)
+        t1_hashtable = self.__create_hashtable(t1, parent)
+        t2_hashtable = self.__create_hashtable(t2, parent)
+
+        t1_hashes = set(t1_hashtable.keys())
+        t2_hashes = set(t2_hashtable.keys())
+
+        hashes_added = t2_hashes - t1_hashes
+        hashes_removed = t1_hashes - t2_hashes
+
+        items_added = [t2_hashtable[i].item for i in hashes_added]
+        items_removed = [t1_hashtable[i].item for i in hashes_removed]
 
         if items_removed:
             self.__extend_result_list(
@@ -525,16 +534,11 @@ class DeepDiff(RemapDict):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
-                item_hash = hash(item)
-            except TypeError:
-                try:
-                    cleaned_item = order_unordered(item)
-                    item_hash = hash(pickle.dumps(cleaned_item))
-                except Exception as e:
-                    eprint("Can not produce a hash for %s item in %s and\
-                        thus not counting this object. %s" % (item, parent, e))
-                else:
-                    add_hash(hashes, item_hash, item, i)
+                cleaned_item = order_unordered(item)
+                item_hash = hash(pickle.dumps(cleaned_item))
+            except Exception as e:
+                eprint("Can not produce a hash for %s item in %s and\
+                    thus not counting this object. %s" % (item, parent, e))
             else:
                 add_hash(hashes, item_hash, item, i)
         return hashes
@@ -624,22 +628,12 @@ class DeepDiff(RemapDict):
             self.__diff_tuple(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, (set, frozenset)):
+            # self.__diff_unhashable_iterable(t1, t2, parent, is_set=True)
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
             if self.ignore_order:
-                if self.report_repetition:
-                    self.__diff_unhashable_iterable(t1, t2, parent)
-                else:
-                    try:
-                        t1 = set(t1)
-                        t2 = set(t2)
-                    # When we can't make a set since the iterable has unhashable
-                    # items
-                    except TypeError:
-                        self.__diff_unhashable_iterable(t1, t2, parent)
-                    else:
-                        self.__diff_set(t1, t2, parent=parent)
+                self.__diff_unhashable_iterable(t1, t2, parent)
             else:
                 self.__diff_iterable(t1, t2, parent, parents_ids)
 

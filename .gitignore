@@ -53,3 +53,10 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# OS-specific spam
+.DS_Store
+
+# Editor / IDE files
+*.swp
+.idea/
