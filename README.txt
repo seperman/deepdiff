@@ -1,4 +1,4 @@
-**DeepDiff v 1.7.0**
+**DeepDiff v 1.8.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -223,6 +223,7 @@ Example in DeepDiff for the same operation:
 
 **Changelog**
 
+- v1-8-0: Exclusion patterns
 - v1-7-0: Deep Set comparison
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
