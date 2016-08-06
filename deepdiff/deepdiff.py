@@ -55,7 +55,8 @@ EXPANDED_KEY_MAP = {
 
 def order_unordered(data):
     """
-    orders unordered data.
+    Order unordered data.
+
     We use it in pickling so that serializations are consistent
     since pickle serializes data inconsistently for unordered iterables
     such as dictionary and set.
@@ -80,7 +81,10 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 
 class RemapDict(dict):
+
     """
+    Remap Dictionary.
+
     For keys that have a new, longer name, remap the old key to the new key.
     Other keys that don't have a new name are handled as before.
     """
@@ -90,8 +94,8 @@ class RemapDict(dict):
         new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
         if self.show_warning and new_key != old_key:
             self.show_warning = False
-            logger.warning("DeepDiff Deprecation: %s is renamed to %s. Please start using\
- the new unified naming convention.", old_key, new_key)
+            logger.warning("DeepDiff Deprecation: %s is renamed to %s. Please start using "
+                           "the new unified naming convention.", old_key, new_key)
         if new_key in self:
             return self.get(new_key)
         else:
@@ -347,13 +351,13 @@ class DeepDiff(RemapDict):
                  ignore_order=False, report_repetition=False, significant_digits=None,
                  exclude_paths=set(), exclude_types=set(), **kwargs):
         if kwargs:
-            raise ValueError(("The following parameter(s) are not valid: %s\n" +
-                             "The valid parameters are ignore_order, report_repetition, significant_digits," +
-                             "exclude_paths and exclude_types.") % ', '.join(kwargs.keys()))
+            raise ValueError(("The following parameter(s) are not valid: %s\n"
+                              "The valid parameters are ignore_order, report_repetition, significant_digits,"
+                              "exclude_paths and exclude_types.") % ', '.join(kwargs.keys()))
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
-        self.exclude_paths = exclude_paths
-        self.exclude_types = exclude_types
+        self.exclude_paths = set(exclude_paths)
+        self.exclude_types = set(exclude_types)
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
@@ -540,8 +544,8 @@ class DeepDiff(RemapDict):
                 cleaned_item = order_unordered(item)
                 item_hash = hash(pickle.dumps(cleaned_item))
             except:
-                logger.error("Can not produce a hash for %s item in %s and\
-                    thus not counting this object." % (item, parent), exc_info=True)
+                logger.error("Can not produce a hash for %s item in %s and "
+                             "thus not counting this object." % (item, parent), exc_info=True)
             else:
                 add_hash(hashes, item_hash, item, i)
         return hashes
@@ -617,8 +621,8 @@ class DeepDiff(RemapDict):
                 # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
                 # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
                 # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-                t1_s = ("{:."+str(self.significant_digits)+"f}").format(t1)
-                t2_s = ("{:."+str(self.significant_digits)+"f}").format(t2)
+                t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
+                t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
                 if t1_s != t2_s:
                     self["values_changed"][parent] = RemapDict(
                         old_value=t1, new_value=t2)
