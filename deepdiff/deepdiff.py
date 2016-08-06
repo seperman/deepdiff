@@ -380,14 +380,14 @@ class DeepDiff(RemapDict):
     def __set_or_dict(self):
         return {} if self.verbose_level >= 2 else set()
 
-    def __extend_result_list(self, keys, parent, result_obj, print_as_attribute=False):
+    def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for i in keys:
-            if self.__skip_this(i, None, parent + "['" + str(i) + "']"):
+            if self.__skip_this(i, None, parent="{}['{}']".format(parent, i)):
                 continue
             else:
                 i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
-                result_obj.add(key_text % (parent, i))
+                report_obj.add(key_text % (parent, i))
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -435,11 +435,11 @@ class DeepDiff(RemapDict):
 
         if t_keys_added:
             self.__extend_result_list(keys=t_keys_added, parent=parent,
-                                      result_obj=self[item_added_key], print_as_attribute=print_as_attribute)
+                                      report_obj=self[item_added_key], print_as_attribute=print_as_attribute)
 
         if t_keys_removed:
             self.__extend_result_list(keys=t_keys_removed, parent=parent,
-                                      result_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
+                                      report_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
 
         self.__diff_common_children(
             t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
@@ -481,11 +481,11 @@ class DeepDiff(RemapDict):
 
         if items_removed:
             self.__extend_result_list(
-                keys=items_removed, parent=parent, result_obj=self["set_item_removed"])
+                keys=items_removed, parent=parent, report_obj=self["set_item_removed"])
 
         if items_added:
             self.__extend_result_list(
-                keys=items_added, parent=parent, result_obj=self["set_item_added"])
+                keys=items_added, parent=parent, report_obj=self["set_item_added"])
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""
