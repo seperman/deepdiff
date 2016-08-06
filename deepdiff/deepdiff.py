@@ -26,12 +26,12 @@ if (py_major_version, py_minor_version) == (2.6):
 if py3:
     from builtins import int
     strings = (str, bytes)  # which are both basestring
-    numbers = (int, float, complex, datetime.datetime, Decimal)
+    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import zip_longest
     items = 'items'
 else:
     strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, Decimal)
+    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
 

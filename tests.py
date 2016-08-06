@@ -9,6 +9,7 @@ To run a specific test, run this from the root of repo:
 python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
 """
 import unittest
+import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
 from sys import version
@@ -60,6 +61,13 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {
             'root[4]'}, 'values_changed': {'root[2]': {"old_value": 2, "new_value": 4}}
         }
+        self.assertEqual(ddiff, result)
+
+    def test_diffs_dates(self):
+        t1 = datetime.date(2016, 8, 8)
+        t2 = datetime.date(2016, 8, 7)
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root': {'new_value': t2, 'old_value': t1}}}
         self.assertEqual(ddiff, result)
 
     def test_string_difference(self):
