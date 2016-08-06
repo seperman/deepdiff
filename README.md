@@ -1,4 +1,4 @@
-# deepdiff v 1.7.0
+# deepdiff v 1.8.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -256,6 +256,24 @@ Although `ignore_order` flag uses hash of items to calculate what is added or re
  'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 ```
 
+### Exclude certain types from comparison:
+```python
+>>> l1 = logging.getLogger("test")
+>>> l2 = logging.getLogger("test2")
+>>> t1 = {"log": l1, 2: 1337}
+>>> t2 = {"log": l2, 2: 1337}
+>>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
+{}
+```
+
+### Exclude part of your object tree from comparison:
+```python
+>>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+>>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+>>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+{}
+```
+
 ### Significant Digits
 
 Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
@@ -316,6 +334,7 @@ Example in DeepDiff for the same operation:
 
 ##Changelog
 
+- v1-8-0: Exclusion patterns
 - v1-7-0: Deep Set comparison
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
@@ -349,4 +368,4 @@ Thanks to:
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- Victor Hahn Castell @ Flexoptix for deep set comparison
+- [Victor Hahn Castell](http://hahncastell.de) @ [Flexoptix](http://www.flexoptix.net) for deep set comparison and exclusion patterns

@@ -1,4 +1,4 @@
-**DeepDiff v 1.7.0**
+**DeepDiff v 1.8.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -184,6 +184,20 @@ Object attribute added:
     {'attribute_added': ['root.c'],
      'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
+Exclude certain types from comparison:
+    >>> l1 = logging.getLogger("test")
+    >>> l2 = logging.getLogger("test2")
+    >>> t1 = {"log": l1, 2: 1337}
+    >>> t2 = {"log": l2, 2: 1337}
+    >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
+    {}
+
+Exclude part of your object tree from comparison:
+    >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+    >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+    >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+    {}
+
 
 Using DeepDiff in unit tests
 result is the output of the function that is being tests.
@@ -209,6 +223,7 @@ Example in DeepDiff for the same operation:
 
 **Changelog**
 
+- v1-8-0: Exclusion patterns
 - v1-7-0: Deep Set comparison
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
@@ -242,4 +257,4 @@ Thanks to:
 - timoilya for comparing list of sets when ignoring order
 - Bernhard10 for significant digits comparison
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- Victor Hahn Castell @ Flexoptix for deep set comparison
+- Victor Hahn Castell @ Flexoptix for deep set comparison and exclusion patterns

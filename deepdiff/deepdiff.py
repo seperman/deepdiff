@@ -343,11 +343,17 @@ class DeepDiff(RemapDict):
 
     show_warning = True
 
-    def __init__(self, t1, t2, ignore_order=False, report_repetition=False, significant_digits=None, **kwargs):
+    def __init__(self, t1, t2,
+                 ignore_order=False, report_repetition=False, significant_digits=None,
+                 exclude_paths=set(), exclude_types=set(), **kwargs):
         if kwargs:
-            raise ValueError("The following parameter(s) are not valid: %s\nThe valid parameters are ignore_order, report_repetition and significant_digits" % ', '.join(kwargs.keys()))
+            raise ValueError(("The following parameter(s) are not valid: %s\n" +
+                             "The valid parameters are ignore_order, report_repetition, significant_digits," +
+                             "exclude_paths and exclude_types.") % ', '.join(kwargs.keys()))
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
+        self.exclude_paths = exclude_paths
+        self.exclude_types = exclude_types
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
@@ -365,12 +371,14 @@ class DeepDiff(RemapDict):
         for k in empty_keys:
             del self[k]
 
-    @staticmethod
-    def __extend_result_list(keys, parent, result_obj, print_as_attribute=False):
+    def __extend_result_list(self, keys, parent, result_obj, print_as_attribute=False):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for i in keys:
-            i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
-            result_obj.add(key_text % (parent, i))
+            if self.__skip_this(i, None, parent + "['" + str(i) + "']"):
+                continue
+            else:
+                i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
+                result_obj.add(key_text % (parent, i))
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -586,6 +594,9 @@ class DeepDiff(RemapDict):
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
+        if self.__skip_this(t1, t2, parent):
+            return
+
         if t1 is t2:
             return
 
@@ -636,6 +647,18 @@ class DeepDiff(RemapDict):
             self.__diff_obj(t1, t2, parent, parents_ids)
 
         return
+
+    def __skip_this(self, t1, t2, parent):
+        skip = False
+        if parent in self.exclude_paths:
+            skip = True
+        else:
+            for exclude_type in self.exclude_types:
+                if isinstance(t1, exclude_type) or isinstance(t2, exclude_type):
+                    skip = True
+                    break
+
+        return skip
 
 
 if __name__ == "__main__":
