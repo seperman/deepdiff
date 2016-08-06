@@ -732,24 +732,48 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, exclude_types={logging.Logger})
         self.assertEqual(ddiff, {})
 
-    def test_skip_path(self):
+    def test_skip_path1(self):
         t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
         t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
+    def test_skip_path2(self):
         t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
         t2 = {"for life": "vegan"}
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
+    def test_skip_path2_reverse(self):
         t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
         t2 = {"for life": "vegan"}
         ddiff = DeepDiff(t2, t1, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
+    def test_skip_path4(self):
         t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
         t2 = {"for life": "vegan", "zutaten": ["veggies", "tofu", "soy sauce"]}
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertTrue('dictionary_item_added' in ddiff, {})
         self.assertTrue('dictionary_item_removed' not in ddiff, {})
+
+    def test_skip_custom_object_path(self):
+        class ClassA(object):
+            a = 1
+
+            def __init__(self, b):
+                self.b = b
+
+        t1 = ClassA(1)
+        t2 = ClassA(2)
+        ddiff = DeepDiff(t1, t2, exclude_paths=['root.b'])
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_skip_list_path(self):
+
+        t1 = ['a', 'b']
+        t2 = ['a']
+        ddiff = DeepDiff(t1, t2, exclude_paths=['root[1]'])
+        result = {}
+        self.assertEqual(ddiff, result)

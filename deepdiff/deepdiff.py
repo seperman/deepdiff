@@ -349,21 +349,23 @@ class DeepDiff(RemapDict):
 
     def __init__(self, t1, t2,
                  ignore_order=False, report_repetition=False, significant_digits=None,
-                 exclude_paths=set(), exclude_types=set(), **kwargs):
+                 exclude_paths=set(), exclude_types=set(), verbose_level=1, **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                              "exclude_paths and exclude_types.") % ', '.join(kwargs.keys()))
+                              "exclude_paths, exclude_types and verbose_level.") % ', '.join(kwargs.keys()))
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
+        self.verbose_level = verbose_level
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
 
-        self.update({"type_changes": {}, "dictionary_item_added": set([]), "dictionary_item_removed": set([]),
+        self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
+                     "dictionary_item_removed": self.__set_or_dict(),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
                      "attribute_added": set([]), "attribute_removed": set([]), "set_item_removed": set([]),
                      "set_item_added": set([]), "repetition_change": {}})
@@ -374,6 +376,9 @@ class DeepDiff(RemapDict):
 
         for k in empty_keys:
             del self[k]
+
+    def __set_or_dict(self):
+        return {} if self.verbose_level >= 2 else set()
 
     def __extend_result_list(self, keys, parent, result_obj, print_as_attribute=False):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
@@ -488,11 +493,13 @@ class DeepDiff(RemapDict):
         items_added = {}
 
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
-
+            new_parent = "%s[%s]" % (parent, i)
+            if self.__skip_this(x, y, parent=new_parent):
+                continue
             if y is ListItemRemovedOrAdded:
-                items_removed["%s[%s]" % (parent, i)] = x
+                items_removed[new_parent] = x
             elif x is ListItemRemovedOrAdded:
-                items_added["%s[%s]" % (parent, i)] = y
+                items_added[new_parent] = y
             else:
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -598,15 +605,17 @@ class DeepDiff(RemapDict):
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
-        if self.__skip_this(t1, t2, parent):
-            return
 
         if t1 is t2:
             return
 
+        if self.__skip_this(t1, t2, parent):
+            return
+
         if type(t1) != type(t2):
-            self["type_changes"][parent] = RemapDict(
-                old_value=t1, new_value=t2, old_type=type(t1), new_type=type(t2))
+            self["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
+            if self.verbose_level:
+                self["type_changes"][parent].update(old_value=t1, new_value=t2)
 
         elif isinstance(t1, strings):
             self.__diff_str(t1, t2, parent)
