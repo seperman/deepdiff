@@ -3,5 +3,3 @@ omit =
     */python?.?/*
     */site-packages/nose/*
     *__init__*
-    numbers.py
-    decimal.py

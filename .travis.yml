@@ -12,10 +12,8 @@ sudo: false
 
 install:
   - pip install coveralls
-  - pip install nose
 
-script:
-  - nosetests --with-coverage --cover-package=deepdiff
+script: coverage run --source deepdiff setup.py test
 
 after_success:
   - coveralls

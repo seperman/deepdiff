@@ -22,6 +22,7 @@ setup(name='deepdiff',
       license='MIT',
       packages=['deepdiff'],
       zip_safe=False,
+      test_suite="tests",
       long_description=long_description,
       classifiers=[
           "Intended Audience :: Developers",

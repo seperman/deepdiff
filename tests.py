@@ -3,10 +3,16 @@
 
 """
 To run the test, run this in the root of repo:
-python -m unittest discover
+    python -m unittest discover
+
+Or to run it with coverage:
+    coverage run --source deepdiff setup.py test
+
+Or using Nose:
+    nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
-python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
+    python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
 """
 import unittest
 import datetime
