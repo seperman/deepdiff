@@ -4,15 +4,6 @@ Deep Difference of dictionaries, iterables, strings and other objects. It will r
 
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
-**Pycon 2016**
-
-I was honored to give a talk about how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
-
-Diff It To Dig It Video
-https://www.youtube.com/watch?v=J5r99eJIxF4
-And here is more info:
-http://zepworks.com/blog/diff-it-to-digg-it/
-
 **Parameters**
 
 In addition to the 2 objects being compared:
@@ -220,11 +211,21 @@ Example in DeepDiff for the same operation:
     >>> DeepDiff(item1, item2)
     {'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type '
 
+**Pycon 2016**
+
+I was honored to give a talk about how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
+
+Diff It To Dig It Video
+https://www.youtube.com/watch?v=J5r99eJIxF4
+And here is more info:
+http://zepworks.com/blog/diff-it-to-digg-it/
+
 
 **Changelog**
 
-- v1-8-0: Exclusion patterns
-- v1-7-0: Deep Set comparison
+- v2-0-0: Exclusion patterns better coverage. Updating docs.
+- v1-8-0: Exclusion patterns.
+- v1-7-0: Deep Set comparison.
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
 - v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.

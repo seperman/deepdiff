@@ -130,7 +130,7 @@ And if you don't care about the value of items that have changed type, please se
 ```python
 >>> t1 = {1:1, 2:2, 3:3}
 >>> t2 = {1:1, 2:"2", 3:3}
->>> pprint(DeepDiff(t1, t2), indent=2)
+>>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
 { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
                                  'old_type': <class 'int'>,}}}
 ```
@@ -381,8 +381,9 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
-- v1-8-0: Exclusion patterns
-- v1-7-0: Deep Set comparison
+- v2-0-0: Exclusion patterns better coverage. Updating docs.
+- v1-8-0: Exclusion patterns.
+- v1-7-0: Deep Set comparison.
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
 - v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.

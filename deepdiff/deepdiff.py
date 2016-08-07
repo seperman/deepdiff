@@ -105,16 +105,10 @@ class RemapDict(dict):
 class DeepDiff(RemapDict):
 
     r"""
-    **DeepDiff v 1.7.0**
+    **DeepDiff**
 
     Deep Difference of dictionaries, iterables, strings and almost any other object.
     It will recursively look for all the changes.
-
-    **Pycon 2016 Talk**
-    I gave a talk about how DeepDiff does what it does at Pycon 2016.
-    `Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
-
-    And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
 
     **Parameters**
 
@@ -157,6 +151,12 @@ class DeepDiff(RemapDict):
 
     int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
 
+    **Pycon 2016 Talk**
+    I gave a talk about how DeepDiff does what it does at Pycon 2016.
+    `Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
+
+    And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
+
     **Examples**
 
     Importing
@@ -182,17 +182,24 @@ class DeepDiff(RemapDict):
     Value of an item has changed
         >>> t1 = {1:1, 2:2, 3:3}
         >>> t2 = {1:1, 2:4, 3:3}
-        >>> pprint(DeepDiff(t1, t2), indent=2)
+        >>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
         {'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
 
     Item added and/or removed
-        >>> t1 = {1:1, 2:2, 3:3, 4:4}
-        >>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
+        >>> t1 = {1:1, 3:3, 4:4}
+        >>> t2 = {1:1, 3:3, 5:5, 6:6}
         >>> ddiff = DeepDiff(t1, t2)
         >>> pprint (ddiff)
         {'dictionary_item_added': {'root[5]', 'root[6]'},
-         'dictionary_item_removed': {'root[4]'},
-         'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+         'dictionary_item_removed': {'root[4]'}}
+
+    Set verbose level to 2 in order to see the added or removed items with their values
+        >>> t1 = {1:1, 3:3, 4:4}
+        >>> t2 = {1:1, 3:3, 5:5, 6:6}
+        >>> ddiff = DeepDiff(t1, t2, verbose_level=2)
+        >>> pprint(ddiff, indent=2)
+        { 'dictionary_item_added': {'root[5]': 5, 'root[6]': 6},
+          'dictionary_item_removed': {'root[4]': 4}}
 
     String difference
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
@@ -246,6 +253,13 @@ class DeepDiff(RemapDict):
                                               'new_value': 'world\n\n\nEnd',
                                               'old_type': <class 'list'>,
                                               'old_value': [1, 2, 3]}}}
+
+    And if you don't care about the value of items that have changed type, please set verbose level to 0
+        >>> t1 = {1:1, 2:2, 3:3}
+        >>> t2 = {1:1, 2:"2", 3:3}
+        >>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
+        { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
+                                         'old_type': <class 'int'>}}}
 
     List difference
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}

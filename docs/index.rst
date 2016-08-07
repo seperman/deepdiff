@@ -20,7 +20,7 @@ Install from PyPi::
 
 
 **************
-DeepDiff 1.7.0
+DeepDiff 2.0.0
 **************
 
 .. toctree::
@@ -44,7 +44,9 @@ Indices and tables
 Changelog
 =========
 
-- v1-7-0: Deep Set comparison
+- v2-0-0: Exclusion patterns better coverage. Updating docs.
+- v1-8-0: Exclusion patterns.
+- v1-7-0: Deep Set comparison.
 - v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
 - v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
 - v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
