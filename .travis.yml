@@ -10,4 +10,11 @@ python:
 
 sudo: false
 
-script: nosetests
+install:
+  - pip install coveralls
+
+script:
+  coverage run --source=deepdiff setup.py test
+
+after_success:
+  - coveralls
