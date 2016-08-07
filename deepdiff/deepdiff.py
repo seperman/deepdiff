@@ -144,6 +144,11 @@ class DeepDiff(RemapDict):
 
         For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
+    verbose_level : int >= 0, default = 1.
+        Higher verbose level shows you more details.
+        For example verbose level 1 shows what dictionary item are added or removed.
+        And verbose level 2 shows the value of the items that are added or removed too.
+
     **Returns**
 
         A DeepDiff object that has already calculated the difference of the 2 items.
@@ -358,6 +363,7 @@ class DeepDiff(RemapDict):
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
+        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
 
         if significant_digits is not None and significant_digits < 0:
@@ -367,7 +373,8 @@ class DeepDiff(RemapDict):
         self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
                      "dictionary_item_removed": self.__set_or_dict(),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": set([]), "attribute_removed": set([]), "set_item_removed": set([]),
+                     "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
+                     "set_item_removed": set([]),
                      "set_item_added": set([]), "repetition_change": {}})
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
@@ -382,12 +389,16 @@ class DeepDiff(RemapDict):
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
-        for i in keys:
-            if self.__skip_this(i, None, parent="{}['{}']".format(parent, i)):
-                continue
-            else:
-                i = "'%s'" % i if not print_as_attribute and isinstance(i, strings) else i
-                report_obj.add(key_text % (parent, i))
+        for key in keys:
+            key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
+            key_in_report = key_text % (parent, key_formatted)
+
+            item = obj[key] if obj else key
+            if not self.__skip_this(item, None, key_in_report):
+                if obj and self.verbose_level >= 2:
+                    report_obj[key_in_report] = obj[key]
+                else:
+                    report_obj.add(key_in_report)
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -414,6 +425,16 @@ class DeepDiff(RemapDict):
 
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
 
+    def __skip_this(self, t1, t2, parent):
+        skip = False
+        if parent in self.exclude_paths:
+            skip = True
+        else:
+            if isinstance(t1, self.exclude_types_tuple) or isinstance(t2, self.exclude_types_tuple):
+                skip = True
+
+        return skip
+
     def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), print_as_attribute=False):
         """Difference of 2 dictionaries"""
         if print_as_attribute:
@@ -435,11 +456,11 @@ class DeepDiff(RemapDict):
 
         if t_keys_added:
             self.__extend_result_list(keys=t_keys_added, parent=parent,
-                                      report_obj=self[item_added_key], print_as_attribute=print_as_attribute)
+                                      report_obj=self[item_added_key], print_as_attribute=print_as_attribute, obj=t2)
 
         if t_keys_removed:
             self.__extend_result_list(keys=t_keys_removed, parent=parent,
-                                      report_obj=self[item_removed_key], print_as_attribute=print_as_attribute)
+                                      report_obj=self[item_removed_key], print_as_attribute=print_as_attribute, obj=t1)
 
         self.__diff_common_children(
             t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
@@ -603,6 +624,35 @@ class DeepDiff(RemapDict):
         self["iterable_item_removed"].update(items_removed)
         self["iterable_item_added"].update(items_added)
 
+    def __diff_numbers(self, t1, t2, parent):
+        """Diff Numbers"""
+
+        if self.significant_digits is not None and isinstance(t1, (float, complex, Decimal)):
+            # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
+            # data is read from files that were previousely written from python and
+            # to be consistent with on-screen representation of numbers.
+            # Other options would be abs(t1-t2)<10**-self.significant_digits
+            # or math.is_close (python3.5+)
+            # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
+            # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
+            # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
+            t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
+            t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
+            if t1_s != t2_s:
+                self["values_changed"][parent] = RemapDict(
+                    old_value=t1, new_value=t2)
+        else:
+            if t1 != t2:
+                self["values_changed"][parent] = RemapDict(
+                    old_value=t1, new_value=t2)
+
+    def __diff_types(self, t1, t2, parent):
+        """Diff types"""
+
+        self["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
+        if self.verbose_level:
+            self["type_changes"][parent].update(old_value=t1, new_value=t2)
+
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
 
@@ -613,32 +663,13 @@ class DeepDiff(RemapDict):
             return
 
         if type(t1) != type(t2):
-            self["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
-            if self.verbose_level:
-                self["type_changes"][parent].update(old_value=t1, new_value=t2)
+            self.__diff_types(t1, t2, parent)
 
         elif isinstance(t1, strings):
             self.__diff_str(t1, t2, parent)
 
         elif isinstance(t1, numbers):
-            if self.significant_digits is not None and isinstance(t1, (float, complex, Decimal)):
-                # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
-                # data is read from files that were previousely written from python and
-                # to be consistent with on-screen representation of numbers.
-                # Other options would be abs(t1-t2)<10**-self.significant_digits
-                # or math.is_close (python3.5+)
-                # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
-                # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
-                # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-                t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
-                t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
-                if t1_s != t2_s:
-                    self["values_changed"][parent] = RemapDict(
-                        old_value=t1, new_value=t2)
-            else:
-                if t1 != t2:
-                    self["values_changed"][parent] = RemapDict(
-                        old_value=t1, new_value=t2)
+            self.__diff_numbers(t1, t2, parent)
 
         elif isinstance(t1, MutableMapping):
             self.__diff_dict(t1, t2, parent, parents_ids)
@@ -660,18 +691,6 @@ class DeepDiff(RemapDict):
             self.__diff_obj(t1, t2, parent, parents_ids)
 
         return
-
-    def __skip_this(self, t1, t2, parent):
-        skip = False
-        if parent in self.exclude_paths:
-            skip = True
-        else:
-            for exclude_type in self.exclude_types:
-                if isinstance(t1, exclude_type) or isinstance(t2, exclude_type):
-                    skip = True
-                    break
-
-        return skip
 
 
 if __name__ == "__main__":

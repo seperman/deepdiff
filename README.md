@@ -9,12 +9,15 @@
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
-## Pycon 2016
+## Table of Contents
 
-I was honored to give a talk about how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
-
-[Diff It To Dig It Video](https://www.youtube.com/watch?v=J5r99eJIxF4)
-And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
+- [Installation](#Installation)
+- [Importing](#Importing)
+- [Supported data types](#supported-data-types)
+- [Type Change](#type-of-an-item-has-changed)
+- [Value Change](#value-of-an-item-has-changed)
+- [Item added or removed](#item-added-or-removed)
+- [String difference](#string-difference)
 
 ##Installation
 
@@ -73,7 +76,7 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 {'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
 ```
 
-### Item added and/or removed
+### Item added or removed
 
 ```python
 >>> t1 = {1:1, 2:2, 3:3, 4:4}
@@ -326,6 +329,14 @@ Example in DeepDiff for the same operation:
 >>> DeepDiff(item1, item2)
 {'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type 'int'>}}}
 ```
+
+
+## Pycon 2016
+
+I was honored to give a talk about how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
+
+[Diff It To Dig It Video](https://www.youtube.com/watch?v=J5r99eJIxF4)
+And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 
 ##Documentation

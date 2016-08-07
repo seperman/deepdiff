@@ -20,7 +20,7 @@ py3 = version[0] == '3'
 
 
 class CustomClass:
-    def __init__(self, a, b):
+    def __init__(self, a, b=None):
         self.a = a
         self.b = b
 
@@ -61,6 +61,14 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {
             'root[4]'}, 'values_changed': {'root[2]': {"old_value": 2, "new_value": 4}}
         }
+        self.assertEqual(ddiff, result)
+
+    def test_item_added_and_removed_verbose(self):
+        t1 = {1: 1, 3: 3, 4: 4}
+        t2 = {1: 1, 3: 3, 5: 5, 6: 6}
+        ddiff = DeepDiff(t1, t2, verbose_level=2)
+        result = {'dictionary_item_removed': {'root[4]': 4},
+                  'dictionary_item_added': {'root[6]': 6, 'root[5]': 5}}
         self.assertEqual(ddiff, result)
 
     def test_diffs_dates(self):
@@ -392,16 +400,10 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_change(self):
-        class ClassA(object):
-            a = 1
-
-            def __init__(self, b):
-                self.b = b
-
-        t1 = ClassA(1)
-        t2 = ClassA(2)
+        t1 = CustomClass(1)
+        t2 = CustomClass(2)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.b': {'old_value': 1, 'new_value': 2}}}
+        result = {'values_changed': {'root.a': {'old_value': 1, 'new_value': 2}}}
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_slot_change(self):
@@ -418,7 +420,7 @@ class DeepDiffTestCase(unittest.TestCase):
         result = {'values_changed': {'root.y': {'old_value': 1, 'new_value': 2}}}
         self.assertEqual(ddiff, result)
 
-    def test_custom_objects_add_and_remove(self):
+    def get_custom_objects_add_and_remove(self):
         class ClassA(object):
             a = 1
 
@@ -430,12 +432,24 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = ClassA(2)
         t2.c = "new attribute"
         del t2.d
+        return t1, t2
+
+    def test_custom_objects_add_and_remove(self):
+        t1, t2 = self.get_custom_objects_add_and_remove()
         ddiff = DeepDiff(t1, t2)
         result = {'attribute_added': {'root.c'}, 'values_changed': {
             'root.b': {'new_value': 2, 'old_value': 1}}, 'attribute_removed': {'root.d'}}
         self.assertEqual(ddiff, result)
 
-    def test_custom_objects_add_and_remove_method(self):
+    def test_custom_objects_add_and_remove_verbose(self):
+        t1, t2 = self.get_custom_objects_add_and_remove()
+        ddiff = DeepDiff(t1, t2, verbose_level=2)
+        result = {'attribute_added': {'root.c': 'new attribute'},
+                  'attribute_removed': {'root.d': 10},
+                  'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
+        self.assertEqual(ddiff, result)
+
+    def get_custom_object_with_added_removed_methods(self):
         class ClassA(object):
 
             def method_a(self):
@@ -452,12 +466,23 @@ class DeepDiffTestCase(unittest.TestCase):
 
         t2.method_b = method_b
         t2.method_a = method_c
-        ddiff = DeepDiff(t1, t2)
         # Note that we are comparing ClassA instances. method_a originally was in ClassA
         # But we also added another version of it to t2. So it comes up as
         # added attribute.
+        return t1, t2
+
+    def test_custom_objects_add_and_remove_method(self):
+        t1, t2 = self.get_custom_object_with_added_removed_methods()
+        ddiff = DeepDiff(t1, t2)
+
         result = {'attribute_added': {'root.method_a', 'root.method_b'}}
         self.assertEqual(ddiff, result)
+
+    def test_custom_objects_add_and_remove_method_verbose(self):
+        t1, t2 = self.get_custom_object_with_added_removed_methods()
+        ddiff = DeepDiff(t1, t2, verbose_level=2)
+        self.assertTrue('root.method_a' in ddiff['attribute_added'])
+        self.assertTrue('root.method_b' in ddiff['attribute_added'])
 
     def test_set_of_custom_objects(self):
         member1 = CustomClass(13, 37)
@@ -758,15 +783,9 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertTrue('dictionary_item_removed' not in ddiff, {})
 
     def test_skip_custom_object_path(self):
-        class ClassA(object):
-            a = 1
-
-            def __init__(self, b):
-                self.b = b
-
-        t1 = ClassA(1)
-        t2 = ClassA(2)
-        ddiff = DeepDiff(t1, t2, exclude_paths=['root.b'])
+        t1 = CustomClass(1)
+        t2 = CustomClass(2)
+        ddiff = DeepDiff(t1, t2, exclude_paths=['root.a'])
         result = {}
         self.assertEqual(ddiff, result)
 
@@ -775,5 +794,31 @@ class DeepDiffTestCase(unittest.TestCase):
         t1 = ['a', 'b']
         t2 = ['a']
         ddiff = DeepDiff(t1, t2, exclude_paths=['root[1]'])
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_skip_dictionary_path(self):
+
+        t1 = {1: {2: "a"}}
+        t2 = {1: {}}
+        ddiff = DeepDiff(t1, t2, exclude_paths=['root[1][2]'])
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_skip_dictionary_path_with_custom_object(self):
+        obj1 = CustomClass(1)
+        obj2 = CustomClass(2)
+
+        t1 = {1: {2: obj1}}
+        t2 = {1: {2: obj2}}
+        ddiff = DeepDiff(t1, t2, exclude_paths=['root[1][2].a'])
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_skip_str_type_in_dictionary(self):
+
+        t1 = {1: {2: "a"}}
+        t2 = {1: {}}
+        ddiff = DeepDiff(t1, t2, exclude_types=[str])
         result = {}
         self.assertEqual(ddiff, result)
