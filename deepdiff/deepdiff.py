@@ -23,13 +23,13 @@ py3 = py_major_version == '3'
 if (py_major_version, py_minor_version) == (2.6):
     sys.exit('Python 2.6 is not supported.')
 
-if py3:
+if py3:  # pragma: no cover
     from builtins import int
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import zip_longest
     items = 'items'
-else:
+else:  # pragma: no cover
     strings = (str, unicode)
     numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import izip_longest as zip_longest
@@ -40,7 +40,7 @@ logger = logging.getLogger()
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
-EXPANDED_KEY_MAP = {
+EXPANDED_KEY_MAP = {  # pragma: no cover
     'dic_item_added': 'dictionary_item_added',
     'dic_item_removed': 'dictionary_item_removed',
     'newindexes': 'new_indexes',
@@ -71,7 +71,7 @@ def order_unordered(data):
     return data
 
 
-class ListItemRemovedOrAdded(object):
+class ListItemRemovedOrAdded(object):  # pragma: no cover
 
     """Class of conditions to be checked"""
 
