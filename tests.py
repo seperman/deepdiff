@@ -40,12 +40,19 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = t1
         self.assertEqual(DeepDiff(t1, t2), {})
 
-    def test_item_change(self):
+    def test_item_type_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: "2", 3: 3}
         self.assertEqual(DeepDiff(t1, t2), {'type_changes': {"root[2]":
                                                              {"old_value": 2, "old_type": int,
                                                               "new_value": "2", "new_type": str}}})
+
+    def test_item_type_change_less_verbose(self):
+        t1 = {1: 1, 2: 2, 3: 3}
+        t2 = {1: 1, 2: "2", 3: 3}
+        self.assertEqual(DeepDiff(t1, t2, verbose_level=0), {'type_changes': {"root[2]":
+                                                             {"old_type": int,
+                                                              "new_type": str}}})
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}

@@ -15,11 +15,11 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Parameters**
 
-t1 : A dictionary, list, string or any python object that has __dict__
-    This is the first item to be compared to the second item
+In addition to the 2 objects being compared:
 
-t2 : dictionary, list, string or almost any python object that has __dict__
-    The second item is to be compared to the first one
+- ignore_order
+- report_repetition
+- verbose_level
 
 **Returns**
 

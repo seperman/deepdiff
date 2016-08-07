@@ -12,12 +12,13 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 ## Table of Contents
 
 - [Installation](#Installation)
-- [Importing](#Importing)
-- [Supported data types](#supported-data-types)
-- [Type Change](#type-of-an-item-has-changed)
-- [Value Change](#value-of-an-item-has-changed)
-- [Item added or removed](#item-added-or-removed)
-- [String difference](#string-difference)
+- [Parameters](#parameters)
+- [Ignore Order](#ignore-order)
+- [Report repetitions](#report-repetitions)
+- [Verbose Level](#verbose-level)
+- [Examples](#examples)
+- [Documentation](http://deepdiff.readthedocs.io/en/latest/)
+
 
 ##Installation
 
@@ -31,9 +32,66 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 >>> from deepdiff import DeepDiff
 ```
 
+## Parameters
+
+In addition to the 2 objects being compared:
+
+- [ignore_order](#ignore-order)
+- [report_repetition](#report-repetitions)
+- [verbose_level](#verbose-level)
+
 ## Supported data types
 
 int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
+
+## Ignore Order
+
+Sometimes you don't care about the order of objects when comparing them. In those cases, you can set `ignore_order=True`. However this flag won't report the repetitions to you. You need to additionally enable `report_report_repetition=True` for getting a report of repetitions.
+
+### List difference ignoring order or duplicates
+
+```python
+>>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+>>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
+>>> ddiff = DeepDiff(t1, t2, ignore_order=True)
+>>> print (ddiff)
+{}
+```
+
+## Report repetitions
+
+This flag ONLY works when ignoring order is enabled.
+
+```python
+t1 = [1, 3, 1, 4]
+t2 = [4, 4, 1]
+ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+print(ddiff)
+```
+
+which will print you:
+
+```python
+{'iterable_item_removed': {'root[1]': 3},
+  'repetition_change': {'root[0]': {'old_repeat': 2,
+                                    'old_indexes': [0, 2],
+                                    'new_indexes': [2],
+                                    'value': 1,
+                                    'new_repeat': 1},
+                        'root[3]': {'old_repeat': 1,
+                                    'old_indexes': [3],
+                                    'new_indexes': [0, 1],
+                                    'value': 4,
+                                    'new_repeat': 2}}}
+```
+
+## Verbose Level
+
+Verbose level by default is 1. The possible values are 0, 1 and 2.
+
+- Verbose level 0: won't report values when type changed. [Example](##type-of-an-item-has-changed)
+- Verbose level 1: default
+- Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
 
 ## Examples
@@ -67,6 +125,17 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
                                  'old_value': 2}}}
 ```
 
+And if you don't care about the value of items that have changed type, please set verbose level to 0:
+
+```python
+>>> t1 = {1:1, 2:2, 3:3}
+>>> t2 = {1:1, 2:"2", 3:3}
+>>> pprint(DeepDiff(t1, t2), indent=2)
+{ 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
+                                 'old_type': <class 'int'>,}}}
+```
+
+
 ### Value of an item has changed
 
 ```python
@@ -79,13 +148,25 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 ### Item added or removed
 
 ```python
->>> t1 = {1:1, 2:2, 3:3, 4:4}
->>> t2 = {1:1, 2:4, 3:3, 5:5, 6:6}
+>>> t1 = {1:1, 3:3, 4:4}
+>>> t2 = {1:1, 3:3, 5:5, 6:6}
 >>> ddiff = DeepDiff(t1, t2)
->>> pprint (ddiff)
-{'dictionary_item_added': ['root[5]', 'root[6]'],
- 'dictionary_item_removed': ['root[4]'],
- 'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+>>> pprint(ddiff)
+{'dictionary_item_added': {'root[5]', 'root[6]'},
+ 'dictionary_item_removed': {'root[4]'}}
+```
+
+#### Items added or removed verbose
+
+And if you would like to know the values of items added or removed, please set the verbose_level to 2:
+
+```python
+>>> t1 = {1:1, 3:3, 4:4}
+>>> t2 = {1:1, 3:3, 5:5, 6:6}
+>>> ddiff = DeepDiff(t1, t2, verbose_level=2)
+>>> pprint(ddiff, indent=2)
+{ 'dictionary_item_added': {'root[5]': 5, 'root[6]': 6},
+  'dictionary_item_removed': {'root[4]': 4}}
 ```
 
 ### String difference
@@ -136,19 +217,6 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
  End
 ```
 
-### Type change
-
-```python
->>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
->>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
->>> ddiff = DeepDiff(t1, t2)
->>> pprint (ddiff, indent = 2)
-{ 'type_changes': { "root[4]['b']": { 'new_type': <class 'str'>,
-                                      'new_value': 'world\n\n\nEnd',
-                                      'old_type': <class 'list'>,
-                                      'old_value': [1, 2, 3]}}}
-```
-
 ### List difference
 
 ```python
@@ -159,7 +227,7 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 {'iterable_item_removed': {"root[4]['b'][2]": 3, "root[4]['b'][3]": 4}}
 ```
 
-### List difference 2:
+### List difference Example 2
 
 ```python
 >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
@@ -169,38 +237,6 @@ int, string, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple an
 { 'iterable_item_added': {"root[4]['b'][3]": 3},
   'values_changed': { "root[4]['b'][1]": {'new_value': 3, 'old_value': 2},
                       "root[4]['b'][2]": {'new_value': 2, 'old_value': 3}}}
-```
-
-### List difference ignoring order or duplicates: (with the same dictionaries as above)
-
-```python
->>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
->>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
->>> ddiff = DeepDiff(t1, t2, ignore_order=True)
->>> print (ddiff)
-{}
-```
-
-### List difference ignoring order or duplicates for objects that have hash collision (Advanced)
-
-It might rarely happen that Python objects have hash collision using the built-in hash function:
-
-```python
->>> a='\0B'
->>> hash(a)
-64
->>> b='\0\0C'
->>> hash(b)
-64
-```
-
-Although `ignore_order` flag uses hash of items to calculate what is added or removed, we still get the right answer.
-
-```python
->>> list1=[a,b]
->>> list2=[a,a]
->>> DeepDiff(list1,list2, ignore_order=True)
-{'set_item_removed': set(["root['\x00\x00C']"])}
 ```
 
 ### List that contains dictionary:
@@ -341,7 +377,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Documentation
 
-<http://deepdiff.readthedocs.org/en/latest/>
+<http://deepdiff.readthedocs.io/en/latest/>
 
 ##Changelog
 
