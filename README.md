@@ -5,6 +5,7 @@
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 ![License](https://img.shields.io/pypi/l/deepdiff.svg?version=latest)
 [![Build Status](https://travis-ci.org/seperman/deepdiff.svg?branch=master)](https://travis-ci.org/seperman/deepdiff)
+[![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
