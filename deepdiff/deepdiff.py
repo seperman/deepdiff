@@ -6,9 +6,9 @@ import sys
 import difflib
 import datetime
 import logging
-try:
+try:  # pragma: no cover
     import cPickle as pickle
-except:
+except:  # pragma: no cover
     import pickle
 from decimal import Decimal
 from collections import Iterable
@@ -20,7 +20,7 @@ py_minor_version = sys.version[2]
 
 py3 = py_major_version == '3'
 
-if (py_major_version, py_minor_version) == (2.6):
+if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
     sys.exit('Python 2.6 is not supported.')
 
 if py3:  # pragma: no cover
@@ -98,7 +98,7 @@ class RemapDict(dict):
                            "the new unified naming convention.", old_key, new_key)
         if new_key in self:
             return self.get(new_key)
-        else:
+        else:  # pragma: no cover
             raise KeyError(new_key)
 
 
@@ -585,7 +585,7 @@ class DeepDiff(RemapDict):
             try:
                 cleaned_item = order_unordered(item)
                 item_hash = hash(pickle.dumps(cleaned_item))
-            except:
+            except:  # pragma: no cover
                 logger.error("Can not produce a hash for %s item in %s and "
                              "thus not counting this object." % (item, parent), exc_info=True)
             else:
@@ -707,7 +707,7 @@ class DeepDiff(RemapDict):
         return
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     if not py3:
         sys.exit("Please run with Python 3 to check for doc strings.")
     import doctest

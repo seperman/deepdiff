@@ -718,6 +718,10 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff2 = DeepDiff(t1, t2, significant_digits=6)
         self.assertEqual(ddiff, ddiff2)
 
+    def test_negative_significant_digits(self):
+        with self.assertRaises(ValueError):
+            DeepDiff(1, 1, significant_digits=-1)
+
     def test_base_level_dictionary_remapping(self):
         """
         Since subclassed dictionaries that override __getitem__ treat newdict.get(key)
@@ -829,9 +833,30 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_skip_str_type_in_dictionary(self):
-
         t1 = {1: {2: "a"}}
         t2 = {1: {}}
         ddiff = DeepDiff(t1, t2, exclude_types=[str])
         result = {}
         self.assertEqual(ddiff, result)
+
+    def test_unknown_parameters(self):
+        with self.assertRaises(ValueError):
+            DeepDiff(1, 1, wrong_param=2)
+
+    def test_bad_attribute(self):
+        class Bad(object):
+            __slots__ = ['x', 'y']
+
+            def __getattr__(self, key):
+                raise AttributeError("Bad item")
+
+            def __str__(self):
+                return "Bad Object"
+
+        t1 = Bad()
+        t2 = Bad()
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'unprocessed': ['root: Bad Object and Bad Object']}
+        self.assertEqual(ddiff, result)
+
