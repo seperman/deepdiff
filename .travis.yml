@@ -14,7 +14,7 @@ install:
   - pip install coveralls
 
 script:
-  coverage run --source=deepdiff setup.py test
+  coverage run --source=deepdiff tests.py
 
 after_success:
   - coveralls
