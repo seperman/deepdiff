@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 2.1.0 documentation!
+DeepDiff 2.1.1 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
