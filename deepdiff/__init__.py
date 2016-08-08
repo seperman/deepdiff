@@ -1,2 +1,2 @@
-from .deepdiff import DeepDiff
-from .deepsearch import DeepSearch
+from .ddiff import DeepDiff
+from .dsearch import DeepSearch

@@ -57,14 +57,37 @@ class DeepSearch(dict):
     exclude_types: list, default = None.
         List of object types to exclude from the report.
 
-
     **Returns**
 
-        A DeepSearch object that has all the matches.
+        A DeepSearch object that has the matched paths and matched values.
 
     **Supported data types**
 
     int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
+
+    **Examples**
+
+    Importing
+        >>> from deepdiff import DeepSearch
+        >>> from pprint import pprint
+        >>> from __future__ import print_function # In case running on Python 2
+
+    Search in list for string
+        >>> obj = ["long somewhere", "string", 0, "somewhere great!"]
+        >>> item = "somewhere"
+        >>> ds = DeepSearch(obj, item, verbose_level=2)
+        >>> print(ds)
+        {'matched_values': {'root[3]': 'somewhere great!', 'root[0]': 'long somewhere'}}
+
+    Search in nested data for string
+        >>> obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
+        >>> item = "somewhere"
+        >>> ds = DeepSearch(obj, item, verbose_level=2)
+        >>> pprint(ds, indent=2)
+        { 'matched_paths': {"root[1]['somewhere']": 'around'},
+          'matched_values': { 'root[0]': 'something somewhere',
+                              "root[1]['long']": 'somewhere'}}
+
     """
 
     warning_num = 0
