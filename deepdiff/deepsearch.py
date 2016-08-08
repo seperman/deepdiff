@@ -56,7 +56,7 @@ class DeepSearch(dict):
     int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
     """
 
-    show_warning = True
+    warning_num = 0
 
     def __init__(self, obj, item, exclude_paths=set(), exclude_types=set(), verbose_level=1, **kwargs):
         if kwargs:
@@ -70,7 +70,7 @@ class DeepSearch(dict):
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
         self.update(matched_keys=self.__set_or_dict(), matched_values=self.__set_or_dict(),
-                    unprocessed=[])
+                    matched_set_values=self.__set_or_dict(), unprocessed=[])
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
@@ -82,6 +82,12 @@ class DeepSearch(dict):
     def __set_or_dict(self):
         return {} if self.verbose_level >= 2 else set()
 
+    def __report(self, report_key, key, value):
+        if self.verbose_level >= 2:
+            self[report_key][key] = value
+        else:
+            self[report_key].add(key)
+
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
         parents_ids = set(parents_ids)
@@ -89,7 +95,7 @@ class DeepSearch(dict):
         return frozenset(parents_ids)
 
     def __search_obj(self, obj, item, parent, parents_ids=frozenset({}), is_namedtuple=False):
-        """Difference of 2 objects"""
+        """Search objects"""
         try:
             if is_namedtuple:
                 obj = obj._asdict()
@@ -115,7 +121,7 @@ class DeepSearch(dict):
         return skip
 
     def __search_dict(self, obj, item, parent, parents_ids=frozenset({}), print_as_attribute=False):
-        """Difference of 2 dictionaries"""
+        """Search dictionaries"""
         if print_as_attribute:
             parent_text = "%s.%s"
         else:
@@ -141,22 +147,19 @@ class DeepSearch(dict):
             new_parent = parent_text % (parent, item_key_str)
 
             if item in new_parent:
-                self['matched_keys'][new_parent] = obj_child
+                self.__report(report_key='matched_keys', key=new_parent, value=obj_child)
 
             self.__search(obj_child, item, parent=new_parent, parents_ids=parents_ids_added)
 
     def __search_iterable(self, obj, item, parent="root", parents_ids=frozenset({})):
-        """Difference of iterables except dictionaries, sets and strings."""
+        """Search iterables except dictionaries, sets and strings."""
 
         for i, x in enumerate(obj):
             new_parent = "%s[%s]" % (parent, i)
             if self.__skip_this(x, parent=new_parent):
                 continue
             if x == item:
-                if self.verbose_level >= 2:
-                    self["matched_values"][new_parent] = x
-                else:
-                    self["matched_values"].add(new_parent)
+                self.__report(report_key='matched_values', key=new_parent, value=x)
             else:
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -164,14 +167,10 @@ class DeepSearch(dict):
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
                 self.__search(x, item, "%s[%s]" % (parent, i), parents_ids_added)
 
-
     def __search_str(self, obj, item, parent):
         """Compare strings"""
         if item in obj:
-            if self.verbose_level >= 2:
-                self["matched_values"][parent] = obj
-            else:
-                self["matched_values"].add(parent)
+            self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
         if item == obj:
@@ -190,7 +189,7 @@ class DeepSearch(dict):
             self.__search_obj(obj, item, parent, parents_ids, is_namedtuple=True)
 
     def __search(self, obj, item, parent="root", parents_ids=frozenset({})):
-        """The main diff method"""
+        """The main search method"""
 
         if self.__skip_this(item, parent):
             return
@@ -207,7 +206,14 @@ class DeepSearch(dict):
         elif isinstance(obj, tuple):
             self.__search_tuple(obj, item, parent, parents_ids)
 
-        elif isinstance(obj, Iterable) or isinstance(obj, (set, frozenset)):
+        elif isinstance(obj, (set, frozenset)):
+            if self.warning_num < 10:
+                logger.warning("Set item detected in the path."
+                               "'set' objects do NOT support indexing. But DeepSearch will still report a path.")
+                self.warning_num += 1
+            self.__search_iterable(obj, item, parent, parents_ids)
+
+        elif isinstance(obj, Iterable):
             self.__search_iterable(obj, item, parent, parents_ids)
 
         else:

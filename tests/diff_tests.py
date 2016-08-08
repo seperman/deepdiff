@@ -859,4 +859,3 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'unprocessed': ['root: Bad Object and Bad Object']}
         self.assertEqual(ddiff, result)
-
