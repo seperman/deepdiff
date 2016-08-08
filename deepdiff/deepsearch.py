@@ -47,6 +47,17 @@ class DeepSearch(dict):
 
     item : The item to search for
 
+    verbose_level : int >= 0, default = 1.
+        Verbose level one shows the paths of found items.
+        Verbose level 2 shows the path and value of the found items.
+
+    exclude_paths: list, default = None.
+        List of paths to exclude from the report.
+
+    exclude_types: list, default = None.
+        List of object types to exclude from the report.
+
+
     **Returns**
 
         A DeepSearch object that has all the matches.
@@ -69,7 +80,7 @@ class DeepSearch(dict):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
-        self.update(matched_keys=self.__set_or_dict(), matched_values=self.__set_or_dict(),
+        self.update(matched_paths=self.__set_or_dict(), matched_values=self.__set_or_dict(),
                     matched_set_values=self.__set_or_dict(), unprocessed=[])
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
@@ -147,7 +158,7 @@ class DeepSearch(dict):
             new_parent = parent_text % (parent, item_key_str)
 
             if str(item) in new_parent:
-                self.__report(report_key='matched_keys', key=new_parent, value=obj_child)
+                self.__report(report_key='matched_paths', key=new_parent, value=obj_child)
 
             self.__search(obj_child, item, parent=new_parent, parents_ids=parents_ids_added)
 

@@ -165,7 +165,7 @@ print(ds)
 Which will print:
 
 ```py
-{'matched_keys': {"root['somewhere']": "around"},
+{'matched_paths': {"root['somewhere']": "around"},
  'matched_values': {"root['long']": "somewhere"}}
 ```
 

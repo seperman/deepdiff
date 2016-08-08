@@ -94,19 +94,19 @@ class DeepSearchTestCase(unittest.TestCase):
 
     def test_string_in_dictionary(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-        result = {'matched_keys': {"root['somewhere']"}, 'matched_values': {"root['long']"}}
+        result = {'matched_paths': {"root['somewhere']"}, 'matched_values': {"root['long']"}}
         ds = DeepSearch(obj, item, verbose_level=1)
         self.assertEqual(ds, result)
 
     def test_string_in_dictionary_verbose(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-        result = {'matched_keys': {"root['somewhere']": "around"}, 'matched_values': {"root['long']": "somewhere"}}
+        result = {'matched_paths': {"root['somewhere']": "around"}, 'matched_values': {"root['long']": "somewhere"}}
         ds = DeepSearch(obj, item, verbose_level=2)
         self.assertEqual(ds, result)
 
     def test_string_in_dictionary_in_list_verbose(self):
         obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
-        result = {'matched_keys': {"root[1]['somewhere']": "around"},
+        result = {'matched_paths': {"root[1]['somewhere']": "around"},
                   'matched_values': {"root[1]['long']": "somewhere", "root[0]": "something somewhere"}}
         ds = DeepSearch(obj, item, verbose_level=2)
         self.assertEqual(ds, result)
@@ -135,7 +135,7 @@ class DeepSearchTestCase(unittest.TestCase):
         obj = Point(x="my keys are somewhere", somewhere_good=22)
         ds = DeepSearch(obj, item, verbose_level=2)
         result = {'matched_values': {'root.x': 'my keys are somewhere'},
-                  'matched_keys': {'root.somewhere_good': 22}}
+                  'matched_paths': {'root.somewhere_good': 22}}
         self.assertEqual(ds, result)
 
     def test_string_in_set_verbose(self):
