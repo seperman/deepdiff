@@ -16,7 +16,12 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 - [Parameters](#parameters)
 - [Ignore Order](#ignore-order)
 - [Report repetitions](#report-repetitions)
+- [Exclude types or paths](#exclude-type-or-paths)
+- [Significant Digits](#significant-digits)
 - [Verbose Level](#verbose-level)
+- [Deep Search](#deepsearch)
+- [Using DeepDiff in unit tests](#using-deepdiff-in-unit-tests)
+- [Difference with Json Patch](#difference-with-json-patch)
 - [Examples](#examples)
 - [Documentation](http://deepdiff.readthedocs.io/en/latest/)
 
@@ -86,6 +91,53 @@ which will print you:
                                     'new_repeat': 2}}}
 ```
 
+## Exclude types or paths
+
+### Exclude certain types from comparison:
+```python
+>>> l1 = logging.getLogger("test")
+>>> l2 = logging.getLogger("test2")
+>>> t1 = {"log": l1, 2: 1337}
+>>> t2 = {"log": l2, 2: 1337}
+>>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
+{}
+```
+
+### Exclude part of your object tree from comparison:
+```python
+>>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+>>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+>>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+{}
+```
+
+## Significant Digits
+
+Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
+
+```python
+>>> t1 = Decimal('1.52')
+>>> t2 = Decimal('1.57')
+>>> DeepDiff(t1, t2, significant_digits=0)
+{}
+>>> DeepDiff(t1, t2, significant_digits=1)
+{'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
+```
+
+Approximate float comparison:
+
+```python
+>>> t1 = [ 1.1129, 1.3359 ]
+>>> t2 = [ 1.113, 1.3362 ]
+>>> pprint(DeepDiff(t1, t2, significant_digits=3))
+{}
+>>> pprint(DeepDiff(t1, t2))
+{'values_changed': {'root[0]': {'new_value': 1.113, 'old_value': 1.1129},
+                    'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
+>>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
+{'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
+```
+
 ## Verbose Level
 
 Verbose level by default is 1. The possible values are 0, 1 and 2.
@@ -94,8 +146,55 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 - Verbose level 1: default
 - Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
+## Deep Search
+(New in 2.1.0)
 
-## Examples
+DeepDiff comes with a utility to find the path to the item you are looking for.
+It is called DeepSearch and it has a similar interface to DeepDiff.
+
+Let's say you have a huge nested object and want to see if any item with the word `somewhere` exists in it.
+
+```py
+from deepdiff import DeepSearch
+obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
+ds = DeepSearch(obj, item, verbose_level=2)
+print(ds)
+```
+
+Which will print:
+
+```py
+{'matched_keys': {"root['somewhere']": "around"},
+ 'matched_values': {"root['long']": "somewhere"}}
+```
+
+## Using DeepDiff in unit tests
+
+`result` is the output of the function that is being tests.
+`expected` is the expected output of the function.
+
+```python
+assertEqual(DeepDiff(result, expected), {})
+```
+
+## Difference with Json Patch
+
+Unlike [Json Patch](https://tools.ietf.org/html/rfc6902) which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
+
+Example in Json Patch for replacing:
+
+`{ "op": "replace", "path": "/a/b/c", "value": 42 }`
+
+Example in DeepDiff for the same operation:
+
+```python
+>>> item1 = {'a':{'b':{'c':'foo'}}}
+>>> item2 = {'a':{'b':{'c':42}}}
+>>> DeepDiff(item1, item2)
+{'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type 'int'>}}}
+```
+
+# Examples
 
 ### Importing
 
@@ -312,59 +411,6 @@ And if you would like to know the values of items added or removed, please set t
 >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
 >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
 {}
-```
-
-### Significant Digits
-
-Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
-
-```python
->>> t1 = Decimal('1.52')
->>> t2 = Decimal('1.57')
->>> DeepDiff(t1, t2, significant_digits=0)
-{}
->>> DeepDiff(t1, t2, significant_digits=1)
-{'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
-```
-
-Approximate float comparison:
-
-```python
->>> t1 = [ 1.1129, 1.3359 ]
->>> t2 = [ 1.113, 1.3362 ]
->>> pprint(DeepDiff(t1, t2, significant_digits=3))
-{}
->>> pprint(DeepDiff(t1, t2))
-{'values_changed': {'root[0]': {'new_value': 1.113, 'old_value': 1.1129},
-                    'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
->>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
-{'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
-```
-
-### Using DeepDiff in unit tests
-
-`result` is the output of the function that is being tests.
-`expected` is the expected output of the function.
-
-```python
-assertEqual(DeepDiff(result, expected), {})
-```
-
-## Difference with Json Patch
-
-Unlike [Json Patch](https://tools.ietf.org/html/rfc6902) which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
-
-Example in Json Patch for replacing:
-
-`{ "op": "replace", "path": "/a/b/c", "value": 42 }`
-
-Example in DeepDiff for the same operation:
-
-```python
->>> item1 = {'a':{'b':{'c':'foo'}}}
->>> item2 = {'a':{'b':{'c':42}}}
->>> DeepDiff(item1, item2)
-{'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type 'int'>}}}
 ```
 
 

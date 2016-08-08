@@ -4,6 +4,9 @@ Deep Difference of dictionaries, iterables, strings and other objects. It will r
 
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 
+Note: Checkout the github repo's readme for complete coverage of features:
+https://github.com/seperman/deepdiff
+
 **Parameters**
 
 In addition to the 2 objects being compared:
