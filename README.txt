@@ -1,8 +1,11 @@
-**DeepDiff v 2.0.0**
+**DeepDiff v 2.1.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
 Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
+
+Note: Checkout the github repo's readme for complete coverage of features:
+https://github.com/seperman/deepdiff
 
 **Parameters**
 
@@ -223,6 +226,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
 - v1-8-0: Exclusion patterns.
 - v1-7-0: Deep Set comparison.

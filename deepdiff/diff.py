@@ -143,6 +143,13 @@ class DeepDiff(RemapDict):
         For example verbose level 1 shows what dictionary item are added or removed.
         And verbose level 2 shows the value of the items that are added or removed too.
 
+    exclude_paths: list, default = None.
+        List of paths to exclude from the report.
+
+    exclude_types: list, default = None.
+        List of object types to exclude from the report.
+
+
     **Returns**
 
         A DeepDiff object that has already calculated the difference of the 2 items.
