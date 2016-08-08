@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-To run all the test, run this in the root of repo:
-    python -m unittest discover
-
 To run only the search tests:
     python -m unittest tests.search_tests
 
-Or to run it with coverage:
+Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
 
 Or using Nose:
