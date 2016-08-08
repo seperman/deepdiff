@@ -45,6 +45,7 @@ Indices and tables
 Changelog
 =========
 
+- v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
 - v1-8-0: Exclusion patterns.
 - v1-7-0: Deep Set comparison.

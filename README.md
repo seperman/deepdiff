@@ -35,7 +35,8 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 ### Importing
 
 ```python
->>> from deepdiff import DeepDiff
+>>> from deepdiff import DeepDiff  # For Deep Difference of 2 objects
+>>> from deepdiff import DeepSearch  # For finding if item exists in an object
 ```
 
 ## Parameters
@@ -428,6 +429,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
+- v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
 - v1-8-0: Exclusion patterns.
 - v1-7-0: Deep Set comparison.
