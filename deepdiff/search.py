@@ -103,8 +103,9 @@ class DeepSearch(dict):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
-        self.update(matched_paths=self.__set_or_dict(), matched_values=self.__set_or_dict(),
-                    matched_set_values=self.__set_or_dict(), unprocessed=[])
+        self.update(matched_paths=self.__set_or_dict(),
+                    matched_values=self.__set_or_dict(),
+                    unprocessed=[])
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
@@ -231,6 +232,9 @@ class DeepSearch(dict):
         elif isinstance(obj, strings) and isinstance(item, strings):
             self.__search_str(obj, item, parent)
 
+        elif isinstance(obj, strings) and isinstance(item, numbers):
+            return
+
         elif isinstance(obj, numbers):
             self.__search_numbers(obj, item, parent)
 
@@ -253,7 +257,6 @@ class DeepSearch(dict):
         else:
             self.__search_obj(obj, item, parent, parents_ids)
 
-        return
 
 
 if __name__ == "__main__":  # pragma: no cover
