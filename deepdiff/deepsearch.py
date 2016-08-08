@@ -146,7 +146,7 @@ class DeepSearch(dict):
 
             new_parent = parent_text % (parent, item_key_str)
 
-            if item in new_parent:
+            if str(item) in new_parent:
                 self.__report(report_key='matched_keys', key=new_parent, value=obj_child)
 
             self.__search(obj_child, item, parent=new_parent, parents_ids=parents_ids_added)
@@ -174,7 +174,7 @@ class DeepSearch(dict):
 
     def __search_numbers(self, obj, item, parent):
         if item == obj:
-            self["matched_values"][parent] = obj
+            self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_tuple(self, obj, item, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
@@ -194,7 +194,7 @@ class DeepSearch(dict):
         if self.__skip_this(item, parent):
             return
 
-        elif isinstance(obj, strings):
+        elif isinstance(obj, strings) and isinstance(item, strings):
             self.__search_str(obj, item, parent)
 
         elif isinstance(obj, numbers):
