@@ -19,7 +19,7 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
 - [Exclude types or paths](#exclude-type-or-paths)
 - [Significant Digits](#significant-digits)
 - [Verbose Level](#verbose-level)
-- [Deep Search](#deepsearch)
+- [Deep Search](#deep-search)
 - [Using DeepDiff in unit tests](#using-deepdiff-in-unit-tests)
 - [Difference with Json Patch](#difference-with-json-patch)
 - [Examples](#examples)
