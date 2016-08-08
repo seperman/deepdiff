@@ -20,18 +20,19 @@ Install from PyPi::
 
 
 **************
-DeepDiff 2.0.0
+DeepDiff 2.1.0
 **************
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
 .. automodule:: deepdiff
 
 .. autoclass:: DeepDiff
     :members:
 
-
+.. autoclass:: DeepSearch
+    :members:
 
 Indices and tables
 ==================
