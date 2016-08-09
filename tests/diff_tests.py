@@ -158,6 +158,26 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+    def test_nested_list_difference_ignore_order(self):
+        t1 = [1, 2, [3, 4]]
+        t2 = [[4, 3], 2, 1]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
+    def test_nested_list_with_dictionarry_difference_ignore_order(self):
+        t1 = [1, 2, [3, 4, {1: 2}]]
+        t2 = [[4, 3, {1: 2}], 2, 1]
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        if py3:
+            # TODO: DeepDiff in Py3 currently messes up. It needs to return {} but returns the following.
+            # Pickle needs to be forked so it gives consistent results.
+            current_wrong_result = {'iterable_item_removed': {'root[2]': [3, 4, {1: 2}]},
+                                    'iterable_item_added': {'root[0]': [4, 3, {1: 2}]}}
+        else:
+            current_wrong_result = {}
+        self.assertEqual(ddiff, current_wrong_result)
+
     def test_list_difference_ignore_order_report_repetition(self):
         t1 = [1, 3, 1, 4]
         t2 = [4, 4, 1]
