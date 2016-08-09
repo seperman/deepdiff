@@ -1,4 +1,4 @@
-# deepdiff v 2.1.1
+# deepdiff v 2.1.2
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -148,7 +148,7 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 - Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
 ## Deep Search
-(New in 2.1.1)
+(New in 2.1.2)
 
 DeepDiff comes with a utility to find the path to the item you are looking for.
 It is called DeepSearch and it has a similar interface to DeepDiff.
