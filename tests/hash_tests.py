@@ -44,6 +44,21 @@ class DeepHashTestCase(unittest.TestCase):
         result = DeepHash(obj)
         self.assertEqual(result.hashes, expected_result)
 
+    def test_hash_str_fail_if_mutable(self):
+        """
+        This test fails if ContentHash is getting a mutable copy of hashes
+        which means each init of the ContentHash will have hashes from
+        the previous init.
+        """
+        obj1 = "a"
+        id_obj1 = id(obj1)
+        expected_result = {id_obj1: '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        result = DeepHash(obj1)
+        self.assertEqual(result.hashes, expected_result)
+        obj2 = "b"
+        result = DeepHash(obj2)
+        self.assertTrue(id_obj1 not in result.hashes)
+
     def test_list1(self):
         string1 = "a"
         obj = [string1, 10, 20]
@@ -58,4 +73,5 @@ class DeepHashTestCase(unittest.TestCase):
         expected_result = {id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
                            id(obj): 'dict:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj)
+        from nose.tools import set_trace; set_trace()
         self.assertEqual(result.hashes, expected_result)

@@ -56,16 +56,15 @@ class DeepHash(object):
 
     show_warning = True
 
-    def __init__(self, obj, hashes={}, exclude_types=set(), **kwargs):
+    def __init__(self, obj, hashes=None, exclude_types=set(), **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are obj, hashes and exclude_types.") % ', '.join(kwargs.keys()))
-        from nose.tools import set_trace; set_trace()
         self.obj = obj
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
 
-        self.hashes = hashes
+        self.hashes = hashes if hashes else {}
         self.unprocessed = []
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
