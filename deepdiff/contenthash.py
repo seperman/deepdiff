@@ -7,7 +7,7 @@ import datetime
 from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
-import hashlib
+from hashlib import sha1
 import logging
 
 from deepdiff.helper import py3
@@ -36,6 +36,18 @@ def warn(*args, **kwargs):
         logger.warning(*args, **kwargs)
 
 
+class NotHashed(object):
+    pass
+
+
+class AlreadyHashed(object):
+    pass
+
+
+class Skipped(object):
+    pass
+
+
 class DeepHash(object):
 
     r"""
@@ -48,6 +60,7 @@ class DeepHash(object):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are obj, hashes and exclude_types.") % ', '.join(kwargs.keys()))
+        from nose.tools import set_trace; set_trace()
         self.obj = obj
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -70,13 +83,17 @@ class DeepHash(object):
         else:
             if py3:
                 if isinstance(obj, str):
-                    obj = "bytes:{}".format(obj)
+                    obj = "{}:{}".format(type(obj).__name__, obj)
                     obj = obj.encode('utf-8')
+                elif isinstance(obj, bytes):
+                    obj = type(obj).__name__ + b":" + obj
             else:
                 if isinstance(obj, unicode):
-                    obj = u"bytes:{}".format(obj)
+                    obj = u"{}:{}".format(type(obj).__name__, obj)
                     obj = obj.encode('utf-8')
-            result = hashlib.sha1(obj).hexdigest()
+                elif isinstance(obj, str):
+                    obj = type(obj).__name__ + ":" + obj
+            result = sha1(obj).hexdigest()
             self.hashes[obj_id] = result
         return result
 
@@ -109,17 +126,19 @@ class DeepHash(object):
         obj_keys = set(obj.keys())
 
         for key in obj_keys:
+            key_hash = self.__hash(key)
             item = obj[key]
             item_id = id(item)
             if parents_ids and item_id in parents_ids:
                 continue
             hashed = self.__hash(item)
+            hashed = "key:{},value:{}".format(key_hash, hashed)
             result.append(hashed)
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
 
         result.sort()
         result = ','.join(result)
-        result = "dict:{}".format(result)
+        result = "dict:{{}}".format(result)
 
         return result
 
@@ -140,13 +159,11 @@ class DeepHash(object):
 
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
             hashed = self.__hash(x, parents_ids_added)
-            if hashed is None:
-                import ipdb; ipdb.set_trace()
             result.append(hashed)
 
         result.sort()
         result = ','.join(result)
-        result = "{}:{}".format(type(obj), result)
+        result = "{}:{}".format(type(obj).__name__, result)
 
         return result
 
@@ -168,16 +185,16 @@ class DeepHash(object):
     def __hash(self, obj, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
 
-        result = None
+        result = NotHashed
 
         if self.__skip_this(obj):
-            return
+            return Skipped
 
         elif isinstance(obj, strings):
             result = self.__hash_str(obj)
 
         elif isinstance(obj, numbers):
-            result = "{}:{}".format(type(obj), obj)
+            result = "{}:{}".format(type(obj).__name__, obj)
 
         elif isinstance(obj, MutableMapping):
             result = self.__hash_dict(obj, parents_ids)
@@ -195,8 +212,10 @@ class DeepHash(object):
             result = self.__hash_obj(obj, parents_ids)
 
         obj_id = id(obj)
-        if obj_id not in self.hashes:
+        if result != NotHashed and obj_id not in self.hashes and not isinstance(obj, numbers):
             self.hashes[obj_id] = result
+
+        return result
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:

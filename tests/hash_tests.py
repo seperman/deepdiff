@@ -36,11 +36,26 @@ class CustomClass:
 
 
 class DeepHashTestCase(unittest.TestCase):
-
     """DeepSearch Tests."""
 
-    def test_number_in_list(self):
-        obj = ["a", 10, 20]
-        expected_result = {}
+    def test_hash_str(self):
+        obj = "a"
+        expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        result = DeepHash(obj)
+        self.assertEqual(result.hashes, expected_result)
+
+    def test_list1(self):
+        string1 = "a"
+        obj = [string1, 10, 20]
+        expected_result = {id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
+                           id(obj): 'list:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        result = DeepHash(obj)
+        self.assertEqual(result.hashes, expected_result)
+
+    def test_dict1(self):
+        string1 = "a"
+        obj = {"key1": string1, 1: 10, 2: 20}
+        expected_result = {id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
+                           id(obj): 'dict:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj)
         self.assertEqual(result.hashes, expected_result)
