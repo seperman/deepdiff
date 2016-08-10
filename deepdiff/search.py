@@ -9,13 +9,7 @@ from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
 
-py_major_version = sys.version[0]
-py_minor_version = sys.version[2]
-
-py3 = py_major_version == '3'
-
-if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
-    sys.exit('Python 2.6 is not supported.')
+from deepdiff.helper import py3
 
 if py3:  # pragma: no cover
     from builtins import int
@@ -256,7 +250,6 @@ class DeepSearch(dict):
 
         else:
             self.__search_obj(obj, item, parent, parents_ids)
-
 
 
 if __name__ == "__main__":  # pragma: no cover
