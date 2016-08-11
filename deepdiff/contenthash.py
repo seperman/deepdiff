@@ -191,6 +191,10 @@ class DeepHash(dict):
     def __hash(self, obj, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
 
+        obj_id = id(obj)
+        if obj_id in self:
+            return self[obj_id]
+
         result = NotHashed
 
         if self.__skip_this(obj):
@@ -217,7 +221,6 @@ class DeepHash(dict):
         else:
             result = self.__hash_obj(obj, parents_ids)
 
-        obj_id = id(obj)
         if result != NotHashed and obj_id not in self and not isinstance(obj, numbers):
             self[obj_id] = result
 

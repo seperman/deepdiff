@@ -577,7 +577,8 @@ class DeepDiff(RemapDict):
         for (i, item) in enumerate(t):
             try:
                 hashes = DeepHash(item, hashes=self.hashes)
-                item_hash = hashes[id(item)]
+                # from nose.tools import set_trace; set_trace()
+                item_hash = hashes.get(id(item), item)
             except:  # pragma: no cover
                 logger.error("Can not produce a hash for %s item in %s and "
                              "thus not counting this object." % (item, parent), exc_info=True)
