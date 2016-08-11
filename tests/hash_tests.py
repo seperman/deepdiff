@@ -117,6 +117,42 @@ class DeepHashTestCase(unittest.TestCase):
 
         self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
 
+    def test_same_sets_same_hash(self):
+        t1 = {1, 3, 2}
+        t2 = {2, 3, 1}
+        t1_hash = DeepHash(t1)
+        t2_hash = DeepHash(t2)
+
+        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+
+    def test_same_sets_in_lists_same_hash(self):
+        t1 = ["a", {1, 3, 2}]
+        t2 = [{2, 3, 1}, "a"]
+        t1_hash = DeepHash(t1)
+        t2_hash = DeepHash(t2)
+
+        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+
+    def test_unknown_parameters(self):
+        with self.assertRaises(ValueError):
+            DeepHash(1, wrong_param=2)
+
+    def test_bad_attribute(self):
+        class Bad(object):
+            __slots__ = ['x', 'y']
+
+            def __getattr__(self, key):
+                raise AttributeError("Bad item")
+
+            def __str__(self):
+                return "Bad Object"
+
+        t1 = Bad()
+
+        ddiff = DeepHash(t1)
+        result = {id(t1): DeepHash.Unprocessed, 'unprocessed': [t1]}
+        self.assertEqual(ddiff, result)
+
 
 class DeepHashSHA1TestCase(unittest.TestCase):
     """DeepSearch Tests."""

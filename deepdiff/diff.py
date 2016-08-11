@@ -576,14 +576,17 @@ class DeepDiff(RemapDict):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
-                hashes = DeepHash(item, hashes=self.hashes)
-                # from nose.tools import set_trace; set_trace()
-                item_hash = hashes.get(id(item), item)
+                hashes_all = DeepHash(item, hashes=self.hashes)
+                item_hash = hashes_all.get(id(item), item)
             except:  # pragma: no cover
                 logger.error("Can not produce a hash for %s item in %s and "
                              "thus not counting this object." % (item, parent), exc_info=True)
             else:
-                add_hash(hashes, item_hash, item, i)
+                if isinstance(item_hash, DeepHash.Unprocessed):
+                    logger.error("Can not produce a hash for %s item in %s and "
+                                 "thus not counting this object." % (item, parent), exc_info=True)
+                else:
+                    add_hash(hashes, item_hash, item, i)
         return hashes
 
     def __diff_unhashable_iterable(self, t1, t2, parent):

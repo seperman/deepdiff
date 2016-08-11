@@ -28,24 +28,12 @@ logger = logging.getLogger()
 WARNING_NUM = 0
 
 
-def warn(*args, **kwargs):
+def warn(*args, **kwargs):  # pragma: no cover
     global WARNING_NUM
 
     if WARNING_NUM < 10:
         WARNING_NUM += 1
         logger.warning(*args, **kwargs)
-
-
-class NotHashed(object):
-    pass
-
-
-class AlreadyHashed(object):
-    pass
-
-
-class Skipped(object):
-    pass
 
 
 class DeepHash(dict):
@@ -67,9 +55,36 @@ class DeepHash(dict):
         self.hasher = hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
-        self.unprocessed = []
+        self['unprocessed'] = []
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
+
+        if not self['unprocessed']:
+            del self['unprocessed']
+
+    class NotHashed(object):
+
+        def __repr__(self):
+            return "Error: NotHashed"
+
+        def __str__(self):
+            return "Error: NotHashed"
+
+    class Skipped(object):
+
+        def __repr__(self):
+            return "Skipped"
+
+        def __str__(self):
+            return "Skipped"
+
+    class Unprocessed(object):
+
+        def __repr__(self):
+            return "Error: Unprocessed"
+
+        def __str__(self):
+            return "Error: Unprocessed"
 
     @staticmethod
     def sha1hex(obj):
@@ -114,8 +129,8 @@ class DeepHash(dict):
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
-                self.unprocessed.append("%s: %s and %s" % (obj))
-                return
+                self['unprocessed'].append(obj)
+                return self.Unprocessed
 
         self.__hash_dict(obj, parents_ids)
 
@@ -195,10 +210,10 @@ class DeepHash(dict):
         if obj_id in self:
             return self[obj_id]
 
-        result = NotHashed
+        result = self.NotHashed
 
         if self.__skip_this(obj):
-            return Skipped
+            return self.Skipped
 
         elif isinstance(obj, strings):
             result = self.__hash_str(obj)
@@ -221,7 +236,7 @@ class DeepHash(dict):
         else:
             result = self.__hash_obj(obj, parents_ids)
 
-        if result != NotHashed and obj_id not in self and not isinstance(obj, numbers):
+        if result != self.NotHashed and obj_id not in self and not isinstance(obj, numbers):
             self[obj_id] = result
 
         return result
