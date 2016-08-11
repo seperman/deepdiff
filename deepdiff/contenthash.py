@@ -48,7 +48,7 @@ class Skipped(object):
     pass
 
 
-class DeepHash(object):
+class DeepHash(dict):
 
     r"""
     **DeepHash**
@@ -56,7 +56,7 @@ class DeepHash(object):
 
     show_warning = True
 
-    def __init__(self, obj, hashes=None, exclude_types=set(), **kwargs):
+    def __init__(self, obj, hashes=None, exclude_types=set(), hasher=hash, **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are obj, hashes and exclude_types.") % ', '.join(kwargs.keys()))
@@ -64,10 +64,29 @@ class DeepHash(object):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
 
-        self.hashes = hashes if hashes else {}
+        self.hasher = hasher
+        hashes = hashes if hashes else {}
+        self.update(hashes)
         self.unprocessed = []
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
+
+    @staticmethod
+    def sha1hex(obj):
+        """Use Sha1 for more accuracy."""
+        if py3:
+            if isinstance(obj, str):
+                obj = "{}:{}".format(type(obj).__name__, obj)
+                obj = obj.encode('utf-8')
+            elif isinstance(obj, bytes):
+                obj = type(obj).__name__ + b":" + obj
+        else:
+            if isinstance(obj, unicode):
+                obj = u"{}:{}".format(type(obj).__name__, obj)
+                obj = obj.encode('utf-8')
+            elif isinstance(obj, str):
+                obj = type(obj).__name__ + ":" + obj
+        return sha1(obj).hexdigest()
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -77,23 +96,11 @@ class DeepHash(object):
 
     def __get_and_set_hash(self, obj):
         obj_id = id(obj)
-        if obj_id in self.hashes:
-            result = self.hashes[obj_id]
+        if obj_id in self:
+            result = self[obj_id]
         else:
-            if py3:
-                if isinstance(obj, str):
-                    obj = "{}:{}".format(type(obj).__name__, obj)
-                    obj = obj.encode('utf-8')
-                elif isinstance(obj, bytes):
-                    obj = type(obj).__name__ + b":" + obj
-            else:
-                if isinstance(obj, unicode):
-                    obj = u"{}:{}".format(type(obj).__name__, obj)
-                    obj = obj.encode('utf-8')
-                elif isinstance(obj, str):
-                    obj = type(obj).__name__ + ":" + obj
-            result = sha1(obj).hexdigest()
-            self.hashes[obj_id] = result
+            result = self.hasher(obj)
+            self[obj_id] = result
         return result
 
     def __hash_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
@@ -130,14 +137,14 @@ class DeepHash(object):
             item_id = id(item)
             if parents_ids and item_id in parents_ids:
                 continue
-            hashed = self.__hash(item)
-            hashed = "key:{},value:{}".format(key_hash, hashed)
-            result.append(hashed)
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+            hashed = self.__hash(item, parents_ids_added)
+            hashed = "{}:{}".format(key_hash, hashed)
+            result.append(hashed)
 
         result.sort()
-        result = ','.join(result)
-        result = "dict:{{}}".format(result)
+        result = ';'.join(result)
+        result = "dict:{%s}" % result
 
         return result
 
@@ -211,8 +218,8 @@ class DeepHash(object):
             result = self.__hash_obj(obj, parents_ids)
 
         obj_id = id(obj)
-        if result != NotHashed and obj_id not in self.hashes and not isinstance(obj, numbers):
-            self.hashes[obj_id] = result
+        if result != NotHashed and obj_id not in self and not isinstance(obj, numbers):
+            self[obj_id] = result
 
         return result
 
