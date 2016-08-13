@@ -583,7 +583,7 @@ class DeepDiff(RemapDict):
                 logger.error("Can not produce a hash for %s item in %s and "
                              "thus not counting this object." % (item, parent), exc_info=True)
             else:
-                if isinstance(item_hash, DeepHash.Unprocessed):
+                if isinstance(item_hash, DeepHash.Unprocessed):  # pragma: no cover
                     logger.error("Can not produce a hash for %s item in %s and "
                                  "thus not counting this object." % (item, parent), exc_info=True)
                 else:

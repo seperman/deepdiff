@@ -72,7 +72,7 @@ class DeepHash(dict):
             return "Error: NotHashed"  # pragma: no cover
 
         def __str__(self):
-            return "Error: NotHashed"
+            return "Error: NotHashed"  # pragma: no cover
 
     class Skipped(object):
 
@@ -80,7 +80,7 @@ class DeepHash(dict):
             return "Skipped"  # pragma: no cover
 
         def __str__(self):
-            return "Skipped"
+            return "Skipped"  # pragma: no cover
 
     class Unprocessed(object):
 
@@ -88,7 +88,7 @@ class DeepHash(dict):
             return "Error: Unprocessed"  # pragma: no cover
 
         def __str__(self):
-            return "Error: Unprocessed"
+            return "Error: Unprocessed"  # pragma: no cover
 
     @staticmethod
     def sha1hex(obj):
@@ -98,7 +98,7 @@ class DeepHash(dict):
                 obj = "{}:{}".format(type(obj).__name__, obj)
                 obj = obj.encode('utf-8')
             elif isinstance(obj, bytes):
-                obj = type(obj).__name__ + b":" + obj
+                obj = type(obj).__name__.encode('utf-8') + b":" + obj
         else:
             if isinstance(obj, unicode):
                 obj = u"{}:{}".format(type(obj).__name__, obj)

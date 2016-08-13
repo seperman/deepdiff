@@ -214,6 +214,12 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         result = DeepHash(obj2, hasher=DeepHash.sha1hex)
         self.assertTrue(id_obj1 not in result)
 
+    def test_bytecode(self):
+        obj = b"a"
+        expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        self.assertEqual(result, expected_result)
+
     def test_list1(self):
         string1 = "a"
         obj = [string1, 10, 20]
