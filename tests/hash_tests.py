@@ -153,6 +153,42 @@ class DeepHashTestCase(unittest.TestCase):
         result = {id(t1): DeepHash.Unprocessed, 'unprocessed': [t1]}
         self.assertEqual(ddiff, result)
 
+    def test_repetition_by_default_does_not_effect(self):
+        list1 = [3, 4]
+        list1_id = id(list1)
+        a = [1, 2, list1]
+        a_id = id(a)
+
+        list2 = [4, 3, 3]
+        list2_id = id(list2)
+        b = [list2, 2, 1]
+        b_id = id(b)
+
+        hash_a = DeepHash(a)
+        hash_b = DeepHash(b)
+
+        self.assertEqual(hash_a[list1_id], hash_b[list2_id])
+        self.assertEqual(hash_a[a_id], hash_b[b_id])
+
+    def test_repetition_off_affects_result(self):
+        list1 = [3, 4]
+        list1_id = id(list1)
+        a = [1, 2, list1]
+        a_id = id(a)
+
+        list2 = [4, 3, 3]
+        list2_id = id(list2)
+        b = [list2, 2, 1]
+        b_id = id(b)
+
+        hash_a = DeepHash(a, ignore_repetition=False)
+        hash_b = DeepHash(b, ignore_repetition=False)
+
+        self.assertNotEqual(hash_a[list1_id], hash_b[list2_id])
+        self.assertNotEqual(hash_a[a_id], hash_b[b_id])
+
+        self.assertEqual(hash_a[list1_id].replace('3|1', '3|2'), hash_b[list2_id])
+
 
 class DeepHashSHA1TestCase(unittest.TestCase):
     """DeepSearch Tests."""

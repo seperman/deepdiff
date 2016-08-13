@@ -7,6 +7,7 @@ import datetime
 from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
+from collections import defaultdict
 from hashlib import sha1
 import logging
 
@@ -44,13 +45,16 @@ class DeepHash(dict):
 
     show_warning = True
 
-    def __init__(self, obj, hashes=None, exclude_types=set(), hasher=hash, **kwargs):
+    def __init__(self, obj, hashes=None, exclude_types=set(),
+                 hasher=hash, ignore_repetition=True, **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
-                              "The valid parameters are obj, hashes and exclude_types.") % ', '.join(kwargs.keys()))
+                              "The valid parameters are obj, hashes, exclude_types."
+                              "hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
         self.obj = obj
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
+        self.ignore_repetition = ignore_repetition
 
         self.hasher = hasher
         hashes = hashes if hashes else {}
@@ -65,7 +69,7 @@ class DeepHash(dict):
     class NotHashed(object):
 
         def __repr__(self):
-            return "Error: NotHashed"
+            return "Error: NotHashed"  # pragma: no cover
 
         def __str__(self):
             return "Error: NotHashed"
@@ -73,7 +77,7 @@ class DeepHash(dict):
     class Skipped(object):
 
         def __repr__(self):
-            return "Skipped"
+            return "Skipped"  # pragma: no cover
 
         def __str__(self):
             return "Skipped"
@@ -81,7 +85,7 @@ class DeepHash(dict):
     class Unprocessed(object):
 
         def __repr__(self):
-            return "Error: Unprocessed"
+            return "Error: Unprocessed"  # pragma: no cover
 
         def __str__(self):
             return "Error: Unprocessed"
@@ -168,7 +172,7 @@ class DeepHash(dict):
 
     def __hash_iterable(self, obj, parents_ids=frozenset({})):
 
-        result = []
+        result = defaultdict(int)
 
         for i, x in enumerate(obj):
             if self.__skip_this(x):
@@ -180,7 +184,12 @@ class DeepHash(dict):
 
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
             hashed = self.__hash(x, parents_ids_added)
-            result.append(hashed)
+            result[hashed] += 1
+
+        if self.ignore_repetition:
+            result = list(result.keys())
+        else:
+            result = ['{}|{}'.format(i[0], i[1]) for i in getattr(result, items)()]
 
         result.sort()
         result = ','.join(result)
@@ -213,7 +222,7 @@ class DeepHash(dict):
         result = self.NotHashed
 
         if self.__skip_this(obj):
-            return self.Skipped
+            result = self.Skipped
 
         elif isinstance(obj, strings):
             result = self.__hash_str(obj)
@@ -238,6 +247,10 @@ class DeepHash(dict):
 
         if result != self.NotHashed and obj_id not in self and not isinstance(obj, numbers):
             self[obj_id] = result
+
+        if result is self.NotHashed:
+            self[obj_id] = self.NotHashed
+            self['unprocessed'].append(obj)
 
         return result
 
