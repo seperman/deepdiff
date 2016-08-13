@@ -111,6 +111,7 @@ class DeepDiff(RemapDict):
 
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
+        This feature currently is experimental and is not production ready.
 
     significant_digits : int >= 0, default=None.
         If it is a non negative integer, it compares only that many digits AFTER
@@ -589,7 +590,7 @@ class DeepDiff(RemapDict):
                     add_hash(hashes, item_hash, item, i)
         return hashes
 
-    def __diff_unhashable_iterable(self, t1, t2, parent):
+    def __diff_iterable_with_contenthash(self, t1, t2, parent):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
@@ -689,12 +690,11 @@ class DeepDiff(RemapDict):
             self.__diff_tuple(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, (set, frozenset)):
-            # self.__diff_unhashable_iterable(t1, t2, parent, is_set=True)
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
             if self.ignore_order:
-                self.__diff_unhashable_iterable(t1, t2, parent)
+                self.__diff_iterable_with_contenthash(t1, t2, parent)
             else:
                 self.__diff_iterable(t1, t2, parent, parents_ids)
 

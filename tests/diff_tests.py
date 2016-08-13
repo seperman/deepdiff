@@ -158,7 +158,7 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
-    def test_list_difference_ignore_order_nested(self):
+    def test_nested_list_ignore_order(self):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3, 3], 2, 1]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
@@ -195,6 +195,17 @@ class DeepDiffTestCase(unittest.TestCase):
                                                     'value': 4,
                                                     'new_repeat': 2}}}
         self.assertEqual(ddiff, result)
+
+    # TODO: fix repeition report
+    def test_nested_list_ignore_order_report_repetition_wrong_currently(self):
+        t1 = [1, 2, [3, 4]]
+        t2 = [[4, 3, 3], 2, 1]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        result = {'repetition_change': {
+            'root[2][0]': {'old_repeat': 1, 'new_indexes': [1, 2],
+                           'old_indexes': [1],
+                           'value': 3, 'new_repeat': 2}}}
+        self.assertNotEqual(ddiff, result)
 
     def test_list_of_unhashable_difference_ignore_order(self):
         t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
