@@ -12,6 +12,10 @@ Or using Nose:
     nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
+    On linux:
+    nosetests ./tests/hash_tests.py:DeepHashSHA1TestCase.test_bytecode
+
+    On windows:
     nosetests .\tests\hash_tests.py:DeepSearchTestCase.test_string_in_root
 """
 import unittest
@@ -216,7 +220,10 @@ class DeepHashSHA1TestCase(unittest.TestCase):
 
     def test_bytecode(self):
         obj = b"a"
-        expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        if py3:
+            expected_result = {id(obj): '066c7cf4158717c47244fa6cf1caafca605d550b'}
+        else:
+            expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 

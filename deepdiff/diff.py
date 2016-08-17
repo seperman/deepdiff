@@ -6,10 +6,6 @@ import sys
 import difflib
 import datetime
 import logging
-try:  # pragma: no cover
-    import cPickle as pickle
-except:  # pragma: no cover
-    import pickle
 from decimal import Decimal
 from collections import Iterable
 from collections import namedtuple
