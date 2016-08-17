@@ -35,8 +35,7 @@ else:  # pragma: no cover
     from itertools import izip_longest as zip_longest
     items = 'iteritems'
 
-logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
@@ -613,8 +612,8 @@ class DeepDiff(RemapDict):
                 cleaned_item = order_unordered(item)
                 item_hash = hash(pickle.dumps(cleaned_item))
             except:  # pragma: no cover
-                logger.error("Can not produce a hash for %s item in %s and "
-                             "thus not counting this object." % (item, parent), exc_info=True)
+                logger.warning("Can not produce a hash for %s item in %s and "
+                               "thus not counting this object." % (item, parent), exc_info=True)
             else:
                 add_hash(hashes, item_hash, item, i)
         return hashes
