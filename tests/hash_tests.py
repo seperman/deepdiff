@@ -13,10 +13,10 @@ Or using Nose:
 
 To run a specific test, run this from the root of repo:
     On linux:
-    nosetests ./tests/hash_tests.py:DeepHashSHA1TestCase.test_bytecode
+    nosetests ./tests/hash_tests.py:DeepHashTestCase.test_bytecode
 
     On windows:
-    nosetests .\tests\hash_tests.py:DeepSearchTestCase.test_string_in_root
+    nosetests .\tests\hash_tests.py:DeepHashTestCase.test_string_in_root
 """
 import unittest
 from deepdiff import DeepHash
@@ -40,7 +40,7 @@ class CustomClass:
 
 
 class DeepHashTestCase(unittest.TestCase):
-    """DeepSearch Tests."""
+    """DeepHash Tests."""
 
     def test_hash_str(self):
         obj = "a"
@@ -174,7 +174,7 @@ class DeepHashTestCase(unittest.TestCase):
         self.assertEqual(hash_a[list1_id], hash_b[list2_id])
         self.assertEqual(hash_a[a_id], hash_b[b_id])
 
-    def test_repetition_off_affects_result(self):
+    def test_setting_repetition_off_unequal_hash(self):
         list1 = [3, 4]
         list1_id = id(list1)
         a = [1, 2, list1]
@@ -193,9 +193,32 @@ class DeepHashTestCase(unittest.TestCase):
 
         self.assertEqual(hash_a[list1_id].replace('3|1', '3|2'), hash_b[list2_id])
 
+    def test_already_calculated_hash_wont_be_recalculated(self):
+        hashes = (i for i in range(10))
+
+        def hasher(obj):
+            return next(hashes)
+
+        obj = "a"
+        expected_result = {id(obj): 0}
+        result = DeepHash(obj, hasher=hasher)
+        self.assertEqual(result, expected_result)
+
+        # we simply feed the last result to DeepHash
+        # So it can re-use the results.
+        result2 = DeepHash(obj, hasher=hasher, hashes=result)
+        # if hashes are not cached and re-used,
+        # then the next time hasher runs, it returns
+        # number 1 instead of 0.
+        self.assertEqual(result2, expected_result)
+
+        result3 = DeepHash(obj, hasher=hasher)
+        expected_result = {id(obj): 1}
+        self.assertEqual(result3, expected_result)
+
 
 class DeepHashSHA1TestCase(unittest.TestCase):
-    """DeepSearch Tests."""
+    """DeepHash with SHA1 Tests."""
 
     def test_hash_str(self):
         obj = "a"
