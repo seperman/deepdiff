@@ -21,8 +21,7 @@ else:  # pragma: no cover
     numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
     items = 'iteritems'
 
-logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
