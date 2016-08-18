@@ -253,7 +253,7 @@ class DeepHash(dict):
         if result != self.not_hashed and obj_id not in self and not isinstance(obj, numbers):
             self[obj_id] = result
 
-        if result is self.not_hashed:
+        if result is self.not_hashed:  # pragma: no cover
             self[obj_id] = self.not_hashed
             self['unprocessed'].append(obj)
 
