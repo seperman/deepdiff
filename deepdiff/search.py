@@ -253,6 +253,6 @@ class DeepSearch(dict):
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:
-        sys.exit("Please run with Python 3 to check for doc strings.")
+        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()

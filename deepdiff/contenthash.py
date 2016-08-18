@@ -138,7 +138,9 @@ class DeepHash(dict):
                 self['unprocessed'].append(obj)
                 return self.unprocessed
 
-        self.__hash_dict(obj, parents_ids)
+        result = self.__hash_dict(obj, parents_ids)
+        result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
+        return result
 
     def __skip_this(self, obj):
         skip = False
@@ -259,6 +261,6 @@ class DeepHash(dict):
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:
-        sys.exit("Please run with Python 3 to check for doc strings.")
+        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()

@@ -21,6 +21,7 @@ To run a specific test, run this from the root of repo:
 import unittest
 from deepdiff import DeepHash
 from sys import version
+from collections import namedtuple
 import logging
 logging.disable(logging.CRITICAL)
 
@@ -80,12 +81,14 @@ class DeepHashTestCase(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     def test_named_tuples(self):
-        from collections import namedtuple
-        Point = namedtuple('Point', ['x', 'y'])
-        t1 = Point(x=11, y=22)
-        result = DeepHash(t1)
-        from nose.tools import set_trace; set_trace()
-        self.assertEqual(result, {})
+        x = "x"
+        x_id = id(x)
+        x_hash = hash(x)
+        Point = namedtuple('Point', [x])
+        obj = Point(x=11)
+        result = DeepHash(obj)
+        expected_result = {x_id: x_hash, id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
+        self.assertEqual(result, expected_result)
 
     def test_dict(self):
         string1 = "a"
