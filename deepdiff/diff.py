@@ -362,6 +362,10 @@ class DeepDiff(RemapDict):
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
 
     def __skip_this(self, t1, t2, parent):
+        """
+        Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
+        :rtype: bool
+        """
         skip = False
         if parent in self.exclude_paths:
             skip = True
