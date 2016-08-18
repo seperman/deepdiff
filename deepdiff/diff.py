@@ -351,6 +351,12 @@ class DeepDiff(RemapDict):
     def __unprocessed(self, parent, t1, t2):
         self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
 
+    def __values_changed(self, parent, t1, t2, diff=None):
+        if diff is not None:
+            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
+        else:
+            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
+
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
         parents_ids = set(parents_ids)
@@ -502,10 +508,9 @@ class DeepDiff(RemapDict):
             diff = list(diff)
             if diff:
                 diff = '\n'.join(diff)
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2, diff=diff)
+                self.__values_changed(parent, t1, t2, diff)
         elif t1 != t2:
-            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
+            self.__values_changed(parent, t1, t2)
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
@@ -602,12 +607,10 @@ class DeepDiff(RemapDict):
             t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
             t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
             if t1_s != t2_s:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+                self.__values_changed(parent, t1, t2)
         else:
             if t1 != t2:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+                self.__values_changed(parent, t1, t2)
 
     def __diff_types(self, t1, t2, parent):
         """Diff types"""
