@@ -20,6 +20,7 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepHash
+import sys
 from sys import version
 from collections import namedtuple
 import logging
@@ -81,14 +82,20 @@ class DeepHashTestCase(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     def test_named_tuples(self):
+        # checking if pypy3 is running the test
+        # in that case due to a pypy3 bug or something
+        # the id of x inside the named tuple changes.
         x = "x"
         x_id = id(x)
         x_hash = hash(x)
         Point = namedtuple('Point', [x])
         obj = Point(x=11)
         result = DeepHash(obj)
-        expected_result = {x_id: x_hash, id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
-        self.assertEqual(result, expected_result)
+        if py3 and hasattr(sys, "pypy_translation_info"):
+            self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' % x_hash)
+        else:
+            expected_result = {x_id: x_hash, id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
+            self.assertEqual(result, expected_result)
 
     def test_dict(self):
         string1 = "a"
