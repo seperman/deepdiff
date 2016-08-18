@@ -98,13 +98,13 @@ class DeepHash(dict):
     @staticmethod
     def sha1hex(obj):
         """Use Sha1 for more accuracy."""
-        if py3:
+        if py3:  # pragma: no cover
             if isinstance(obj, str):
                 obj = "{}:{}".format(type(obj).__name__, obj)
                 obj = obj.encode('utf-8')
             elif isinstance(obj, bytes):
                 obj = type(obj).__name__.encode('utf-8') + b":" + obj
-        else:
+        else:  # pragma: no cover
             if isinstance(obj, unicode):
                 obj = u"{}:{}".format(type(obj).__name__, obj)
                 obj = obj.encode('utf-8')
