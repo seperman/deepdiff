@@ -3,11 +3,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import difflib
-import datetime
-import logging
-from decimal import Decimal
-from collections import Iterable
-from collections import MutableMapping
 
 from deepdiff.helper import *
 from deepdiff.contenthash import DeepHash
