@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from __future__ import absolute_import
 from __future__ import print_function
 import difflib
-try:  # pragma: no cover
-    import cPickle as pickle
-except:  # pragma: no cover
-    import pickle
+import datetime
+import logging
 from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
 
-from .helpers import *
+from deepdiff.helper import *
+from deepdiff.contenthash import DeepHash
 
 
 class DeepDiff(RemapDict):
@@ -37,6 +36,7 @@ class DeepDiff(RemapDict):
 
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
+        This feature currently is experimental and is not production ready.
 
     significant_digits : int >= 0, default=None.
         If it is a non negative integer, it compares only that many digits AFTER
@@ -298,6 +298,7 @@ class DeepDiff(RemapDict):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
+        self.hashes = {}
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
@@ -524,8 +525,7 @@ class DeepDiff(RemapDict):
         else:
             self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
 
-    @staticmethod
-    def __create_hashtable(t, parent):
+    def __create_hashtable(self, t, parent):
         """Create hashtable of {item_hash: item}"""
 
         def add_hash(hashes, item_hash, item, i):
@@ -537,16 +537,20 @@ class DeepDiff(RemapDict):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
-                cleaned_item = order_unordered(item)
-                item_hash = hash(pickle.dumps(cleaned_item))
-            except:  # pragma: no cover
-                logger.error("Can not produce a hash for %s item in %s and "
-                             "thus not counting this object." % (item, parent), exc_info=True)
+                hashes_all = DeepHash(item, hashes=self.hashes)
+                item_hash = hashes_all.get(id(item), item)
+            except Exception as e:  # pragma: no cover
+                logger.warning("Can not produce a hash for %s item in %s and "
+                               "thus not counting this object: %s" % (item, parent), e)
             else:
-                add_hash(hashes, item_hash, item, i)
+                if item_hash is hashes_all.unprocessed:  # pragma: no cover
+                    logger.warning("%s item in %s was not processed while hashing "
+                                   "thus not counting this object." % (item, parent))
+                else:
+                    add_hash(hashes, item_hash, item, i)
         return hashes
 
-    def __diff_unhashable_iterable(self, t1, t2, parent):
+    def __diff_iterable_with_contenthash(self, t1, t2, parent):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
@@ -644,12 +648,11 @@ class DeepDiff(RemapDict):
             self.__diff_tuple(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, (set, frozenset)):
-            # self.__diff_unhashable_iterable(t1, t2, parent, is_set=True)
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
             if self.ignore_order:
-                self.__diff_unhashable_iterable(t1, t2, parent)
+                self.__diff_iterable_with_contenthash(t1, t2, parent)
             else:
                 self.__diff_iterable(t1, t2, parent, parents_ids)
 
@@ -661,6 +664,6 @@ class DeepDiff(RemapDict):
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:
-        sys.exit("Please run with Python 3 to check for doc strings.")
+        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()

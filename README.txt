@@ -1,4 +1,4 @@
-**DeepDiff v 2.1.2**
+**DeepDiff v 2.5.1**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -226,6 +226,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
 - v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
 - v1-8-0: Exclusion patterns.

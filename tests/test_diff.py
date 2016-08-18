@@ -158,6 +158,12 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+    def test_nested_list_ignore_order(self):
+        t1 = [1, 2, [3, 4]]
+        t2 = [[4, 3, 3], 2, 1]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
     def test_nested_list_difference_ignore_order(self):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3], 2, 1]
@@ -169,14 +175,9 @@ class DeepDiffTestCase(unittest.TestCase):
         t2 = [[4, 3, {1: 2}], 2, 1]
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        if py3:
-            # TODO: DeepDiff in Py3 currently messes up. It needs to return {} but returns the following.
-            # Pickle needs to be forked so it gives consistent results.
-            current_wrong_result = {'iterable_item_removed': {'root[2]': [3, 4, {1: 2}]},
-                                    'iterable_item_added': {'root[0]': [4, 3, {1: 2}]}}
-        else:
-            current_wrong_result = {}
-        self.assertEqual(ddiff, current_wrong_result)
+
+        result = {}
+        self.assertEqual(ddiff, result)
 
     def test_list_difference_ignore_order_report_repetition(self):
         t1 = [1, 3, 1, 4]
@@ -194,6 +195,17 @@ class DeepDiffTestCase(unittest.TestCase):
                                                     'value': 4,
                                                     'new_repeat': 2}}}
         self.assertEqual(ddiff, result)
+
+    # TODO: fix repeition report
+    def test_nested_list_ignore_order_report_repetition_wrong_currently(self):
+        t1 = [1, 2, [3, 4]]
+        t2 = [[4, 3, 3], 2, 1]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        result = {'repetition_change': {
+            'root[2][0]': {'old_repeat': 1, 'new_indexes': [1, 2],
+                           'old_indexes': [1],
+                           'value': 3, 'new_repeat': 2}}}
+        self.assertNotEqual(ddiff, result)
 
     def test_list_of_unhashable_difference_ignore_order(self):
         t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
