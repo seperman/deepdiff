@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 2.2.0 documentation!
+DeepDiff 2.5.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
@@ -186,7 +186,7 @@ Indices and tables
 Changelog
 =========
 
-- v2-2-0: Adding ContentHash module to fix ignore_order once and for all.
+- v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
 - v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
 - v1-8-0: Exclusion patterns.
