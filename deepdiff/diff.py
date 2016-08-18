@@ -6,22 +6,13 @@ import sys
 import difflib
 import datetime
 import logging
-try:  # pragma: no cover
-    import cPickle as pickle
-except:  # pragma: no cover
-    import pickle
 from decimal import Decimal
 from collections import Iterable
 from collections import namedtuple
 from collections import MutableMapping
 
-py_major_version = sys.version[0]
-py_minor_version = sys.version[2]
-
-py3 = py_major_version == '3'
-
-if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
-    sys.exit('Python 2.6 is not supported.')
+from deepdiff.helper import py3
+from deepdiff.contenthash import DeepHash
 
 if py3:  # pragma: no cover
     from builtins import int
@@ -61,35 +52,6 @@ def warn(*args, **kwargs):
     if WARNING_NUM < 10:
         WARNING_NUM += 1
         logger.warning(*args, **kwargs)
-
-
-def order_unordered(data):
-    """
-    Order unordered data.
-
-    We use it in pickling so that serializations are consistent
-    since pickle serializes data inconsistently for unordered iterables
-    such as dictionary and set.
-    """
-    if isinstance(data, MutableMapping):
-        data = sorted(data.items(), key=lambda x: x[0])
-        for i, item in enumerate(data):
-            data[i] = (item[0], order_unordered(item[1]))
-    elif isinstance(data, Iterable) and not isinstance(data, strings):
-        try:
-            data = sorted(data)
-        except Exception as e:
-            warn("Unable to order data type: %s. "
-                 "Ignore order might be giving inaccurate results.",
-                 type(data), exc_info=True)
-        else:
-            new_data = []
-            for item in data:
-                item = order_unordered(item)
-                new_data.append(item)
-            data = new_data
-
-    return data
 
 
 class ListItemRemovedOrAdded(object):  # pragma: no cover
@@ -144,6 +106,7 @@ class DeepDiff(RemapDict):
 
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
+        This feature currently is experimental and is not production ready.
 
     significant_digits : int >= 0, default=None.
         If it is a non negative integer, it compares only that many digits AFTER
@@ -405,6 +368,7 @@ class DeepDiff(RemapDict):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
+        self.hashes = {}
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
@@ -596,8 +560,7 @@ class DeepDiff(RemapDict):
         else:
             self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
 
-    @staticmethod
-    def __create_hashtable(t, parent):
+    def __create_hashtable(self, t, parent):
         """Create hashtable of {item_hash: item}"""
 
         def add_hash(hashes, item_hash, item, i):
@@ -609,16 +572,20 @@ class DeepDiff(RemapDict):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
-                cleaned_item = order_unordered(item)
-                item_hash = hash(pickle.dumps(cleaned_item))
-            except:  # pragma: no cover
+                hashes_all = DeepHash(item, hashes=self.hashes)
+                item_hash = hashes_all.get(id(item), item)
+            except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s item in %s and "
-                               "thus not counting this object." % (item, parent), exc_info=True)
+                               "thus not counting this object: %s" % (item, parent), e)
             else:
-                add_hash(hashes, item_hash, item, i)
+                if item_hash is hashes_all.unprocessed:  # pragma: no cover
+                    logger.warning("%s item in %s was not processed while hashing "
+                                   "thus not counting this object." % (item, parent))
+                else:
+                    add_hash(hashes, item_hash, item, i)
         return hashes
 
-    def __diff_unhashable_iterable(self, t1, t2, parent):
+    def __diff_iterable_with_contenthash(self, t1, t2, parent):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(t1, parent)
         t2_hashtable = self.__create_hashtable(t2, parent)
@@ -718,12 +685,11 @@ class DeepDiff(RemapDict):
             self.__diff_tuple(t1, t2, parent, parents_ids)
 
         elif isinstance(t1, (set, frozenset)):
-            # self.__diff_unhashable_iterable(t1, t2, parent, is_set=True)
             self.__diff_set(t1, t2, parent=parent)
 
         elif isinstance(t1, Iterable):
             if self.ignore_order:
-                self.__diff_unhashable_iterable(t1, t2, parent)
+                self.__diff_iterable_with_contenthash(t1, t2, parent)
             else:
                 self.__diff_iterable(t1, t2, parent, parents_ids)
 
@@ -735,6 +701,6 @@ class DeepDiff(RemapDict):
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:
-        sys.exit("Please run with Python 3 to check for doc strings.")
+        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()
