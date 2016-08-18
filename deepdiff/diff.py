@@ -321,6 +321,20 @@ class DeepDiff(RemapDict):
         return {} if self.verbose_level >= 2 else set()
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
+        """
+        Include already identifies changes to a container in our report.
+        Called from __diff_dict() and __diff_set()
+        :param keys: A set of items that should be reported as some kind of change,
+                     e.g. dictionary keys if we're reporting changes in a dict.
+        :param parent: Path string describing where the change occurred in the object hierarchy.
+        :param report_obj: The appropriate result dict entry for this kind of change (e.g. dictionary_item_added)
+        :param print_as_attribute: Report changes as attribute changes instead of key changes.
+                                   This is used if we're actually, at some higher level,
+                                   comparing a custom object right now.
+        :param obj: If the parent object of keys is a dict, pass it here.
+                    This will be used to also report values for changed dict entries, if requested.
+        :rtype: None
+        """
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key in keys:
             key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
