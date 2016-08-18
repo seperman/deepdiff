@@ -331,7 +331,8 @@ class DeepDiff(RemapDict):
         :param print_as_attribute: Report changes as attribute changes instead of key changes.
                                    This is used if we're actually, at some higher level,
                                    comparing a custom object right now.
-        :param obj: If the parent object of keys is a dict, pass it here.
+        :param obj: If the parent object of keys is able to provide values in the obj[key] style
+                    (e.g. a dict or a list), pass it here.
                     This will be used to also report values for changed dict entries, if requested.
         :rtype: None
         """
@@ -343,7 +344,7 @@ class DeepDiff(RemapDict):
             item = obj[key] if obj else key
             if not self.__skip_this(item, None, key_in_report):
                 if obj and self.verbose_level >= 2:              # report key and value, as requested by user
-                    report_obj[key_in_report] = obj[key]
+                    report_obj[key_in_report] = item
                 else:                                            # report key only
                     report_obj.add(key_in_report)
 
