@@ -68,6 +68,7 @@ Sometimes you don't care about the order of objects when comparing them. In thos
 ## Report repetitions
 
 This flag ONLY works when ignoring order is enabled.
+Note that this feature is experimental.
 
 ```python
 t1 = [1, 3, 1, 4]
