@@ -63,7 +63,7 @@ class DeepHashTestCase(unittest.TestCase):
         result = DeepHash(obj2)
         self.assertTrue(id_obj1 not in result)
 
-    def test_list1(self):
+    def test_list(self):
         string1 = "a"
         obj = [string1, 10, 20]
         expected_result = {id(string1): hash(string1),
@@ -71,7 +71,23 @@ class DeepHashTestCase(unittest.TestCase):
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
-    def test_dict1(self):
+    def test_tuple(self):
+        string1 = "a"
+        obj = (string1, 10, 20)
+        expected_result = {id(string1): hash(string1),
+                           id(obj): 'tuple:int:10,int:20,str:%s' % hash(string1)}
+        result = DeepHash(obj)
+        self.assertEqual(result, expected_result)
+
+    def test_named_tuples(self):
+        from collections import namedtuple
+        Point = namedtuple('Point', ['x', 'y'])
+        t1 = Point(x=11, y=22)
+        result = DeepHash(t1)
+        from nose.tools import set_trace; set_trace()
+        self.assertEqual(result, {})
+
+    def test_dict(self):
         string1 = "a"
         hash_string1 = hash(string1)
         key1 = "key1"
@@ -221,6 +237,26 @@ class DeepHashTestCase(unittest.TestCase):
         obj = {"log": l1, 2: 1337}
         result = DeepHash(obj, exclude_types={logging.Logger})
         self.assertEqual(result[id(l1)], result.skipped)
+
+    def test_hash_dic_with_loop(self):
+        obj = {2: 1337}
+        obj[1] = obj
+        result = DeepHash(obj)
+        expected_result = {id(obj): 'dict:{int:2:int:1337}'}
+        self.assertEqual(result, expected_result)
+
+    def test_hash_iterable_with_loop(self):
+        obj = [1]
+        obj.append(obj)
+        result = DeepHash(obj)
+        expected_result = {id(obj): 'list:int:1'}
+        self.assertEqual(result, expected_result)
+
+    def test_hash_iterable_with_excluded_type(self):
+        l1 = logging.getLogger("test")
+        obj = [1, l1]
+        result = DeepHash(obj, exclude_types={logging.Logger})
+        self.assertTrue(id(l1) not in result)
 
 
 class DeepHashSHA1TestCase(unittest.TestCase):

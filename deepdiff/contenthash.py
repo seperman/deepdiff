@@ -209,10 +209,11 @@ class DeepHash(dict):
             obj._asdict
         # It must be a normal tuple
         except AttributeError:
-            self.__hash_iterable(obj, parents_ids)
+            result = self.__hash_iterable(obj, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__hash_obj(obj, parents_ids, is_namedtuple=True)
+            result = self.__hash_obj(obj, parents_ids, is_namedtuple=True)
+        return result
 
     def __hash(self, obj, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
