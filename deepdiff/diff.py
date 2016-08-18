@@ -333,6 +333,9 @@ class DeepDiff(RemapDict):
                 else:
                     report_obj.add(key_in_report)
 
+    def __unprocessed(self, parent, t1, t2):
+        self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
         parents_ids = set(parents_ids)
@@ -353,7 +356,7 @@ class DeepDiff(RemapDict):
                 t1 = {i: getattr(t1, i) for i in t1.__slots__}
                 t2 = {i: getattr(t2, i) for i in t2.__slots__}
             except AttributeError:
-                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+                self.__unprocessed(parent, t1, t2)
                 return
 
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
