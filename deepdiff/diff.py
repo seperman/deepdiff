@@ -465,6 +465,14 @@ class DeepDiff(RemapDict):
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""
+        try:
+            if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
+                return self.__diff_iterable_subscriptable(t1, t2, parent, parents_ids)
+        except AttributeError:
+            return  # TODO
+
+    def __diff_iterable_subscriptable(self, t1, t2, parent="root", parents_ids=frozenset({})):
+        """Difference of subscriptable iterables, like lists"""
         items_removed = {}
         items_added = {}
 
