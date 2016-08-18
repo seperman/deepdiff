@@ -328,9 +328,9 @@ class DeepDiff(RemapDict):
 
             item = obj[key] if obj else key
             if not self.__skip_this(item, None, key_in_report):
-                if obj and self.verbose_level >= 2:
+                if obj and self.verbose_level >= 2:              # report key and value, as requested by user
                     report_obj[key_in_report] = obj[key]
-                else:
+                else:                                            # report key only
                     report_obj.add(key_in_report)
 
     def __unprocessed(self, parent, t1, t2):
