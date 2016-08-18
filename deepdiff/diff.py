@@ -473,26 +473,26 @@ class DeepDiff(RemapDict):
 
     def __diff_iterable_subscriptable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of subscriptable iterables, like lists"""
-        items_removed = {}
-        items_added = {}
+        indices_added = []
+        indices_removed = []
 
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
-            new_parent = "%s[%s]" % (parent, i)
-            if self.__skip_this(x, y, parent=new_parent):
-                continue
-            if y is ListItemRemovedOrAdded:
-                items_removed[new_parent] = x
-            elif x is ListItemRemovedOrAdded:
-                items_added[new_parent] = y
-            else:
+            if y is ListItemRemovedOrAdded:    # item removed completely - will pass to __extend_result_list() later
+                indices_removed.append(i)
+            elif x is ListItemRemovedOrAdded:  # new item added - will pass to __extend_result_list() later
+                indices_added.append(i)
+            else:                              # check if item value has changed
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
-        self["iterable_item_removed"].update(items_removed)
-        self["iterable_item_added"].update(items_added)
+        if len(indices_added):
+            self.__extend_result_list(indices_added, parent, self["iterable_item_added"], obj=t2)
+        if len(indices_removed):
+            self.__extend_result_list(indices_removed, parent, self["iterable_item_removed"], obj=t1)
+
 
     def __diff_str(self, t1, t2, parent):
         """Compare strings"""
