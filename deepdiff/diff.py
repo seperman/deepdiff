@@ -574,13 +574,13 @@ class DeepDiff(RemapDict):
             try:
                 hashes_all = DeepHash(item, hashes=self.hashes)
                 item_hash = hashes_all.get(id(item), item)
-            except:  # pragma: no cover
+            except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s item in %s and "
-                               "thus not counting this object." % (item, parent), exc_info=True)
+                               "thus not counting this object: %s" % (item, parent), e)
             else:
-                if isinstance(item_hash, DeepHash.Unprocessed):  # pragma: no cover
-                    logger.error("Can not produce a hash for %s item in %s and "
-                                 "thus not counting this object." % (item, parent), exc_info=True)
+                if item_hash is hashes_all.unprocessed:  # pragma: no cover
+                    logger.warning("%s item in %s was not processed while hashing "
+                                   "thus not counting this object." % (item, parent))
                 else:
                     add_hash(hashes, item_hash, item, i)
         return hashes

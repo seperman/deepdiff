@@ -23,8 +23,7 @@ else:  # pragma: no cover
     numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
     items = 'iteritems'
 
-logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 WARNING_NUM = 0
 
@@ -35,6 +34,33 @@ def warn(*args, **kwargs):  # pragma: no cover
     if WARNING_NUM < 10:
         WARNING_NUM += 1
         logger.warning(*args, **kwargs)
+
+
+class Skipped(object):
+
+    def __repr__(self):
+        return "Skipped"  # pragma: no cover
+
+    def __str__(self):
+        return "Skipped"  # pragma: no cover
+
+
+class Unprocessed(object):
+
+    def __repr__(self):
+        return "Error: Unprocessed"  # pragma: no cover
+
+    def __str__(self):
+        return "Error: Unprocessed"  # pragma: no cover
+
+
+class NotHashed(object):
+
+    def __repr__(self):
+        return "Error: NotHashed"  # pragma: no cover
+
+    def __str__(self):
+        return "Error: NotHashed"  # pragma: no cover
 
 
 class DeepHash(dict):
@@ -60,35 +86,14 @@ class DeepHash(dict):
         hashes = hashes if hashes else {}
         self.update(hashes)
         self['unprocessed'] = []
+        self.unprocessed = Unprocessed()
+        self.skipped = Skipped()
+        self.not_hashed = NotHashed()
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
 
         if not self['unprocessed']:
             del self['unprocessed']
-
-    class NotHashed(object):
-
-        def __repr__(self):
-            return "Error: NotHashed"  # pragma: no cover
-
-        def __str__(self):
-            return "Error: NotHashed"  # pragma: no cover
-
-    class Skipped(object):
-
-        def __repr__(self):
-            return "Skipped"  # pragma: no cover
-
-        def __str__(self):
-            return "Skipped"  # pragma: no cover
-
-    class Unprocessed(object):
-
-        def __repr__(self):
-            return "Error: Unprocessed"  # pragma: no cover
-
-        def __str__(self):
-            return "Error: Unprocessed"  # pragma: no cover
 
     @staticmethod
     def sha1hex(obj):
@@ -115,11 +120,8 @@ class DeepHash(dict):
 
     def __get_and_set_hash(self, obj):
         obj_id = id(obj)
-        if obj_id in self:
-            result = self[obj_id]
-        else:
-            result = self.hasher(obj)
-            self[obj_id] = result
+        result = self.hasher(obj)
+        self[obj_id] = result
         return result
 
     def __hash_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
@@ -134,7 +136,7 @@ class DeepHash(dict):
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
                 self['unprocessed'].append(obj)
-                return self.Unprocessed
+                return self.unprocessed
 
         self.__hash_dict(obj, parents_ids)
 
@@ -219,10 +221,10 @@ class DeepHash(dict):
         if obj_id in self:
             return self[obj_id]
 
-        result = self.NotHashed
+        result = self.not_hashed
 
         if self.__skip_this(obj):
-            result = self.Skipped
+            result = self.skipped
 
         elif isinstance(obj, strings):
             result = self.__hash_str(obj)
@@ -245,11 +247,11 @@ class DeepHash(dict):
         else:
             result = self.__hash_obj(obj, parents_ids)
 
-        if result != self.NotHashed and obj_id not in self and not isinstance(obj, numbers):
+        if result != self.not_hashed and obj_id not in self and not isinstance(obj, numbers):
             self[obj_id] = result
 
-        if result is self.NotHashed:
-            self[obj_id] = self.NotHashed
+        if result is self.not_hashed:
+            self[obj_id] = self.not_hashed
             self['unprocessed'].append(obj)
 
         return result

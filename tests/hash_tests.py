@@ -153,9 +153,9 @@ class DeepHashTestCase(unittest.TestCase):
 
         t1 = Bad()
 
-        ddiff = DeepHash(t1)
-        result = {id(t1): DeepHash.Unprocessed, 'unprocessed': [t1]}
-        self.assertEqual(ddiff, result)
+        result = DeepHash(t1)
+        expected_result = {id(t1): result.unprocessed, 'unprocessed': [t1]}
+        self.assertEqual(result, expected_result)
 
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]
@@ -215,6 +215,12 @@ class DeepHashTestCase(unittest.TestCase):
         result3 = DeepHash(obj, hasher=hasher)
         expected_result = {id(obj): 1}
         self.assertEqual(result3, expected_result)
+
+    def test_skip_type(self):
+        l1 = logging.getLogger("test")
+        obj = {"log": l1, 2: 1337}
+        result = DeepHash(obj, exclude_types={logging.Logger})
+        self.assertEqual(result[id(l1)], result.skipped)
 
 
 class DeepHashSHA1TestCase(unittest.TestCase):
