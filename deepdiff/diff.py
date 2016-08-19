@@ -8,7 +8,7 @@ from deepdiff.helper import *
 from deepdiff.contenthash import DeepHash
 
 
-class DeepDiff(RemapDict):
+class DeepDiff(ResultDict):
 
     r"""
     **DeepDiff**
@@ -287,34 +287,24 @@ class DeepDiff(RemapDict):
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are ignore_order, report_repetition, significant_digits,"
                               "exclude_paths, exclude_types and verbose_level.") % ', '.join(kwargs.keys()))
+
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
-        self.verbose_level = verbose_level
         self.hashes = {}
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
 
-        self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
-                     "dictionary_item_removed": self.__set_or_dict(),
-                     "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
-                     "set_item_removed": set([]),
-                     "set_item_added": set([]), "repetition_change": {}})
+        self.result_text = ResultDict(verbose_level)
 
         self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
 
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
-
-        for k in empty_keys:
-            del self[k]
-
-    def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else set()
+        self.result_text.cleanup()   # clean up text-style result dictionary
+        self.update(self.result_text)  # use text style result as default view
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
         """
@@ -345,13 +335,13 @@ class DeepDiff(RemapDict):
                     report_obj.add(key_in_report)
 
     def __unprocessed(self, parent, t1, t2):
-        self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+        self.result_text['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
 
     def __values_changed(self, parent, t1, t2, diff=None):
         if diff is not None:
-            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
+            self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
         else:
-            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
+            self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -413,11 +403,11 @@ class DeepDiff(RemapDict):
 
         if t_keys_added:
             self.__extend_result_list(keys=t_keys_added, parent=parent,
-                                      report_obj=self[item_added_key], print_as_attribute=print_as_attribute, obj=t2)
+                                      report_obj=self.result_text[item_added_key], print_as_attribute=print_as_attribute, obj=t2)
 
         if t_keys_removed:
             self.__extend_result_list(keys=t_keys_removed, parent=parent,
-                                      report_obj=self[item_removed_key], print_as_attribute=print_as_attribute, obj=t1)
+                                      report_obj=self.result_text[item_removed_key], print_as_attribute=print_as_attribute, obj=t1)
 
         self.__diff_common_children(
             t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
@@ -459,11 +449,11 @@ class DeepDiff(RemapDict):
 
         if items_removed:
             self.__extend_result_list(
-                keys=items_removed, parent=parent, report_obj=self["set_item_removed"])
+                keys=items_removed, parent=parent, report_obj=self.result_text["set_item_removed"])
 
         if items_added:
             self.__extend_result_list(
-                keys=items_added, parent=parent, report_obj=self["set_item_added"])
+                keys=items_added, parent=parent, report_obj=self.result_text["set_item_added"])
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""
@@ -493,9 +483,9 @@ class DeepDiff(RemapDict):
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
         if len(indices_added):
-            self.__extend_result_list(indices_added, parent, self["iterable_item_added"], obj=t2)
+            self.__extend_result_list(indices_added, parent, self.result_text["iterable_item_added"], obj=t2)
         if len(indices_removed):
-            self.__extend_result_list(indices_removed, parent, self["iterable_item_removed"], obj=t1)
+            self.__extend_result_list(indices_removed, parent, self.result_text["iterable_item_removed"], obj=t1)
 
 
     def __diff_str(self, t1, t2, parent):
@@ -581,7 +571,7 @@ class DeepDiff(RemapDict):
                         new_indexes=t2_indexes,
                         value=t1_item_and_index.item
                     )}
-                    self['repetition_change'].update(repetition_change)
+                    self.result_text['repetition_change'].update(repetition_change)
 
         else:
             items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].indexes[0]): t2_hashtable[
@@ -590,8 +580,8 @@ class DeepDiff(RemapDict):
             items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].indexes[0]): t1_hashtable[
                 hash_value].item for hash_value in hashes_removed}
 
-        self["iterable_item_removed"].update(items_removed)
-        self["iterable_item_added"].update(items_added)
+        self.result_text["iterable_item_removed"].update(items_removed)
+        self.result_text["iterable_item_added"].update(items_added)
 
     def __diff_numbers(self, t1, t2, parent):
         """Diff Numbers"""
@@ -616,9 +606,9 @@ class DeepDiff(RemapDict):
     def __diff_types(self, t1, t2, parent):
         """Diff types"""
 
-        self["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
-        if self.verbose_level:
-            self["type_changes"][parent].update(old_value=t1, new_value=t2)
+        self.result_text["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
+        if self.result_text.verbose_level:
+            self.result_text["type_changes"][parent].update(old_value=t1, new_value=t2)
 
     def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """The main diff method"""
