@@ -471,7 +471,9 @@ class DeepDiff(RemapDict):
             if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
                 return self.__diff_iterable_subscriptable(t1, t2, parent, parents_ids)
         except AttributeError:
-            return  # TODO
+            # Temporarily fix handling of non-subscriptable iterables by pretending they are subscriptable.
+            # See test for further comments.
+            return self.__diff_iterable_subscriptable(list(t1), list(t2), parent, parents_ids)
 
     def __diff_iterable_subscriptable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of subscriptable iterables, like lists"""
