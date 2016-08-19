@@ -149,7 +149,7 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 - Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
 ## Deep Search
-(New in 2.5.1)
+(New in v2-1-0)
 
 DeepDiff comes with a utility to find the path to the item you are looking for.
 It is called DeepSearch and it has a similar interface to DeepDiff.
@@ -169,6 +169,8 @@ Which will print:
 {'matched_paths': {"root['somewhere']": "around"},
  'matched_values': {"root['long']": "somewhere"}}
 ```
+
+Tip: An interesting use case is to search inside `locals()` when doing pdb.
 
 ## Using DeepDiff in unit tests
 
