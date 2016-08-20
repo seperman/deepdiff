@@ -2,85 +2,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import print_function
-import sys
 import difflib
-import datetime
-import logging
-from decimal import Decimal
-from collections import Iterable
-from collections import namedtuple
-from collections import MutableMapping
 
-from deepdiff.helper import py3
+from deepdiff.helper import *
 from deepdiff.contenthash import DeepHash
-
-if py3:  # pragma: no cover
-    from builtins import int
-    strings = (str, bytes)  # which are both basestring
-    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
-    from itertools import zip_longest
-    items = 'items'
-else:  # pragma: no cover
-    strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
-    from itertools import izip_longest as zip_longest
-    items = 'iteritems'
-
-logger = logging.getLogger(__name__)
-
-IndexedHash = namedtuple('IndexedHash', 'indexes item')
-
-EXPANDED_KEY_MAP = {  # pragma: no cover
-    'dic_item_added': 'dictionary_item_added',
-    'dic_item_removed': 'dictionary_item_removed',
-    'newindexes': 'new_indexes',
-    'newrepeat': 'new_repeat',
-    'newtype': 'new_type',
-    'newvalue': 'new_value',
-    'oldindexes': 'old_indexes',
-    'oldrepeat': 'old_repeat',
-    'oldtype': 'old_type',
-    'oldvalue': 'old_value'}
-
-
-WARNING_NUM = 0
-
-
-def warn(*args, **kwargs):
-    global WARNING_NUM
-
-    if WARNING_NUM < 10:
-        WARNING_NUM += 1
-        logger.warning(*args, **kwargs)
-
-
-class ListItemRemovedOrAdded(object):  # pragma: no cover
-
-    """Class of conditions to be checked"""
-
-    pass
-
-INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-
-class RemapDict(dict):
-
-    """
-    Remap Dictionary.
-
-    For keys that have a new, longer name, remap the old key to the new key.
-    Other keys that don't have a new name are handled as before.
-    """
-
-    def __getitem__(self, old_key):
-        new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
-        if new_key != old_key:
-            warn("DeepDiff Deprecation: %s is renamed to %s. Please start using "
-                 "the new unified naming convention.", old_key, new_key)
-        if new_key in self:
-            return self.get(new_key)
-        else:  # pragma: no cover
-            raise KeyError(new_key)
 
 
 class DeepDiff(RemapDict):
@@ -392,6 +317,21 @@ class DeepDiff(RemapDict):
         return {} if self.verbose_level >= 2 else set()
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
+        """
+        Include already identifies changes to a container in our report.
+        Called from __diff_dict() and __diff_set()
+        :param keys: A set of items that should be reported as some kind of change,
+                     e.g. dictionary keys if we're reporting changes in a dict.
+        :param parent: Path string describing where the change occurred in the object hierarchy.
+        :param report_obj: The appropriate result dict entry for this kind of change (e.g. dictionary_item_added)
+        :param print_as_attribute: Report changes as attribute changes instead of key changes.
+                                   This is used if we're actually, at some higher level,
+                                   comparing a custom object right now.
+        :param obj: If the parent object of keys is able to provide values in the obj[key] style
+                    (e.g. a dict or a list), pass it here.
+                    This will be used to also report values for changed dict entries, if requested.
+        :rtype: None
+        """
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key in keys:
             key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
@@ -399,10 +339,19 @@ class DeepDiff(RemapDict):
 
             item = obj[key] if obj else key
             if not self.__skip_this(item, None, key_in_report):
-                if obj and self.verbose_level >= 2:
-                    report_obj[key_in_report] = obj[key]
-                else:
+                if isinstance(report_obj, dict):      # report key and value, usually caused by self.verbose_level >= 2
+                    report_obj[key_in_report] = item
+                else:                                 # report key only
                     report_obj.add(key_in_report)
+
+    def __unprocessed(self, parent, t1, t2):
+        self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+
+    def __values_changed(self, parent, t1, t2, diff=None):
+        if diff is not None:
+            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
+        else:
+            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -424,12 +373,16 @@ class DeepDiff(RemapDict):
                 t1 = {i: getattr(t1, i) for i in t1.__slots__}
                 t2 = {i: getattr(t2, i) for i in t2.__slots__}
             except AttributeError:
-                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+                self.__unprocessed(parent, t1, t2)
                 return
 
         self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
 
     def __skip_this(self, t1, t2, parent):
+        """
+        Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
+        :rtype: bool
+        """
         skip = False
         if parent in self.exclude_paths:
             skip = True
@@ -514,26 +467,36 @@ class DeepDiff(RemapDict):
 
     def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""
-        items_removed = {}
-        items_added = {}
+        try:
+            if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
+                return self.__diff_iterable_subscriptable(t1, t2, parent, parents_ids)
+        except AttributeError:
+            # Temporarily fix handling of non-subscriptable iterables by pretending they are subscriptable.
+            # See test for further comments.
+            return self.__diff_iterable_subscriptable(list(t1), list(t2), parent, parents_ids)
+
+    def __diff_iterable_subscriptable(self, t1, t2, parent="root", parents_ids=frozenset({})):
+        """Difference of subscriptable iterables, like lists"""
+        indices_added = []
+        indices_removed = []
 
         for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
-            new_parent = "%s[%s]" % (parent, i)
-            if self.__skip_this(x, y, parent=new_parent):
-                continue
-            if y is ListItemRemovedOrAdded:
-                items_removed[new_parent] = x
-            elif x is ListItemRemovedOrAdded:
-                items_added[new_parent] = y
-            else:
+            if y is ListItemRemovedOrAdded:    # item removed completely - will pass to __extend_result_list() later
+                indices_removed.append(i)
+            elif x is ListItemRemovedOrAdded:  # new item added - will pass to __extend_result_list() later
+                indices_added.append(i)
+            else:                              # check if item value has changed
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
                 self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
-        self["iterable_item_removed"].update(items_removed)
-        self["iterable_item_added"].update(items_added)
+        if len(indices_added):
+            self.__extend_result_list(indices_added, parent, self["iterable_item_added"], obj=t2)
+        if len(indices_removed):
+            self.__extend_result_list(indices_removed, parent, self["iterable_item_removed"], obj=t1)
+
 
     def __diff_str(self, t1, t2, parent):
         """Compare strings"""
@@ -543,10 +506,9 @@ class DeepDiff(RemapDict):
             diff = list(diff)
             if diff:
                 diff = '\n'.join(diff)
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2, diff=diff)
+                self.__values_changed(parent, t1, t2, diff)
         elif t1 != t2:
-            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
+            self.__values_changed(parent, t1, t2)
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
@@ -646,12 +608,10 @@ class DeepDiff(RemapDict):
             t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
             t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
             if t1_s != t2_s:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+                self.__values_changed(parent, t1, t2)
         else:
             if t1 != t2:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+                self.__values_changed(parent, t1, t2)
 
     def __diff_types(self, t1, t2, parent):
         """Diff types"""

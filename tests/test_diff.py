@@ -891,3 +891,25 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'unprocessed': ['root: Bad Object and Bad Object']}
         self.assertEqual(ddiff, result)
+
+    def test_non_subscriptable_iterable(self):
+        def gen1():
+            yield 42
+            yield 1337
+            yield 31337
+
+        def gen2():
+            yield 42
+            yield 1337
+
+        t1 = gen1()
+        t2 = gen2()
+        ddiff = DeepDiff(t1, t2)
+
+        result = {'iterable_item_removed': {'root[2]': 31337}}
+        # TODO: This should NOT be the expected behaviour. This is a non-subscriptable iterable.
+        # Something like generator[2] is just invalid.
+        # Should be more something like:
+        #result = {'iterable_item_removed': {'root': 31337}}
+        # But how to handle multiple changes then?  {'root': {31337}}}?
+        self.assertEqual(ddiff, result)
