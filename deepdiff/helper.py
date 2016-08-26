@@ -75,6 +75,13 @@ def order_unordered(data):
     return data
 
 
+def is_string(param):
+    if py3:
+        return isinstance(param, str)
+    else:
+        return isinstance(param, basestring)
+
+
 class ListItemRemovedOrAdded(object):  # pragma: no cover
 
     """Class of conditions to be checked"""
@@ -114,27 +121,3 @@ class RemapDict(dict):
             return self.get(new_key)
         else:  # pragma: no cover
             raise KeyError(new_key)
-
-
-class ResultDict(RemapDict):
-    def __init__(self, verbose_level):
-        """
-        Initialize a result dict.
-        """
-        self.verbose_level = verbose_level
-
-        self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
-                     "dictionary_item_removed": self.__set_or_dict(),
-                     "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
-                     "set_item_removed": set([]),
-                     "set_item_added": set([]), "repetition_change": {}})
-
-    def cleanup(self):
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
-
-        for k in empty_keys:
-            del self[k]
-
-    def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else set()
