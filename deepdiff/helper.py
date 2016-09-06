@@ -21,13 +21,11 @@ if py3:  # pragma: no cover
 
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
-    from itertools import zip_longest
 
     items = 'items'
 else:  # pragma: no cover
     strings = (str, unicode)
     numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
-    from itertools import izip_longest as zip_longest
 
     items = 'iteritems'
 

@@ -26,7 +26,7 @@ class RefStyleResultDict(ResultDict):
         self.update({"type_changes": set(),
                      "dictionary_item_added": set(), "dictionary_item_removed": set(),
                      "values_changed": set(), "unprocessed": set(),
-                     "iterable_item_added": (), "iterable_item_removed": (),
+                     "iterable_item_added": set(), "iterable_item_removed": set(),
                      "attribute_added": set(), "attribute_removed": set(),
                      "set_item_removed": set(), "set_item_added": set(),
                      "repetition_change": set()})
@@ -61,6 +61,8 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_dictionary_item_added(ref)
         self._from_ref_dictionary_item_removed(ref)
         self._from_ref_value_changed(ref)
+        self._from_ref_iterable_item_added(ref)
+        self._from_ref_iterable_item_removed(ref)
         # TODO
 
     def _from_ref_dictionary_type_changes(self, ref):
@@ -92,6 +94,17 @@ class TextStyleResultDict(ResultDict):
                 self['values_changed'][change.path()] = {'new_value': change.t2, 'old_value': change.t1}
                 if change.diff:
                     self['values_changed'][change.path()].update({'diff': change.diff})
+
+    def _from_ref_iterable_item_added(self, ref):
+        if 'iterable_item_added' in ref:
+            for change in ref['iterable_item_added']:
+                self['iterable_item_added'][change.path()] = change.t2
+
+    def _from_ref_iterable_item_removed(self, ref):
+        if 'iterable_item_removed' in ref:
+            for change in ref['iterable_item_removed']:
+                self['iterable_item_removed'][change.path()] = change.t1
+
 
 class DiffLevel:
     """
@@ -401,8 +414,8 @@ class DictRelationship(ChildRelationship):
         return "'%s'" % string
 
 
-class ListRelationship(DictRelationship):
-    pass  # for our purposes, we can see lists as special cases of dicts
+class SubscriptableIterableRelationship(DictRelationship):
+    pass  # for our purposes, we can see lists etc. as special cases of dicts
 
 
 class InaccessibleRelationship(ChildRelationship):

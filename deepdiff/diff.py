@@ -12,11 +12,15 @@ from collections import namedtuple
 from collections import MutableMapping
 from collections import Iterable
 
-from deepdiff.helper import py3, strings, numbers
+from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded
 from deepdiff.model import RemapDict, ResultDict, TextStyleResultDict, RefStyleResultDict, DiffLevel
-from deepdiff.model import ChildRelationship, DictRelationship, ListRelationship, SetRelationship, AttributeRelationship
+from deepdiff.model import DictRelationship, AttributeRelationship, SubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
+if py3:  # pragma: no cover
+    from itertools import zip_longest
+else:  # pragma: no cover
+    from itertools import izip_longest as zip_longest
 
 class DeepDiff(ResultDict):
 
@@ -475,37 +479,44 @@ class DeepDiff(ResultDict):
             self.__extend_result_list(
                 keys=items_added, parent=parent, report_obj=self.result_text["set_item_added"])
 
-    def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
+    def __diff_iterable(self, level, parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""
         try:
-            if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
-                return self.__diff_iterable_subscriptable(t1, t2, parent, parents_ids)
+            if getattr(level.t1, '__getitem__') and getattr(level.t2, '__getitem__'):
+                return self.__diff_iterable_subscriptable(level, parents_ids)
         except AttributeError:
             # Temporarily fix handling of non-subscriptable iterables by pretending they are subscriptable.
             # See test for further comments.
-            return self.__diff_iterable_subscriptable(list(t1), list(t2), parent, parents_ids)
+            level.t1 = list(level.t1)
+            level.t2 = list(level.t2)
+            return self.__diff_iterable_subscriptable(level, parents_ids)
 
-    def __diff_iterable_subscriptable(self, t1, t2, parent="root", parents_ids=frozenset({})):
+    def __diff_iterable_subscriptable(self, level, parents_ids=frozenset({})):
         """Difference of subscriptable iterables, like lists"""
-        indices_added = []
-        indices_removed = []
+        for i, (x, y) in enumerate(zip_longest(level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
+            if y is ListItemRemovedOrAdded:    # item removed completely
+                change_level = level.branch_deeper(level.t1[i], None,
+                                                   child_relationship_class=SubscriptableIterableRelationship,
+                                                   child_relationship_param=i)
+                self.__report_result('iterable_item_removed', change_level)
 
-        for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
-            if y is ListItemRemovedOrAdded:    # item removed completely - will pass to __extend_result_list() later
-                indices_removed.append(i)
-            elif x is ListItemRemovedOrAdded:  # new item added - will pass to __extend_result_list() later
-                indices_added.append(i)
+            elif x is ListItemRemovedOrAdded:  # new item added
+                change_level = level.branch_deeper(None, level.t2[i],
+                                                   child_relationship_class=SubscriptableIterableRelationship,
+                                                   child_relationship_param=i)
+                self.__report_result('iterable_item_added', change_level)
+
             else:                              # check if item value has changed
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
-                self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
-        if len(indices_added):
-            self.__extend_result_list(indices_added, parent, self.result_text["iterable_item_added"], obj=t2)
-        if len(indices_removed):
-            self.__extend_result_list(indices_removed, parent, self.result_text["iterable_item_removed"], obj=t1)
+                # Go one level deeper
+                next_level = level.branch_deeper(x, y,
+                                                 child_relationship_class=SubscriptableIterableRelationship,
+                                                 child_relationship_param=i)
+                self.__diff(next_level, parents_ids_added)
 
     def __diff_str(self, level):
         """Compare strings"""
