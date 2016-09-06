@@ -323,6 +323,7 @@ class DeepDiff(ResultDict):
     def __report_result(self, report_type, level):
         """
         Add a detected change to the reference-style result dictionary.
+        report_type will be added to level.
         (We'll create the text-style report from there later.)
         :param report_type: A well defined string key describing the type of change.
                             Examples: "set_item_added", "values_changed"
@@ -331,6 +332,7 @@ class DeepDiff(ResultDict):
 
         :rtype: None
         """
+        level.report_type = report_type
         self.result_refs[report_type].add(level)
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):  # TODO
@@ -364,7 +366,7 @@ class DeepDiff(ResultDict):
     def __unprocessed(self, parent, t1, t2):
         self.result_text['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
 
-    def __values_changed(self, parent, t1, t2, diff=None):
+    def __values_changed(self, level, diff=None):
         if diff is not None:
             self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
         else:
@@ -505,18 +507,20 @@ class DeepDiff(ResultDict):
         if len(indices_removed):
             self.__extend_result_list(indices_removed, parent, self.result_text["iterable_item_removed"], obj=t1)
 
-
-    def __diff_str(self, t1, t2, parent):
+    def __diff_str(self, level):
         """Compare strings"""
-        if '\n' in t1 or '\n' in t2:
+        if level.t1 == level.t2:
+            return
+
+        # do we add a diff for convenience?
+        if '\n' in level.t1 or '\n' in level.t2:
             diff = difflib.unified_diff(
-                t1.splitlines(), t2.splitlines(), lineterm='')
+                level.t1.splitlines(), level.t2.splitlines(), lineterm='')
             diff = list(diff)
             if diff:
-                diff = '\n'.join(diff)
-                self.__values_changed(parent, t1, t2, diff)
-        elif t1 != t2:
-            self.__values_changed(parent, t1, t2)
+                level.diff = '\n'.join(diff)
+
+        self.__report_result('values_changed', level)
 
     def __diff_tuple(self, t1, t2, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named

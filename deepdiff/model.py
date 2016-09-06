@@ -60,8 +60,8 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_dictionary_type_changes(ref)
         self._from_ref_dictionary_item_added(ref)
         self._from_ref_dictionary_item_removed(ref)
-        # TODO
         self._from_ref_value_changed(ref)
+        # TODO
 
     def _from_ref_dictionary_type_changes(self, ref):
         if 'type_changes' in ref:
@@ -90,7 +90,8 @@ class TextStyleResultDict(ResultDict):
         if 'values_changed' in ref:
             for change in ref['values_changed']:
                 self['values_changed'][change.path()] = {'new_value': change.t2, 'old_value': change.t1}
-
+                if change.diff:
+                    self['values_changed'][change.path()].update({'diff': change.diff})
 
 class DiffLevel:
     """
@@ -100,7 +101,7 @@ class DiffLevel:
     (which is just fancy for "a change").
     This is the result object class for object reference style reports.
     """
-    def __init__(self, t1, t2, down=None, up=None, report_type=None, child_rel1=None, child_rel2=None):
+    def __init__(self, t1, t2, down=None, up=None, report_type=None, diff=None, child_rel1=None, child_rel2=None):
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -128,6 +129,12 @@ class DiffLevel:
         """
         If this object is this change's deepest level, this contains a string describing the type of change.
         Examples: "set_item_added", "values_changed"
+        """
+
+        self.diff = diff
+        """
+        Optionally, a textual description detailling the change.
+        Currently used for multi-line strings only (i.e. a classic text diff).
         """
 
         if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
