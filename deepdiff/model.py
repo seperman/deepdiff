@@ -256,15 +256,18 @@ class DiffLevel:
         :return: The leaf ("downmost") object of the copy.
         """
         orig = self.all_up()
-        result = copy(orig)
-        while self.down:
+        result = copy(orig)           # copy top level
+
+        while orig.down is not None:  # copy following level
             # copy this level
             result.down = copy(orig.down)
-            if orig.t1_child_rel:
+            result.down.up = result        # adjust reverse link
+
+            if orig.t1_child_rel is not None:
                 result.t1_child_rel = ChildRelationship.create(orig.t1_child_rel.__class__,
                                                                result.t1, result.down.t1,
                                                                orig.t1_child_rel.param)
-            if orig.t2_child_rel:
+            if orig.t2_child_rel is not None:
                 result.t2_child_rel = ChildRelationship.create(orig.t2_child_rel.__class__,
                                                                result.t2, result.down.t2,
                                                                orig.t2_child_rel.param)
