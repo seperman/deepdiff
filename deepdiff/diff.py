@@ -438,14 +438,12 @@ class DeepDiff(ResultDict):
 
         for key in t_keys_added:
             change_level = level.branch_deeper(None, level.t2[key],
-                                               child_relationship_class=rel_class, child_relationship_param=key,
-                                               report_type=item_added_key)
+                                               child_relationship_class=rel_class, child_relationship_param=key)
             self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
             change_level = level.branch_deeper(level.t1[key], None,
-                                               child_relationship_class=rel_class, child_relationship_param=key,
-                                               report_type=item_removed_key)
+                                               child_relationship_class=rel_class, child_relationship_param=key)
             self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
@@ -459,10 +457,10 @@ class DeepDiff(ResultDict):
                                              child_relationship_class=rel_class, child_relationship_param=key)
             self.__diff(next_level, parents_ids_added)
 
-    def __diff_set(self, t1, t2, parent="root"):
+    def __diff_set(self, level):
         """Difference of sets"""
-        t1_hashtable = self.__create_hashtable(t1, parent)
-        t2_hashtable = self.__create_hashtable(t2, parent)
+        t1_hashtable = self.__create_hashtable(level.t1, level)
+        t2_hashtable = self.__create_hashtable(level.t2, level)
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -473,13 +471,15 @@ class DeepDiff(ResultDict):
         items_added = [t2_hashtable[i].item for i in hashes_added]
         items_removed = [t1_hashtable[i].item for i in hashes_removed]
 
-        if items_removed:
-            self.__extend_result_list(
-                keys=items_removed, parent=parent, report_obj=self.result_text["set_item_removed"])
+        for item in items_added:
+            change_level = level.branch_deeper(None, item,
+                                               child_relationship_class=SetRelationship)
+            self.__report_result('set_item_added', change_level)
 
-        if items_added:
-            self.__extend_result_list(
-                keys=items_added, parent=parent, report_obj=self.result_text["set_item_added"])
+        for item in items_removed:
+            change_level = level.branch_deeper(item, None,
+                                               child_relationship_class=SetRelationship)
+            self.__report_result('set_item_removed', change_level)
 
     def __diff_iterable(self, level, parents_ids=frozenset({})):
         """Difference of iterables except dictionaries, sets and strings."""

@@ -64,6 +64,8 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_iterable_item_added(ref)
         self._from_ref_iterable_item_removed(ref)
         # TODO
+        self._from_ref_set_item_removed(ref)
+        self._from_ref_set_item_added(ref)
         self._from_ref_repetition_change(ref)
 
     def _from_ref_dictionary_type_changes(self, ref):
@@ -106,7 +108,25 @@ class TextStyleResultDict(ResultDict):
             for change in ref['iterable_item_removed']:
                 self['iterable_item_removed'][change.path()] = change.t1
 
-    # TODO
+    def _from_ref_set_item_removed(self, ref):
+        if 'set_item_removed' in ref:
+            for change in ref['set_item_removed']:
+                path = change.up.path()  # we want't the set's path, the removed item is not directly accessible
+                item = change.t1
+                if is_string(item):
+                    item = "'%s'" % item
+                self['set_item_removed'].add("%s[%s]" % (path, str(item)))
+                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
+
+    def _from_ref_set_item_added(self, ref):
+        if 'set_item_added' in ref:
+            for change in ref['set_item_added']:
+                path = change.up.path()  # we want't the set's path, the added item is not directly accessible
+                item = change.t2
+                if is_string(item):
+                    item = "'%s'" % item
+                self['set_item_added'].add("%s[%s]" % (path, str(item)))
+                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
 
     def _from_ref_repetition_change(self, ref):
         if 'repetition_change' in ref:
@@ -267,7 +287,7 @@ class DiffLevel:
                 level = level.down
         return result
 
-    def create_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param, report_type=None):
+    def create_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
         """
         Start a new comparison level and correctly link it to this one.
         :rtype: DiffLevel
@@ -279,7 +299,7 @@ class DiffLevel:
         level.auto_generate_child_rel(child_relationship_class, child_relationship_param)
         return result
 
-    def branch_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param, report_type=None):
+    def branch_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
         """
         Branch this comparison: Do not touch this comparison line, but create a new one with exactly the same content,
         just one level deeper.
