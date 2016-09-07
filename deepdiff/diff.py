@@ -369,7 +369,7 @@ class DeepDiff(ResultDict):
                 else:                                 # report key only
                     report_obj.add(key_in_report)
 
-    def __unprocessed(self, parent, t1, t2):
+    def __unprocessed(self, parent, t1, t2): # TODO!!!
         self.result_text['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
 
     def __values_changed(self, level, diff=None):
@@ -384,24 +384,24 @@ class DeepDiff(ResultDict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
-    def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({}), is_namedtuple=False):
+    def __diff_obj(self, level, parents_ids=frozenset({}), is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
-                t1 = t1._asdict()
-                t2 = t2._asdict()
+                t1 = level.t1._asdict()
+                t2 = level.t2._asdict()
             else:
-                t1 = t1.__dict__
-                t2 = t2.__dict__
+                t1 = level.t1.__dict__
+                t2 = level.t2.__dict__
         except AttributeError:
             try:
-                t1 = {i: getattr(t1, i) for i in t1.__slots__}
-                t2 = {i: getattr(t2, i) for i in t2.__slots__}
+                t1 = {i: getattr(t1, i) for i in level.t1.__slots__}
+                t2 = {i: getattr(t2, i) for i in level.t2.__slots__}
             except AttributeError:
-                self.__unprocessed(parent, t1, t2)
+                self.__unprocessed(level)
                 return
 
-        self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
+        self.__diff_dict(level, parents_ids, print_as_attribute=True, override=True, override_t1=t1, override_t2=t2)
 
     def __skip_this(self, level):
         """
@@ -417,8 +417,18 @@ class DeepDiff(ResultDict):
 
         return skip
 
-    def __diff_dict(self, level, parents_ids=frozenset({}), print_as_attribute=False):
+    def __diff_dict(self, level, parents_ids=frozenset({}), print_as_attribute=False,
+                    override=False, override_t1=None, override_t2=None):
         """Difference of 2 dictionaries"""
+        if override:
+            # for special stuff like custom objects and named tuples we receive preprocessed t1 and t2
+            # but must not spoil the chain (=level) with it
+            t1 = override_t1
+            t2 = override_t2
+        else:
+            t1 = level.t1
+            t2 = level.t2
+
         if print_as_attribute:
             item_added_key = "attribute_added"
             item_removed_key = "attribute_removed"
@@ -428,8 +438,8 @@ class DeepDiff(ResultDict):
             item_removed_key = "dictionary_item_removed"
             rel_class = DictRelationship
 
-        t1_keys = set(level.t1.keys())
-        t2_keys = set(level.t2.keys())
+        t1_keys = set(t1.keys())
+        t2_keys = set(t2.keys())
 
         t_keys_intersect = t2_keys.intersection(t1_keys)
 
@@ -437,23 +447,23 @@ class DeepDiff(ResultDict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         for key in t_keys_added:
-            change_level = level.branch_deeper(None, level.t2[key],
+            change_level = level.branch_deeper(None, t2[key],
                                                child_relationship_class=rel_class, child_relationship_param=key)
             self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
-            change_level = level.branch_deeper(level.t1[key], None,
+            change_level = level.branch_deeper(t1[key], None,
                                                child_relationship_class=rel_class, child_relationship_param=key)
             self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
-            item_id = id(level.t1[key])
+            item_id = id(t1[key])
             if parents_ids and item_id in parents_ids:
                 continue
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
 
             # Go one level deeper
-            next_level = level.branch_deeper(level.t1[key], level.t2[key],
+            next_level = level.branch_deeper(t1[key], t2[key],
                                              child_relationship_class=rel_class, child_relationship_param=key)
             self.__diff(next_level, parents_ids_added)
 
@@ -535,17 +545,17 @@ class DeepDiff(ResultDict):
 
         self.__report_result('values_changed', level)
 
-    def __diff_tuple(self, t1, t2, parent, parents_ids):
+    def __diff_tuple(self, level, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
-            t1._asdict
+            level.t1._asdict
         # It must be a normal tuple
         except AttributeError:
-            self.__diff_iterable(t1, t2, parent, parents_ids)
+            self.__diff_iterable(level, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
+            self.__diff_obj(level, parents_ids, is_namedtuple=True)
 
     def __create_hashtable(self, t, level):
         """Create hashtable of {item_hash: item}"""
