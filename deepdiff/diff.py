@@ -531,7 +531,7 @@ class DeepDiff(ResultDict):
                 level.t1.splitlines(), level.t2.splitlines(), lineterm='')
             diff = list(diff)
             if diff:
-                level.diff = '\n'.join(diff)
+                level.additional['diff'] = '\n'.join(diff)
 
         self.__report_result('values_changed', level)
 
@@ -583,41 +583,51 @@ class DeepDiff(ResultDict):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        if self.report_repetition:  # TODO
-            items_added = {"%s[%s]" % (parent, i): t2_hashtable[
-                hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].indexes}
+        if self.report_repetition:
+            for hash_value in hashes_added:
+                for i in t2_hashtable[hash_value].indexes:
+                    change_level = level.branch_deeper(None, t2_hashtable[hash_value].item,
+                                                       child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                       child_relationship_param=i)                                    # TODO: what is this value exactly?
+                    self.__report_result('iterable_item_added', change_level)
 
-            items_removed = {"%s[%s]" % (parent, i): t1_hashtable[
-                hash_value].item for hash_value in hashes_removed for i in t1_hashtable[hash_value].indexes}
+            for hash_value in hashes_removed:
+                for i in t1_hashtable[hash_value].indexes:
+                    change_level = level.branch_deeper(t1_hashtable[hash_value].item, None,
+                                                       child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                       child_relationship_param=i)
+                    self.__report_result('iterable_item_removed', change_level)
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
-            for key in items_intersect:
-                t1_indexes = t1_hashtable[key].indexes
-                t2_indexes = t2_hashtable[key].indexes
+            for hash_value in items_intersect:
+                t1_indexes = t1_hashtable[hash_value].indexes
+                t2_indexes = t2_hashtable[hash_value].indexes
                 t1_indexes_len = len(t1_indexes)
                 t2_indexes_len = len(t2_indexes)
-                if t1_indexes_len != t2_indexes_len:
-                    t1_item_and_index = t1_hashtable[key]
-                    repetition_change = {"%s[%s]" % (parent, t1_item_and_index.indexes[0]): RemapDict(
+                if t1_indexes_len != t2_indexes_len:  # this is a repetition change!
+                    # create "change" entry, keep current level untouched to handle further changes
+                    repetition_change_level = level.branch_deeper(
+                        t1_hashtable[hash_value].item, t2_hashtable[hash_value].item,  # nb: those are equal!
+                        child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                        child_relationship_param=t1_hashtable[hash_value].indexes[0])
+                    repetition_change_level.additional['rep'] = RemapDict(
                         old_repeat=t1_indexes_len,
                         new_repeat=t2_indexes_len,
                         old_indexes=t1_indexes,
-                        new_indexes=t2_indexes,
-                        value=t1_item_and_index.item
-                    )}
-                    self.result_text['repetition_change'].update(repetition_change)
+                        new_indexes=t2_indexes)
+                    self.__report_result('repetition_change', repetition_change_level)
 
         else:
             for hash_value in hashes_added:
-                change_level = level.branch_deeper(None, t2_hashtable[hash_value],
+                change_level = level.branch_deeper(None, t2_hashtable[hash_value].item,
                                                    child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
                                                    child_relationship_param=t2_hashtable[hash_value].indexes[0])  # TODO: what is this value exactly?
                 self.__report_result('iterable_item_added', change_level)
 
             for hash_value in hashes_removed:
-                change_level = level.branch_deeper(t1_hashtable[hash_value], None,
-                                                   child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
+                change_level = level.branch_deeper(t1_hashtable[hash_value].item, None,
+                                                   child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
                                                    child_relationship_param=t1_hashtable[hash_value].indexes[0])
                 self.__report_result('iterable_item_removed', change_level)
 

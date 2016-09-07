@@ -64,6 +64,7 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_iterable_item_added(ref)
         self._from_ref_iterable_item_removed(ref)
         # TODO
+        self._from_ref_repetition_change(ref)
 
     def _from_ref_dictionary_type_changes(self, ref):
         if 'type_changes' in ref:
@@ -92,8 +93,8 @@ class TextStyleResultDict(ResultDict):
         if 'values_changed' in ref:
             for change in ref['values_changed']:
                 self['values_changed'][change.path()] = {'new_value': change.t2, 'old_value': change.t1}
-                if change.diff:
-                    self['values_changed'][change.path()].update({'diff': change.diff})
+                if 'diff' in change.additional:
+                    self['values_changed'][change.path()].update({'diff': change.additional['diff']})
 
     def _from_ref_iterable_item_added(self, ref):
         if 'iterable_item_added' in ref:
@@ -105,6 +106,15 @@ class TextStyleResultDict(ResultDict):
             for change in ref['iterable_item_removed']:
                 self['iterable_item_removed'][change.path()] = change.t1
 
+    # TODO
+
+    def _from_ref_repetition_change(self, ref):
+        if 'repetition_change' in ref:
+            for change in ref['repetition_change']:
+                path = change.path()
+                self['repetition_change'][path] = change.additional['rep'].copy()
+                self['repetition_change'][path]['value'] = change.t1
+
 
 class DiffLevel:
     """
@@ -114,7 +124,7 @@ class DiffLevel:
     (which is just fancy for "a change").
     This is the result object class for object reference style reports.
     """
-    def __init__(self, t1, t2, down=None, up=None, report_type=None, diff=None, child_rel1=None, child_rel2=None):
+    def __init__(self, t1, t2, down=None, up=None, report_type=None, child_rel1=None, child_rel2=None, additional=None):
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -144,10 +154,19 @@ class DiffLevel:
         Examples: "set_item_added", "values_changed"
         """
 
-        self.diff = diff
+        # Note: don't use {} as additional's default value - this would turn out to be always the same dict object
+        if additional is not None:
+            self.additional = additional
+        else:
+            self.additional = {}
         """
-        Optionally, a textual description detailling the change.
-        Currently used for multi-line strings only (i.e. a classic text diff).
+        For some types of changes we store some additional information.
+        This is a dict containing this information.
+        Currently, this is used for:
+        - values_changed: In case the changes data is a multi-line string,
+                          we include a textual diff as additional['diff'].
+        - repetition_change: additional['rep']:
+                             e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
         """
 
         if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
@@ -278,23 +297,27 @@ class DiffLevel:
         orig = self.all_up()
         result = copy(orig)           # copy top level
 
-        while orig.down is not None:  # copy following level
-            # copy this level
-            result.down = copy(orig.down)
-            result.down.up = result        # adjust reverse link
+        while orig is not None:
+            result.additional = copy(orig.additional)
 
-            if orig.t1_child_rel is not None:
-                result.t1_child_rel = ChildRelationship.create(orig.t1_child_rel.__class__,
-                                                               result.t1, result.down.t1,
-                                                               orig.t1_child_rel.param)
-            if orig.t2_child_rel is not None:
-                result.t2_child_rel = ChildRelationship.create(orig.t2_child_rel.__class__,
-                                                               result.t2, result.down.t2,
-                                                               orig.t2_child_rel.param)
+            if orig.down is not None:  # copy and create references to the following level
+                # copy following level
+                result.down = copy(orig.down)
+                result.down.up = result        # adjust reverse link
+
+                if orig.t1_child_rel is not None:
+                    result.t1_child_rel = ChildRelationship.create(orig.t1_child_rel.__class__,
+                                                                   result.t1, result.down.t1,
+                                                                   orig.t1_child_rel.param)
+                if orig.t2_child_rel is not None:
+                    result.t2_child_rel = ChildRelationship.create(orig.t2_child_rel.__class__,
+                                                                   result.t2, result.down.t2,
+                                                                   orig.t2_child_rel.param)
 
             # descend to next level
             orig = orig.down
-            result = result.down
+            if result.down is not None:
+                result = result.down
         return result
 
 
