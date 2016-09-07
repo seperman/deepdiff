@@ -4,23 +4,25 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import difflib
-from copy import copy
-import datetime
+import logging
+
 from decimal import Decimal
 
-from collections import namedtuple
 from collections import MutableMapping
 from collections import Iterable
 
-from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded
+from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash
 from deepdiff.model import RemapDict, ResultDict, TextStyleResultDict, RefStyleResultDict, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship, SubscriptableIterableRelationship, SetRelationship
+from deepdiff.model import DictRelationship, AttributeRelationship
+from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
 if py3:  # pragma: no cover
     from itertools import zip_longest
 else:  # pragma: no cover
     from itertools import izip_longest as zip_longest
+
+logger = logging.getLogger(__name__)
 
 class DeepDiff(ResultDict):
 
@@ -545,7 +547,7 @@ class DeepDiff(ResultDict):
         else:
             self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
 
-    def __create_hashtable(self, t, parent):
+    def __create_hashtable(self, t, level):
         """Create hashtable of {item_hash: item}"""
 
         def add_hash(hashes, item_hash, item, i):
@@ -560,20 +562,20 @@ class DeepDiff(ResultDict):
                 hashes_all = DeepHash(item, hashes=self.hashes)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
-                logger.warning("Can not produce a hash for %s item in %s and "
-                               "thus not counting this object: %s" % (item, parent), e)
+                logger.warning("Can not produce a hash for %s and "
+                               "thus not counting this object: %s" % level.path(), e)
             else:
                 if item_hash is hashes_all.unprocessed:  # pragma: no cover
-                    logger.warning("%s item in %s was not processed while hashing "
-                                   "thus not counting this object." % (item, parent))
+                    logger.warning("Item %s was not processed while hashing "
+                                   "thus not counting this object." % level.path())
                 else:
                     add_hash(hashes, item_hash, item, i)
         return hashes
 
-    def __diff_iterable_with_contenthash(self, t1, t2, parent):
+    def __diff_iterable_with_contenthash(self, level):
         """Diff of unhashable iterables. Only used when ignoring the order."""
-        t1_hashtable = self.__create_hashtable(t1, parent)
-        t2_hashtable = self.__create_hashtable(t2, parent)
+        t1_hashtable = self.__create_hashtable(level.t1, level)
+        t2_hashtable = self.__create_hashtable(level.t2, level)
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -581,7 +583,7 @@ class DeepDiff(ResultDict):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        if self.report_repetition:
+        if self.report_repetition:  # TODO
             items_added = {"%s[%s]" % (parent, i): t2_hashtable[
                 hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].indexes}
 
@@ -607,14 +609,17 @@ class DeepDiff(ResultDict):
                     self.result_text['repetition_change'].update(repetition_change)
 
         else:
-            items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].indexes[0]): t2_hashtable[
-                hash_value].item for hash_value in hashes_added}
+            for hash_value in hashes_added:
+                change_level = level.branch_deeper(None, t2_hashtable[hash_value],
+                                                   child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                   child_relationship_param=t2_hashtable[hash_value].indexes[0])  # TODO: what is this value exactly?
+                self.__report_result('iterable_item_added', change_level)
 
-            items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].indexes[0]): t1_hashtable[
-                hash_value].item for hash_value in hashes_removed}
-
-        self.result_text["iterable_item_removed"].update(items_removed)
-        self.result_text["iterable_item_added"].update(items_added)
+            for hash_value in hashes_removed:
+                change_level = level.branch_deeper(t1_hashtable[hash_value], None,
+                                                   child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
+                                                   child_relationship_param=t1_hashtable[hash_value].indexes[0])
+                self.__report_result('iterable_item_removed', change_level)
 
     def __diff_numbers(self, level):
         """Diff Numbers"""

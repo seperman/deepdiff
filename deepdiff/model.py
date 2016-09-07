@@ -305,12 +305,12 @@ class ChildRelationship(metaclass=ABCMeta):
     """
 
     @staticmethod
-    def create(klass, parent, child, param):
+    def create(klass, parent, child, param=None):
         if not issubclass(klass, ChildRelationship):
             raise TypeError
         return klass(parent, child, param)
 
-    def __init__(self, parent, child, param):
+    def __init__(self, parent, child, param=None):
         self.parent = parent
         """
         The parent object of this relationship, e.g. a dict
@@ -427,6 +427,9 @@ class InaccessibleRelationship(ChildRelationship):
 
 
 class SetRelationship(InaccessibleRelationship):  # there is no random access to set elements
+    pass
+
+class NonSubscriptableIterableRelationship(InaccessibleRelationship):
     pass
 
 
