@@ -4,7 +4,7 @@
 from unittest import TestCase
 import logging
 from tests import CustomClass
-from deepdiff.model import DiffLevel, ChildRelationship, DictRelationship, ListRelationship, AttributeRelationship
+from deepdiff.model import DiffLevel, ChildRelationship, DictRelationship, SubscriptableIterableRelationship, AttributeRelationship
 
 logging.disable(logging.CRITICAL)
 
@@ -39,13 +39,13 @@ class ListRelationshipTestCase(TestCase):
         self.l = [1337, 'vegan', self.custom]
 
     def test_min(self):
-        rel = ListRelationship(self.l, self.l[0], 0)
+        rel = SubscriptableIterableRelationship(self.l, self.l[0], 0)
         result = rel.access_string("self.l")
         self.assertEqual(result, "self.l[0]")
         self.assertEqual(eval(result), 1337)
 
     def test_max(self):
-        rel = ChildRelationship.create(ListRelationship, self.l, self.custom, 2)
+        rel = ChildRelationship.create(SubscriptableIterableRelationship, self.l, self.custom, 2)
         self.assertEqual(rel.access_partial(), "[2]")
 
 
