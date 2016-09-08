@@ -106,16 +106,6 @@ class TextStyleResultDict(ResultDict):
                 if 'diff' in change.additional:
                     self['values_changed'][change.path()].update({'diff': change.additional['diff']})
 
-    def _from_ref_iterable_item_added(self, ref):
-        if 'iterable_item_added' in ref:
-            for change in ref['iterable_item_added']:
-                self['iterable_item_added'][change.path()] = change.t2
-
-    def _from_ref_iterable_item_removed(self, ref):
-        if 'iterable_item_removed' in ref:
-            for change in ref['iterable_item_removed']:
-                self['iterable_item_removed'][change.path()] = change.t1
-
     def _from_ref_set_item_removed(self, ref):
         if 'set_item_removed' in ref:
             for change in ref['set_item_removed']:
