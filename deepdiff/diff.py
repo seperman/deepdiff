@@ -338,8 +338,9 @@ class DeepDiff(ResultDict):
 
         :rtype: None
         """
-        level.report_type = report_type
-        self.result_refs[report_type].add(level)
+        if not self.__skip_this(level):
+            level.report_type = report_type
+            self.result_refs[report_type].add(level)
 
     def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):  # TODO
         """
@@ -449,14 +450,12 @@ class DeepDiff(ResultDict):
         for key in t_keys_added:
             change_level = level.branch_deeper(None, t2[key],
                                                child_relationship_class=rel_class, child_relationship_param=key)
-            if not self.__skip_this(change_level):
-                self.__report_result(item_added_key, change_level)
+            self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
             change_level = level.branch_deeper(t1[key], None,
                                                child_relationship_class=rel_class, child_relationship_param=key)
-            if not self.__skip_this(change_level):
-                self.__report_result(item_removed_key, change_level)
+            self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
             item_id = id(t1[key])

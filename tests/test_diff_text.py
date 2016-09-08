@@ -827,7 +827,6 @@ class DeepDiffTextTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_skip_list_path(self):
-
         t1 = ['a', 'b']
         t2 = ['a']
         ddiff = DeepDiff(t1, t2, exclude_paths=['root[1]'])
