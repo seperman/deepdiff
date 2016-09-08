@@ -92,8 +92,8 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_item_added_and_removed(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 4, 'three': 3, 'five': 5, 'six': 6}
-        ddiff = DeepDiff(t1, t2)
-        res = ddiff.result_refs
+        ddiff = DeepDiff(t1, t2, default_view='ref')
+        res = ddiff
         self.assertEqual(set(res.keys()),
                          {'dictionary_item_added', 'dictionary_item_removed', 'values_changed'})
         self.assertEqual(len(res['dictionary_item_added']), 2)

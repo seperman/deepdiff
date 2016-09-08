@@ -298,11 +298,12 @@ class DeepDiff(ResultDict):
 
     def __init__(self, t1, t2,
                  ignore_order=False, report_repetition=False, significant_digits=None,
-                 exclude_paths=set(), exclude_types=set(), verbose_level=1, **kwargs):
+                 exclude_paths=set(), exclude_types=set(), verbose_level=1, default_view='text',
+                 **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                              "exclude_paths, exclude_types and verbose_level.") % ', '.join(kwargs.keys()))
+                              "exclude_paths, exclude_types, verbose_level and default_view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
@@ -324,7 +325,11 @@ class DeepDiff(ResultDict):
 
         self.result_text = TextStyleResultDict(verbose_level, self.result_refs)
         self.result_text.cleanup()   # clean up text-style result dictionary
-        self.update(self.result_text)  # use text style result as default view
+
+        if default_view == 'ref':          # Allow one of our views to be accessible directly via this object
+            self.update(self.result_refs)
+        else:
+            self.update(self.result_text)  # be compatible to DeepDiff 2.x if user didn't specify otherwise
 
     def __report_result(self, report_type, level):
         """
