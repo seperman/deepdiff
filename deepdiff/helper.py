@@ -45,16 +45,14 @@ EXPANDED_KEY_MAP = {  # pragma: no cover
 
 
 def is_string(param):
-    if py3:
+    if py3:  # pragma: no cover
         return isinstance(param, str)
-    else:
+    else:    # pragma: no cover
         return isinstance(param, basestring)
 
 
 class ListItemRemovedOrAdded(object):  # pragma: no cover
-
     """Class of conditions to be checked"""
-
     pass
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
