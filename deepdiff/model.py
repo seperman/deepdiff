@@ -61,10 +61,9 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_default(ref, 'dictionary_item_added')
         self._from_ref_default(ref, 'dictionary_item_removed')
         self._from_ref_value_changed(ref)
-        self._from_ref_default(ref, 'unprocessed')
+        self._from_ref_unprocessed(ref)
         self._from_ref_default(ref, 'iterable_item_added')
         self._from_ref_default(ref, 'iterable_item_removed')
-        # TODO
         self._from_ref_default(ref, 'attribute_added')
         self._from_ref_default(ref, 'attribute_removed')
         self._from_ref_set_item_removed(ref)
@@ -98,6 +97,11 @@ class TextStyleResultDict(ResultDict):
                 self['type_changes'][change.path()] = RemapDict({'old_type': type(change.t1), 'new_type': type(change.t2)})
                 if self.verbose_level:
                     self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
+
+    def _from_ref_unprocessed(self, ref):
+        if 'unprocessed' in ref:
+            for change in ref['unprocessed']:
+                self['unprocessed'].append("%s: %s and %s" % (change.path(), change.t1, change.t2))
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
