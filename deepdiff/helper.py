@@ -44,35 +44,6 @@ EXPANDED_KEY_MAP = {  # pragma: no cover
     'oldvalue': 'old_value'}
 
 
-def order_unordered(data):
-    """
-    Order unordered data.
-
-    We use it in pickling so that serializations are consistent
-    since pickle serializes data inconsistently for unordered iterables
-    such as dictionary and set.
-    """
-    if isinstance(data, MutableMapping):
-        data = sorted(data.items(), key=lambda x: x[0])
-        for i, item in enumerate(data):
-            data[i] = (item[0], order_unordered(item[1]))
-    elif isinstance(data, Iterable) and not isinstance(data, strings):
-        try:
-            data = sorted(data)
-        except Exception as e:
-            warn("Unable to order data type: %s. "
-                 "Ignore order might be giving inaccurate results.",
-                 type(data), exc_info=True)
-        else:
-            new_data = []
-            for item in data:
-                item = order_unordered(item)
-                new_data.append(item)
-            data = new_data
-
-    return data
-
-
 def is_string(param):
     if py3:
         return isinstance(param, str)

@@ -342,12 +342,6 @@ class DeepDiff(ResultDict):
             level.report_type = report_type
             self.result_refs[report_type].add(level)
 
-    def __values_changed(self, level, diff=None):
-        if diff is not None:
-            self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
-        else:
-            self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
-
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
         parents_ids = set(parents_ids)
