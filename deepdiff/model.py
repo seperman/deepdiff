@@ -209,6 +209,9 @@ class DiffLevel:
             Another ChildRelationship object describing the relationship between t2 and it's child object.
             """
 
+        self._path = None
+        """Will cache result of .path() for performance"""
+
     def auto_generate_child_rel(self, klass, param):
         """
         Auto-populate self.child_rel1 and self.child_rel2.
@@ -263,6 +266,10 @@ class DiffLevel:
                       If 'yes':
                         Will return a path including '(unrepresentable)' in place of non string-representable parts.
         """
+        # TODO: We could optimize this by building on top of self.up's path if it is cached there
+        if self._path is not None:
+            return self._path
+
         result = root
         level = self.all_up()  # start at the root
 
@@ -289,6 +296,8 @@ class DiffLevel:
                 break
             else:
                 level = level.down
+
+        self._path = result
         return result
 
     def create_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
