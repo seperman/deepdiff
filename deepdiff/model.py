@@ -352,11 +352,12 @@ class DiffLevel:
         return result
 
 
-class ChildRelationship(metaclass=ABCMeta):
+class ChildRelationship():
     """
     Abstract Base class. Describes the relationship between a container object (the "parent") and the contained
     "child" object.
     """
+    __metaclass__ = ABCMeta
 
     @staticmethod
     def create(klass, parent, child, param=None):
