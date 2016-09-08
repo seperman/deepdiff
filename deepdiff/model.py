@@ -86,10 +86,10 @@ class TextStyleResultDict(ResultDict):
                     self[type].add(change.path())
                 elif isinstance(self[type], dict):
                     self[type][change.path()] = item
-                elif isinstance(self[type], list):
-                    self[type].append(change.path())
-                else:
-                    raise TypeError("Cannot handle this report container type.")
+                elif isinstance(self[type], list):    # pragma: no cover
+                    self[type].append(change.path())  # we don't actually have any of those right now, but just in case
+                else:                                 # pragma: no cover
+                    raise TypeError("Cannot handle this report container type.")  # should never happen
 
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
