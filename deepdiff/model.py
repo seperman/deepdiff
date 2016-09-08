@@ -95,7 +95,7 @@ class TextStyleResultDict(ResultDict):
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
             for change in ref['type_changes']:
-                self['type_changes'][change.path()] = {'old_type': type(change.t1), 'new_type': type(change.t2)}
+                self['type_changes'][change.path()] = RemapDict({'old_type': type(change.t1), 'new_type': type(change.t2)})
                 if self.verbose_level:
                     self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
 
@@ -130,7 +130,7 @@ class TextStyleResultDict(ResultDict):
         if 'repetition_change' in ref:
             for change in ref['repetition_change']:
                 path = change.path()
-                self['repetition_change'][path] = change.additional['rep'].copy()
+                self['repetition_change'][path] = RemapDict(change.additional['rep'])
                 self['repetition_change'][path]['value'] = change.t1
 
 
