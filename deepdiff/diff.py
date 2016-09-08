@@ -342,9 +342,6 @@ class DeepDiff(ResultDict):
             level.report_type = report_type
             self.result_refs[report_type].add(level)
 
-    def __unprocessed(self, parent, t1, t2): # TODO!!!
-        self.result_text['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
-
     def __values_changed(self, level, diff=None):
         if diff is not None:
             self.result_text["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2, diff=diff)
@@ -368,10 +365,10 @@ class DeepDiff(ResultDict):
                 t2 = level.t2.__dict__
         except AttributeError:
             try:
-                t1 = {i: getattr(t1, i) for i in level.t1.__slots__}
-                t2 = {i: getattr(t2, i) for i in level.t2.__slots__}
+                t1 = {i: getattr(level.t1, i) for i in level.t1.__slots__}
+                t2 = {i: getattr(level.t2, i) for i in level.t2.__slots__}
             except AttributeError:
-                self.__unprocessed(level)
+                self.__report_result('unprocessed', level)
                 return
 
         self.__diff_dict(level, parents_ids, print_as_attribute=True, override=True, override_t1=t1, override_t2=t2)
