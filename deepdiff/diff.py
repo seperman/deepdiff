@@ -468,6 +468,7 @@ class DeepDiff(ResultDict):
         except AttributeError:
             # Temporarily fix handling of non-subscriptable iterables by pretending they are subscriptable.
             # See test for further comments.
+            # TODO: This fakes input data! Must fix this!
             level.t1 = list(level.t1)
             level.t2 = list(level.t2)
             return self.__diff_iterable_subscriptable(level, parents_ids)
