@@ -57,43 +57,47 @@ class TextStyleResultDict(ResultDict):
         :param ref: A RefStyleResultDict
         :return:
         """
-        self._from_ref_dictionary_type_changes(ref)
-        self._from_ref_dictionary_item(ref, 'dictionary_item_added')
-        self._from_ref_dictionary_item(ref, 'dictionary_item_removed')
+        self._from_ref_type_changes(ref)
+        self._from_ref_default(ref, 'dictionary_item_added')
+        self._from_ref_default(ref, 'dictionary_item_removed')
         self._from_ref_value_changed(ref)
-        self._from_ref_iterable_item_added(ref)
-        self._from_ref_iterable_item_removed(ref)
+        self._from_ref_default(ref, 'unprocessed')
+        self._from_ref_default(ref, 'iterable_item_added')
+        self._from_ref_default(ref, 'iterable_item_removed')
         # TODO
-        self._from_ref_dictionary_item(ref, 'attribute_added')
-        self._from_ref_dictionary_item(ref, 'attribute_removed')
+        self._from_ref_default(ref, 'attribute_added')
+        self._from_ref_default(ref, 'attribute_removed')
         self._from_ref_set_item_removed(ref)
         self._from_ref_set_item_added(ref)
         self._from_ref_repetition_change(ref)
 
-    def _from_ref_dictionary_type_changes(self, ref):
+    def _from_ref_default(self, ref, type):
+        if type in ref:
+            for change in ref[type]:  # report each change
+                # determine change direction (added or removed)
+                # Report t2 (the new one) whenever possible.
+                # In cases where t2 doesn't exist (i.e. stuff removed), report t1.
+                if change.t2 is not None:
+                    item = change.t2
+                else:
+                    item = change.t1
+
+                # do the reporting
+                if isinstance(self[type], set):
+                    self[type].add(change.path())
+                elif isinstance(self[type], dict):
+                    self[type][change.path()] = item
+                elif isinstance(self[type], list):
+                    self[type].append(change.path())
+                else:
+                    raise TypeError("Cannot handle this report container type.")
+
+    def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
             for change in ref['type_changes']:
                 self['type_changes'][change.path()] = {'old_type': type(change.t1), 'new_type': type(change.t2)}
                 if self.verbose_level:
                     self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
-
-    def _from_ref_dictionary_item(self, ref, type='dictionary_item_added'):
-        """
-        :param type: 'dictionary_item_added', 'attribute_added', 'dictionary_item_removed' or 'attribute_removed'
-        """
-        if type in ref:
-            for change in ref[type]:  # report each change
-                # determine change direction (added or removed)
-                if type in ('dictionary_item_added', 'attribute_added'):
-                    item = change.t2  # report the new, added item (exists only on the right hand side
-                else:  # *_removed
-                    item = change.t1  # report the old, removed item (exists only on the left hand side)
-
-                # do the reporting
-                if self.verbose_level < 2:
-                    self[type].add(change.path())
-                else:
-                    self[type][change.path()] = item
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
