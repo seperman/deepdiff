@@ -58,12 +58,14 @@ class TextStyleResultDict(ResultDict):
         :return:
         """
         self._from_ref_dictionary_type_changes(ref)
-        self._from_ref_dictionary_item_added(ref)
-        self._from_ref_dictionary_item_removed(ref)
+        self._from_ref_dictionary_item(ref, 'dictionary_item_added')
+        self._from_ref_dictionary_item(ref, 'dictionary_item_removed')
         self._from_ref_value_changed(ref)
         self._from_ref_iterable_item_added(ref)
         self._from_ref_iterable_item_removed(ref)
         # TODO
+        self._from_ref_dictionary_item(ref, 'attribute_added')
+        self._from_ref_dictionary_item(ref, 'attribute_removed')
         self._from_ref_set_item_removed(ref)
         self._from_ref_set_item_added(ref)
         self._from_ref_repetition_change(ref)
@@ -75,21 +77,23 @@ class TextStyleResultDict(ResultDict):
                 if self.verbose_level:
                     self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
 
-    def _from_ref_dictionary_item_added(self, ref):
-        if 'dictionary_item_added' in ref:
-            for change in ref['dictionary_item_added']:
-                if self.verbose_level < 2:
-                    self['dictionary_item_added'].add(change.path())
-                else:
-                    self['dictionary_item_added'][change.path()] = change.t2
+    def _from_ref_dictionary_item(self, ref, type='dictionary_item_added'):
+        """
+        :param type: 'dictionary_item_added', 'attribute_added', 'dictionary_item_removed' or 'attribute_removed'
+        """
+        if type in ref:
+            for change in ref[type]:  # report each change
+                # determine change direction (added or removed)
+                if type in ('dictionary_item_added', 'attribute_added'):
+                    item = change.t2  # report the new, added item (exists only on the right hand side
+                else:  # *_removed
+                    item = change.t1  # report the old, removed item (exists only on the left hand side)
 
-    def _from_ref_dictionary_item_removed(self, ref):
-        if 'dictionary_item_removed' in ref:
-            for change in ref['dictionary_item_removed']:
+                # do the reporting
                 if self.verbose_level < 2:
-                    self['dictionary_item_removed'].add(change.path())
+                    self[type].add(change.path())
                 else:
-                    self['dictionary_item_removed'][change.path()] = change.t1
+                    self[type][change.path()] = item
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
