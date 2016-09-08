@@ -478,7 +478,7 @@ class InaccessibleRelationship(ChildRelationship):
     def _format_partial(self, partial):
         return None
 
-    def access_partial(self):
+    def access_partial(self, force=None):
         return None
 
 
