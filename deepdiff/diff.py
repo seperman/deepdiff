@@ -409,7 +409,7 @@ class DeepDiff(ResultDict):
         :rtype: bool
         """
         skip = False
-        if level.path in self.exclude_paths:
+        if level.path() in self.exclude_paths:
             skip = True
         else:
             if isinstance(level.t1, self.exclude_types_tuple) or isinstance(level.t2, self.exclude_types_tuple):
@@ -449,12 +449,14 @@ class DeepDiff(ResultDict):
         for key in t_keys_added:
             change_level = level.branch_deeper(None, t2[key],
                                                child_relationship_class=rel_class, child_relationship_param=key)
-            self.__report_result(item_added_key, change_level)
+            if not self.__skip_this(change_level):
+                self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
             change_level = level.branch_deeper(t1[key], None,
                                                child_relationship_class=rel_class, child_relationship_param=key)
-            self.__report_result(item_removed_key, change_level)
+            if not self.__skip_this(change_level):
+                self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
             item_id = id(t1[key])
