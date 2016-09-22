@@ -100,17 +100,17 @@ class TextStyleResultDict(ResultDict):
                 if self.verbose_level:
                     self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
 
-    def _from_ref_unprocessed(self, ref):
-        if 'unprocessed' in ref:
-            for change in ref['unprocessed']:
-                self['unprocessed'].append("%s: %s and %s" % (change.path(), change.t1, change.t2))
-
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
             for change in ref['values_changed']:
                 self['values_changed'][change.path()] = {'new_value': change.t2, 'old_value': change.t1}
                 if 'diff' in change.additional:
                     self['values_changed'][change.path()].update({'diff': change.additional['diff']})
+
+    def _from_ref_unprocessed(self, ref):
+        if 'unprocessed' in ref:
+            for change in ref['unprocessed']:
+                self['unprocessed'].append("%s: %s and %s" % (change.path(), change.t1, change.t2))
 
     def _from_ref_set_item_removed(self, ref):
         if 'set_item_removed' in ref:
