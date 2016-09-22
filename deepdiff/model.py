@@ -70,9 +70,9 @@ class TextStyleResultDict(ResultDict):
         self._from_ref_set_item_added(ref)
         self._from_ref_repetition_change(ref)
 
-    def _from_ref_default(self, ref, type):
-        if type in ref:
-            for change in ref[type]:  # report each change
+    def _from_ref_default(self, ref, report_type):
+        if report_type in ref:
+            for change in ref[report_type]:  # report each change
                 # determine change direction (added or removed)
                 # Report t2 (the new one) whenever possible.
                 # In cases where t2 doesn't exist (i.e. stuff removed), report t1.
@@ -82,14 +82,16 @@ class TextStyleResultDict(ResultDict):
                     item = change.t1
 
                 # do the reporting
-                if isinstance(self[type], set):
-                    self[type].add(change.path())
-                elif isinstance(self[type], dict):
-                    self[type][change.path()] = item
-                elif isinstance(self[type], list):    # pragma: no cover
-                    self[type].append(change.path())  # we don't actually have any of those right now, but just in case
-                else:                                 # pragma: no cover
-                    raise TypeError("Cannot handle this report container type.")  # should never happen
+                if isinstance(self[report_type], set):
+                    self[report_type].add(change.path())
+                elif isinstance(self[report_type], dict):
+                    self[report_type][change.path()] = item
+                elif isinstance(self[report_type], list):    # pragma: no cover
+                    # we don't actually have any of those right now, but just in case
+                    self[report_type].append(change.path())
+                else:                                        # pragma: no cover
+                    # should never happen
+                    raise TypeError("Cannot handle this report container type.")
 
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
