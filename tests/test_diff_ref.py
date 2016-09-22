@@ -21,7 +21,7 @@ from deepdiff import DeepDiff
 import logging
 
 from deepdiff.helper import py3
-from deepdiff.model import DictRelationship
+from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
 from tests import CustomClass
 
@@ -84,3 +84,31 @@ class DeepDiffRefTestCase(unittest.TestCase):
                          {'dictionary_item_added', 'dictionary_item_removed', 'values_changed'})
         self.assertEqual(len(res['dictionary_item_added']), 2)
         self.assertEqual(len(res['dictionary_item_removed']), 1)
+
+    def test_non_subscriptable_iterable(self):
+        def gen1():
+            yield 42
+            yield 1337
+            yield 31337
+
+        def gen2():
+            yield 42
+            yield 1337
+
+        t1 = gen1()
+        t2 = gen2()
+        ddiff = DeepDiff(t1, t2, default_view='ref')
+
+        self.assertEqual(set(ddiff.keys()), {'iterable_item_removed'})
+        self.assertEqual(len(ddiff['iterable_item_removed']), 1)
+
+        (change, ) = ddiff['iterable_item_removed']
+
+        self.assertEqual(change.up.t1, t1)
+        self.assertEqual(change.up.t2, t2)
+        self.assertEqual(change.report_type, 'iterable_item_removed')
+        self.assertEqual(change.t1, 31337)
+        self.assertIsNone(change.t2)
+
+        self.assertIsInstance(change.up.t1_child_rel, NonSubscriptableIterableRelationship)
+        self.assertIsNone(change.up.t2_child_rel)

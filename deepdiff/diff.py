@@ -460,32 +460,43 @@ class DeepDiff(ResultDict):
                                                child_relationship_class=SetRelationship)
             self.__report_result('set_item_removed', change_level)
 
-    def __diff_iterable(self, level, parents_ids=frozenset({})):
-        """Difference of iterables except dictionaries, sets and strings."""
+    @staticmethod
+    def __iterables_subscriptable(t1, t2):
         try:
-            if getattr(level.t1, '__getitem__') and getattr(level.t2, '__getitem__'):
-                return self.__diff_iterable_subscriptable(level, parents_ids)
+            if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
+                return True
+            else:             # pragma: no cover
+                return False  # should never happen
         except AttributeError:
-            # Temporarily fix handling of non-subscriptable iterables by pretending they are subscriptable.
-            # See test for further comments.
-            # TODO: This fakes input data! Must fix this!
-            level.t1 = list(level.t1)
-            level.t2 = list(level.t2)
-            return self.__diff_iterable_subscriptable(level, parents_ids)
+            return False
 
-    def __diff_iterable_subscriptable(self, level, parents_ids=frozenset({})):
-        """Difference of subscriptable iterables, like lists"""
+    def __diff_iterable(self, level, parents_ids=frozenset({})):
+        """Difference of iterables"""
+        # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
+        subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
+        if subscriptable:
+            child_relationship_class = SubscriptableIterableRelationship
+        else:
+            child_relationship_class = NonSubscriptableIterableRelationship
+
         for i, (x, y) in enumerate(zip_longest(level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
+            # prepare further stuff depending on whether t1 and t2 are subscriptable
+            if subscriptable:
+                child_relationship_param = i
+            else:
+                child_relationship_param = None
+
+            # now really do the comparison
             if y is ListItemRemovedOrAdded:    # item removed completely
-                change_level = level.branch_deeper(level.t1[i], None,
-                                                   child_relationship_class=SubscriptableIterableRelationship,
-                                                   child_relationship_param=i)
+                change_level = level.branch_deeper(x, None,
+                                                   child_relationship_class=child_relationship_class,
+                                                   child_relationship_param=child_relationship_param)
                 self.__report_result('iterable_item_removed', change_level)
 
             elif x is ListItemRemovedOrAdded:  # new item added
-                change_level = level.branch_deeper(None, level.t2[i],
-                                                   child_relationship_class=SubscriptableIterableRelationship,
-                                                   child_relationship_param=i)
+                change_level = level.branch_deeper(None, y,
+                                                   child_relationship_class=child_relationship_class,
+                                                   child_relationship_param=child_relationship_param)
                 self.__report_result('iterable_item_added', change_level)
 
             else:                              # check if item value has changed
@@ -496,8 +507,8 @@ class DeepDiff(ResultDict):
 
                 # Go one level deeper
                 next_level = level.branch_deeper(x, y,
-                                                 child_relationship_class=SubscriptableIterableRelationship,
-                                                 child_relationship_param=i)
+                                                 child_relationship_class=child_relationship_class,
+                                                 child_relationship_param=child_relationship_param)
                 self.__diff(next_level, parents_ids_added)
 
     def __diff_str(self, level):
