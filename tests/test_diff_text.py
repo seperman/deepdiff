@@ -407,6 +407,13 @@ class DeepDiffTextTestCase(unittest.TestCase):
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
         self.assertEqual(ddiff, result)
 
+    def test_set_strings(self):
+        t1 = {"veggies", "tofu"}
+        t2 = {"veggies", "tofu", "seitan"}
+        ddiff = DeepDiff(t1, t2)
+        result = {'set_item_added': {"root['seitan']"}}
+        self.assertEqual(ddiff, result)
+
     def test_frozenset(self):
         t1 = frozenset([1, 2, 'B'])
         t2 = frozenset([1, 2, 3, 5])

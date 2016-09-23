@@ -103,3 +103,9 @@ class DiffLevelTestCase(TestCase):
     def test_path(self):
         # Provides textual path all the way through
         self.assertEqual(self.lowest.path("self.t1"), "self.t1[1337].a")
+
+
+class ChildRelationshipTestCase(TestCase):
+    def test_create_invalid_klass(self):
+        with self.assertRaises(TypeError):
+            ChildRelationship.create(DiffLevel, "hello", 42)

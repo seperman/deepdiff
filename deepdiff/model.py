@@ -398,10 +398,10 @@ class ChildRelationship():
                 Will strictly return partials of Python-parsable expressions. The result those yield will compare
                 equal to the objects in question.
               If 'yes':
-                Will return a partial including '(unrepresentable)' instread of the non string-representable part.
+                Will return a partial including '(unrepresentable)' instead of the non string-representable part.
 
         """
-        stringified = self._param_to_str()
+        stringified = self._param_to_str(force)
         if stringified:
             return self._format_partial(stringified)
 
@@ -414,7 +414,7 @@ class ChildRelationship():
             return None
 
     @abstractmethod
-    def _format_partial(self, partial):
+    def _format_partial(self, partial):  # pragma: no cover
         """
         Formats an access partial to create a valid partial python string representing this relationship.
         E.g. for a dict, this turns a partial param "42" into "[42]".
