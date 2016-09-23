@@ -893,9 +893,6 @@ class DeepDiffTextTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
 
         result = {'iterable_item_removed': {'root[2]': 31337}}
-        # TODO: This should NOT be the expected behaviour. This is a non-subscriptable iterable.
-        # Something like generator[2] is just invalid.
-        # Should be more something like:
-        #result = {'iterable_item_removed': {'root': 31337}}
-        # But how to handle multiple changes then?  {'root': {31337}}}?
+        # Note: In text-style results, we currently pretend this stuff is subscriptable for readability
+
         self.assertEqual(ddiff, result)

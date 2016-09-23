@@ -83,12 +83,12 @@ class TextStyleResultDict(ResultDict):
 
                 # do the reporting
                 if isinstance(self[report_type], set):
-                    self[report_type].add(change.path())
+                    self[report_type].add(change.path(force='fake'))
                 elif isinstance(self[report_type], dict):
-                    self[report_type][change.path()] = item
+                    self[report_type][change.path(force='fake')] = item
                 elif isinstance(self[report_type], list):    # pragma: no cover
                     # we don't actually have any of those right now, but just in case
-                    self[report_type].append(change.path())
+                    self[report_type].append(change.path(force='fake'))
                 else:                                        # pragma: no cover
                     # should never happen
                     raise TypeError("Cannot handle this report container type.")
@@ -96,21 +96,21 @@ class TextStyleResultDict(ResultDict):
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
             for change in ref['type_changes']:
-                self['type_changes'][change.path()] = RemapDict({'old_type': type(change.t1), 'new_type': type(change.t2)})
+                self['type_changes'][change.path(force='fake')] = RemapDict({'old_type': type(change.t1), 'new_type': type(change.t2)})
                 if self.verbose_level:
-                    self["type_changes"][change.path()].update(old_value=change.t1, new_value=change.t2)
+                    self["type_changes"][change.path(force='fake')].update(old_value=change.t1, new_value=change.t2)
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
             for change in ref['values_changed']:
-                self['values_changed'][change.path()] = {'new_value': change.t2, 'old_value': change.t1}
+                self['values_changed'][change.path(force='fake')] = {'new_value': change.t2, 'old_value': change.t1}
                 if 'diff' in change.additional:
-                    self['values_changed'][change.path()].update({'diff': change.additional['diff']})
+                    self['values_changed'][change.path(force='fake')].update({'diff': change.additional['diff']})
 
     def _from_ref_unprocessed(self, ref):
         if 'unprocessed' in ref:
             for change in ref['unprocessed']:
-                self['unprocessed'].append("%s: %s and %s" % (change.path(), change.t1, change.t2))
+                self['unprocessed'].append("%s: %s and %s" % (change.path(force='fake'), change.t1, change.t2))
 
     def _from_ref_set_item_removed(self, ref):
         if 'set_item_removed' in ref:
@@ -135,7 +135,7 @@ class TextStyleResultDict(ResultDict):
     def _from_ref_repetition_change(self, ref):
         if 'repetition_change' in ref:
             for change in ref['repetition_change']:
-                path = change.path()
+                path = change.path(force='fake')
                 self['repetition_change'][path] = RemapDict(change.additional['rep'])
                 self['repetition_change'][path]['value'] = change.t1
 
@@ -265,6 +265,9 @@ class DiffLevel:
                         equal to the objects in question.
                       If 'yes':
                         Will return a path including '(unrepresentable)' in place of non string-representable parts.
+                      If 'fake':
+                        Will try to produce an output optimized for readability.
+                        This will pretend all iterables are subscriptable, for example.
         """
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
         if self._path is not None:
@@ -480,14 +483,27 @@ class InaccessibleRelationship(ChildRelationship):
         return None
 
     def access_partial(self, force=None):
-        return None
+        if force=='yes':
+            return "(unrepresentable)"
+        else:
+            return None
 
 
 class SetRelationship(InaccessibleRelationship):  # there is no random access to set elements
     pass
 
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
-    pass
+    def access_partial(self, force=None):
+        if force=='yes':
+            return "(unrepresentable)"
+        elif force=='fake' and self.param:
+            stringified = self._param_to_str()
+            if stringified:
+                return "[%s]" % stringified
+        elif force=='fake':
+            return "[(unrepresentable)]"
+        else:
+            return None
 
 
 class AttributeRelationship(ChildRelationship):
