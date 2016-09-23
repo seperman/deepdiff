@@ -480,23 +480,16 @@ class DeepDiff(ResultDict):
             child_relationship_class = NonSubscriptableIterableRelationship
 
         for i, (x, y) in enumerate(zip_longest(level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
-            # prepare further stuff depending on whether t1 and t2 are subscriptable
-            if subscriptable:
-                child_relationship_param = i
-            else:
-                child_relationship_param = None
-
-            # now really do the comparison
             if y is ListItemRemovedOrAdded:    # item removed completely
                 change_level = level.branch_deeper(x, None,
                                                    child_relationship_class=child_relationship_class,
-                                                   child_relationship_param=child_relationship_param)
+                                                   child_relationship_param=i)
                 self.__report_result('iterable_item_removed', change_level)
 
             elif x is ListItemRemovedOrAdded:  # new item added
                 change_level = level.branch_deeper(None, y,
                                                    child_relationship_class=child_relationship_class,
-                                                   child_relationship_param=child_relationship_param)
+                                                   child_relationship_param=i)
                 self.__report_result('iterable_item_added', change_level)
 
             else:                              # check if item value has changed
@@ -508,7 +501,7 @@ class DeepDiff(ResultDict):
                 # Go one level deeper
                 next_level = level.branch_deeper(x, y,
                                                  child_relationship_class=child_relationship_class,
-                                                 child_relationship_param=child_relationship_param)
+                                                 child_relationship_param=i)
                 self.__diff(next_level, parents_ids_added)
 
     def __diff_str(self, level):
