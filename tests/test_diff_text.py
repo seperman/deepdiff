@@ -18,26 +18,14 @@ import unittest
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-from sys import version
 import logging
+from deepdiff.helper import py3
+from tests import CustomClass
+
 logging.disable(logging.CRITICAL)
 
-py3 = version[0] == '3'
 
-
-class CustomClass:
-    def __init__(self, a, b=None):
-        self.a = a
-        self.b = b
-
-    def __str__(self):
-        return "({}, {})".format(self.a, self.b)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class DeepDiffTestCase(unittest.TestCase):
+class DeepDiffTextTestCase(unittest.TestCase):
 
     """DeepDiff Tests."""
 
@@ -49,9 +37,10 @@ class DeepDiffTestCase(unittest.TestCase):
     def test_item_type_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: "2", 3: 3}
-        self.assertEqual(DeepDiff(t1, t2), {'type_changes': {"root[2]":
-                                                             {"old_value": 2, "old_type": int,
-                                                              "new_value": "2", "new_type": str}}})
+        ddiff = DeepDiff(t1, t2)
+        self.assertEqual(ddiff, {'type_changes': {"root[2]":
+                                                      {"old_value": 2, "old_type": int,
+                                                       "new_value": "2", "new_type": str}}})
 
     def test_item_type_change_less_verbose(self):
         t1 = {1: 1, 2: 2, 3: 3}
@@ -418,6 +407,13 @@ class DeepDiffTestCase(unittest.TestCase):
             'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
         self.assertEqual(ddiff, result)
 
+    def test_set_strings(self):
+        t1 = {"veggies", "tofu"}
+        t2 = {"veggies", "tofu", "seitan"}
+        ddiff = DeepDiff(t1, t2)
+        result = {'set_item_added': {"root['seitan']"}}
+        self.assertEqual(ddiff, result)
+
     def test_frozenset(self):
         t1 = frozenset([1, 2, 'B'])
         t2 = frozenset([1, 2, 3, 5])
@@ -610,7 +606,6 @@ class DeepDiffTestCase(unittest.TestCase):
     def test_loop_in_lists2(self):
         t1 = [1, 2, [3]]
         t1[2].append(t1)
-
         t2 = [1, 2, [4]]
         t2[2].append(t2)
 
@@ -839,7 +834,6 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_skip_list_path(self):
-
         t1 = ['a', 'b']
         t2 = ['a']
         ddiff = DeepDiff(t1, t2, exclude_paths=['root[1]'])
@@ -847,7 +841,6 @@ class DeepDiffTestCase(unittest.TestCase):
         self.assertEqual(ddiff, result)
 
     def test_skip_dictionary_path(self):
-
         t1 = {1: {2: "a"}}
         t2 = {1: {}}
         ddiff = DeepDiff(t1, t2, exclude_paths=['root[1][2]'])
@@ -890,4 +883,23 @@ class DeepDiffTestCase(unittest.TestCase):
 
         ddiff = DeepDiff(t1, t2)
         result = {'unprocessed': ['root: Bad Object and Bad Object']}
+        self.assertEqual(ddiff, result)
+
+    def test_non_subscriptable_iterable(self):
+        def gen1():
+            yield 42
+            yield 1337
+            yield 31337
+
+        def gen2():
+            yield 42
+            yield 1337
+
+        t1 = gen1()
+        t2 = gen2()
+        ddiff = DeepDiff(t1, t2)
+
+        result = {'iterable_item_removed': {'root[2]': 31337}}
+        # Note: In text-style results, we currently pretend this stuff is subscriptable for readability
+
         self.assertEqual(ddiff, result)

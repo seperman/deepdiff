@@ -60,3 +60,5 @@ target/
 # Editor / IDE files
 *.swp
 .idea/
+.~lock*
+

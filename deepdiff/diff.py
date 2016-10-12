@@ -2,88 +2,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import print_function
-import sys
-import difflib
-import datetime
-import logging
-from decimal import Decimal
-from collections import Iterable
-from collections import namedtuple
-from collections import MutableMapping
 
-from deepdiff.helper import py3
+import difflib
+import logging
+
+from decimal import Decimal
+
+from collections import MutableMapping
+from collections import Iterable
+
+from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash
+from deepdiff.model import RemapDict, ResultDict, TextStyleResultDict, RefStyleResultDict, DiffLevel
+from deepdiff.model import DictRelationship, AttributeRelationship
+from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
 if py3:  # pragma: no cover
-    from builtins import int
-    strings = (str, bytes)  # which are both basestring
-    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import zip_longest
-    items = 'items'
 else:  # pragma: no cover
-    strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
     from itertools import izip_longest as zip_longest
-    items = 'iteritems'
 
 logger = logging.getLogger(__name__)
 
-IndexedHash = namedtuple('IndexedHash', 'indexes item')
-
-EXPANDED_KEY_MAP = {  # pragma: no cover
-    'dic_item_added': 'dictionary_item_added',
-    'dic_item_removed': 'dictionary_item_removed',
-    'newindexes': 'new_indexes',
-    'newrepeat': 'new_repeat',
-    'newtype': 'new_type',
-    'newvalue': 'new_value',
-    'oldindexes': 'old_indexes',
-    'oldrepeat': 'old_repeat',
-    'oldtype': 'old_type',
-    'oldvalue': 'old_value'}
-
-
-WARNING_NUM = 0
-
-
-def warn(*args, **kwargs):
-    global WARNING_NUM
-
-    if WARNING_NUM < 10:
-        WARNING_NUM += 1
-        logger.warning(*args, **kwargs)
-
-
-class ListItemRemovedOrAdded(object):  # pragma: no cover
-
-    """Class of conditions to be checked"""
-
-    pass
-
-INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-
-class RemapDict(dict):
-
-    """
-    Remap Dictionary.
-
-    For keys that have a new, longer name, remap the old key to the new key.
-    Other keys that don't have a new name are handled as before.
-    """
-
-    def __getitem__(self, old_key):
-        new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
-        if new_key != old_key:
-            warn("DeepDiff Deprecation: %s is renamed to %s. Please start using "
-                 "the new unified naming convention.", old_key, new_key)
-        if new_key in self:
-            return self.get(new_key)
-        else:  # pragma: no cover
-            raise KeyError(new_key)
-
-
-class DeepDiff(RemapDict):
+class DeepDiff(ResultDict):
 
     r"""
     **DeepDiff**
@@ -357,52 +298,54 @@ class DeepDiff(RemapDict):
 
     def __init__(self, t1, t2,
                  ignore_order=False, report_repetition=False, significant_digits=None,
-                 exclude_paths=set(), exclude_types=set(), verbose_level=1, **kwargs):
+                 exclude_paths=set(), exclude_types=set(), verbose_level=1, default_view='text',
+                 **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                              "exclude_paths, exclude_types and verbose_level.") % ', '.join(kwargs.keys()))
+                              "exclude_paths, exclude_types, verbose_level and default_view.") % ', '.join(kwargs.keys()))
+
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
-        self.verbose_level = verbose_level
         self.hashes = {}
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
 
-        self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
-                     "dictionary_item_removed": self.__set_or_dict(),
-                     "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
-                     "set_item_removed": set([]),
-                     "set_item_added": set([]), "repetition_change": {}})
+        self.result_refs = RefStyleResultDict()
 
-        self.__diff(t1, t2, parents_ids=frozenset({id(t1)}))
+        root = DiffLevel(t1, t2)
+        self.__diff(root, parents_ids=frozenset({id(t1)}))
 
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
+        self.result_refs.cleanup()
 
-        for k in empty_keys:
-            del self[k]
+        self.result_text = TextStyleResultDict(verbose_level, self.result_refs)
+        self.result_text.cleanup()   # clean up text-style result dictionary
 
-    def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else set()
+        if default_view == 'ref':          # Allow one of our views to be accessible directly via this object
+            self.update(self.result_refs)
+        else:
+            self.update(self.result_text)  # be compatible to DeepDiff 2.x if user didn't specify otherwise
 
-    def __extend_result_list(self, keys, parent, report_obj, print_as_attribute=False, obj=None):
-        key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
-        for key in keys:
-            key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
-            key_in_report = key_text % (parent, key_formatted)
+    def __report_result(self, report_type, level):
+        """
+        Add a detected change to the reference-style result dictionary.
+        report_type will be added to level.
+        (We'll create the text-style report from there later.)
+        :param report_type: A well defined string key describing the type of change.
+                            Examples: "set_item_added", "values_changed"
+        :param parent: A DiffLevel object describing the objects in question in their
+                       before-change and after-change object structure.
 
-            item = obj[key] if obj else key
-            if not self.__skip_this(item, None, key_in_report):
-                if obj and self.verbose_level >= 2:
-                    report_obj[key_in_report] = obj[key]
-                else:
-                    report_obj.add(key_in_report)
+        :rtype: None
+        """
+        if not self.__skip_this(level):
+            level.report_type = report_type
+            self.result_refs[report_type].add(level)
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
@@ -410,45 +353,59 @@ class DeepDiff(RemapDict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
-    def __diff_obj(self, t1, t2, parent, parents_ids=frozenset({}), is_namedtuple=False):
+    def __diff_obj(self, level, parents_ids=frozenset({}), is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
-                t1 = t1._asdict()
-                t2 = t2._asdict()
+                t1 = level.t1._asdict()
+                t2 = level.t2._asdict()
             else:
-                t1 = t1.__dict__
-                t2 = t2.__dict__
+                t1 = level.t1.__dict__
+                t2 = level.t2.__dict__
         except AttributeError:
             try:
-                t1 = {i: getattr(t1, i) for i in t1.__slots__}
-                t2 = {i: getattr(t2, i) for i in t2.__slots__}
+                t1 = {i: getattr(level.t1, i) for i in level.t1.__slots__}
+                t2 = {i: getattr(level.t2, i) for i in level.t2.__slots__}
             except AttributeError:
-                self['unprocessed'].append("%s: %s and %s" % (parent, t1, t2))
+                self.__report_result('unprocessed', level)
                 return
 
-        self.__diff_dict(t1, t2, parent, parents_ids, print_as_attribute=True)
+        self.__diff_dict(level, parents_ids, print_as_attribute=True, override=True, override_t1=t1, override_t2=t2)
 
-    def __skip_this(self, t1, t2, parent):
+    def __skip_this(self, level):
+        """
+        Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
+        :rtype: bool
+        """
         skip = False
-        if parent in self.exclude_paths:
+        if level.path() in self.exclude_paths:
             skip = True
         else:
-            if isinstance(t1, self.exclude_types_tuple) or isinstance(t2, self.exclude_types_tuple):
+            if isinstance(level.t1, self.exclude_types_tuple) or isinstance(level.t2, self.exclude_types_tuple):
                 skip = True
 
         return skip
 
-    def __diff_dict(self, t1, t2, parent, parents_ids=frozenset({}), print_as_attribute=False):
+    def __diff_dict(self, level, parents_ids=frozenset({}), print_as_attribute=False,
+                    override=False, override_t1=None, override_t2=None):
         """Difference of 2 dictionaries"""
+        if override:
+            # for special stuff like custom objects and named tuples we receive preprocessed t1 and t2
+            # but must not spoil the chain (=level) with it
+            t1 = override_t1
+            t2 = override_t2
+        else:
+            t1 = level.t1
+            t2 = level.t2
+
         if print_as_attribute:
             item_added_key = "attribute_added"
             item_removed_key = "attribute_removed"
-            parent_text = "%s.%s"
+            rel_class = AttributeRelationship
         else:
             item_added_key = "dictionary_item_added"
             item_removed_key = "dictionary_item_removed"
-            parent_text = "%s[%s]"
+            rel_class = DictRelationship
 
         t1_keys = set(t1.keys())
         t2_keys = set(t2.keys())
@@ -458,42 +415,31 @@ class DeepDiff(RemapDict):
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
 
-        if t_keys_added:
-            self.__extend_result_list(keys=t_keys_added, parent=parent,
-                                      report_obj=self[item_added_key], print_as_attribute=print_as_attribute, obj=t2)
+        for key in t_keys_added:
+            change_level = level.branch_deeper(None, t2[key],
+                                               child_relationship_class=rel_class, child_relationship_param=key)
+            self.__report_result(item_added_key, change_level)
 
-        if t_keys_removed:
-            self.__extend_result_list(keys=t_keys_removed, parent=parent,
-                                      report_obj=self[item_removed_key], print_as_attribute=print_as_attribute, obj=t1)
+        for key in t_keys_removed:
+            change_level = level.branch_deeper(t1[key], None,
+                                               child_relationship_class=rel_class, child_relationship_param=key)
+            self.__report_result(item_removed_key, change_level)
 
-        self.__diff_common_children(
-            t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text)
-
-    def __diff_common_children(self, t1, t2, t_keys_intersect, print_as_attribute, parents_ids, parent, parent_text):
-        """Difference between common attributes of objects or values of common keys of dictionaries"""
-        for item_key in t_keys_intersect:
-            if not print_as_attribute and isinstance(item_key, strings):
-                item_key_str = "'%s'" % item_key
-            else:
-                item_key_str = item_key
-
-            t1_child = t1[item_key]
-            t2_child = t2[item_key]
-
-            item_id = id(t1_child)
-
+        for key in t_keys_intersect:  # key present in both dicts - need to compare values
+            item_id = id(t1[key])
             if parents_ids and item_id in parents_ids:
                 continue
-
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
 
-            self.__diff(t1_child, t2_child, parent=parent_text %
-                        (parent, item_key_str), parents_ids=parents_ids_added)
+            # Go one level deeper
+            next_level = level.branch_deeper(t1[key], t2[key],
+                                             child_relationship_class=rel_class, child_relationship_param=key)
+            self.__diff(next_level, parents_ids_added)
 
-    def __diff_set(self, t1, t2, parent="root"):
+    def __diff_set(self, level):
         """Difference of sets"""
-        t1_hashtable = self.__create_hashtable(t1, parent)
-        t2_hashtable = self.__create_hashtable(t2, parent)
+        t1_hashtable = self.__create_hashtable(level.t1, level)
+        t2_hashtable = self.__create_hashtable(level.t2, level)
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -504,63 +450,88 @@ class DeepDiff(RemapDict):
         items_added = [t2_hashtable[i].item for i in hashes_added]
         items_removed = [t1_hashtable[i].item for i in hashes_removed]
 
-        if items_removed:
-            self.__extend_result_list(
-                keys=items_removed, parent=parent, report_obj=self["set_item_removed"])
+        for item in items_added:
+            change_level = level.branch_deeper(None, item,
+                                               child_relationship_class=SetRelationship)
+            self.__report_result('set_item_added', change_level)
 
-        if items_added:
-            self.__extend_result_list(
-                keys=items_added, parent=parent, report_obj=self["set_item_added"])
+        for item in items_removed:
+            change_level = level.branch_deeper(item, None,
+                                               child_relationship_class=SetRelationship)
+            self.__report_result('set_item_removed', change_level)
 
-    def __diff_iterable(self, t1, t2, parent="root", parents_ids=frozenset({})):
-        """Difference of iterables except dictionaries, sets and strings."""
-        items_removed = {}
-        items_added = {}
+    @staticmethod
+    def __iterables_subscriptable(t1, t2):
+        try:
+            if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
+                return True
+            else:             # pragma: no cover
+                return False  # should never happen
+        except AttributeError:
+            return False
 
-        for i, (x, y) in enumerate(zip_longest(t1, t2, fillvalue=ListItemRemovedOrAdded)):
-            new_parent = "%s[%s]" % (parent, i)
-            if self.__skip_this(x, y, parent=new_parent):
-                continue
-            if y is ListItemRemovedOrAdded:
-                items_removed[new_parent] = x
-            elif x is ListItemRemovedOrAdded:
-                items_added[new_parent] = y
-            else:
+    def __diff_iterable(self, level, parents_ids=frozenset({})):
+        """Difference of iterables"""
+        # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
+        subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
+        if subscriptable:
+            child_relationship_class = SubscriptableIterableRelationship
+        else:
+            child_relationship_class = NonSubscriptableIterableRelationship
+
+        for i, (x, y) in enumerate(zip_longest(level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
+            if y is ListItemRemovedOrAdded:    # item removed completely
+                change_level = level.branch_deeper(x, None,
+                                                   child_relationship_class=child_relationship_class,
+                                                   child_relationship_param=i)
+                self.__report_result('iterable_item_removed', change_level)
+
+            elif x is ListItemRemovedOrAdded:  # new item added
+                change_level = level.branch_deeper(None, y,
+                                                   child_relationship_class=child_relationship_class,
+                                                   child_relationship_param=i)
+                self.__report_result('iterable_item_added', change_level)
+
+            else:                              # check if item value has changed
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
                 parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
-                self.__diff(x, y, "%s[%s]" % (parent, i), parents_ids_added)
 
-        self["iterable_item_removed"].update(items_removed)
-        self["iterable_item_added"].update(items_added)
+                # Go one level deeper
+                next_level = level.branch_deeper(x, y,
+                                                 child_relationship_class=child_relationship_class,
+                                                 child_relationship_param=i)
+                self.__diff(next_level, parents_ids_added)
 
-    def __diff_str(self, t1, t2, parent):
+    def __diff_str(self, level):
         """Compare strings"""
-        if '\n' in t1 or '\n' in t2:
+        if level.t1 == level.t2:
+            return
+
+        # do we add a diff for convenience?
+        if '\n' in level.t1 or '\n' in level.t2:
             diff = difflib.unified_diff(
-                t1.splitlines(), t2.splitlines(), lineterm='')
+                level.t1.splitlines(), level.t2.splitlines(), lineterm='')
             diff = list(diff)
             if diff:
-                diff = '\n'.join(diff)
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2, diff=diff)
-        elif t1 != t2:
-            self["values_changed"][parent] = RemapDict(old_value=t1, new_value=t2)
+                level.additional['diff'] = '\n'.join(diff)
 
-    def __diff_tuple(self, t1, t2, parent, parents_ids):
+        self.__report_result('values_changed', level)
+
+    def __diff_tuple(self, level, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
-            t1._asdict
+            level.t1._asdict
         # It must be a normal tuple
         except AttributeError:
-            self.__diff_iterable(t1, t2, parent, parents_ids)
+            self.__diff_iterable(level, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__diff_obj(t1, t2, parent, parents_ids, is_namedtuple=True)
+            self.__diff_obj(level, parents_ids, is_namedtuple=True)
 
-    def __create_hashtable(self, t, parent):
+    def __create_hashtable(self, t, level):
         """Create hashtable of {item_hash: item}"""
 
         def add_hash(hashes, item_hash, item, i):
@@ -575,20 +546,20 @@ class DeepDiff(RemapDict):
                 hashes_all = DeepHash(item, hashes=self.hashes)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
-                logger.warning("Can not produce a hash for %s item in %s and "
-                               "thus not counting this object: %s" % (item, parent), e)
+                logger.warning("Can not produce a hash for %s and "
+                               "thus not counting this object: %s" % level.path(), e)
             else:
                 if item_hash is hashes_all.unprocessed:  # pragma: no cover
-                    logger.warning("%s item in %s was not processed while hashing "
-                                   "thus not counting this object." % (item, parent))
+                    logger.warning("Item %s was not processed while hashing "
+                                   "thus not counting this object." % level.path())
                 else:
                     add_hash(hashes, item_hash, item, i)
         return hashes
 
-    def __diff_iterable_with_contenthash(self, t1, t2, parent):
+    def __diff_iterable_with_contenthash(self, level):
         """Diff of unhashable iterables. Only used when ignoring the order."""
-        t1_hashtable = self.__create_hashtable(t1, parent)
-        t2_hashtable = self.__create_hashtable(t2, parent)
+        t1_hashtable = self.__create_hashtable(level.t1, level)
+        t2_hashtable = self.__create_hashtable(level.t2, level)
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -597,44 +568,57 @@ class DeepDiff(RemapDict):
         hashes_removed = t1_hashes - t2_hashes
 
         if self.report_repetition:
-            items_added = {"%s[%s]" % (parent, i): t2_hashtable[
-                hash_value].item for hash_value in hashes_added for i in t2_hashtable[hash_value].indexes}
+            for hash_value in hashes_added:
+                for i in t2_hashtable[hash_value].indexes:
+                    change_level = level.branch_deeper(None, t2_hashtable[hash_value].item,
+                                                       child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                       child_relationship_param=i)                                    # TODO: what is this value exactly?
+                    self.__report_result('iterable_item_added', change_level)
 
-            items_removed = {"%s[%s]" % (parent, i): t1_hashtable[
-                hash_value].item for hash_value in hashes_removed for i in t1_hashtable[hash_value].indexes}
+            for hash_value in hashes_removed:
+                for i in t1_hashtable[hash_value].indexes:
+                    change_level = level.branch_deeper(t1_hashtable[hash_value].item, None,
+                                                       child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                       child_relationship_param=i)
+                    self.__report_result('iterable_item_removed', change_level)
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
-            for key in items_intersect:
-                t1_indexes = t1_hashtable[key].indexes
-                t2_indexes = t2_hashtable[key].indexes
+            for hash_value in items_intersect:
+                t1_indexes = t1_hashtable[hash_value].indexes
+                t2_indexes = t2_hashtable[hash_value].indexes
                 t1_indexes_len = len(t1_indexes)
                 t2_indexes_len = len(t2_indexes)
-                if t1_indexes_len != t2_indexes_len:
-                    t1_item_and_index = t1_hashtable[key]
-                    repetition_change = {"%s[%s]" % (parent, t1_item_and_index.indexes[0]): RemapDict(
+                if t1_indexes_len != t2_indexes_len:  # this is a repetition change!
+                    # create "change" entry, keep current level untouched to handle further changes
+                    repetition_change_level = level.branch_deeper(
+                        t1_hashtable[hash_value].item, t2_hashtable[hash_value].item,  # nb: those are equal!
+                        child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                        child_relationship_param=t1_hashtable[hash_value].indexes[0])
+                    repetition_change_level.additional['rep'] = RemapDict(
                         old_repeat=t1_indexes_len,
                         new_repeat=t2_indexes_len,
                         old_indexes=t1_indexes,
-                        new_indexes=t2_indexes,
-                        value=t1_item_and_index.item
-                    )}
-                    self['repetition_change'].update(repetition_change)
+                        new_indexes=t2_indexes)
+                    self.__report_result('repetition_change', repetition_change_level)
 
         else:
-            items_added = {"%s[%s]" % (parent, t2_hashtable[hash_value].indexes[0]): t2_hashtable[
-                hash_value].item for hash_value in hashes_added}
+            for hash_value in hashes_added:
+                change_level = level.branch_deeper(None, t2_hashtable[hash_value].item,
+                                                   child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                   child_relationship_param=t2_hashtable[hash_value].indexes[0])  # TODO: what is this value exactly?
+                self.__report_result('iterable_item_added', change_level)
 
-            items_removed = {"%s[%s]" % (parent, t1_hashtable[hash_value].indexes[0]): t1_hashtable[
-                hash_value].item for hash_value in hashes_removed}
+            for hash_value in hashes_removed:
+                change_level = level.branch_deeper(t1_hashtable[hash_value].item, None,
+                                                   child_relationship_class=SubscriptableIterableRelationship,    # TODO: that might be a lie!
+                                                   child_relationship_param=t1_hashtable[hash_value].indexes[0])
+                self.__report_result('iterable_item_removed', change_level)
 
-        self["iterable_item_removed"].update(items_removed)
-        self["iterable_item_added"].update(items_added)
-
-    def __diff_numbers(self, t1, t2, parent):
+    def __diff_numbers(self, level):
         """Diff Numbers"""
 
-        if self.significant_digits is not None and isinstance(t1, (float, complex, Decimal)):
+        if self.significant_digits is not None and isinstance(level.t1, (float, complex, Decimal)):
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
             # data is read from files that were previousely written from python and
             # to be consistent with on-screen representation of numbers.
@@ -643,58 +627,53 @@ class DeepDiff(RemapDict):
             # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
             # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-            t1_s = ("{:.%sf}" % self.significant_digits).format(t1)
-            t2_s = ("{:.%sf}" % self.significant_digits).format(t2)
+            t1_s = ("{:.%sf}" % self.significant_digits).format(level.t1)
+            t2_s = ("{:.%sf}" % self.significant_digits).format(level.t2)
             if t1_s != t2_s:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+                self.__report_result('values_changed', level)
         else:
-            if t1 != t2:
-                self["values_changed"][parent] = RemapDict(
-                    old_value=t1, new_value=t2)
+            if level.t1 != level.t2:
+                self.__report_result('values_changed', level)
 
-    def __diff_types(self, t1, t2, parent):
+    def __diff_types(self, level):
         """Diff types"""
+        level.report_type = 'type_changes'
+        self.__report_result('type_changes', level)
 
-        self["type_changes"][parent] = RemapDict(old_type=type(t1), new_type=type(t2))
-        if self.verbose_level:
-            self["type_changes"][parent].update(old_value=t1, new_value=t2)
-
-    def __diff(self, t1, t2, parent="root", parents_ids=frozenset({})):
+    def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
-
-        if t1 is t2:
+        if level.t1 is level.t2:
             return
 
-        if self.__skip_this(t1, t2, parent):
+        if self.__skip_this(level):
             return
 
-        if type(t1) != type(t2):
-            self.__diff_types(t1, t2, parent)
+        if type(level.t1) != type(level.t2):
+            self.__diff_types(level)
 
-        elif isinstance(t1, strings):
-            self.__diff_str(t1, t2, parent)
+        elif isinstance(level.t1, strings):
+            self.__diff_str(level)
 
-        elif isinstance(t1, numbers):
-            self.__diff_numbers(t1, t2, parent)
+        elif isinstance(level.t1, numbers):
+            self.__diff_numbers(level)
 
-        elif isinstance(t1, MutableMapping):
-            self.__diff_dict(t1, t2, parent, parents_ids)
+        elif isinstance(level.t1, MutableMapping):
+            self.__diff_dict(level, parents_ids)
 
-        elif isinstance(t1, tuple):
-            self.__diff_tuple(t1, t2, parent, parents_ids)
+        elif isinstance(level.t1, tuple):
+            self.__diff_tuple(level, parents_ids)
 
-        elif isinstance(t1, (set, frozenset)):
-            self.__diff_set(t1, t2, parent=parent)
+        elif isinstance(level.t1, (set, frozenset)):
+            self.__diff_set(level)
 
-        elif isinstance(t1, Iterable):
+        elif isinstance(level.t1, Iterable):
             if self.ignore_order:
-                self.__diff_iterable_with_contenthash(t1, t2, parent)
+                self.__diff_iterable_with_contenthash(level)
             else:
-                self.__diff_iterable(t1, t2, parent, parents_ids)
+                self.__diff_iterable(level, parents_ids)
 
         else:
-            self.__diff_obj(t1, t2, parent, parents_ids)
+            self.__diff_obj(level, parents_ids)
 
         return
 
