@@ -140,7 +140,7 @@ class TextStyleResultDict(ResultDict):
                 self['repetition_change'][path]['value'] = change.t1
 
 
-class DiffLevel:
+class DiffLevel():
     """
     An object of this class represents a single object-tree-level in a reported change.
     A double-linked list of these object describes a single change on all of it's levels.
@@ -491,6 +491,7 @@ class InaccessibleRelationship(ChildRelationship):
 
 class SetRelationship(InaccessibleRelationship):  # there is no random access to set elements
     pass
+
 
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
     def access_partial(self, force=None):
