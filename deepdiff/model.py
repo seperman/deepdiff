@@ -154,11 +154,13 @@ class DiffLevel(object):
     >>> t2 = {2: "b", 5: 5}
     >>> ddiff = DeepDiff(t1, t2, default_view='ref')
     >>> ddiff
-    {'dictionary_item_removed': {<DiffLevel id:4, t1:4, t2:None>}, 'type_changes': {<DiffLevel id:4418288720, t1:2, t2:b>}, 'dictionary_item_added': {<DiffLevel id:4417017672, t1:None, t2:5>}}
+    {'dictionary_item_removed': {<DiffLevel id:4, t1:4, t2:None>},
+     'type_changes': {<DiffLevel id:4418288720, t1:2, t2:b>},
+     'dictionary_item_added': {<DiffLevel id:4417017672, t1:None, t2:5>}}
 
     Graph:
 
-    <DiffLevel id:123, original t1,t2>          <DiffLevel id:200000, original t1,t2>
+    <DiffLevel id:123, original t1,t2>          <DiffLevel id:200, original t1,t2>
                     ↑up                                         ↑up
                     |                                           |
                     |                                           |
@@ -168,6 +170,16 @@ class DiffLevel(object):
 
     Note that the 2 top level DiffLevel objects are 2 different objects even though
     they are essentially talking about the same diff operation.
+
+
+    A ChildRelationship object describing the relationship between t1 and it's child object,
+    where t1's child object equals down.t1.
+
+    The child_rel example:
+
+    >>> dr=list(ddiff['dictionary_item_removed'])[0]
+    >>> dr.up.t1_child_rel
+    <DictRelationship id:456, parent:{2: 2, 4: 4}, child:4, param:4>
 
     """
     def __init__(self, t1, t2, down=None, up=None, report_type=None,
@@ -381,7 +393,7 @@ class DiffLevel(object):
         return result
 
 
-class ChildRelationship():
+class ChildRelationship(object):
     """
     Abstract Base class. Describes the relationship between a container object (the "parent") and the contained
     "child" object.
@@ -409,6 +421,13 @@ class ChildRelationship():
         """
         A subclass-dependent parameter describing how to get from parent to child, e.g. the key in a dict
         """
+
+    def __repr__(self):
+        name = "<{} id:{}, parent:{}, child:{}, param:{}>"
+        parent = str(self.parent)[:12]
+        child = str(self.child)[:12]
+        param = str(self.param)[:12]
+        return name.format(self.__class__.__name__, id(self), parent, child, param)
 
     def access_partial(self, force=None):
         """
