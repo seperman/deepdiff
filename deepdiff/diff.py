@@ -24,6 +24,7 @@ else:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
+
 class DeepDiff(ResultDict):
 
     r"""

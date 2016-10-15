@@ -1,4 +1,4 @@
-# deepdiff v 2.5.1
+# deepdiff v 3.0.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -432,6 +432,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
+- v3-0-0: TBD
 - v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
 - v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.
@@ -451,13 +452,19 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
-## Primary Author
+## Primary Authors
 
 Seperman (Sep Dehpour)
 
 - [Github](https://github.com/seperman)
 - [Linkedin](http://www.linkedin.com/in/sepehr)
 - [ZepWorks](http://www.zepworks.com)
+
+Victor Hahn Castell
+
+- [hahncastell.de](http://hahncastell.de)
+- [flexoptix.net](http://www.flexoptix.net)
+
 
 ## Contributors
 
@@ -469,4 +476,3 @@ Thanks to:
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- [Victor Hahn Castell](http://hahncastell.de) @ [Flexoptix](http://www.flexoptix.net) for deep set comparison and exclusion patterns

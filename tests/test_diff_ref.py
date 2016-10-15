@@ -3,7 +3,7 @@
 
 """
 To run only the search tests:
-    python -m unittest tests.diff_tests
+    python -m unittest tests.test_diff_ref
 
 Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
@@ -12,7 +12,7 @@ Or using Nose:
     nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
-    python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
+    python -m unittest tests.tests_diff_ref.DeepDiffRefTestCase.test_same_objects
 """
 import unittest
 import datetime
@@ -79,11 +79,19 @@ class DeepDiffRefTestCase(unittest.TestCase):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 4, 'three': 3, 'five': 5, 'six': 6}
         ddiff = DeepDiff(t1, t2, default_view='ref')
-        res = ddiff
-        self.assertEqual(set(res.keys()),
+        self.assertEqual(set(ddiff.keys()),
                          {'dictionary_item_added', 'dictionary_item_removed', 'values_changed'})
-        self.assertEqual(len(res['dictionary_item_added']), 2)
-        self.assertEqual(len(res['dictionary_item_removed']), 1)
+        self.assertEqual(len(ddiff['dictionary_item_added']), 2)
+        self.assertEqual(len(ddiff['dictionary_item_removed']), 1)
+
+    def test_item_added_and_removed2(self):
+        t1 = {2: 2, 4: 4}
+        t2 = {2: "b", 5: 5}
+        ddiff = DeepDiff(t1, t2, default_view='ref')
+        self.assertEqual(set(ddiff.keys()),
+                         {'dictionary_item_added', 'dictionary_item_removed', 'type_changes'})
+        self.assertEqual(len(ddiff['dictionary_item_added']), 1)
+        self.assertEqual(len(ddiff['dictionary_item_removed']), 1)
 
     def test_non_subscriptable_iterable(self):
         def gen1():

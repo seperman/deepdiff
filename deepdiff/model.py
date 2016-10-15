@@ -33,7 +33,7 @@ class RefStyleResultDict(ResultDict):
 
 
 class TextStyleResultDict(ResultDict):
-    def __init__(self, verbose_level = 1, ref_results = None):
+    def __init__(self, verbose_level=1, ref_results=None):
         self.verbose_level = verbose_level
 
         # TODO: centralize keys
@@ -41,15 +41,14 @@ class TextStyleResultDict(ResultDict):
                      "dictionary_item_removed": self.__set_or_dict(),
                      "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
                      "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
-                     "set_item_removed": set([]),
-                     "set_item_added": set([]), "repetition_change": {}})
+                     "set_item_removed": set(),
+                     "set_item_added": set(), "repetition_change": {}})
 
         if ref_results:
             self.from_ref_results(ref_results)
 
     def __set_or_dict(self):
         return {} if self.verbose_level >= 2 else set()
-        #return dict()
 
     def from_ref_results(self, ref):
         """
@@ -140,15 +139,38 @@ class TextStyleResultDict(ResultDict):
                 self['repetition_change'][path]['value'] = change.t1
 
 
-class DiffLevel:
+class DiffLevel(object):
     """
     An object of this class represents a single object-tree-level in a reported change.
-    A double-linked list of these object describes a single change on all of it's levels.
+    A double-linked list of these object describes a single change on all of its levels.
     Looking at the tree of all changes, a list of those objects represents a single path through the tree
     (which is just fancy for "a change").
     This is the result object class for object reference style reports.
+
+    Example:
+
+    >>> t1 = {2: 2, 4: 4}
+    >>> t2 = {2: "b", 5: 5}
+    >>> ddiff = DeepDiff(t1, t2, default_view='ref')
+    >>> ddiff
+    {'dictionary_item_removed': {<DiffLevel id:4, t1:4, t2:None>}, 'type_changes': {<DiffLevel id:4418288720, t1:2, t2:b>}, 'dictionary_item_added': {<DiffLevel id:4417017672, t1:None, t2:5>}}
+
+    Graph:
+
+    <DiffLevel id:123, original t1,t2>          <DiffLevel id:200000, original t1,t2>
+                    ↑up                                         ↑up
+                    |                                           |
+                    |                                           |
+                    ↓down                                       ↓down
+    <DiffLevel id:43, t1:None, t2:5>            <DiffLevel id:4, t1:4, t2:None>
+    .path() = 'root[5]'                         .path() = 'root[4]'
+
+    Note that the 2 top level DiffLevel objects are 2 different objects even though
+    they are essentially talking about the same diff operation.
+
     """
-    def __init__(self, t1, t2, down=None, up=None, report_type=None, child_rel1=None, child_rel2=None, additional=None):
+    def __init__(self, t1, t2, down=None, up=None, report_type=None,
+                 child_rel1=None, child_rel2=None, additional=None):
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -179,10 +201,8 @@ class DiffLevel:
         """
 
         # Note: don't use {} as additional's default value - this would turn out to be always the same dict object
-        if additional is not None:
-            self.additional = additional
-        else:
-            self.additional = {}
+        self.additional = {} if additional is None else additional
+
         """
         For some types of changes we store some additional information.
         This is a dict containing this information.
@@ -194,7 +214,7 @@ class DiffLevel:
         """
 
         if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
-            self.auto_generate_child_rel(klass = child_rel1, param = child_rel2)
+            self.auto_generate_child_rel(klass=child_rel1, param=child_rel2)
         else:                             # the user supplied ChildRelationship objects for t1 and t2
             self.t1_child_rel = child_rel1
             """
@@ -211,6 +231,9 @@ class DiffLevel:
 
         self._path = None
         """Will cache result of .path() for performance"""
+
+    def __repr__(self):
+        return "<DiffLevel id:{}, t1:{}, t2:{}>".format(id(self), self.t1, self.t2)
 
     def auto_generate_child_rel(self, klass, param):
         """
@@ -483,7 +506,7 @@ class InaccessibleRelationship(ChildRelationship):
         return None
 
     def access_partial(self, force=None):
-        if force=='yes':
+        if force == 'yes':
             return "(unrepresentable)"
         else:
             return None
@@ -492,15 +515,16 @@ class InaccessibleRelationship(ChildRelationship):
 class SetRelationship(InaccessibleRelationship):  # there is no random access to set elements
     pass
 
+
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
     def access_partial(self, force=None):
-        if force=='yes':
+        if force == 'yes':
             return "(unrepresentable)"
-        elif force=='fake' and self.param:
+        elif force == 'fake' and self.param:
             stringified = self._param_to_str()
             if stringified:
                 return "[%s]" % stringified
-        elif force=='fake':
+        elif force == 'fake':
             return "[(unrepresentable)]"
         else:
             return None

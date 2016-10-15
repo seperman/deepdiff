@@ -3,7 +3,7 @@
 
 """
 To run only the search tests:
-    python -m unittest tests.diff_tests
+    python -m unittest tests.test_diff_text
 
 Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
@@ -12,7 +12,7 @@ Or using Nose:
     nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
-    python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
+    python -m unittest tests.test_diff_text.DeepDiffTextTestCase.test_same_objects
 """
 import unittest
 import datetime
