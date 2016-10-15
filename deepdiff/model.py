@@ -140,6 +140,7 @@ class TextStyleResultDict(ResultDict):
 
 
 class DiffLevel(object):
+
     """
     An object of this class represents a single object-tree-level in a reported change.
     A double-linked list of these object describes a single change on all of its levels.
