@@ -8,10 +8,6 @@ from deepdiff.model import DiffLevel, ChildRelationship, DictRelationship, Subsc
 
 logging.disable(logging.CRITICAL)
 
-# NOTE: Some of these tests use eval() on library results. Using eval() is inherently dangerous.
-# While this may be somewhat acceptable here due to the fact that we trust our own lib
-# it still leaves the theoretical possibility of executing malicious code.
-
 
 class DictRelationshipTestCase(TestCase):
     def setUp(self):
@@ -26,7 +22,6 @@ class DictRelationshipTestCase(TestCase):
         rel = ChildRelationship.create(DictRelationship, self.d, self.d['vegan'], 'vegan')
         result = rel.access_string("self.d")
         self.assertEqual(result, "self.d['vegan']")
-        self.assertEqual(eval(result), 'for life')
 
     def test_objkey(self):
         rel = DictRelationship(self.d, self.d[self.customkey], self.customkey)
@@ -42,7 +37,6 @@ class ListRelationshipTestCase(TestCase):
         rel = SubscriptableIterableRelationship(self.l, self.l[0], 0)
         result = rel.access_string("self.l")
         self.assertEqual(result, "self.l[0]")
-        self.assertEqual(eval(result), 1337)
 
     def test_max(self):
         rel = ChildRelationship.create(SubscriptableIterableRelationship, self.l, self.custom, 2)
@@ -98,7 +92,7 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(self.highest.t2_child_rel.parent, self.highest.t2)
 
         # Provides textual relationship from t1 to t1[1337]
-        self.assertEqual(self.custom1, eval(self.highest.t2_child_rel.access_string("self.t1")))
+        self.assertEqual('self.t1[1337]', self.highest.t2_child_rel.access_string("self.t1"))
 
     def test_path(self):
         # Provides textual path all the way through
