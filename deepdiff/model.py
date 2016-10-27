@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from .helper import items
-from .helper import is_string
 from .helper import RemapDict
+from .helper import strings
 from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
@@ -116,7 +116,7 @@ class TextStyleResultDict(ResultDict):
             for change in ref['set_item_removed']:
                 path = change.up.path()  # we want't the set's path, the removed item is not directly accessible
                 item = change.t1
-                if is_string(item):
+                if isinstance(item, strings):
                     item = "'%s'" % item
                 self['set_item_removed'].add("%s[%s]" % (path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
@@ -126,7 +126,7 @@ class TextStyleResultDict(ResultDict):
             for change in ref['set_item_added']:
                 path = change.up.path()  # we want't the set's path, the added item is not directly accessible
                 item = change.t2
-                if is_string(item):
+                if isinstance(item, strings):
                     item = "'%s'" % item
                 self['set_item_added'].add("%s[%s]" % (path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
@@ -225,7 +225,6 @@ class DiffLevel(object):
         - repetition_change: additional['rep']:
                              e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
         """
-
         if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
             self.auto_generate_child_rel(klass=child_rel1, param=child_rel2)
         else:                             # the user supplied ChildRelationship objects for t1 and t2
@@ -476,7 +475,7 @@ class ChildRelationship(object):
                         Will return '(unrepresentable)' instead of None if there is no string representation
         """
         param = self.param
-        if is_string(param):
+        if isinstance(param, strings):
             return self._format_param_str(param)
         else:
             candidate = str(param)

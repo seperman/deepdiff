@@ -5,6 +5,9 @@
 To run only the search tests:
     python -m unittest tests.test_diff_text
 
+Or to run all the tests:
+    python -m unittest discover
+
 Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
 
@@ -18,10 +21,10 @@ import unittest
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-import logging
 from deepdiff.helper import py3
 from tests import CustomClass
 
+import logging
 logging.disable(logging.CRITICAL)
 
 

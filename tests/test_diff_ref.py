@@ -5,6 +5,9 @@
 To run only the search tests:
     python -m unittest tests.test_diff_ref
 
+Or to run all the tests:
+    python -m unittest discover
+
 Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
 
@@ -15,17 +18,10 @@ To run a specific test, run this from the root of repo:
     python -m unittest tests.tests_diff_ref.DeepDiffRefTestCase.test_same_objects
 """
 import unittest
-import datetime
-from decimal import Decimal
 from deepdiff import DeepDiff
-import logging
-
-from deepdiff.helper import py3
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
-from tests import CustomClass
-
-
+import logging
 logging.disable(logging.CRITICAL)
 
 

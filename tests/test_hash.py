@@ -5,6 +5,9 @@
 To run only the search tests:
     python -m unittest tests.hash_tests
 
+Or to run all the tests:
+    python -m unittest discover
+
 Or to run all the tests with coverage:
     coverage run --source deepdiff setup.py test
 
@@ -24,6 +27,7 @@ import sys
 from sys import version
 from collections import namedtuple
 import logging
+
 logging.disable(logging.CRITICAL)
 
 py3 = version[0] == '3'
