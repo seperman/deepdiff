@@ -24,9 +24,6 @@ else:  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 
-INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-
 class DeepSearch(dict):
 
     r"""

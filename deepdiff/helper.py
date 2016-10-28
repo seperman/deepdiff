@@ -8,6 +8,9 @@ from collections import MutableMapping
 from collections import Iterable
 import logging
 
+logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
+logger = logging.getLogger()
+
 py_major_version = sys.version[0]
 py_minor_version = sys.version[2]
 
@@ -44,15 +47,18 @@ EXPANDED_KEY_MAP = {  # pragma: no cover
     'oldvalue': 'old_value'}
 
 
+def short_repr(item, max_length=15):
+    """Short representation of item if it is too long"""
+    item = str(item)
+    if len(item) > max_length:
+        item = '{}...{}'.format(item[:12], item[-1])
+    return item
+
+
 class ListItemRemovedOrAdded(object):  # pragma: no cover
     """Class of conditions to be checked"""
     pass
 
-INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-
-logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
-logger = logging.getLogger()
 
 WARNING_NUM = 0
 

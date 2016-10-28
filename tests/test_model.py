@@ -4,7 +4,8 @@
 from unittest import TestCase
 import logging
 from tests import CustomClass
-from deepdiff.model import DiffLevel, ChildRelationship, DictRelationship, SubscriptableIterableRelationship, AttributeRelationship
+from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
+                            SubscriptableIterableRelationship, AttributeRelationship)
 
 logging.disable(logging.CRITICAL)
 
@@ -20,8 +21,8 @@ class DictRelationshipTestCase(TestCase):
 
     def test_strkey(self):
         rel = ChildRelationship.create(DictRelationship, self.d, self.d['vegan'], 'vegan')
-        result = rel.access_string("self.d")
-        self.assertEqual(result, "self.d['vegan']")
+        result = rel.access_partial()
+        self.assertEqual(result, "['vegan']")
 
     def test_objkey(self):
         rel = DictRelationship(self.d, self.d[self.customkey], self.customkey)
@@ -35,8 +36,8 @@ class ListRelationshipTestCase(TestCase):
 
     def test_min(self):
         rel = SubscriptableIterableRelationship(self.l, self.l[0], 0)
-        result = rel.access_string("self.l")
-        self.assertEqual(result, "self.l[0]")
+        result = rel.access_partial()
+        self.assertEqual(result, "[0]")
 
     def test_max(self):
         rel = ChildRelationship.create(SubscriptableIterableRelationship, self.l, self.custom, 2)
@@ -49,8 +50,8 @@ class AttributeRelationshipTestCase(TestCase):
 
     def test_a(self):
         rel = AttributeRelationship(self.custom, 13, "a")
-        result = rel.access_string("self.custom")
-        self.assertEqual(result, "self.custom.a")
+        result = rel.access_partial()
+        self.assertEqual(result, ".a")
 
 
 class DiffLevelTestCase(TestCase):
@@ -92,7 +93,7 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(self.highest.t2_child_rel.parent, self.highest.t2)
 
         # Provides textual relationship from t1 to t1[1337]
-        self.assertEqual('self.t1[1337]', self.highest.t2_child_rel.access_string("self.t1"))
+        self.assertEqual('[1337]', self.highest.t2_child_rel.access_partial())
 
     def test_path(self):
         # Provides textual path all the way through

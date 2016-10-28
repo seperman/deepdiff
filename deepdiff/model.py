@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .helper import items
-from .helper import RemapDict
-from .helper import strings
+from .helper import items, RemapDict, strings, short_repr
 from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
@@ -423,9 +421,9 @@ class ChildRelationship(object):
 
     def __repr__(self):
         name = "<{} id:{}, parent:{}, child:{}, param:{}>"
-        parent = str(self.parent)[:12]
-        child = str(self.child)[:12]
-        param = str(self.param)[:12]
+        parent = short_repr(self.parent)
+        child = short_repr(self.child)
+        param = short_repr(self.param)
         return name.format(self.__class__.__name__, id(self), parent, child, param)
 
     def access_partial(self, force=None):
@@ -446,14 +444,6 @@ class ChildRelationship(object):
         stringified = self._param_to_str(force)
         if stringified:
             return self._format_partial(stringified)
-
-    def access_string(self, parentname):
-        """Combines a given parent var name with this relationships's access partial."""
-        partial = self.access_partial()
-        if partial:
-            return parentname + partial
-        else:
-            return None
 
     @abstractmethod
     def _format_partial(self, partial):  # pragma: no cover
@@ -476,7 +466,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
-            return self._format_param_str(param)
+            result = self._format_param_str(param)
         else:
             candidate = str(param)
             try:
@@ -484,11 +474,13 @@ class ChildRelationship(object):
                 # Note: This will miss string-representable custom objects.
                 # However, the only alternative I can currently think of is using eval() which is inherently dangerous.
             except (SyntaxError, ValueError):
-                return self.__param_unparsable(param, force)
-            if resurrected == param:
-                return candidate
+                result = self.__param_unparsable(param, force)
             else:
-                return self.__param_unparsable(param, force)
+                if resurrected == param:
+                    result = candidate
+                else:
+                    result = self.__param_unparsable(param, force)
+        return result
 
     def _format_param_str(self, string):
         """
