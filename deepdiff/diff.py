@@ -15,7 +15,7 @@ import logging
 
 from decimal import Decimal
 
-from collections import MutableMapping
+from collections import Mapping
 from collections import Iterable
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
@@ -672,7 +672,7 @@ class DeepDiff(ResultDict):
         elif isinstance(level.t1, numbers):
             self.__diff_numbers(level)
 
-        elif isinstance(level.t1, MutableMapping):
+        elif isinstance(level.t1, Mapping):
             self.__diff_dict(level, parents_ids)
 
         elif isinstance(level.t1, tuple):
