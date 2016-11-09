@@ -36,6 +36,19 @@ class DeepDiffRefTestCase(unittest.TestCase):
         res = ddiff.tree
         self.assertEqual(res, {})
 
+    def test_significant_digits_signed_zero(self):
+        t1 = 0.00001
+        t2 = -0.0001
+        ddiff = DeepDiff(t1, t2, significant_digits = 2)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+        t1 = 1*10**-12
+        t2 = -1*10**-12
+        ddiff = DeepDiff(t1, t2, significant_digits=10)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+
+        
     def test_item_added_extensive(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'new': 1337}
