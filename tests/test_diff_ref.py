@@ -121,6 +121,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertIsInstance(change.up.t1_child_rel, NonSubscriptableIterableRelationship)
         self.assertIsNone(change.up.t2_child_rel)
 
+
     def test_non_subscriptable_iterable_path(self):
         t1 = (i for i in [42, 1337, 31337])
         t2 = (i for i in [42, 1337, ])
@@ -131,3 +132,26 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(change.path(), None)
         self.assertEqual(change.path(force='yes'), 'root(unrepresentable)')
         self.assertEqual(change.path(force='fake'), 'root[2]')
+
+class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
+
+    """DeepDiff Tests."""
+    def setUp(self):
+        import numpy as np
+        a1 = np.array([1.23, 1.66, 1.98])
+        a2 = np.array([1.23, 1.66, 1.98])
+        self.d1 = { 'np': a1 }
+        self.d2 = { 'np': a2 }
+        
+    def test_diff_with_numpy(self):
+        ddiff = DeepDiff(self.d1, self.d2)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+        
+    def test_diff_with_empty_seq(self):
+        a1 = {"empty":[]}
+        a2 = {"empty":[]}
+        ddiff = DeepDiff(a1, a2)
+        res = ddiff.tree
+        self.assertEqual(ddiff, {})
+
