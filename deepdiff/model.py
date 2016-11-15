@@ -148,22 +148,23 @@ class DiffLevel(object):
 
     Example:
 
-    >>> t1 = {2: 2, 4: 4}
-    >>> t2 = {2: "b", 5: 5}
+    >>> t1 = {2: 2, 4: 44}
+    >>> t2 = {2: "b", 5: 55}
     >>> ddiff = DeepDiff(t1, t2, default_view='ref')
     >>> ddiff
-    {'dictionary_item_removed': {<DiffLevel id:4, t1:4, t2:None>},
-     'type_changes': {<DiffLevel id:4418288720, t1:2, t2:b>},
-     'dictionary_item_added': {<DiffLevel id:4417017672, t1:None, t2:5>}}
+    {'dictionary_item_added': {<DiffLevel id:4560126096, t1:None, t2:55>},
+     'dictionary_item_removed': {<DiffLevel id:4560126416, t1:44, t2:None>},
+     'type_changes': {<DiffLevel id:4560126608, t1:2, t2:b>}}
 
     Graph:
 
     <DiffLevel id:123, original t1,t2>          <DiffLevel id:200, original t1,t2>
                     ↑up                                         ↑up
                     |                                           |
+                    | ChildRelationship                         | ChildRelationship
                     |                                           |
                     ↓down                                       ↓down
-    <DiffLevel id:43, t1:None, t2:5>            <DiffLevel id:4, t1:4, t2:None>
+    <DiffLevel id:13, t1:None, t2:55>            <DiffLevel id:421, t1:44, t2:None>
     .path() = 'root[5]'                         .path() = 'root[4]'
 
     Note that the 2 top level DiffLevel objects are 2 different objects even though
@@ -173,11 +174,47 @@ class DiffLevel(object):
     A ChildRelationship object describing the relationship between t1 and it's child object,
     where t1's child object equals down.t1.
 
+    Think about it like a graph:
+
+    +---------------------------------------------------------------+
+    |                                                               |
+    |    parent                 difflevel                 parent    |
+    |      +                          ^                     +       |
+    +------|--------------------------|---------------------|-------+
+           |                      |   | up                  |
+           | Child                |   |                     | ChildRelationship
+           | Relationship         |   |                     |
+           |                 down |   |                     |
+    +------|----------------------|-------------------------|-------+
+    |      v                      v                         v       |
+    |    child                  difflevel                 child     |
+    |                                                               |
+    +---------------------------------------------------------------+
+
+
     The child_rel example:
 
-    >>> dr=list(ddiff['dictionary_item_removed'])[0]
-    >>> dr.up.t1_child_rel
-    <DictRelationship id:456, parent:{2: 2, 4: 4}, child:4, param:4>
+    # dictionary_item_removed is a set so in order to get an item from it:
+    >>> difflevel = iter(ddiff['dictionary_item_removed']).next()
+    >>> difflevel.up.t1_child_rel
+    <DictRelationship id:456, parent:{2: 2, 4: 44}, child:44, param:4>
+
+    >>> difflevel = iter(ddiff['dictionary_item_added']).next()
+    >>> difflevel
+    <DiffLevel id:4560126096, t1:None, t2:55>
+
+    >>> difflevel.up
+    >>> <DiffLevel id:4560154512, t1:{2: 2, 4: 44}, t2:{2: 'b', 5: 55}>
+
+    >>> difflevel.up
+    <DiffLevel id:4560154512, t1:{2: 2, 4: 44}, t2:{2: 'b', 5: 55}>
+
+    # t1 didn't exist
+    >>> difflevel.up.t1_child_rel
+
+    # t2 is added
+    >>> difflevel.up.t2_child_rel
+    <DictRelationship id:4560154384, parent:{2: 'b', 5: 55}, child:55, param:5>
 
     """
     def __init__(self, t1, t2, down=None, up=None, report_type=None,
@@ -223,21 +260,26 @@ class DiffLevel(object):
         - repetition_change: additional['rep']:
                              e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
         """
-        if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
-            self.auto_generate_child_rel(klass=child_rel1, param=child_rel2)
-        else:                             # the user supplied ChildRelationship objects for t1 and t2
-            self.t1_child_rel = child_rel1
-            """
-            A ChildRelationship object describing the relationship between t1 and it's child object,
-            where t1's child object equals down.t1.
-            If this relationship is representable as a string, str(self.t1_child_rel) returns a partial parsable python string,
-            e.g. "[2]", ".my_attribute"
-            """
 
-            self.t2_child_rel = child_rel2
-            """
-            Another ChildRelationship object describing the relationship between t2 and it's child object.
-            """
+        # TODO: remove
+        # if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
+        #     # This case does not happen actually when diffing
+        #     self.auto_generate_child_rel(klass=child_rel1, param=child_rel2)
+
+        # the user supplied ChildRelationship objects for t1 and t2
+
+        self.t1_child_rel = child_rel1
+        """
+        A ChildRelationship object describing the relationship between t1 and it's child object,
+        where t1's child object equals down.t1.
+        If this relationship is representable as a string, str(self.t1_child_rel) returns a partial parsable python string,
+        e.g. "[2]", ".my_attribute"
+        """
+
+        self.t2_child_rel = child_rel2
+        """
+        Another ChildRelationship object describing the relationship between t2 and it's child object.
+        """
 
         self._path = None
         """Will cache result of .path() for performance"""
@@ -255,9 +297,11 @@ class DiffLevel(object):
                       e.g. the key in a dict
         """
         if self.down.t1:
-            self.t1_child_rel = ChildRelationship.create(klass, self.t1, self.down.t1, param)
+            self.t1_child_rel = ChildRelationship.create(klass=klass, parent=self.t1,
+                                                         child=self.down.t1, param=param)
         if self.down.t2:
-            self.t2_child_rel = ChildRelationship.create(klass, self.t2, self.down.t2, param)
+            self.t2_child_rel = ChildRelationship.create(klass=klass, parent=self.t2,
+                                                         child=self.down.t2, param=param)
 
     def all_up(self):
         """
@@ -345,7 +389,7 @@ class DiffLevel(object):
         level = self.all_down()
         result = DiffLevel(new_t1, new_t2, down=None, up=level, report_type=report_type)
         level.down = result
-        level.auto_generate_child_rel(child_relationship_class, child_relationship_param)
+        level.auto_generate_child_rel(klass=child_relationship_class, param=child_relationship_param)
         return result
 
     def branch_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
@@ -375,13 +419,15 @@ class DiffLevel(object):
                 result.down.up = result        # adjust reverse link
 
                 if orig.t1_child_rel is not None:
-                    result.t1_child_rel = ChildRelationship.create(orig.t1_child_rel.__class__,
-                                                                   result.t1, result.down.t1,
-                                                                   orig.t1_child_rel.param)
+                    result.t1_child_rel = ChildRelationship.create(klass=orig.t1_child_rel.__class__,
+                                                                   parent=result.t1,
+                                                                   child=result.down.t1,
+                                                                   param=orig.t1_child_rel.param)
                 if orig.t2_child_rel is not None:
-                    result.t2_child_rel = ChildRelationship.create(orig.t2_child_rel.__class__,
-                                                                   result.t2, result.down.t2,
-                                                                   orig.t2_child_rel.param)
+                    result.t2_child_rel = ChildRelationship.create(klass=orig.t2_child_rel.__class__,
+                                                                   parent=result.t2,
+                                                                   child=result.down.t2,
+                                                                   param=orig.t2_child_rel.param)
 
             # descend to next level
             orig = orig.down
@@ -404,20 +450,14 @@ class ChildRelationship(object):
         return klass(parent, child, param)
 
     def __init__(self, parent, child, param=None):
+        # The parent object of this relationship, e.g. a dict
         self.parent = parent
-        """
-        The parent object of this relationship, e.g. a dict
-        """
 
+        # The child object of this relationship, e.g. a value in a dict
         self.child = child
-        """
-        The child object of this relationship, e.g. a value in a dict
-        """
 
+        # A subclass-dependent parameter describing how to get from parent to child, e.g. the key in a dict
         self.param = param
-        """
-        A subclass-dependent parameter describing how to get from parent to child, e.g. the key in a dict
-        """
 
     def __repr__(self):
         name = "<{} id:{}, parent:{}, child:{}, param:{}>"
@@ -466,7 +506,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
-            result = self._format_param_str(param)
+            result = self._format_param_if_str(param)
         else:
             candidate = str(param)
             try:
@@ -482,7 +522,7 @@ class ChildRelationship(object):
                     result = self.__param_unparsable(param, force)
         return result
 
-    def _format_param_str(self, string):
+    def _format_param_if_str(self, string):
         """
         This is a hook allowing subclasses to manipulate param strings.
         :param string: Input string
@@ -503,7 +543,7 @@ class DictRelationship(ChildRelationship):
     def _format_partial(self, partial):
         return "[%s]" % partial
 
-    def _format_param_str(self, string):
+    def _format_param_if_str(self, string):
         """Overriding this b/c strings as dict keys must come in quotes."""
         return "'%s'" % string
 

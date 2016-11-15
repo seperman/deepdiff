@@ -3,7 +3,7 @@
 
 from unittest import TestCase
 import logging
-from tests import CustomClass
+from tests import CustomClass, CustomClassMisleadingRepr
 from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
                             SubscriptableIterableRelationship, AttributeRelationship)
 
@@ -12,20 +12,28 @@ logging.disable(logging.CRITICAL)
 
 class DictRelationshipTestCase(TestCase):
     def setUp(self):
-        self.customkey = CustomClass(13, 37)
-        self.d = {42: 'answer', 'vegan': 'for life', self.customkey: 1337}
+        self.customkey = CustomClass(a=13, b=37)
+        self.customkey_misleading = CustomClassMisleadingRepr(a=11, b=20)
+        self.d = {42: 'answer', 'vegan': 'for life',
+                  self.customkey: 1337, self.customkey_misleading: 'banana'}
 
     def test_numkey(self):
-        rel = DictRelationship(self.d, self.d[42], 42)
+        rel = DictRelationship(parent=self.d, child=self.d[42], param=42)
         self.assertEqual(rel.access_partial(), "[42]")
 
     def test_strkey(self):
-        rel = ChildRelationship.create(DictRelationship, self.d, self.d['vegan'], 'vegan')
+        rel = ChildRelationship.create(klass=DictRelationship, parent=self.d,
+                                       child=self.d['vegan'], param='vegan')
         result = rel.access_partial()
         self.assertEqual(result, "['vegan']")
 
     def test_objkey(self):
-        rel = DictRelationship(self.d, self.d[self.customkey], self.customkey)
+        rel = DictRelationship(parent=self.d, child=self.d[self.customkey], param=self.customkey)
+        self.assertIsNone(rel.access_partial())
+
+    def test_objkey_misleading_repr(self):
+        rel = DictRelationship(parent=self.d, child=self.d[self.customkey_misleading],
+                               param=self.customkey_misleading)
         self.assertIsNone(rel.access_partial())
 
 
@@ -57,8 +65,8 @@ class AttributeRelationshipTestCase(TestCase):
 class DiffLevelTestCase(TestCase):
     def setUp(self):
         # Test data
-        self.custom1 = CustomClass(13, 37)
-        self.custom2 = CustomClass(313, 37)
+        self.custom1 = CustomClass(a=13, b=37)
+        self.custom2 = CustomClass(a=313, b=37)
         self.t1 = {42: 'answer', 'vegan': 'for life', 1337: self.custom1}
         self.t2 = {42: 'answer', 'vegan': 'for the animals', 1337: self.custom2}
 
@@ -66,15 +74,19 @@ class DiffLevelTestCase(TestCase):
         self.lowest = DiffLevel(self.custom1.a, self.custom2.a, report_type='values_changed')
 
         # Test manual child relationship
-        rel_int_low_t1 = AttributeRelationship(self.custom1, self.custom1.a, "a")
-        rel_int_low_t2 = AttributeRelationship(self.custom2, self.custom2.a, "a")
+        rel_int_low_t1 = AttributeRelationship(parent=self.custom1, child=self.custom1.a, param="a")
+        rel_int_low_t2 = AttributeRelationship(parent=self.custom2, child=self.custom2.a, param="a")
         self.intermediate = DiffLevel(self.custom1, self.custom2, down=self.lowest,
                                       child_rel1=rel_int_low_t1, child_rel2=rel_int_low_t2)
         self.lowest.up = self.intermediate
 
         # Test automatic child relationship
+        t1_child_rel = ChildRelationship.create(klass=DictRelationship, parent=self.t1,
+                                                child=self.intermediate.t1, param=1337)
+        t2_child_rel = ChildRelationship.create(klass=DictRelationship, parent=self.t2,
+                                                child=self.intermediate.t2, param=1337)
         self.highest = DiffLevel(self.t1, self.t2, down=self.intermediate,
-                                 child_rel1=DictRelationship, child_rel2=1337)
+                                 child_rel1=t1_child_rel, child_rel2=t2_child_rel)
         self.intermediate.up = self.highest
 
     def test_all_up(self):
