@@ -19,22 +19,22 @@ class DictRelationshipTestCase(TestCase):
 
     def test_numkey(self):
         rel = DictRelationship(parent=self.d, child=self.d[42], param=42)
-        self.assertEqual(rel.access_partial(), "[42]")
+        self.assertEqual(rel.get_partial(), "[42]")
 
     def test_strkey(self):
         rel = ChildRelationship.create(klass=DictRelationship, parent=self.d,
                                        child=self.d['vegan'], param='vegan')
-        result = rel.access_partial()
+        result = rel.get_partial()
         self.assertEqual(result, "['vegan']")
 
     def test_objkey(self):
         rel = DictRelationship(parent=self.d, child=self.d[self.customkey], param=self.customkey)
-        self.assertIsNone(rel.access_partial())
+        self.assertIsNone(rel.get_partial())
 
     def test_objkey_misleading_repr(self):
         rel = DictRelationship(parent=self.d, child=self.d[self.customkey_misleading],
                                param=self.customkey_misleading)
-        self.assertIsNone(rel.access_partial())
+        self.assertIsNone(rel.get_partial())
 
 
 class ListRelationshipTestCase(TestCase):
@@ -44,12 +44,12 @@ class ListRelationshipTestCase(TestCase):
 
     def test_min(self):
         rel = SubscriptableIterableRelationship(self.l, self.l[0], 0)
-        result = rel.access_partial()
+        result = rel.get_partial()
         self.assertEqual(result, "[0]")
 
     def test_max(self):
         rel = ChildRelationship.create(SubscriptableIterableRelationship, self.l, self.custom, 2)
-        self.assertEqual(rel.access_partial(), "[2]")
+        self.assertEqual(rel.get_partial(), "[2]")
 
 
 class AttributeRelationshipTestCase(TestCase):
@@ -58,7 +58,7 @@ class AttributeRelationshipTestCase(TestCase):
 
     def test_a(self):
         rel = AttributeRelationship(self.custom, 13, "a")
-        result = rel.access_partial()
+        result = rel.get_partial()
         self.assertEqual(result, ".a")
 
 
@@ -105,7 +105,7 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(self.highest.t2_child_rel.parent, self.highest.t2)
 
         # Provides textual relationship from t1 to t1[1337]
-        self.assertEqual('[1337]', self.highest.t2_child_rel.access_partial())
+        self.assertEqual('[1337]', self.highest.t2_child_rel.get_partial())
 
     def test_path(self):
         # Provides textual path all the way through

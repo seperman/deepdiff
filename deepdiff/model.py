@@ -5,6 +5,8 @@ from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
 
+FORCE_DEFAULT = 'fake'
+
 
 class ResultDict(RemapDict):
     def cleanup(self):
@@ -80,12 +82,12 @@ class TextStyleResultDict(ResultDict):
 
                 # do the reporting
                 if isinstance(self[report_type], set):
-                    self[report_type].add(change.path(force='fake'))
+                    self[report_type].add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(self[report_type], dict):
-                    self[report_type][change.path(force='fake')] = item
+                    self[report_type][change.path(force=FORCE_DEFAULT)] = item
                 elif isinstance(self[report_type], list):    # pragma: no cover
                     # we don't actually have any of those right now, but just in case
-                    self[report_type].append(change.path(force='fake'))
+                    self[report_type].append(change.path(force=FORCE_DEFAULT))
                 else:                                        # pragma: no cover
                     # should never happen
                     raise TypeError("Cannot handle this report container type.")
@@ -93,21 +95,25 @@ class TextStyleResultDict(ResultDict):
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
             for change in ref['type_changes']:
-                self['type_changes'][change.path(force='fake')] = RemapDict({'old_type': type(change.t1), 'new_type': type(change.t2)})
+                remap_dict = RemapDict({'old_type': type(change.t1),
+                                        'new_type': type(change.t2)})
+                self['type_changes'][change.path(force=FORCE_DEFAULT)] = remap_dict
                 if self.verbose_level:
-                    self["type_changes"][change.path(force='fake')].update(old_value=change.t1, new_value=change.t2)
+                    self["type_changes"][change.path(force=FORCE_DEFAULT)].update(old_value=change.t1,
+                                                                                  new_value=change.t2)
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
             for change in ref['values_changed']:
-                self['values_changed'][change.path(force='fake')] = {'new_value': change.t2, 'old_value': change.t1}
+                the_changed = {'new_value': change.t2, 'old_value': change.t1}
+                self['values_changed'][change.path(force=FORCE_DEFAULT)] = the_changed
                 if 'diff' in change.additional:
-                    self['values_changed'][change.path(force='fake')].update({'diff': change.additional['diff']})
+                    self['values_changed'][change.path(force=FORCE_DEFAULT)].update({'diff': change.additional['diff']})
 
     def _from_ref_unprocessed(self, ref):
         if 'unprocessed' in ref:
             for change in ref['unprocessed']:
-                self['unprocessed'].append("%s: %s and %s" % (change.path(force='fake'), change.t1, change.t2))
+                self['unprocessed'].append("%s: %s and %s" % (change.path(force=FORCE_DEFAULT), change.t1, change.t2))
 
     def _from_ref_set_item_removed(self, ref):
         if 'set_item_removed' in ref:
@@ -132,7 +138,7 @@ class TextStyleResultDict(ResultDict):
     def _from_ref_repetition_change(self, ref):
         if 'repetition_change' in ref:
             for change in ref['repetition_change']:
-                path = change.path(force='fake')
+                path = change.path(force=FORCE_DEFAULT)
                 self['repetition_change'][path] = RemapDict(change.additional['rep'])
                 self['repetition_change'][path]['value'] = change.t1
 
@@ -365,7 +371,7 @@ class DiffLevel(object):
                 break
 
             # Build path for this level
-            append = next_rel.access_partial(force)
+            append = next_rel.get_partial(force)
             if append:
                 result += append
             else:
@@ -466,7 +472,7 @@ class ChildRelationship(object):
         param = short_repr(self.param)
         return name.format(self.__class__.__name__, id(self), parent, child, param)
 
-    def access_partial(self, force=None):
+    def get_partial(self, force=None):
         """
         Returns a partial python parsable string describing this relationship,
         or None if the relationship is not representable as a string.
@@ -481,22 +487,22 @@ class ChildRelationship(object):
                 Will return a partial including '(unrepresentable)' instead of the non string-representable part.
 
         """
-        stringified = self._param_to_str(force)
+        stringified = self.param_to_partial(force)
         if stringified:
-            return self._format_partial(stringified)
+            return self.format_partial(stringified)
 
     @abstractmethod
-    def _format_partial(self, partial):  # pragma: no cover
+    def format_partial(self, partial):  # pragma: no cover
         """
-        Formats an access partial to create a valid partial python string representing this relationship.
+        Formats a get partial to create a valid partial python string representing this relationship.
         E.g. for a dict, this turns a partial param "42" into "[42]".
         """
         pass
 
-    def _param_to_str(self, force=None):
+    def param_to_partial(self, force=None):
         """
         Convert param to a string. Return None if there is no string representation.
-        This is called by access_partial()
+        This is called by get_partial()
         :param force: Bends the meaning of "no string representation".
                       If None:
                         Will strictly return Python-parsable expressions. The result those yield will compare
@@ -506,7 +512,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
-            result = self._format_param_if_str(param)
+            result = self._emphasize_str(param)
         else:
             candidate = str(param)
             try:
@@ -522,7 +528,7 @@ class ChildRelationship(object):
                     result = self.__param_unparsable(param, force)
         return result
 
-    def _format_param_if_str(self, string):
+    def _emphasize_str(self, string):
         """
         This is a hook allowing subclasses to manipulate param strings.
         :param string: Input string
@@ -532,7 +538,7 @@ class ChildRelationship(object):
 
     @staticmethod
     def __param_unparsable(param, force=None):
-        """Partial called by _param_to_str()"""
+        """Partial called by param_to_partial()"""
         if force == 'yes':
             return '(unrepresentable)'
         else:
@@ -540,10 +546,10 @@ class ChildRelationship(object):
 
 
 class DictRelationship(ChildRelationship):
-    def _format_partial(self, partial):
+    def format_partial(self, partial):
         return "[%s]" % partial
 
-    def _format_param_if_str(self, string):
+    def _emphasize_str(self, string):
         """Overriding this b/c strings as dict keys must come in quotes."""
         return "'%s'" % string
 
@@ -553,10 +559,10 @@ class SubscriptableIterableRelationship(DictRelationship):
 
 
 class InaccessibleRelationship(ChildRelationship):
-    def _format_partial(self, partial):
+    def format_partial(self, partial):
         return None
 
-    def access_partial(self, force=None):
+    def get_partial(self, force=None):
         if force == 'yes':
             return "(unrepresentable)"
         else:
@@ -568,11 +574,11 @@ class SetRelationship(InaccessibleRelationship):  # there is no random access to
 
 
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
-    def access_partial(self, force=None):
+    def get_partial(self, force=None):
         if force == 'yes':
             return "(unrepresentable)"
         elif force == 'fake' and self.param:
-            stringified = self._param_to_str()
+            stringified = self.param_to_partial()
             if stringified:
                 return "[%s]" % stringified
         elif force == 'fake':
@@ -582,5 +588,5 @@ class NonSubscriptableIterableRelationship(InaccessibleRelationship):
 
 
 class AttributeRelationship(ChildRelationship):
-    def _format_partial(self, partial):
+    def format_partial(self, partial):
         return ".%s" % partial
