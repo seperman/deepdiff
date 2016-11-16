@@ -88,3 +88,10 @@ class RemapDict(dict):
             return self.get(new_key)
         else:  # pragma: no cover
             raise KeyError(new_key)
+
+
+class Verbose(object):
+    """
+    Global verbose level
+    """
+    level = 1

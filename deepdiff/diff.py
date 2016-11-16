@@ -11,7 +11,7 @@ from decimal import Decimal
 from collections import MutableMapping
 from collections import Iterable
 
-from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash
+from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextStyleResultDict, RefStyleResultDict, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -319,18 +319,19 @@ class DeepDiff(ResultDict):
 
         self.result_refs = RefStyleResultDict()
 
+        Verbose.level = verbose_level
+
         root = DiffLevel(t1, t2)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
         self.result_refs.cleanup()
 
-        self.result_text = TextStyleResultDict(verbose_level, self.result_refs)
-        self.result_text.cleanup()   # clean up text-style result dictionary
-
         if default_view == 'ref':          # Allow one of our views to be accessible directly via this object
             self.update(self.result_refs)
         else:
-            self.update(self.result_text)  # be compatible to DeepDiff 2.x if user didn't specify otherwise
+            result_text = TextStyleResultDict(ref_results=self.result_refs)
+            result_text.cleanup()   # clean up text-style result dictionary
+            self.update(result_text)  # be compatible to DeepDiff 2.x if user didn't specify otherwise
 
     def __report_result(self, report_type, level):
         """

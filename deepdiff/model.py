@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .helper import items, RemapDict, strings, short_repr
+from .helper import items, RemapDict, strings, short_repr, Verbose
 from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
@@ -33,8 +33,7 @@ class RefStyleResultDict(ResultDict):
 
 
 class TextStyleResultDict(ResultDict):
-    def __init__(self, verbose_level=1, ref_results=None):
-        self.verbose_level = verbose_level
+    def __init__(self, ref_results=None):
 
         # TODO: centralize keys
         self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
@@ -48,7 +47,7 @@ class TextStyleResultDict(ResultDict):
             self.from_ref_results(ref_results)
 
     def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else set()
+        return {} if Verbose.level >= 2 else set()
 
     def from_ref_results(self, ref):
         """
@@ -81,16 +80,17 @@ class TextStyleResultDict(ResultDict):
                     item = change.t1
 
                 # do the reporting
-                if isinstance(self[report_type], set):
-                    self[report_type].add(change.path(force=FORCE_DEFAULT))
-                elif isinstance(self[report_type], dict):
-                    self[report_type][change.path(force=FORCE_DEFAULT)] = item
-                elif isinstance(self[report_type], list):    # pragma: no cover
+                report = self[report_type]
+                if isinstance(report, set):
+                    report.add(change.path(force=FORCE_DEFAULT))
+                elif isinstance(report, dict):
+                    report[change.path(force=FORCE_DEFAULT)] = item
+                elif isinstance(report, list):    # pragma: no cover
                     # we don't actually have any of those right now, but just in case
-                    self[report_type].append(change.path(force=FORCE_DEFAULT))
-                else:                                        # pragma: no cover
+                    report.append(change.path(force=FORCE_DEFAULT))
+                else:  # pragma: no cover
                     # should never happen
-                    raise TypeError("Cannot handle this report container type.")
+                    raise TypeError("Cannot handle {} report container type.".format(report))
 
     def _from_ref_type_changes(self, ref):
         if 'type_changes' in ref:
@@ -98,9 +98,8 @@ class TextStyleResultDict(ResultDict):
                 remap_dict = RemapDict({'old_type': type(change.t1),
                                         'new_type': type(change.t2)})
                 self['type_changes'][change.path(force=FORCE_DEFAULT)] = remap_dict
-                if self.verbose_level:
-                    self["type_changes"][change.path(force=FORCE_DEFAULT)].update(old_value=change.t1,
-                                                                                  new_value=change.t2)
+                if Verbose.level:
+                    remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_ref_value_changed(self, ref):
         if 'values_changed' in ref:
@@ -108,7 +107,7 @@ class TextStyleResultDict(ResultDict):
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
                 self['values_changed'][change.path(force=FORCE_DEFAULT)] = the_changed
                 if 'diff' in change.additional:
-                    self['values_changed'][change.path(force=FORCE_DEFAULT)].update({'diff': change.additional['diff']})
+                    the_changed.update({'diff': change.additional['diff']})
 
     def _from_ref_unprocessed(self, ref):
         if 'unprocessed' in ref:
@@ -224,7 +223,7 @@ class DiffLevel(object):
 
     """
     def __init__(self, t1, t2, down=None, up=None, report_type=None,
-                 child_rel1=None, child_rel2=None, additional=None):
+                 child_rel1=None, child_rel2=None, additional=None, verbose_level=1):
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -236,62 +235,56 @@ class DiffLevel(object):
                             - The param argument for a ChildRelationship class we shall create.
                            Alternatives for child_rel1 and child_rel2 must be used consistently.
         """
+
+        # The current-level object in the left hand tree
         self.t1 = t1
-        """The current-level object in the left hand tree"""
 
+        # The current-level object in the right hand tree
         self.t2 = t2
-        """The current-level object in the right hand tree"""
 
+        # Another DiffLevel object describing this change one level deeper down the object tree
         self.down = down
-        """Another DiffLevel object describing this change one level deeper down the object tree"""
 
+        # Another DiffLevel object describing this change one level further up the object tree
         self.up = up
-        """Another DiffLevel object describing this change one level further up the object tree"""
 
         self.report_type = report_type
-        """
-        If this object is this change's deepest level, this contains a string describing the type of change.
-        Examples: "set_item_added", "values_changed"
-        """
+
+        # If this object is this change's deepest level, this contains a string describing the type of change.
+        # Examples: "set_item_added", "values_changed"
 
         # Note: don't use {} as additional's default value - this would turn out to be always the same dict object
         self.additional = {} if additional is None else additional
 
-        """
-        For some types of changes we store some additional information.
-        This is a dict containing this information.
-        Currently, this is used for:
-        - values_changed: In case the changes data is a multi-line string,
-                          we include a textual diff as additional['diff'].
-        - repetition_change: additional['rep']:
-                             e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
-        """
-
-        # TODO: remove
-        # if isinstance(child_rel1, type):  # we shall create ChildRelationship objects for t1 and t2
-        #     # This case does not happen actually when diffing
-        #     self.auto_generate_child_rel(klass=child_rel1, param=child_rel2)
-
+        # For some types of changes we store some additional information.
+        # This is a dict containing this information.
+        # Currently, this is used for:
+        # - values_changed: In case the changes data is a multi-line string,
+        #                   we include a textual diff as additional['diff'].
+        # - repetition_change: additional['rep']:
+        #                      e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
         # the user supplied ChildRelationship objects for t1 and t2
 
+        # A ChildRelationship object describing the relationship between t1 and it's child object,
+        # where t1's child object equals down.t1.
+        # If this relationship is representable as a string, str(self.t1_child_rel) returns a partial parsable python string,
+        # e.g. "[2]", ".my_attribute"
         self.t1_child_rel = child_rel1
-        """
-        A ChildRelationship object describing the relationship between t1 and it's child object,
-        where t1's child object equals down.t1.
-        If this relationship is representable as a string, str(self.t1_child_rel) returns a partial parsable python string,
-        e.g. "[2]", ".my_attribute"
-        """
 
+        # Another ChildRelationship object describing the relationship between t2 and it's child object.
         self.t2_child_rel = child_rel2
-        """
-        Another ChildRelationship object describing the relationship between t2 and it's child object.
-        """
 
+        # Will cache result of .path() for performance
         self._path = None
-        """Will cache result of .path() for performance"""
 
     def __repr__(self):
-        return "<DiffLevel id:{}, t1:{}, t2:{}>".format(id(self), self.t1, self.t2)
+        if Verbose.level == 0:
+            result = "<{}>".format(self.path())
+        elif Verbose.level >= 1:
+            t1_repr = short_repr(self.t1)
+            t2_repr = short_repr(self.t2)
+            result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
+        return result
 
     def auto_generate_child_rel(self, klass, param):
         """
@@ -386,7 +379,8 @@ class DiffLevel(object):
         self._path = result
         return result
 
-    def create_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
+    def create_deeper(self, new_t1, new_t2, child_relationship_class,
+                      child_relationship_param=None, report_type=None):
         """
         Start a new comparison level and correctly link it to this one.
         :rtype: DiffLevel
