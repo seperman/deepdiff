@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# In order to run the docstrings:
+# python3 -m deepdiff.search
+
 from __future__ import absolute_import
 from __future__ import print_function
 import sys

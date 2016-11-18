@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+# In order to run the docstrings:
+# python3 -m deepdiff.diff
+# You might need to run it many times since dictionaries come in different orders
+# every time you run the docstrings.
+# However the docstring expects it in a specific order in order to pass!
+
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -158,15 +165,15 @@ class DeepDiff(ResultDict):
                                                         ' End',
                                                 'new_value': 'world\n1\n2\nEnd',
                                                 'old_value': 'world!\n'
-                                                            'Goodbye!\n'
-                                                            '1\n'
-                                                            '2\n'
-                                                            'End'}}}
+                                                             'Goodbye!\n'
+                                                             '1\n'
+                                                             '2\n'
+                                                             'End'}}}
 
         >>>
         >>> print (ddiff['values_changed']["root[4]['b']"]["diff"])
-        ---
-        +++
+        --- 
+        +++ 
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
@@ -174,6 +181,7 @@ class DeepDiff(ResultDict):
          1
          2
          End
+
 
     Type change
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
@@ -682,6 +690,7 @@ class DeepDiff(ResultDict):
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:
-        sys.exit("Please run with Python 3 to verify the doc strings.")
+        import sys
+        sys.exit("Please run with Python 3 to verify the doc strings: python3 -m deepdiff.diff")
     import doctest
     doctest.testmod()

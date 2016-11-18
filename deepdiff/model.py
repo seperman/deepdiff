@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .helper import items, RemapDict, strings, short_repr, Verbose
+from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose
 from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
