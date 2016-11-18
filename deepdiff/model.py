@@ -278,12 +278,12 @@ class DiffLevel(object):
         self._path = None
 
     def __repr__(self):
-        if Verbose.level == 0:
-            result = "<{}>".format(self.path())
-        elif Verbose.level >= 1:
+        if Verbose.level:
             t1_repr = short_repr(self.t1)
             t2_repr = short_repr(self.t2)
             result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
+        else:
+            result = "<{}>".format(self.path())
         return result
 
     def auto_generate_child_rel(self, klass, param):
@@ -460,11 +460,11 @@ class ChildRelationship(object):
         self.param = param
 
     def __repr__(self):
-        name = "<{} id:{}, parent:{}, child:{}, param:{}>"
+        name = "<{} parent:{}, child:{}, param:{}>"
         parent = short_repr(self.parent)
         child = short_repr(self.child)
         param = short_repr(self.param)
-        return name.format(self.__class__.__name__, id(self), parent, child, param)
+        return name.format(self.__class__.__name__, parent, child, param)
 
     def get_partial(self, force=None):
         """

@@ -6,6 +6,7 @@ import logging
 from tests import CustomClass, CustomClassMisleadingRepr
 from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
                             SubscriptableIterableRelationship, AttributeRelationship)
+from deepdiff.helper import Verbose
 
 logging.disable(logging.CRITICAL)
 
@@ -65,7 +66,7 @@ class AttributeRelationshipTestCase(TestCase):
 class DiffLevelTestCase(TestCase):
     def setUp(self):
         # Test data
-        self.custom1 = CustomClass(a=13, b=37)
+        self.custom1 = CustomClass(a='very long text here', b=37)
         self.custom2 = CustomClass(a=313, b=37)
         self.t1 = {42: 'answer', 'vegan': 'for life', 1337: self.custom1}
         self.t2 = {42: 'answer', 'vegan': 'for the animals', 1337: self.custom2}
@@ -110,6 +111,20 @@ class DiffLevelTestCase(TestCase):
     def test_path(self):
         # Provides textual path all the way through
         self.assertEqual(self.lowest.path("self.t1"), "self.t1[1337].a")
+
+    def test_repr_short(self):
+        level = Verbose.level
+        Verbose.level = 0
+        item_repr = repr(self.lowest)
+        Verbose.level = level
+        self.assertEqual(item_repr, '<root[1337].a>')
+
+    def test_repr_long(self):
+        level = Verbose.level
+        Verbose.level = 1
+        item_repr = repr(self.lowest)
+        Verbose.level = level
+        self.assertEqual(item_repr, "<root[1337].a t1:'very long t...', t2:313>")
 
 
 class ChildRelationshipTestCase(TestCase):
