@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-
 import sys
 import datetime
 from decimal import Decimal
 from collections import namedtuple
-from collections import MutableMapping
-from collections import Iterable
 import logging
 
-logging.basicConfig(format='%(asctime)s %(levelname)8s %(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 py_major_version = sys.version[0]
 py_minor_version = sys.version[2]
@@ -21,14 +17,14 @@ if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
 
 if py3:  # pragma: no cover
     from builtins import int
-
     strings = (str, bytes)  # which are both basestring
     numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
-
     items = 'items'
 else:  # pragma: no cover
+    int = int
     strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
+    numbers = (int, float, long, complex, datetime.datetime, datetime.date,
+               Decimal)
 
     items = 'iteritems'
 

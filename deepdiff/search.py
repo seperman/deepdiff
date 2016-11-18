@@ -3,23 +3,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-import datetime
-import logging
-from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
+import logging
 
-from deepdiff.helper import py3
-
-if py3:  # pragma: no cover
-    from builtins import int
-    strings = (str, bytes)  # which are both basestring
-    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
-    items = 'items'
-else:  # pragma: no cover
-    strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
-    items = 'iteritems'
+from deepdiff.helper import py3, strings, numbers, items
 
 logger = logging.getLogger(__name__)
 

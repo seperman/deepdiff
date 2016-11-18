@@ -3,37 +3,15 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-import datetime
-from decimal import Decimal
 from collections import Iterable
 from collections import MutableMapping
 from collections import defaultdict
 from hashlib import sha1
 import logging
 
-from deepdiff.helper import py3
-
-if py3:  # pragma: no cover
-    from builtins import int
-    strings = (str, bytes)  # which are both basestring
-    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
-    items = 'items'
-else:  # pragma: no cover
-    strings = (str, unicode)
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, Decimal)
-    items = 'iteritems'
+from deepdiff.helper import py3, int, strings, numbers, items
 
 logger = logging.getLogger(__name__)
-
-WARNING_NUM = 0
-
-
-def warn(*args, **kwargs):  # pragma: no cover
-    global WARNING_NUM
-
-    if WARNING_NUM < 10:
-        WARNING_NUM += 1
-        logger.warning(*args, **kwargs)
 
 
 class Skipped(object):
