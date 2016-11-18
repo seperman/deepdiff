@@ -16,6 +16,6 @@ class HelperTestCase(unittest.TestCase):
 
     def test_short_repr_when_long(self):
 
-        item = {1: 2, '2': 'Forward Research Manager'}
+        item = {'Eat more': 'burritos'}
         output = short_repr(item)
-        self.assertEqual(output, "{1: 2, '2': ...}")
+        self.assertEqual(output, "{'Eat more':...}")

@@ -91,6 +91,14 @@ class DeepDiffTextTestCase(unittest.TestCase):
                                      "root[4]['b']": {'old_value': 'world', 'new_value': 'world!'}}}
         self.assertEqual(ddiff, result)
 
+    def test_diffs_equal_strings_when_not_identical(self):
+        t1 = 'hello'
+        t2 = 'hel'
+        t2 += 'lo'
+        assert t1 is not t2
+        ddiff = DeepDiff(t1, t2)
+        self.assertEqual(ddiff, {})
+
     def test_string_difference2(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {
             "a": "hello", "b": "world!\nGoodbye!\n1\n2\nEnd"}}
