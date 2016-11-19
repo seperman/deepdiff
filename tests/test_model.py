@@ -11,6 +11,12 @@ from deepdiff.helper import Verbose
 logging.disable(logging.CRITICAL)
 
 
+class WorkingChildRelationship(ChildRelationship):
+
+    def format_partial(self, partial):
+        return "|%s|" % partial
+
+
 class DictRelationshipTestCase(TestCase):
     def setUp(self):
         self.customkey = CustomClass(a=13, b=37)
@@ -131,3 +137,15 @@ class ChildRelationshipTestCase(TestCase):
     def test_create_invalid_klass(self):
         with self.assertRaises(TypeError):
             ChildRelationship.create(DiffLevel, "hello", 42)
+
+    def test_rel_repr_short(self):
+        rel = WorkingChildRelationship(parent="that parent", child="this child", param="some param")
+        rel_repr = repr(rel)
+        expected = "<WorkingChildRelationship parent:'that parent', child:'this child', param:'some param'>"
+        self.assertEqual(rel_repr, expected)
+
+    def test_rel_repr_long(self):
+        rel = WorkingChildRelationship(parent="that parent who has a long path", child="this child", param="some param")
+        rel_repr = repr(rel)
+        expected = "<WorkingChildRelationship parent:'that parent...', child:'this child', param:'some param'>"
+        self.assertEqual(rel_repr, expected)
