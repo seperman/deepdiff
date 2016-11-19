@@ -489,7 +489,7 @@ class ChildRelationship(object):
                 Will return a partial including '(unrepresentable)' instead of the non string-representable part.
 
         """
-        stringified = self.param_to_partial(force)
+        stringified = self._param_to_partial(force)
         if stringified:
             return self.format_partial(stringified)
 
@@ -501,7 +501,7 @@ class ChildRelationship(object):
         """
         pass
 
-    def param_to_partial(self, force=None):
+    def _param_to_partial(self, force=None):
         """
         Convert param to a string. Return None if there is no string representation.
         This is called by get_partial()
@@ -514,7 +514,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
-            result = self._emphasize_str(param)
+            result = self.quote_str(param)
         else:
             candidate = str(param)
             try:
@@ -522,15 +522,12 @@ class ChildRelationship(object):
                 # Note: This will miss string-representable custom objects.
                 # However, the only alternative I can currently think of is using eval() which is inherently dangerous.
             except (SyntaxError, ValueError):
-                result = self.__param_unparsable(param, force)
+                result = None
             else:
-                if resurrected == param:
-                    result = candidate
-                else:
-                    result = self.__param_unparsable(param, force)
+                result = candidate if resurrected == param else None
         return result
 
-    def _emphasize_str(self, string):
+    def quote_str(self, string):
         """
         This is a hook allowing subclasses to manipulate param strings.
         :param string: Input string
@@ -540,7 +537,6 @@ class ChildRelationship(object):
 
     @staticmethod
     def __param_unparsable(param, force=None):
-        """Partial called by param_to_partial()"""
         if force == 'yes':
             return '(unrepresentable)'
         else:
@@ -551,7 +547,7 @@ class DictRelationship(ChildRelationship):
     def format_partial(self, partial):
         return "[%s]" % partial
 
-    def _emphasize_str(self, string):
+    def quote_str(self, string):
         """Overriding this b/c strings as dict keys must come in quotes."""
         return "'%s'" % string
 
@@ -571,7 +567,8 @@ class InaccessibleRelationship(ChildRelationship):
             return None
 
 
-class SetRelationship(InaccessibleRelationship):  # there is no random access to set elements
+# there is no random access to set elements
+class SetRelationship(InaccessibleRelationship):
     pass
 
 
@@ -580,7 +577,7 @@ class NonSubscriptableIterableRelationship(InaccessibleRelationship):
         if force == 'yes':
             return "(unrepresentable)"
         elif force == 'fake' and self.param:
-            stringified = self.param_to_partial()
+            stringified = self._param_to_partial()
             if stringified:
                 return "[%s]" % stringified
         elif force == 'fake':
