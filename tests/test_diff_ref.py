@@ -33,15 +33,16 @@ class DeepDiffRefTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = t1
         ddiff = DeepDiff(t1, t2)
-        res = ddiff.result_refs
+        res = ddiff.tree
         self.assertEqual(res, {})
 
     def test_item_added_extensive(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'new': 1337}
         ddiff = DeepDiff(t1, t2)
-        res = ddiff.result_refs
-        self.assertEqual(set(res.keys()), {'dictionary_item_added'})
+        res = ddiff.tree
+        (key,) = res.keys()
+        self.assertEqual(key, 'dictionary_item_added')
         self.assertEqual(len(res['dictionary_item_added']), 1)
 
         (added1,) = res['dictionary_item_added']
@@ -50,8 +51,8 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(added1.up.down, added1)
         self.assertIsNone(added1.down)
         self.assertIsNone(added1.up.up)
-        self.assertEqual(added1.all_up(), added1.up)
-        self.assertEqual(added1.up.all_down(), added1)
+        self.assertEqual(added1.all_up, added1.up)
+        self.assertEqual(added1.up.all_down, added1)
         self.assertEqual(added1.report_type, 'dictionary_item_added')
 
         # assert DiffLevel chain points to the objects we entered
@@ -74,7 +75,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_item_added_and_removed(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 4, 'three': 3, 'five': 5, 'six': 6}
-        ddiff = DeepDiff(t1, t2, default_view='ref')
+        ddiff = DeepDiff(t1, t2, view='tree')
         self.assertEqual(set(ddiff.keys()),
                          {'dictionary_item_added', 'dictionary_item_removed', 'values_changed'})
         self.assertEqual(len(ddiff['dictionary_item_added']), 2)
@@ -83,7 +84,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_item_added_and_removed2(self):
         t1 = {2: 2, 4: 4}
         t2 = {2: "b", 5: 5}
-        ddiff = DeepDiff(t1, t2, default_view='ref')
+        ddiff = DeepDiff(t1, t2, view='tree')
         self.assertEqual(set(ddiff.keys()),
                          {'dictionary_item_added', 'dictionary_item_removed', 'type_changes'})
         self.assertEqual(len(ddiff['dictionary_item_added']), 1)
@@ -92,7 +93,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_non_subscriptable_iterable(self):
         t1 = (i for i in [42, 1337, 31337])
         t2 = (i for i in [42, 1337, ])
-        ddiff = DeepDiff(t1, t2, default_view='ref')
+        ddiff = DeepDiff(t1, t2, view='tree')
         (change, ) = ddiff['iterable_item_removed']
 
         self.assertEqual(set(ddiff.keys()), {'iterable_item_removed'})
@@ -110,7 +111,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_non_subscriptable_iterable_path(self):
         t1 = (i for i in [42, 1337, 31337])
         t2 = (i for i in [42, 1337, ])
-        ddiff = DeepDiff(t1, t2, default_view='ref')
+        ddiff = DeepDiff(t1, t2, view='tree')
         (change, ) = ddiff['iterable_item_removed']
 
         # testing path

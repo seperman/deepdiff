@@ -1,6 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+To run only the search tests:
+    python -m unittest tests.test_diff_ref
+
+Or to run all the tests:
+    python -m unittest discover
+
+Or to run all the tests with coverage:
+    coverage run --source deepdiff setup.py test
+
+Or using Nose:
+    nosetests --with-coverage --cover-package=deepdiff
+
+To run a specific test, run this from the root of repo:
+    python -m unittest tests.test_model.DiffLevelTestCase.test_path_when_both_children_empty
+"""
+
 from unittest import TestCase
 import logging
 from tests import CustomClass, CustomClassMisleadingRepr
@@ -97,10 +114,10 @@ class DiffLevelTestCase(TestCase):
         self.intermediate.up = self.highest
 
     def test_all_up(self):
-        self.assertEqual(self.lowest.all_up(), self.highest)
+        self.assertEqual(self.lowest.all_up, self.highest)
 
     def test_all_down(self):
-        self.assertEqual(self.highest.all_down(), self.lowest)
+        self.assertEqual(self.highest.all_down, self.lowest)
 
     def test_automatic_child_rel(self):
         self.assertIsInstance(self.highest.t1_child_rel, DictRelationship)
@@ -123,13 +140,13 @@ class DiffLevelTestCase(TestCase):
         This is a situation that should never happen.
         But we are creating it artificially.
         """
-        t1 = {}
-        t2 = {}
+        t1 = {1: 1}
+        t2 = {1: 2}
         child_t1 = {}
         child_t2 = {}
         up = DiffLevel(t1, t2)
-        up.down = DiffLevel(child_t1, child_t2)
-        path = up.down.path()
+        down = up.down = DiffLevel(child_t1, child_t2)
+        path = down.path()
         self.assertEqual(path, 'root')
 
     def test_repr_short(self):

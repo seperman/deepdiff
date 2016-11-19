@@ -19,7 +19,7 @@ from collections import MutableMapping
 from collections import Iterable
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
-from deepdiff.model import RemapDict, ResultDict, TextStyleResultDict, RefStyleResultDict, DiffLevel
+from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
@@ -307,12 +307,12 @@ class DeepDiff(ResultDict):
 
     def __init__(self, t1, t2,
                  ignore_order=False, report_repetition=False, significant_digits=None,
-                 exclude_paths=set(), exclude_types=set(), verbose_level=1, default_view='text',
+                 exclude_paths=set(), exclude_types=set(), verbose_level=1, view='text',
                  **kwargs):
         if kwargs:
             raise ValueError(("The following parameter(s) are not valid: %s\n"
                               "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                              "exclude_paths, exclude_types, verbose_level and default_view.") % ', '.join(kwargs.keys()))
+                              "exclude_paths, exclude_types, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
@@ -325,19 +325,20 @@ class DeepDiff(ResultDict):
             raise ValueError("significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
 
-        self.result_refs = RefStyleResultDict()
+        self.tree = TreeResult()
 
         Verbose.level = verbose_level
 
         root = DiffLevel(t1, t2)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
-        self.result_refs.cleanup()
+        self.tree.cleanup()
 
-        if default_view == 'ref':          # Allow one of our views to be accessible directly via this object
-            self.update(self.result_refs)
+        if view == 'tree':
+            self.update(self.tree)
+            del self.tree
         else:
-            result_text = TextStyleResultDict(ref_results=self.result_refs)
+            result_text = TextResult(tree_results=self.tree)
             result_text.cleanup()   # clean up text-style result dictionary
             self.update(result_text)  # be compatible to DeepDiff 2.x if user didn't specify otherwise
 
@@ -355,7 +356,7 @@ class DeepDiff(ResultDict):
         """
         if not self.__skip_this(level):
             level.report_type = report_type
-            self.result_refs[report_type].add(level)
+            self.tree[report_type].add(level)
 
     @staticmethod
     def __add_to_frozen_set(parents_ids, item_id):
