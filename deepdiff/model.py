@@ -353,28 +353,23 @@ class DiffLevel(object):
         level = self.all_up()  # start at the root
 
         # traverse all levels of this relationship
-        while True:
+        while level and level is not self:
             # get this level's relationship object
-            if level == self:  # don't descend from self (or the path returned will be too deep)
-                break
-            else:
-                next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a partial from
+            next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a partial from
 
+            # t1 and t2 both are empty
             if next_rel is None:
                 break
 
             # Build path for this level
-            append = next_rel.get_partial(force)
-            if append:
-                result += append
+            item = next_rel.get_partial(force)
+            if item:
+                result += item
             else:
                 return None  # it seems this path is not representable as a string
 
             # Prepare processing next level
-            if level.down is None:
-                break
-            else:
-                level = level.down
+            level = level.down
 
         self._path = result
         return result
