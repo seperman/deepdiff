@@ -200,11 +200,11 @@ class DiffLevel(object):
     The child_rel example:
 
     # dictionary_item_removed is a set so in order to get an item from it:
-    >>> difflevel = iter(ddiff['dictionary_item_removed']).next()
+    >>> (difflevel,) = ddiff['dictionary_item_removed'])
     >>> difflevel.up.t1_child_rel
     <DictRelationship id:456, parent:{2: 2, 4: 44}, child:44, param:4>
 
-    >>> difflevel = iter(ddiff['dictionary_item_added']).next()
+    >>> (difflevel,) = ddiff['dictionary_item_added'])
     >>> difflevel
     <DiffLevel id:4560126096, t1:None, t2:55>
 
@@ -274,8 +274,8 @@ class DiffLevel(object):
         # Another ChildRelationship object describing the relationship between t2 and it's child object.
         self.t2_child_rel = child_rel2
 
-        # Will cache result of .path() for performance
-        self._path = None
+        # Will cache result of .path() per 'force' as key for performance
+        self._path = {}
 
     def __repr__(self):
         if Verbose.level:
@@ -346,8 +346,8 @@ class DiffLevel(object):
                         This will pretend all iterables are subscriptable, for example.
         """
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
-        if self._path is not None:
-            return self._path
+        if force in self._path:
+            return self._path[force]
 
         result = root
         level = self.all_up()  # start at the root
@@ -366,12 +366,14 @@ class DiffLevel(object):
             if item:
                 result += item
             else:
-                return None  # it seems this path is not representable as a string
+                # it seems this path is not representable as a string
+                result = None
+                break
 
             # Prepare processing next level
             level = level.down
 
-        self._path = result
+        self._path[force] = result
         return result
 
     def create_deeper(self, new_t1, new_t2, child_relationship_class,

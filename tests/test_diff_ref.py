@@ -15,7 +15,7 @@ Or using Nose:
     nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
-    python -m unittest tests.tests_diff_ref.DeepDiffRefTestCase.test_same_objects
+    python -m unittest tests.test_diff_ref.DeepDiffRefTestCase.test_same_objects
 """
 import unittest
 from deepdiff import DeepDiff
@@ -90,23 +90,13 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(len(ddiff['dictionary_item_removed']), 1)
 
     def test_non_subscriptable_iterable(self):
-        def gen1():
-            yield 42
-            yield 1337
-            yield 31337
-
-        def gen2():
-            yield 42
-            yield 1337
-
-        t1 = gen1()
-        t2 = gen2()
+        t1 = (i for i in [42, 1337, 31337])
+        t2 = (i for i in [42, 1337, ])
         ddiff = DeepDiff(t1, t2, default_view='ref')
+        (change, ) = ddiff['iterable_item_removed']
 
         self.assertEqual(set(ddiff.keys()), {'iterable_item_removed'})
         self.assertEqual(len(ddiff['iterable_item_removed']), 1)
-
-        (change, ) = ddiff['iterable_item_removed']
 
         self.assertEqual(change.up.t1, t1)
         self.assertEqual(change.up.t2, t2)
@@ -116,3 +106,14 @@ class DeepDiffRefTestCase(unittest.TestCase):
 
         self.assertIsInstance(change.up.t1_child_rel, NonSubscriptableIterableRelationship)
         self.assertIsNone(change.up.t2_child_rel)
+
+    def test_non_subscriptable_iterable_path(self):
+        t1 = (i for i in [42, 1337, 31337])
+        t2 = (i for i in [42, 1337, ])
+        ddiff = DeepDiff(t1, t2, default_view='ref')
+        (change, ) = ddiff['iterable_item_removed']
+
+        # testing path
+        self.assertEqual(change.path(), None)
+        self.assertEqual(change.path(force='yes'), 'root(unrepresentable)')
+        self.assertEqual(change.path(force='fake'), 'root[2]')

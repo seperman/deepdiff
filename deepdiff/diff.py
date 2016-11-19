@@ -388,7 +388,7 @@ class DeepDiff(ResultDict):
         :rtype: bool
         """
         skip = False
-        if level.path() in self.exclude_paths:
+        if self.exclude_paths and level.path() in self.exclude_paths:
             skip = True
         else:
             if isinstance(level.t1, self.exclude_types_tuple) or isinstance(level.t2, self.exclude_types_tuple):

@@ -118,6 +118,20 @@ class DiffLevelTestCase(TestCase):
         # Provides textual path all the way through
         self.assertEqual(self.lowest.path("self.t1"), "self.t1[1337].a")
 
+    def test_path_when_both_children_empty(self):
+        """
+        This is a situation that should never happen.
+        But we are creating it artificially.
+        """
+        t1 = {}
+        t2 = {}
+        child_t1 = {}
+        child_t2 = {}
+        up = DiffLevel(t1, t2)
+        up.down = DiffLevel(child_t1, child_t2)
+        path = up.down.path()
+        self.assertEqual(path, 'root')
+
     def test_repr_short(self):
         level = Verbose.level
         Verbose.level = 0
@@ -149,17 +163,3 @@ class ChildRelationshipTestCase(TestCase):
         rel_repr = repr(rel)
         expected = "<WorkingChildRelationship parent:'that parent...', child:'this child', param:'some param'>"
         self.assertEqual(rel_repr, expected)
-
-    def test_path_when_both_children_empty(self):
-        """
-        This is a situation that should never happen.
-        But we are creating it artificially.
-        """
-        t1 = {}
-        t2 = {}
-        child_t1 = {}
-        child_t2 = {}
-        up = DiffLevel(t1, t2)
-        up.down = DiffLevel(child_t1, child_t2)
-        path = up.down.path()
-        self.assertEqual(path, 'root')
