@@ -535,13 +535,6 @@ class ChildRelationship(object):
         """
         return string
 
-    @staticmethod
-    def __param_unparsable(param, force=None):
-        if force == 'yes':
-            return '(unrepresentable)'
-        else:
-            return None
-
 
 class DictRelationship(ChildRelationship):
     def format_partial(self, partial):
@@ -557,14 +550,8 @@ class SubscriptableIterableRelationship(DictRelationship):
 
 
 class InaccessibleRelationship(ChildRelationship):
-    def format_partial(self, partial):
+    def format_partial(self, partial):  # pragma: no cover
         return None
-
-    def get_partial(self, force=None):
-        if force == 'yes':
-            return "(unrepresentable)"
-        else:
-            return None
 
 
 # there is no random access to set elements
@@ -580,8 +567,6 @@ class NonSubscriptableIterableRelationship(InaccessibleRelationship):
             stringified = self._param_to_partial()
             if stringified:
                 return "[%s]" % stringified
-        elif force == 'fake':
-            return "[(unrepresentable)]"
         else:
             return None
 
