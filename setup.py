@@ -24,6 +24,7 @@ setup(name='deepdiff',
       zip_safe=False,
       test_suite="tests",
       long_description=long_description,
+      tests_require=['numpy==1.11.2'],
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
