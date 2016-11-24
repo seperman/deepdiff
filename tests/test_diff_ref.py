@@ -18,6 +18,7 @@ To run a specific test, run this from the root of repo:
     python -m unittest tests.test_diff_ref.DeepDiffRefTestCase.test_same_objects
 """
 import unittest
+import platform
 from deepdiff import DeepDiff
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
@@ -147,6 +148,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
         ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits = 1, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+@unittest.skipIf(platform.python_implementation() == "PyPy", "Numpy is not the same under PyPy")
 class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
 
     """DeepDiff Tests."""
