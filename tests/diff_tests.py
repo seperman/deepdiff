@@ -158,6 +158,12 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+    def test_dictionary_difference_ignore_order(self):
+        t1 = {"a": [[{"b": 2, "c": 4}, {"b": 2, "c": 3}]]}
+        t2 = {"a": [[{"b": 2, "c": 3}, {"b": 2, "c": 4}]]}
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
     def test_nested_list_ignore_order(self):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3, 3], 2, 1]

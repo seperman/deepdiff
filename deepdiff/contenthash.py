@@ -121,6 +121,7 @@ class DeepHash(dict):
     def __get_and_set_hash(self, obj):
         obj_id = id(obj)
         result = self.hasher(obj)
+        result = "str:{}".format(result)
         self[obj_id] = result
         return result
 
@@ -202,7 +203,7 @@ class DeepHash(dict):
         return result
 
     def __hash_str(self, obj):
-        return "str:{}".format(self.__get_and_set_hash(obj))
+        return self.__get_and_set_hash(obj)
 
     def __hash_tuple(self, obj, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
