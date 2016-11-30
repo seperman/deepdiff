@@ -3,7 +3,7 @@
 
 """
 To run only the search tests:
-    python -m unittest tests.hash_tests
+    python -m unittest tests.test_hash
 
 Or to run all the tests:
     python -m unittest discover
@@ -16,10 +16,10 @@ Or using Nose:
 
 To run a specific test, run this from the root of repo:
     On linux:
-    nosetests ./tests/hash_tests.py:DeepHashTestCase.test_bytecode
+    nosetests ./tests/test_hash.py:DeepHashTestCase.test_bytecode
 
     On windows:
-    nosetests .\tests\hash_tests.py:DeepHashTestCase.test_string_in_root
+    nosetests .\tests\test_hash.py:DeepHashTestCase.test_string_in_root
 """
 import unittest
 from deepdiff import DeepHash
@@ -45,12 +45,16 @@ class CustomClass:
         return self.__str__()
 
 
+def hash_and_format(obj):
+    return "str:{}".format(hash(obj))
+
+
 class DeepHashTestCase(unittest.TestCase):
     """DeepHash Tests."""
 
     def test_hash_str(self):
         obj = "a"
-        expected_result = {id(obj): hash(obj)}
+        expected_result = {id(obj): hash_and_format(obj)}
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
@@ -62,7 +66,7 @@ class DeepHashTestCase(unittest.TestCase):
         """
         obj1 = "a"
         id_obj1 = id(obj1)
-        expected_result = {id_obj1: hash(obj1)}
+        expected_result = {id_obj1: hash_and_format(obj1)}
         result = DeepHash(obj1)
         self.assertEqual(result, expected_result)
         obj2 = "b"
@@ -72,7 +76,7 @@ class DeepHashTestCase(unittest.TestCase):
     def test_list(self):
         string1 = "a"
         obj = [string1, 10, 20]
-        expected_result = {id(string1): hash(string1),
+        expected_result = {id(string1): hash_and_format(string1),
                            id(obj): 'list:int:10,int:20,str:%s' % hash(string1)}
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
@@ -80,7 +84,7 @@ class DeepHashTestCase(unittest.TestCase):
     def test_tuple(self):
         string1 = "a"
         obj = (string1, 10, 20)
-        expected_result = {id(string1): hash(string1),
+        expected_result = {id(string1): hash_and_format(string1),
                            id(obj): 'tuple:int:10,int:20,str:%s' % hash(string1)}
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
@@ -98,7 +102,7 @@ class DeepHashTestCase(unittest.TestCase):
         if py3 and hasattr(sys, "pypy_translation_info"):
             self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' % x_hash)
         else:
-            expected_result = {x_id: x_hash, id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
+            expected_result = {x_id: 'str:{}'.format(x_hash), id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
             self.assertEqual(result, expected_result)
 
     def test_dict(self):
@@ -107,8 +111,8 @@ class DeepHashTestCase(unittest.TestCase):
         key1 = "key1"
         hash_key1 = hash(key1)
         obj = {key1: string1, 1: 10, 2: 20}
-        expected_result = {id(key1): hash_key1,
-                           id(string1): hash_string1,
+        expected_result = {id(key1): "str:{}".format(hash_key1),
+                           id(string1): "str:{}".format(hash_string1),
                            id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (hash_key1, hash_string1)}
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
@@ -120,8 +124,8 @@ class DeepHashTestCase(unittest.TestCase):
         hash_key1 = hash(key1)
         dict1 = {key1: string1, 1: 10, 2: 20}
         obj = [0, dict1]
-        expected_result = {id(key1): hash_key1,
-                           id(string1): hash_string1,
+        expected_result = {id(key1): "str:{}".format(hash_key1),
+                           id(string1): "str:{}".format(hash_string1),
                            id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (hash_key1, hash_string1),
                            id(obj): 'list:dict:{int:1:int:10;int:2:int:20;str:%s:str:%s},int:0' % (hash_key1, hash_string1)}
         result = DeepHash(obj)
@@ -146,6 +150,14 @@ class DeepHashTestCase(unittest.TestCase):
     def test_nested_lists_same_hash3(self):
         t1 = [{1: [2, 3], 4: [5, [6, 7]]}]
         t2 = [{4: [[7, 6], 5], 1: [3, 2]}]
+        t1_hash = DeepHash(t1)
+        t2_hash = DeepHash(t2)
+
+        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+
+    def test_nested_lists_in_dictionary_same_hash(self):
+        t1 = [{"c": 4}, {"c": 3}]
+        t2 = [{"c": 3}, {"c": 4}]
         t1_hash = DeepHash(t1)
         t2_hash = DeepHash(t2)
 
@@ -230,7 +242,7 @@ class DeepHashTestCase(unittest.TestCase):
             return next(hashes)
 
         obj = "a"
-        expected_result = {id(obj): 0}
+        expected_result = {id(obj): "str:0"}
         result = DeepHash(obj, hasher=hasher)
         self.assertEqual(result, expected_result)
 
@@ -243,7 +255,7 @@ class DeepHashTestCase(unittest.TestCase):
         self.assertEqual(result2, expected_result)
 
         result3 = DeepHash(obj, hasher=hasher)
-        expected_result = {id(obj): 1}
+        expected_result = {id(obj): "str:{}".format(1)}
         self.assertEqual(result3, expected_result)
 
     def test_skip_type(self):
@@ -278,7 +290,7 @@ class DeepHashSHA1TestCase(unittest.TestCase):
 
     def test_hash_str(self):
         obj = "a"
-        expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        expected_result = {id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 
@@ -290,7 +302,7 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         """
         obj1 = "a"
         id_obj1 = id(obj1)
-        expected_result = {id_obj1: '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        expected_result = {id_obj1: 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj1, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
         obj2 = "b"
@@ -300,16 +312,16 @@ class DeepHashSHA1TestCase(unittest.TestCase):
     def test_bytecode(self):
         obj = b"a"
         if py3:
-            expected_result = {id(obj): '066c7cf4158717c47244fa6cf1caafca605d550b'}
+            expected_result = {id(obj): 'str:066c7cf4158717c47244fa6cf1caafca605d550b'}
         else:
-            expected_result = {id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+            expected_result = {id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 
     def test_list1(self):
         string1 = "a"
         obj = [string1, 10, 20]
-        expected_result = {id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
+        expected_result = {id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
                            id(obj): 'list:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -318,8 +330,8 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         string1 = "a"
         key1 = "key1"
         obj = {key1: string1, 1: 10, 2: 20}
-        expected_result = {id(key1): '63216212fdf88fe0c838c36ab65278b9953000d6',
-                           id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
+        expected_result = {id(key1): 'str:63216212fdf88fe0c838c36ab65278b9953000d6',
+                           id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
                            id(obj): 'dict:{int:1:int:10;int:2:int:20;str:63216212fdf88fe0c838c36ab65278b9953000d6:str:48591f1d794734cabf55f96f5a5a72c084f13ac0}'}
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
