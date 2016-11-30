@@ -36,6 +36,19 @@ class DeepDiffRefTestCase(unittest.TestCase):
         res = ddiff.tree
         self.assertEqual(res, {})
 
+    def test_significant_digits_signed_zero(self):
+        t1 = 0.00001
+        t2 = -0.0001
+        ddiff = DeepDiff(t1, t2, significant_digits = 2)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+        t1 = 1*10**-12
+        t2 = -1*10**-12
+        ddiff = DeepDiff(t1, t2, significant_digits=10)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+
+        
     def test_item_added_extensive(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'new': 1337}
@@ -108,6 +121,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertIsInstance(change.up.t1_child_rel, NonSubscriptableIterableRelationship)
         self.assertIsNone(change.up.t2_child_rel)
 
+
     def test_non_subscriptable_iterable_path(self):
         t1 = (i for i in [42, 1337, 31337])
         t2 = (i for i in [42, 1337, ])
@@ -118,3 +132,40 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(change.path(), None)
         self.assertEqual(change.path(force='yes'), 'root(unrepresentable)')
         self.assertEqual(change.path(force='fake'), 'root[2]')
+
+    def test_significant_digits(self):
+        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits = 1)
+        self.assertEqual(ddiff, {})
+
+    @unittest.expectedFailure    
+    def test_significant_digits_with_sets(self):
+        ddiff = DeepDiff(set([0.012, 0.98]), set([0.013, 0.99]), significant_digits = 1)
+        self.assertEqual(ddiff, {})
+
+    @unittest.expectedFailure
+    def test_significant_digits_with_ignore_order(self):
+        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits = 1, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
+class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
+
+    """DeepDiff Tests."""
+    def setUp(self):
+        import numpy as np
+        a1 = np.array([1.23, 1.66, 1.98])
+        a2 = np.array([1.23, 1.66, 1.98])
+        self.d1 = { 'np': a1 }
+        self.d2 = { 'np': a2 }
+        
+    def test_diff_with_numpy(self):
+        ddiff = DeepDiff(self.d1, self.d2)
+        res = ddiff.tree
+        self.assertEqual(res, {})
+        
+    def test_diff_with_empty_seq(self):
+        a1 = {"empty":[]}
+        a2 = {"empty":[]}
+        ddiff = DeepDiff(a1, a2)
+        res = ddiff.tree
+        self.assertEqual(ddiff, {})
+

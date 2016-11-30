@@ -15,7 +15,7 @@ import logging
 
 from decimal import Decimal
 
-from collections import MutableMapping
+from collections import Mapping
 from collections import Iterable
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
@@ -640,7 +640,11 @@ class DeepDiff(ResultDict):
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
             t1_s = ("{:.%sf}" % self.significant_digits).format(level.t1)
             t2_s = ("{:.%sf}" % self.significant_digits).format(level.t2)
-            if t1_s != t2_s:
+            
+            # Special case for 0: "-0.00" should compare equal to "0.00"
+            if set(t1_s)<=set("-0.") and set(t2_s)<=set("-0."):
+                return
+            elif t1_s != t2_s:
                 self.__report_result('values_changed', level)
         else:
             if level.t1 != level.t2:
@@ -668,7 +672,7 @@ class DeepDiff(ResultDict):
         elif isinstance(level.t1, numbers):
             self.__diff_numbers(level)
 
-        elif isinstance(level.t1, MutableMapping):
+        elif isinstance(level.t1, Mapping):
             self.__diff_dict(level, parents_ids)
 
         elif isinstance(level.t1, tuple):
