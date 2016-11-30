@@ -7,11 +7,13 @@ python:
   - "3.5"
   - "pypy"
   - "pypy3"
+  - "pypy-5.3.1"
 
 sudo: false
 
 install:
   - pip install coveralls
+  - pip install numpy==1.11.2
 
 script: coverage run --source deepdiff setup.py test
 
