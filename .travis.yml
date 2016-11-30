@@ -13,7 +13,6 @@ sudo: false
 
 install:
   - pip install coveralls
-  - pip install numpy==1.11.2
 
 script: coverage run --source deepdiff setup.py test
 

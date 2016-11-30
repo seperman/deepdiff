@@ -15,11 +15,8 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepSearch
-from sys import version
 import logging
 logging.disable(logging.CRITICAL)
-
-py3 = version[0] == '3'
 
 item = "somewhere"
 

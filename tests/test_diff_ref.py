@@ -18,6 +18,7 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepDiff
+from deepdiff.helper import pypy3
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
 import logging
@@ -162,23 +163,25 @@ class DeepDiffRefTestCase(unittest.TestCase):
 
 
 class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
-    """DeepDiff Tests."""
+    """DeepDiff Tests with Numpy."""
 
     def setUp(self):
-        import numpy as np
-        a1 = np.array([1.23, 1.66, 1.98])
-        a2 = np.array([1.23, 1.66, 1.98])
-        self.d1 = {'np': a1}
-        self.d2 = {'np': a2}
+        if not pypy3:
+            import numpy as np
+            a1 = np.array([1.23, 1.66, 1.98])
+            a2 = np.array([1.23, 1.66, 1.98])
+            self.d1 = {'np': a1}
+            self.d2 = {'np': a2}
 
+    @unittest.skipIf(pypy3, "Numpy is not compatible with pypy3")
     def test_diff_with_numpy(self):
         ddiff = DeepDiff(self.d1, self.d2)
         res = ddiff.tree
         self.assertEqual(res, {})
 
+    @unittest.skipIf(pypy3, "Numpy is not compatible with pypy3")
     def test_diff_with_empty_seq(self):
         a1 = {"empty": []}
         a2 = {"empty": []}
         ddiff = DeepDiff(a1, a2)
-        res = ddiff.tree
         self.assertEqual(ddiff, {})

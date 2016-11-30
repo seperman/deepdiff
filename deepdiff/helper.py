@@ -15,6 +15,8 @@ py3 = py_major_version == '3'
 if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
     sys.exit('Python 2.6 is not supported.')
 
+pypy3 = py3 and hasattr(sys, "pypy_translation_info")
+
 if py3:  # pragma: no cover
     from builtins import int
     strings = (str, bytes)  # which are both basestring

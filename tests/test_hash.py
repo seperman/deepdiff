@@ -22,14 +22,11 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepHash
-import sys
-from sys import version
+from deepdiff.helper import py3, pypy3
 from collections import namedtuple
 import logging
 
 logging.disable(logging.CRITICAL)
-
-py3 = version[0] == '3'
 
 
 class CustomClass:
@@ -102,7 +99,7 @@ class DeepHashTestCase(unittest.TestCase):
         Point = namedtuple('Point', [x])
         obj = Point(x=11)
         result = DeepHash(obj)
-        if py3 and hasattr(sys, "pypy_translation_info"):
+        if pypy3:
             self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' %
                              x_hash)
         else:
