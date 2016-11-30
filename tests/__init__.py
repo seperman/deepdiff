@@ -16,6 +16,5 @@ class CustomClass(object):
 
 
 class CustomClassMisleadingRepr(CustomClass):
-
     def __str__(self):
         return "({}, {})".format(self.a, self.b)

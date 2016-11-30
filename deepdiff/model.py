@@ -24,25 +24,40 @@ class ResultDict(RemapDict):
 class TreeResult(ResultDict):
     def __init__(self):
         # TODO: centralize keys
-        self.update({"type_changes": set(),
-                     "dictionary_item_added": set(), "dictionary_item_removed": set(),
-                     "values_changed": set(), "unprocessed": set(),
-                     "iterable_item_added": set(), "iterable_item_removed": set(),
-                     "attribute_added": set(), "attribute_removed": set(),
-                     "set_item_removed": set(), "set_item_added": set(),
-                     "repetition_change": set()})
+        self.update({
+            "type_changes": set(),
+            "dictionary_item_added": set(),
+            "dictionary_item_removed": set(),
+            "values_changed": set(),
+            "unprocessed": set(),
+            "iterable_item_added": set(),
+            "iterable_item_removed": set(),
+            "attribute_added": set(),
+            "attribute_removed": set(),
+            "set_item_removed": set(),
+            "set_item_added": set(),
+            "repetition_change": set()
+        })
 
 
 class TextResult(ResultDict):
     def __init__(self, tree_results=None):
 
         # TODO: centralize keys
-        self.update({"type_changes": {}, "dictionary_item_added": self.__set_or_dict(),
-                     "dictionary_item_removed": self.__set_or_dict(),
-                     "values_changed": {}, "unprocessed": [], "iterable_item_added": {}, "iterable_item_removed": {},
-                     "attribute_added": self.__set_or_dict(), "attribute_removed": self.__set_or_dict(),
-                     "set_item_removed": set(),
-                     "set_item_added": set(), "repetition_change": {}})
+        self.update({
+            "type_changes": {},
+            "dictionary_item_added": self.__set_or_dict(),
+            "dictionary_item_removed": self.__set_or_dict(),
+            "values_changed": {},
+            "unprocessed": [],
+            "iterable_item_added": {},
+            "iterable_item_removed": {},
+            "attribute_added": self.__set_or_dict(),
+            "attribute_removed": self.__set_or_dict(),
+            "set_item_removed": set(),
+            "set_item_added": set(),
+            "repetition_change": {}
+        })
 
         if tree_results:
             self._from_tree_results(tree_results)
@@ -86,19 +101,23 @@ class TextResult(ResultDict):
                     report.add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(report, dict):
                     report[change.path(force=FORCE_DEFAULT)] = item
-                elif isinstance(report, list):    # pragma: no cover
+                elif isinstance(report, list):  # pragma: no cover
                     # we don't actually have any of those right now, but just in case
                     report.append(change.path(force=FORCE_DEFAULT))
                 else:  # pragma: no cover
                     # should never happen
-                    raise TypeError("Cannot handle {} report container type.".format(report))
+                    raise TypeError("Cannot handle {} report container type.".
+                                    format(report))
 
     def _from_tree_type_changes(self, tree):
         if 'type_changes' in tree:
             for change in tree['type_changes']:
-                remap_dict = RemapDict({'old_type': type(change.t1),
-                                        'new_type': type(change.t2)})
-                self['type_changes'][change.path(force=FORCE_DEFAULT)] = remap_dict
+                remap_dict = RemapDict({
+                    'old_type': type(change.t1),
+                    'new_type': type(change.t2)
+                })
+                self['type_changes'][change.path(
+                    force=FORCE_DEFAULT)] = remap_dict
                 if Verbose.level:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
@@ -106,19 +125,22 @@ class TextResult(ResultDict):
         if 'values_changed' in tree:
             for change in tree['values_changed']:
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
-                self['values_changed'][change.path(force=FORCE_DEFAULT)] = the_changed
+                self['values_changed'][change.path(
+                    force=FORCE_DEFAULT)] = the_changed
                 if 'diff' in change.additional:
                     the_changed.update({'diff': change.additional['diff']})
 
     def _from_tree_unprocessed(self, tree):
         if 'unprocessed' in tree:
             for change in tree['unprocessed']:
-                self['unprocessed'].append("%s: %s and %s" % (change.path(force=FORCE_DEFAULT), change.t1, change.t2))
+                self['unprocessed'].append("%s: %s and %s" % (change.path(
+                    force=FORCE_DEFAULT), change.t1, change.t2))
 
     def _from_tree_set_item_removed(self, tree):
         if 'set_item_removed' in tree:
             for change in tree['set_item_removed']:
-                path = change.up.path()  # we want't the set's path, the removed item is not directly accessible
+                path = change.up.path(
+                )  # we want't the set's path, the removed item is not directly accessible
                 item = change.t1
                 if isinstance(item, strings):
                     item = "'%s'" % item
@@ -128,7 +150,8 @@ class TextResult(ResultDict):
     def _from_tree_set_item_added(self, tree):
         if 'set_item_added' in tree:
             for change in tree['set_item_added']:
-                path = change.up.path()  # we want't the set's path, the added item is not directly accessible
+                path = change.up.path(
+                )  # we want't the set's path, the added item is not directly accessible
                 item = change.t2
                 if isinstance(item, strings):
                     item = "'%s'" % item
@@ -139,12 +162,12 @@ class TextResult(ResultDict):
         if 'repetition_change' in tree:
             for change in tree['repetition_change']:
                 path = change.path(force=FORCE_DEFAULT)
-                self['repetition_change'][path] = RemapDict(change.additional['rep'])
+                self['repetition_change'][path] = RemapDict(change.additional[
+                    'rep'])
                 self['repetition_change'][path]['value'] = change.t1
 
 
 class DiffLevel(object):
-
     """
     An object of this class represents a single object-tree-level in a reported change.
     A double-linked list of these object describes a single change on all of its levels.
@@ -223,8 +246,17 @@ class DiffLevel(object):
     <DictRelationship id:4560154384, parent:{2: 'b', 5: 55}, child:55, param:5>
 
     """
-    def __init__(self, t1, t2, down=None, up=None, report_type=None,
-                 child_rel1=None, child_rel2=None, additional=None, verbose_level=1):
+
+    def __init__(self,
+                 t1,
+                 t2,
+                 down=None,
+                 up=None,
+                 report_type=None,
+                 child_rel1=None,
+                 child_rel2=None,
+                 additional=None,
+                 verbose_level=1):
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -306,12 +338,11 @@ class DiffLevel(object):
                       e.g. the key in a dict
         """
         if self.down.t1 is not None:
-            self.t1_child_rel = ChildRelationship.create(klass=klass, parent=self.t1,
-                                                         child=self.down.t1, param=param)
+            self.t1_child_rel = ChildRelationship.create(
+                klass=klass, parent=self.t1, child=self.down.t1, param=param)
         if self.down.t2 is not None:
-            self.t2_child_rel = ChildRelationship.create(klass=klass, parent=self.t2,
-                                                         child=self.down.t2, param=param)
-
+            self.t2_child_rel = ChildRelationship.create(
+                klass=klass, parent=self.t2, child=self.down.t2, param=param)
 
     @property
     def all_up(self):
@@ -389,20 +420,31 @@ class DiffLevel(object):
         self._path[force] = result
         return result
 
-    def create_deeper(self, new_t1, new_t2, child_relationship_class,
-                      child_relationship_param=None, report_type=None):
+    def create_deeper(self,
+                      new_t1,
+                      new_t2,
+                      child_relationship_class,
+                      child_relationship_param=None,
+                      report_type=None):
         """
         Start a new comparison level and correctly link it to this one.
         :rtype: DiffLevel
         :return: New level
         """
         level = self.all_down
-        result = DiffLevel(new_t1, new_t2, down=None, up=level, report_type=report_type)
+        result = DiffLevel(
+            new_t1, new_t2, down=None, up=level, report_type=report_type)
         level.down = result
-        level.auto_generate_child_rel(klass=child_relationship_class, param=child_relationship_param)
+        level.auto_generate_child_rel(
+            klass=child_relationship_class, param=child_relationship_param)
         return result
 
-    def branch_deeper(self, new_t1, new_t2, child_relationship_class, child_relationship_param=None, report_type=None):
+    def branch_deeper(self,
+                      new_t1,
+                      new_t2,
+                      child_relationship_class,
+                      child_relationship_param=None,
+                      report_type=None):
         """
         Branch this comparison: Do not touch this comparison line, but create a new one with exactly the same content,
         just one level deeper.
@@ -410,7 +452,8 @@ class DiffLevel(object):
         :return: New level in new comparison line
         """
         branch = self.copy()
-        return branch.create_deeper(new_t1, new_t2, child_relationship_class, child_relationship_param, report_type)
+        return branch.create_deeper(new_t1, new_t2, child_relationship_class,
+                                    child_relationship_param, report_type)
 
     def copy(self):
         """
@@ -428,15 +471,17 @@ class DiffLevel(object):
                 result.down = copy(orig.down)
 
                 if orig.t1_child_rel is not None:
-                    result.t1_child_rel = ChildRelationship.create(klass=orig.t1_child_rel.__class__,
-                                                                   parent=result.t1,
-                                                                   child=result.down.t1,
-                                                                   param=orig.t1_child_rel.param)
+                    result.t1_child_rel = ChildRelationship.create(
+                        klass=orig.t1_child_rel.__class__,
+                        parent=result.t1,
+                        child=result.down.t1,
+                        param=orig.t1_child_rel.param)
                 if orig.t2_child_rel is not None:
-                    result.t2_child_rel = ChildRelationship.create(klass=orig.t2_child_rel.__class__,
-                                                                   parent=result.t2,
-                                                                   child=result.down.t2,
-                                                                   param=orig.t2_child_rel.param)
+                    result.t2_child_rel = ChildRelationship.create(
+                        klass=orig.t2_child_rel.__class__,
+                        parent=result.t2,
+                        child=result.down.t2,
+                        param=orig.t2_child_rel.param)
 
             # descend to next level
             orig = orig.down

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 To run only the search tests:
     python -m unittest tests.search_tests
@@ -38,7 +37,6 @@ class CustomClass:
 
 
 class DeepSearchTestCase(unittest.TestCase):
-
     """DeepSearch Tests."""
 
     def test_number_in_list(self):
@@ -79,7 +77,12 @@ class DeepSearchTestCase(unittest.TestCase):
 
     def test_string_in_list_verbose3(self):
         obj = ["long somewhere", "string", 0, "somewhere great!"]
-        result = {"matched_values": {'root[0]': 'long somewhere', 'root[3]': "somewhere great!"}}
+        result = {
+            "matched_values": {
+                'root[0]': 'long somewhere',
+                'root[3]': "somewhere great!"
+            }
+        }
         self.assertEqual(DeepSearch(obj, item, verbose_level=2), result)
 
     def test_int_in_dictionary(self):
@@ -91,20 +94,44 @@ class DeepSearchTestCase(unittest.TestCase):
 
     def test_string_in_dictionary(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-        result = {'matched_paths': {"root['somewhere']"}, 'matched_values': {"root['long']"}}
+        result = {
+            'matched_paths': {"root['somewhere']"},
+            'matched_values': {"root['long']"}
+        }
         ds = DeepSearch(obj, item, verbose_level=1)
         self.assertEqual(ds, result)
 
     def test_string_in_dictionary_verbose(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-        result = {'matched_paths': {"root['somewhere']": "around"}, 'matched_values': {"root['long']": "somewhere"}}
+        result = {
+            'matched_paths': {
+                "root['somewhere']": "around"
+            },
+            'matched_values': {
+                "root['long']": "somewhere"
+            }
+        }
         ds = DeepSearch(obj, item, verbose_level=2)
         self.assertEqual(ds, result)
 
     def test_string_in_dictionary_in_list_verbose(self):
-        obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
-        result = {'matched_paths': {"root[1]['somewhere']": "around"},
-                  'matched_values': {"root[1]['long']": "somewhere", "root[0]": "something somewhere"}}
+        obj = [
+            "something somewhere", {
+                "long": "somewhere",
+                "string": 2,
+                0: 0,
+                "somewhere": "around"
+            }
+        ]
+        result = {
+            'matched_paths': {
+                "root[1]['somewhere']": "around"
+            },
+            'matched_values': {
+                "root[1]['long']": "somewhere",
+                "root[0]": "something somewhere"
+            }
+        }
         ds = DeepSearch(obj, item, verbose_level=2)
         self.assertEqual(ds, result)
 
@@ -131,8 +158,14 @@ class DeepSearchTestCase(unittest.TestCase):
         Point = namedtuple('Point', ['x', 'somewhere_good'])
         obj = Point(x="my keys are somewhere", somewhere_good=22)
         ds = DeepSearch(obj, item, verbose_level=2)
-        result = {'matched_values': {'root.x': 'my keys are somewhere'},
-                  'matched_paths': {'root.somewhere_good': 22}}
+        result = {
+            'matched_values': {
+                'root.x': 'my keys are somewhere'
+            },
+            'matched_paths': {
+                'root.somewhere_good': 22
+            }
+        }
         self.assertEqual(ds, result)
 
     def test_string_in_set_verbose(self):
@@ -143,7 +176,6 @@ class DeepSearchTestCase(unittest.TestCase):
 
     def test_loop(self):
         class LoopTest(object):
-
             def __init__(self, a):
                 self.loop = self
                 self.a = a
@@ -163,7 +195,10 @@ class DeepSearchTestCase(unittest.TestCase):
         self.assertEqual(ds, result)
 
     def test_skip_path1(self):
-        obj = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy", "somewhere"]}
+        obj = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy", "somewhere"]
+        }
         ds = DeepSearch(obj, item, exclude_paths={"root['ingredients']"})
         self.assertEqual(ds, {})
 

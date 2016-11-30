@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 To run only the search tests:
     python -m unittest tests.test_hash
@@ -76,16 +75,20 @@ class DeepHashTestCase(unittest.TestCase):
     def test_list(self):
         string1 = "a"
         obj = [string1, 10, 20]
-        expected_result = {id(string1): hash_and_format(string1),
-                           id(obj): 'list:int:10,int:20,str:%s' % hash(string1)}
+        expected_result = {
+            id(string1): hash_and_format(string1),
+            id(obj): 'list:int:10,int:20,str:%s' % hash(string1)
+        }
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
     def test_tuple(self):
         string1 = "a"
         obj = (string1, 10, 20)
-        expected_result = {id(string1): hash_and_format(string1),
-                           id(obj): 'tuple:int:10,int:20,str:%s' % hash(string1)}
+        expected_result = {
+            id(string1): hash_and_format(string1),
+            id(obj): 'tuple:int:10,int:20,str:%s' % hash(string1)
+        }
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
@@ -100,9 +103,13 @@ class DeepHashTestCase(unittest.TestCase):
         obj = Point(x=11)
         result = DeepHash(obj)
         if py3 and hasattr(sys, "pypy_translation_info"):
-            self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' % x_hash)
+            self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' %
+                             x_hash)
         else:
-            expected_result = {x_id: 'str:{}'.format(x_hash), id(obj): 'ntdict:{str:%s:int:11}' % x_hash}
+            expected_result = {
+                x_id: 'str:{}'.format(x_hash),
+                id(obj): 'ntdict:{str:%s:int:11}' % x_hash
+            }
             self.assertEqual(result, expected_result)
 
     def test_dict(self):
@@ -111,9 +118,12 @@ class DeepHashTestCase(unittest.TestCase):
         key1 = "key1"
         hash_key1 = hash(key1)
         obj = {key1: string1, 1: 10, 2: 20}
-        expected_result = {id(key1): "str:{}".format(hash_key1),
-                           id(string1): "str:{}".format(hash_string1),
-                           id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (hash_key1, hash_string1)}
+        expected_result = {
+            id(key1): "str:{}".format(hash_key1),
+            id(string1): "str:{}".format(hash_string1),
+            id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' %
+            (hash_key1, hash_string1)
+        }
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
@@ -124,10 +134,15 @@ class DeepHashTestCase(unittest.TestCase):
         hash_key1 = hash(key1)
         dict1 = {key1: string1, 1: 10, 2: 20}
         obj = [0, dict1]
-        expected_result = {id(key1): "str:{}".format(hash_key1),
-                           id(string1): "str:{}".format(hash_string1),
-                           id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (hash_key1, hash_string1),
-                           id(obj): 'list:dict:{int:1:int:10;int:2:int:20;str:%s:str:%s},int:0' % (hash_key1, hash_string1)}
+        expected_result = {
+            id(key1): "str:{}".format(hash_key1),
+            id(string1): "str:{}".format(hash_string1),
+            id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' %
+            (hash_key1, hash_string1),
+            id(obj):
+            'list:dict:{int:1:int:10;int:2:int:20;str:%s:str:%s},int:0' %
+            (hash_key1, hash_string1)
+        }
         result = DeepHash(obj)
         self.assertEqual(result, expected_result)
 
@@ -233,7 +248,8 @@ class DeepHashTestCase(unittest.TestCase):
         self.assertNotEqual(hash_a[list1_id], hash_b[list2_id])
         self.assertNotEqual(hash_a[a_id], hash_b[b_id])
 
-        self.assertEqual(hash_a[list1_id].replace('3|1', '3|2'), hash_b[list2_id])
+        self.assertEqual(hash_a[list1_id].replace('3|1', '3|2'),
+                         hash_b[list2_id])
 
     def test_already_calculated_hash_wont_be_recalculated(self):
         hashes = (i for i in range(10))
@@ -290,7 +306,9 @@ class DeepHashSHA1TestCase(unittest.TestCase):
 
     def test_hash_str(self):
         obj = "a"
-        expected_result = {id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        expected_result = {
+            id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'
+        }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 
@@ -302,7 +320,9 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         """
         obj1 = "a"
         id_obj1 = id(obj1)
-        expected_result = {id_obj1: 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        expected_result = {
+            id_obj1: 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'
+        }
         result = DeepHash(obj1, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
         obj2 = "b"
@@ -312,17 +332,24 @@ class DeepHashSHA1TestCase(unittest.TestCase):
     def test_bytecode(self):
         obj = b"a"
         if py3:
-            expected_result = {id(obj): 'str:066c7cf4158717c47244fa6cf1caafca605d550b'}
+            expected_result = {
+                id(obj): 'str:066c7cf4158717c47244fa6cf1caafca605d550b'
+            }
         else:
-            expected_result = {id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+            expected_result = {
+                id(obj): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0'
+            }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 
     def test_list1(self):
         string1 = "a"
         obj = [string1, 10, 20]
-        expected_result = {id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
-                           id(obj): 'list:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'}
+        expected_result = {
+            id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
+            id(obj):
+            'list:int:10,int:20,str:48591f1d794734cabf55f96f5a5a72c084f13ac0'
+        }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
 
@@ -330,8 +357,11 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         string1 = "a"
         key1 = "key1"
         obj = {key1: string1, 1: 10, 2: 20}
-        expected_result = {id(key1): 'str:63216212fdf88fe0c838c36ab65278b9953000d6',
-                           id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
-                           id(obj): 'dict:{int:1:int:10;int:2:int:20;str:63216212fdf88fe0c838c36ab65278b9953000d6:str:48591f1d794734cabf55f96f5a5a72c084f13ac0}'}
+        expected_result = {
+            id(key1): 'str:63216212fdf88fe0c838c36ab65278b9953000d6',
+            id(string1): 'str:48591f1d794734cabf55f96f5a5a72c084f13ac0',
+            id(obj):
+            'dict:{int:1:int:10;int:2:int:20;str:63216212fdf88fe0c838c36ab65278b9953000d6:str:48591f1d794734cabf55f96f5a5a72c084f13ac0}'
+        }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)

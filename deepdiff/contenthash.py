@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class Skipped(object):
-
     def __repr__(self):
         return "Skipped"  # pragma: no cover
 
@@ -24,7 +23,6 @@ class Skipped(object):
 
 
 class Unprocessed(object):
-
     def __repr__(self):
         return "Error: Unprocessed"  # pragma: no cover
 
@@ -33,7 +31,6 @@ class Unprocessed(object):
 
 
 class NotHashed(object):
-
     def __repr__(self):
         return "Error: NotHashed"  # pragma: no cover
 
@@ -42,22 +39,28 @@ class NotHashed(object):
 
 
 class DeepHash(dict):
-
     r"""
     **DeepHash**
     """
 
     show_warning = True
 
-    def __init__(self, obj, hashes=None, exclude_types=set(),
-                 hasher=hash, ignore_repetition=True, **kwargs):
+    def __init__(self,
+                 obj,
+                 hashes=None,
+                 exclude_types=set(),
+                 hasher=hash,
+                 ignore_repetition=True,
+                 **kwargs):
         if kwargs:
-            raise ValueError(("The following parameter(s) are not valid: %s\n"
-                              "The valid parameters are obj, hashes, exclude_types."
-                              "hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
+            raise ValueError(
+                ("The following parameter(s) are not valid: %s\n"
+                 "The valid parameters are obj, hashes, exclude_types."
+                 "hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
         self.obj = obj
         self.exclude_types = set(exclude_types)
-        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
+        self.exclude_types_tuple = tuple(
+            exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
         self.hasher = hasher
@@ -118,7 +121,8 @@ class DeepHash(dict):
                 return self.unprocessed
 
         result = self.__hash_dict(obj, parents_ids)
-        result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
+        result = "nt{}".format(result) if is_namedtuple else "obj{}".format(
+            result)
         return result
 
     def __skip_this(self, obj):
@@ -172,7 +176,9 @@ class DeepHash(dict):
         if self.ignore_repetition:
             result = list(result.keys())
         else:
-            result = ['{}|{}'.format(i[0], i[1]) for i in getattr(result, items)()]
+            result = [
+                '{}|{}'.format(i[0], i[1]) for i in getattr(result, items)()
+            ]
 
         result.sort()
         result = ','.join(result)
@@ -229,7 +235,8 @@ class DeepHash(dict):
         else:
             result = self.__hash_obj(obj, parents_ids)
 
-        if result != self.not_hashed and obj_id not in self and not isinstance(obj, numbers):
+        if result != self.not_hashed and obj_id not in self and not isinstance(
+                obj, numbers):
             self[obj_id] = result
 
         if result is self.not_hashed:  # pragma: no cover
@@ -237,6 +244,7 @@ class DeepHash(dict):
             self['unprocessed'].append(obj)
 
         return result
+
 
 if __name__ == "__main__":  # pragma: no cover
     if not py3:

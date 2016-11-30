@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 To run only the search tests:
     python -m unittest tests.test_diff_text
@@ -29,7 +28,6 @@ logging.disable(logging.CRITICAL)
 
 
 class DeepDiffTextTestCase(unittest.TestCase):
-
     """DeepDiff Tests."""
 
     def test_same_objects(self):
@@ -41,30 +39,56 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: "2", 3: 3}
         ddiff = DeepDiff(t1, t2)
-        self.assertEqual(ddiff, {'type_changes': {"root[2]":
-                                                      {"old_value": 2, "old_type": int,
-                                                       "new_value": "2", "new_type": str}}})
+        self.assertEqual(ddiff, {
+            'type_changes': {
+                "root[2]": {
+                    "old_value": 2,
+                    "old_type": int,
+                    "new_value": "2",
+                    "new_type": str
+                }
+            }
+        })
 
     def test_item_type_change_less_verbose(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: "2", 3: 3}
-        self.assertEqual(DeepDiff(t1, t2, verbose_level=0), {'type_changes': {"root[2]":
-                                                             {"old_type": int,
-                                                              "new_type": str}}})
+        self.assertEqual(
+            DeepDiff(
+                t1, t2, verbose_level=0),
+            {'type_changes': {
+                "root[2]": {
+                    "old_type": int,
+                    "new_type": str
+                }
+            }})
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: 4, 3: 3}
         result = {
-            'values_changed': {'root[2]': {"old_value": 2, "new_value": 4}}}
+            'values_changed': {
+                'root[2]': {
+                    "old_value": 2,
+                    "new_value": 4
+                }
+            }
+        }
         self.assertEqual(DeepDiff(t1, t2), result)
 
     def test_item_added_and_removed(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: 4}
         t2 = {1: 1, 2: 4, 3: 3, 5: 5, 6: 6}
         ddiff = DeepDiff(t1, t2)
-        result = {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {
-            'root[4]'}, 'values_changed': {'root[2]': {"old_value": 2, "new_value": 4}}
+        result = {
+            'dictionary_item_added': {'root[5]', 'root[6]'},
+            'dictionary_item_removed': {'root[4]'},
+            'values_changed': {
+                'root[2]': {
+                    "old_value": 2,
+                    "new_value": 4
+                }
+            }
         }
         self.assertEqual(ddiff, result)
 
@@ -72,23 +96,47 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = {1: 1, 3: 3, 4: 4}
         t2 = {1: 1, 3: 3, 5: 5, 6: 6}
         ddiff = DeepDiff(t1, t2, verbose_level=2)
-        result = {'dictionary_item_removed': {'root[4]': 4},
-                  'dictionary_item_added': {'root[6]': 6, 'root[5]': 5}}
+        result = {
+            'dictionary_item_removed': {
+                'root[4]': 4
+            },
+            'dictionary_item_added': {
+                'root[6]': 6,
+                'root[5]': 5
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_diffs_dates(self):
         t1 = datetime.date(2016, 8, 8)
         t2 = datetime.date(2016, 8, 7)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root': {'new_value': t2, 'old_value': t1}}}
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_string_difference(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world"}}
         t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": "world!"}}
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root[2]': {'old_value': 2, 'new_value': 4},
-                                     "root[4]['b']": {'old_value': 'world', 'new_value': 'world!'}}}
+        result = {
+            'values_changed': {
+                'root[2]': {
+                    'old_value': 2,
+                    'new_value': 4
+                },
+                "root[4]['b']": {
+                    'old_value': 'world',
+                    'new_value': 'world!'
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_diffs_equal_strings_when_not_identical(self):
@@ -100,32 +148,63 @@ class DeepDiffTextTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
 
     def test_string_difference2(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {
-            "a": "hello", "b": "world!\nGoodbye!\n1\n2\nEnd"}}
+        t1 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": "hello",
+                "b": "world!\nGoodbye!\n1\n2\nEnd"
+            }
+        }
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n1\n2\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {"root[4]['b']": {
-            'diff': '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
-            'new_value': 'world\n1\n2\nEnd', 'old_value': 'world!\nGoodbye!\n1\n2\nEnd'}}}
+        result = {
+            'values_changed': {
+                "root[4]['b']": {
+                    'diff':
+                    '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
+                    'new_value': 'world\n1\n2\nEnd',
+                    'old_value': 'world!\nGoodbye!\n1\n2\nEnd'
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_type_change(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        result = {'type_changes': {"root[4]['b']": {'old_type': list,
-                                                    'new_value': 'world\n\n\nEnd',
-                                                    'old_value': [1, 2, 3],
-                                                    'new_type': str}}}
+        result = {
+            'type_changes': {
+                "root[4]['b']": {
+                    'old_type': list,
+                    'new_value': 'world\n\n\nEnd',
+                    'old_value': [1, 2, 3],
+                    'new_type': str
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_difference(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {
-            "a": "hello", "b": [1, 2, 'to_be_removed', 'to_be_removed2']}}
+        t1 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": "hello",
+                "b": [1, 2, 'to_be_removed', 'to_be_removed2']
+            }
+        }
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'iterable_item_removed': {
-            "root[4]['b'][2]": "to_be_removed", "root[4]['b'][3]": 'to_be_removed2'}}
+        result = {
+            'iterable_item_removed': {
+                "root[4]['b'][2]": "to_be_removed",
+                "root[4]['b'][3]": 'to_be_removed2'
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_difference_add(self):
@@ -138,9 +217,22 @@ class DeepDiffTextTestCase(unittest.TestCase):
     def test_list_difference2(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3, 10, 12]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2]}}
-        result = {'values_changed': {"root[4]['b'][2]": {'new_value': 2, 'old_value': 3},
-                                     "root[4]['b'][1]": {'new_value': 3, 'old_value': 2}},
-                  'iterable_item_removed': {"root[4]['b'][3]": 10, "root[4]['b'][4]": 12}}
+        result = {
+            'values_changed': {
+                "root[4]['b'][2]": {
+                    'new_value': 2,
+                    'old_value': 3
+                },
+                "root[4]['b'][1]": {
+                    'new_value': 3,
+                    'old_value': 2
+                }
+            },
+            'iterable_item_removed': {
+                "root[4]['b'][3]": 10,
+                "root[4]['b'][4]": 12
+            }
+        }
         ddiff = DeepDiff(t1, t2)
         self.assertEqual(ddiff, result)
 
@@ -148,8 +240,21 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 5]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2, 5]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {"root[4]['b'][2]": {'new_value': 2, 'old_value': 5}, "root[4]['b'][1]": {
-            'new_value': 3, 'old_value': 2}}, 'iterable_item_added': {"root[4]['b'][3]": 5}}
+        result = {
+            'values_changed': {
+                "root[4]['b'][2]": {
+                    'new_value': 2,
+                    'old_value': 5
+                },
+                "root[4]['b'][1]": {
+                    'new_value': 3,
+                    'old_value': 2
+                }
+            },
+            'iterable_item_added': {
+                "root[4]['b'][3]": 5
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_difference_ignore_order(self):
@@ -189,17 +294,27 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = [1, 3, 1, 4]
         t2 = [4, 4, 1]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {'iterable_item_removed': {'root[1]': 3},
-                  'repetition_change': {'root[0]': {'old_repeat': 2,
-                                                    'old_indexes': [0, 2],
-                                                    'new_indexes': [2],
-                                                    'value': 1,
-                                                    'new_repeat': 1},
-                                        'root[3]': {'old_repeat': 1,
-                                                    'old_indexes': [3],
-                                                    'new_indexes': [0, 1],
-                                                    'value': 4,
-                                                    'new_repeat': 2}}}
+        result = {
+            'iterable_item_removed': {
+                'root[1]': 3
+            },
+            'repetition_change': {
+                'root[0]': {
+                    'old_repeat': 2,
+                    'old_indexes': [0, 2],
+                    'new_indexes': [2],
+                    'value': 1,
+                    'new_repeat': 1
+                },
+                'root[3]': {
+                    'old_repeat': 1,
+                    'old_indexes': [3],
+                    'new_indexes': [0, 1],
+                    'value': 4,
+                    'new_repeat': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     # TODO: fix repeition report
@@ -207,10 +322,17 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3, 3], 2, 1]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {'repetition_change': {
-            'root[2][0]': {'old_repeat': 1, 'new_indexes': [1, 2],
-                           'old_indexes': [1],
-                           'value': 3, 'new_repeat': 2}}}
+        result = {
+            'repetition_change': {
+                'root[2][0]': {
+                    'old_repeat': 1,
+                    'new_indexes': [1, 2],
+                    'old_indexes': [1],
+                    'value': 3,
+                    'new_repeat': 2
+                }
+            }
+        }
         self.assertNotEqual(ddiff, result)
 
     def test_list_of_unhashable_difference_ignore_order(self):
@@ -223,25 +345,61 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = [1, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
         t2 = [{"b": [3, 4, {1: 1}]}, {"a": 2}, {1: 1}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[2]': {1: 1}},
-                  'iterable_item_removed': {'root[3]': 'B', 'root[0]': 1}}
+        result = {
+            'iterable_item_added': {
+                'root[2]': {
+                    1: 1
+                }
+            },
+            'iterable_item_removed': {
+                'root[3]': 'B',
+                'root[0]': 1
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_of_unhashable_difference_ignore_order3(self):
         t1 = [1, {"a": 2}, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
         t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[1]': {1: 1}},
-                  'iterable_item_removed': {'root[4]': 'B', 'root[0]': 1, 'root[1]': {'a': 2}}}
+        result = {
+            'iterable_item_added': {
+                'root[1]': {
+                    1: 1
+                }
+            },
+            'iterable_item_removed': {
+                'root[4]': 'B',
+                'root[0]': 1,
+                'root[1]': {
+                    'a': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
-    def test_list_of_unhashable_difference_ignore_order_report_repetition(self):
+    def test_list_of_unhashable_difference_ignore_order_report_repetition(
+            self):
         t1 = [1, {"a": 2}, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
         t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {'iterable_item_added': {'root[1]': {1: 1}},
-                  'iterable_item_removed': {'root[4]': 'B', 'root[0]': 1, 'root[1]': {'a': 2},
-                                            'root[2]': {'a': 2}}}
+        result = {
+            'iterable_item_added': {
+                'root[1]': {
+                    1: 1
+                }
+            },
+            'iterable_item_removed': {
+                'root[4]': 'B',
+                'root[0]': 1,
+                'root[1]': {
+                    'a': 2
+                },
+                'root[2]': {
+                    'a': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_of_unhashable_difference_ignore_order4(self):
@@ -251,13 +409,24 @@ class DeepDiffTextTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ddiff, result)
 
-    def test_list_of_unhashable_difference_ignore_order_report_repetition2(self):
+    def test_list_of_unhashable_difference_ignore_order_report_repetition2(
+            self):
         t1 = [{"a": 2}, {"a": 2}]
         t2 = [{"a": 2}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {'repetition_change': {
-            'root[0]': {'old_repeat': 2, 'new_indexes': [0], 'old_indexes': [0, 1],
-                        'value': {'a': 2}, 'new_repeat': 1}}}
+        result = {
+            'repetition_change': {
+                'root[0]': {
+                    'old_repeat': 2,
+                    'new_indexes': [0],
+                    'old_indexes': [0, 1],
+                    'value': {
+                        'a': 2
+                    },
+                    'new_repeat': 1
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_list_of_sets_difference_ignore_order(self):
@@ -267,14 +436,16 @@ class DeepDiffTextTestCase(unittest.TestCase):
         result = {'iterable_item_added': {'root[0]': {4}}}
         self.assertEqual(ddiff, result)
 
-    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate(self):
+    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate(
+            self):
         t1 = [{1}, {2}, {3}]
         t2 = [{4}, {1}, {2}, {3}, {3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         result = {'iterable_item_added': {'root[0]': {4}}}
         self.assertEqual(ddiff, result)
 
-    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate_and_mix_of_hashable_unhashable(self):
+    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate_and_mix_of_hashable_unhashable(
+            self):
         t1 = [1, 1, {2}, {3}]
         t2 = [{4}, 1, {2}, {3}, {3}, 1, 1]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
@@ -285,27 +456,36 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 3}]}}
         ddiff = DeepDiff(t1, t2)
-        result = {'dictionary_item_removed': {"root[4]['b'][2][2]"},
-                  'values_changed': {"root[4]['b'][2][1]": {'old_value': 1, 'new_value': 3}}}
+        result = {
+            'dictionary_item_removed': {"root[4]['b'][2][2]"},
+            'values_changed': {
+                "root[4]['b'][2][1]": {
+                    'old_value': 1,
+                    'new_value': 3
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_dictionary_of_list_of_dictionary_ignore_order(self):
         t1 = {
-            'item': [
-                {'title': 1,
-                    'http://purl.org/rss/1.0/modules/content/:encoded': '1'},
-                {'title': 2,
-                    'http://purl.org/rss/1.0/modules/content/:encoded': '2'}
-            ]
+            'item': [{
+                'title': 1,
+                'http://purl.org/rss/1.0/modules/content/:encoded': '1'
+            }, {
+                'title': 2,
+                'http://purl.org/rss/1.0/modules/content/:encoded': '2'
+            }]
         }
 
         t2 = {
-            'item': [
-                {'http://purl.org/rss/1.0/modules/content/:encoded':
-                    '1', 'title': 1},
-                {'http://purl.org/rss/1.0/modules/content/:encoded':
-                    '2', 'title': 2}
-            ]
+            'item': [{
+                'http://purl.org/rss/1.0/modules/content/:encoded': '1',
+                'title': 1
+            }, {
+                'http://purl.org/rss/1.0/modules/content/:encoded': '2',
+                'title': 2
+            }]
         }
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
@@ -400,8 +580,20 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        self.assertEqual(ddiff, {'iterable_item_removed': {"root['key2'][1]": {
-                         'key5': 'val5', 'key6': 'val6'}}, 'iterable_item_added': {"root['key2'][0]": {'key5': 'CHANGE', 'key6': 'val6'}}})
+        self.assertEqual(ddiff, {
+            'iterable_item_removed': {
+                "root['key2'][1]": {
+                    'key5': 'val5',
+                    'key6': 'val6'
+                }
+            },
+            'iterable_item_added': {
+                "root['key2'][0]": {
+                    'key5': 'CHANGE',
+                    'key6': 'val6'
+                }
+            }
+        })
 
     def test_set_ignore_order_report_repetition(self):
         """
@@ -413,7 +605,9 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = {1, 2, 3, 5}
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
         result = {
-            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
+            'set_item_added': {'root[3]', 'root[5]'},
+            'set_item_removed': {'root[8]'}
+        }
         self.assertEqual(ddiff, result)
 
     def test_set(self):
@@ -421,7 +615,9 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = {1, 2, 3, 5}
         ddiff = DeepDiff(t1, t2)
         result = {
-            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {'root[8]'}}
+            'set_item_added': {'root[3]', 'root[5]'},
+            'set_item_removed': {'root[8]'}
+        }
         self.assertEqual(ddiff, result)
 
     def test_set_strings(self):
@@ -436,15 +632,26 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = frozenset([1, 2, 3, 5])
         ddiff = DeepDiff(t1, t2)
         result = {
-            'set_item_added': {'root[3]', 'root[5]'}, 'set_item_removed': {"root['B']"}}
+            'set_item_added': {'root[3]', 'root[5]'},
+            'set_item_removed': {"root['B']"}
+        }
         self.assertEqual(ddiff, result)
 
     def test_tuple(self):
         t1 = (1, 2, 8)
         t2 = (1, 2, 3, 5)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root[2]': {'old_value': 8, 'new_value': 3}},
-                  'iterable_item_added': {'root[3]': 5}}
+        result = {
+            'values_changed': {
+                'root[2]': {
+                    'old_value': 8,
+                    'new_value': 3
+                }
+            },
+            'iterable_item_added': {
+                'root[3]': 5
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_named_tuples(self):
@@ -454,14 +661,27 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = Point(x=11, y=23)
         ddiff = DeepDiff(t1, t2)
         result = {
-            'values_changed': {'root.y': {'old_value': 22, 'new_value': 23}}}
+            'values_changed': {
+                'root.y': {
+                    'old_value': 22,
+                    'new_value': 23
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_change(self):
         t1 = CustomClass(1)
         t2 = CustomClass(2)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.a': {'old_value': 1, 'new_value': 2}}}
+        result = {
+            'values_changed': {
+                'root.a': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_slot_change(self):
@@ -475,7 +695,14 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = ClassA(1, 1)
         t2 = ClassA(1, 2)
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.y': {'old_value': 1, 'new_value': 2}}}
+        result = {
+            'values_changed': {
+                'root.y': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def get_custom_objects_add_and_remove(self):
@@ -495,21 +722,39 @@ class DeepDiffTextTestCase(unittest.TestCase):
     def test_custom_objects_add_and_remove(self):
         t1, t2 = self.get_custom_objects_add_and_remove()
         ddiff = DeepDiff(t1, t2)
-        result = {'attribute_added': {'root.c'}, 'values_changed': {
-            'root.b': {'new_value': 2, 'old_value': 1}}, 'attribute_removed': {'root.d'}}
+        result = {
+            'attribute_added': {'root.c'},
+            'values_changed': {
+                'root.b': {
+                    'new_value': 2,
+                    'old_value': 1
+                }
+            },
+            'attribute_removed': {'root.d'}
+        }
         self.assertEqual(ddiff, result)
 
     def test_custom_objects_add_and_remove_verbose(self):
         t1, t2 = self.get_custom_objects_add_and_remove()
         ddiff = DeepDiff(t1, t2, verbose_level=2)
-        result = {'attribute_added': {'root.c': 'new attribute'},
-                  'attribute_removed': {'root.d': 10},
-                  'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
+        result = {
+            'attribute_added': {
+                'root.c': 'new attribute'
+            },
+            'attribute_removed': {
+                'root.d': 10
+            },
+            'values_changed': {
+                'root.b': {
+                    'new_value': 2,
+                    'old_value': 1
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def get_custom_object_with_added_removed_methods(self):
         class ClassA(object):
-
             def method_a(self):
                 pass
 
@@ -562,7 +807,6 @@ class DeepDiffTextTestCase(unittest.TestCase):
 
     def test_loop(self):
         class LoopTest(object):
-
             def __init__(self, a):
                 self.loop = self
                 self.a = a
@@ -571,18 +815,23 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = LoopTest(2)
 
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.a': {'old_value': 1, 'new_value': 2}}}
+        result = {
+            'values_changed': {
+                'root.a': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_loop2(self):
         class LoopTestA(object):
-
             def __init__(self, a):
                 self.loop = LoopTestB
                 self.a = a
 
         class LoopTestB(object):
-
             def __init__(self, a):
                 self.loop = LoopTestA
                 self.a = a
@@ -591,12 +840,18 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = LoopTestA(2)
 
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.a': {'old_value': 1, 'new_value': 2}}}
+        result = {
+            'values_changed': {
+                'root.a': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_loop3(self):
         class LoopTest(object):
-
             def __init__(self, a):
                 self.loop = LoopTest
                 self.a = a
@@ -605,7 +860,14 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t2 = LoopTest(2)
 
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root.a': {'old_value': 1, 'new_value': 2}}}
+        result = {
+            'values_changed': {
+                'root.a': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_loop_in_lists(self):
@@ -617,7 +879,13 @@ class DeepDiffTextTestCase(unittest.TestCase):
 
         ddiff = DeepDiff(t1, t2)
         result = {
-            'values_changed': {'root[2]': {'new_value': 4, 'old_value': 3}}}
+            'values_changed': {
+                'root[2]': {
+                    'new_value': 4,
+                    'old_value': 3
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_loop_in_lists2(self):
@@ -628,15 +896,27 @@ class DeepDiffTextTestCase(unittest.TestCase):
 
         ddiff = DeepDiff(t1, t2)
         result = {
-            'values_changed': {'root[2][0]': {'old_value': 3, 'new_value': 4}}}
+            'values_changed': {
+                'root[2][0]': {
+                    'old_value': 3,
+                    'new_value': 4
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_decimal(self):
         t1 = {1: Decimal('10.1')}
         t2 = {1: Decimal('2.2')}
         ddiff = DeepDiff(t1, t2)
-        result = {'values_changed': {'root[1]': {'new_value': Decimal('2.2'),
-                                                 'old_value': Decimal('10.1')}}}
+        result = {
+            'values_changed': {
+                'root[1]': {
+                    'new_value': Decimal('2.2'),
+                    'old_value': Decimal('10.1')
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
 
     def test_decimal_ignore_order(self):
@@ -655,11 +935,16 @@ class DeepDiffTextTestCase(unittest.TestCase):
             result = {}
         else:
             # In python2, these are 2 different type of strings
-            result = {'type_changes': {"root['hello']": {
-                      'old_type': unicode,
-                      'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd',
-                      'old_value': u'\u4f60\u597d',
-                      'new_type': str}}}
+            result = {
+                'type_changes': {
+                    "root['hello']": {
+                        'old_type': unicode,
+                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd',
+                        'old_value': u'\u4f60\u597d',
+                        'new_type': str
+                    }
+                }
+            }
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_value_changes(self):
@@ -668,10 +953,22 @@ class DeepDiffTextTestCase(unittest.TestCase):
         ddiff = DeepDiff(unicode_string, ascii_string)
         if py3:
             result = {
-                'values_changed': {"root['hello']": {'old_value': '你好', 'new_value': '你好hello'}}}
+                'values_changed': {
+                    "root['hello']": {
+                        'old_value': '你好',
+                        'new_value': '你好hello'
+                    }
+                }
+            }
         else:
-            result = {'values_changed': {"root['hello']":
-                                         {'new_value': u'\u4f60\u597dhello', 'old_value': u'\u4f60\u597d'}}}
+            result = {
+                'values_changed': {
+                    "root['hello']": {
+                        'new_value': u'\u4f60\u597dhello',
+                        'old_value': u'\u4f60\u597d'
+                    }
+                }
+            }
         self.assertEqual(ddiff, result)
 
     def test_unicode_string_value_and_type_changes(self):
@@ -682,13 +979,25 @@ class DeepDiffTextTestCase(unittest.TestCase):
             # In python3, all string is unicode, so these 2 strings only diff
             # in values
             result = {
-                'values_changed': {"root['hello']": {'new_value': '你好hello', 'old_value': '你好'}}}
+                'values_changed': {
+                    "root['hello']": {
+                        'new_value': '你好hello',
+                        'old_value': '你好'
+                    }
+                }
+            }
         else:
             # In python2, these are 2 different type of strings
-            result = {'type_changes': {"root['hello']": {
-                      'old_type': unicode,
-                      'new_value': '\xe4\xbd\xa0\xe5\xa5\xbdhello',
-                      'old_value': u'\u4f60\u597d', 'new_type': str}}}
+            result = {
+                'type_changes': {
+                    "root['hello']": {
+                        'old_type': unicode,
+                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbdhello',
+                        'old_value': u'\u4f60\u597d',
+                        'new_type': str
+                    }
+                }
+            }
         self.assertEqual(ddiff, result)
 
     def test_int_to_unicode_string(self):
@@ -698,13 +1007,28 @@ class DeepDiffTextTestCase(unittest.TestCase):
         if py3:
             # In python3, all string is unicode, so these 2 strings only diff
             # in values
-            result = {'type_changes': {'root':
-                                       {'old_type': int, 'new_type': str, 'old_value': 1, 'new_value': '你好'}}}
+            result = {
+                'type_changes': {
+                    'root': {
+                        'old_type': int,
+                        'new_type': str,
+                        'old_value': 1,
+                        'new_value': '你好'
+                    }
+                }
+            }
         else:
             # In python2, these are 2 different type of strings
-            result = {'type_changes': {'root':
-                                       {'old_type': int, 'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd', 'old_value': 1,
-                                        'new_type': str}}}
+            result = {
+                'type_changes': {
+                    'root': {
+                        'old_type': int,
+                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd',
+                        'old_value': 1,
+                        'new_type': str
+                    }
+                }
+            }
         self.assertEqual(ddiff, result)
 
     def test_int_to_unicode(self):
@@ -714,13 +1038,28 @@ class DeepDiffTextTestCase(unittest.TestCase):
         if py3:
             # In python3, all string is unicode, so these 2 strings only diff
             # in values
-            result = {'type_changes': {'root':
-                                       {'old_type': int, 'new_type': str, 'old_value': 1, 'new_value': '你好'}}}
+            result = {
+                'type_changes': {
+                    'root': {
+                        'old_type': int,
+                        'new_type': str,
+                        'old_value': 1,
+                        'new_value': '你好'
+                    }
+                }
+            }
         else:
             # In python2, these are 2 different type of strings
-            result = {'type_changes': {'root':
-                                       {'old_type': int, 'new_value': u'\u4f60\u597d',
-                                        'old_value': 1, 'new_type': unicode}}}
+            result = {
+                'type_changes': {
+                    'root': {
+                        'old_type': int,
+                        'new_value': u'\u4f60\u597d',
+                        'old_value': 1,
+                        'new_type': unicode
+                    }
+                }
+            }
         self.assertEqual(ddiff, result)
 
     def test_significant_digits_for_decimals(self):
@@ -730,18 +1069,24 @@ class DeepDiffTextTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
 
     def test_significant_digits_for_complex_imaginary_part(self):
-        t1 = 1.23+1.222254j
-        t2 = 1.23+1.222256j
+        t1 = 1.23 + 1.222254j
+        t2 = 1.23 + 1.222256j
         ddiff = DeepDiff(t1, t2, significant_digits=4)
         self.assertEqual(ddiff, {})
-        result = {'values_changed': {
-            'root': {'new_value': (1.23+1.222256j), 'old_value': (1.23+1.222254j)}}}
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': (1.23 + 1.222256j),
+                    'old_value': (1.23 + 1.222254j)
+                }
+            }
+        }
         ddiff = DeepDiff(t1, t2, significant_digits=5)
         self.assertEqual(ddiff, result)
 
     def test_significant_digits_for_complex_real_part(self):
-        t1 = 1.23446879+1.22225j
-        t2 = 1.23446764+1.22225j
+        t1 = 1.23446879 + 1.22225j
+        t2 = 1.23446764 + 1.22225j
         ddiff = DeepDiff(t1, t2, significant_digits=5)
         self.assertEqual(ddiff, {})
 
@@ -752,11 +1097,27 @@ class DeepDiffTextTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
         ddiff = DeepDiff(t1, t2, significant_digits=4)
         result = {
-            'values_changed': {'root[0]': {'new_value': 1.2343, 'old_value': 1.2344}}}
+            'values_changed': {
+                'root[0]': {
+                    'new_value': 1.2343,
+                    'old_value': 1.2344
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
         ddiff = DeepDiff(t1, t2, significant_digits=5)
-        result = {'values_changed': {'root[0]': {'new_value': 1.2343, 'old_value': 1.2344},
-                                     'root[1]': {'new_value': 5.67882, 'old_value': 5.67881}}}
+        result = {
+            'values_changed': {
+                'root[0]': {
+                    'new_value': 1.2343,
+                    'old_value': 1.2344
+                },
+                'root[1]': {
+                    'new_value': 5.67882,
+                    'old_value': 5.67881
+                }
+            }
+        }
         self.assertEqual(ddiff, result)
         ddiff = DeepDiff(t1, t2)
         ddiff2 = DeepDiff(t1, t2, significant_digits=6)
@@ -776,8 +1137,10 @@ class DeepDiffTextTestCase(unittest.TestCase):
         t1 = {1: 1, 2: 2}
         t2 = {2: 2, 3: 3}
         ddiff = DeepDiff(t1, t2)
-        self.assertEqual(ddiff['dic_item_added'], ddiff['dictionary_item_added'])
-        self.assertEqual(ddiff['dic_item_removed'], ddiff['dictionary_item_removed'])
+        self.assertEqual(ddiff['dic_item_added'],
+                         ddiff['dictionary_item_added'])
+        self.assertEqual(ddiff['dic_item_removed'],
+                         ddiff['dictionary_item_removed'])
 
     def test_index_and_repeat_dictionary_remapping(self):
         t1 = [1, 3, 1, 4]
@@ -819,25 +1182,40 @@ class DeepDiffTextTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
 
     def test_skip_path1(self):
-        t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
-        t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
+        t2 = {
+            "for life": "vegan",
+            "ingredients": ["veggies", "tofu", "soy sauce"]
+        }
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
     def test_skip_path2(self):
-        t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
         t2 = {"for life": "vegan"}
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
     def test_skip_path2_reverse(self):
-        t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
         t2 = {"for life": "vegan"}
         ddiff = DeepDiff(t2, t1, exclude_paths={"root['ingredients']"})
         self.assertEqual(ddiff, {})
 
     def test_skip_path4(self):
-        t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
         t2 = {"for life": "vegan", "zutaten": ["veggies", "tofu", "soy sauce"]}
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         self.assertTrue('dictionary_item_added' in ddiff, {})

@@ -78,8 +78,9 @@ class RemapDict(dict):
     def __getitem__(self, old_key):
         new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
         if new_key != old_key:
-            warn("DeepDiff Deprecation: %s is renamed to %s. Please start using "
-                 "the new unified naming convention.", old_key, new_key)
+            warn(
+                "DeepDiff Deprecation: %s is renamed to %s. Please start using "
+                "the new unified naming convention.", old_key, new_key)
         if new_key in self:
             return self.get(new_key)
         else:  # pragma: no cover

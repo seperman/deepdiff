@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 To run only the search tests:
     python -m unittest tests.test_diff_ref
@@ -26,7 +25,6 @@ logging.disable(logging.CRITICAL)
 
 
 class DeepDiffRefTestCase(unittest.TestCase):
-
     """DeepDiff Tests."""
 
     def test_same_objects(self):
@@ -39,26 +37,25 @@ class DeepDiffRefTestCase(unittest.TestCase):
     def test_significant_digits_signed_zero(self):
         t1 = 0.00001
         t2 = -0.0001
-        ddiff = DeepDiff(t1, t2, significant_digits = 2)
+        ddiff = DeepDiff(t1, t2, significant_digits=2)
         res = ddiff.tree
         self.assertEqual(res, {})
-        t1 = 1*10**-12
-        t2 = -1*10**-12
+        t1 = 1 * 10**-12
+        t2 = -1 * 10**-12
         ddiff = DeepDiff(t1, t2, significant_digits=10)
         res = ddiff.tree
         self.assertEqual(res, {})
 
-        
     def test_item_added_extensive(self):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'new': 1337}
         ddiff = DeepDiff(t1, t2)
         res = ddiff.tree
-        (key,) = res.keys()
+        (key, ) = res.keys()
         self.assertEqual(key, 'dictionary_item_added')
         self.assertEqual(len(res['dictionary_item_added']), 1)
 
-        (added1,) = res['dictionary_item_added']
+        (added1, ) = res['dictionary_item_added']
 
         # assert added1 DiffLevel chain is valid at all
         self.assertEqual(added1.up.down, added1)
@@ -89,8 +86,11 @@ class DeepDiffRefTestCase(unittest.TestCase):
         t1 = {'one': 1, 'two': 2, 'three': 3, 'four': 4}
         t2 = {'one': 1, 'two': 4, 'three': 3, 'five': 5, 'six': 6}
         ddiff = DeepDiff(t1, t2, view='tree')
-        self.assertEqual(set(ddiff.keys()),
-                         {'dictionary_item_added', 'dictionary_item_removed', 'values_changed'})
+        self.assertEqual(
+            set(ddiff.keys()), {
+                'dictionary_item_added', 'dictionary_item_removed',
+                'values_changed'
+            })
         self.assertEqual(len(ddiff['dictionary_item_added']), 2)
         self.assertEqual(len(ddiff['dictionary_item_removed']), 1)
 
@@ -98,14 +98,20 @@ class DeepDiffRefTestCase(unittest.TestCase):
         t1 = {2: 2, 4: 4}
         t2 = {2: "b", 5: 5}
         ddiff = DeepDiff(t1, t2, view='tree')
-        self.assertEqual(set(ddiff.keys()),
-                         {'dictionary_item_added', 'dictionary_item_removed', 'type_changes'})
+        self.assertEqual(
+            set(ddiff.keys()), {
+                'dictionary_item_added', 'dictionary_item_removed',
+                'type_changes'
+            })
         self.assertEqual(len(ddiff['dictionary_item_added']), 1)
         self.assertEqual(len(ddiff['dictionary_item_removed']), 1)
 
     def test_non_subscriptable_iterable(self):
         t1 = (i for i in [42, 1337, 31337])
-        t2 = (i for i in [42, 1337, ])
+        t2 = (i for i in [
+            42,
+            1337,
+        ])
         ddiff = DeepDiff(t1, t2, view='tree')
         (change, ) = ddiff['iterable_item_removed']
 
@@ -118,13 +124,16 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(change.t1, 31337)
         self.assertIsNone(change.t2)
 
-        self.assertIsInstance(change.up.t1_child_rel, NonSubscriptableIterableRelationship)
+        self.assertIsInstance(change.up.t1_child_rel,
+                              NonSubscriptableIterableRelationship)
         self.assertIsNone(change.up.t2_child_rel)
-
 
     def test_non_subscriptable_iterable_path(self):
         t1 = (i for i in [42, 1337, 31337])
-        t2 = (i for i in [42, 1337, ])
+        t2 = (i for i in [
+            42,
+            1337,
+        ])
         ddiff = DeepDiff(t1, t2, view='tree')
         (change, ) = ddiff['iterable_item_removed']
 
@@ -134,38 +143,42 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(change.path(force='fake'), 'root[2]')
 
     def test_significant_digits(self):
-        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits = 1)
+        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits=1)
         self.assertEqual(ddiff, {})
 
-    @unittest.expectedFailure    
+    @unittest.expectedFailure
     def test_significant_digits_with_sets(self):
-        ddiff = DeepDiff(set([0.012, 0.98]), set([0.013, 0.99]), significant_digits = 1)
+        ddiff = DeepDiff(
+            set([0.012, 0.98]), set([0.013, 0.99]), significant_digits=1)
         self.assertEqual(ddiff, {})
 
     @unittest.expectedFailure
     def test_significant_digits_with_ignore_order(self):
-        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits = 1, ignore_order=True)
+        ddiff = DeepDiff(
+            [0.012, 0.98], [0.013, 0.99],
+            significant_digits=1,
+            ignore_order=True)
         self.assertEqual(ddiff, {})
 
-class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
 
+class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
     """DeepDiff Tests."""
+
     def setUp(self):
         import numpy as np
         a1 = np.array([1.23, 1.66, 1.98])
         a2 = np.array([1.23, 1.66, 1.98])
-        self.d1 = { 'np': a1 }
-        self.d2 = { 'np': a2 }
-        
+        self.d1 = {'np': a1}
+        self.d2 = {'np': a2}
+
     def test_diff_with_numpy(self):
         ddiff = DeepDiff(self.d1, self.d2)
         res = ddiff.tree
         self.assertEqual(res, {})
-        
+
     def test_diff_with_empty_seq(self):
-        a1 = {"empty":[]}
-        a2 = {"empty":[]}
+        a1 = {"empty": []}
+        a2 = {"empty": []}
         ddiff = DeepDiff(a1, a2)
         res = ddiff.tree
         self.assertEqual(ddiff, {})
-

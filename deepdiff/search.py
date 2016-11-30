@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class DeepSearch(dict):
-
     r"""
     **DeepSearch**
 
@@ -73,20 +72,30 @@ class DeepSearch(dict):
 
     warning_num = 0
 
-    def __init__(self, obj, item, exclude_paths=set(), exclude_types=set(), verbose_level=1, **kwargs):
+    def __init__(self,
+                 obj,
+                 item,
+                 exclude_paths=set(),
+                 exclude_types=set(),
+                 verbose_level=1,
+                 **kwargs):
         if kwargs:
-            raise ValueError(("The following parameter(s) are not valid: %s\n"
-                              "The valid parameters are obj, item, exclude_paths, exclude_types and verbose_level.") % ', '.join(kwargs.keys()))
+            raise ValueError((
+                "The following parameter(s) are not valid: %s\n"
+                "The valid parameters are obj, item, exclude_paths, exclude_types and verbose_level."
+            ) % ', '.join(kwargs.keys()))
 
         self.obj = obj
         self.item = item
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
-        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
+        self.exclude_types_tuple = tuple(
+            exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
-        self.update(matched_paths=self.__set_or_dict(),
-                    matched_values=self.__set_or_dict(),
-                    unprocessed=[])
+        self.update(
+            matched_paths=self.__set_or_dict(),
+            matched_values=self.__set_or_dict(),
+            unprocessed=[])
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
@@ -110,7 +119,12 @@ class DeepSearch(dict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
-    def __search_obj(self, obj, item, parent, parents_ids=frozenset({}), is_namedtuple=False):
+    def __search_obj(self,
+                     obj,
+                     item,
+                     parent,
+                     parents_ids=frozenset({}),
+                     is_namedtuple=False):
         """Search objects"""
         try:
             if is_namedtuple:
@@ -124,7 +138,8 @@ class DeepSearch(dict):
                 self['unprocessed'].append("%s" % parent)
                 return
 
-        self.__search_dict(obj, item, parent, parents_ids, print_as_attribute=True)
+        self.__search_dict(
+            obj, item, parent, parents_ids, print_as_attribute=True)
 
     def __skip_this(self, item, parent):
         skip = False
@@ -136,7 +151,12 @@ class DeepSearch(dict):
 
         return skip
 
-    def __search_dict(self, obj, item, parent, parents_ids=frozenset({}), print_as_attribute=False):
+    def __search_dict(self,
+                      obj,
+                      item,
+                      parent,
+                      parents_ids=frozenset({}),
+                      print_as_attribute=False):
         """Search dictionaries"""
         if print_as_attribute:
             parent_text = "%s.%s"
@@ -163,11 +183,22 @@ class DeepSearch(dict):
             new_parent = parent_text % (parent, item_key_str)
 
             if str(item) in new_parent:
-                self.__report(report_key='matched_paths', key=new_parent, value=obj_child)
+                self.__report(
+                    report_key='matched_paths',
+                    key=new_parent,
+                    value=obj_child)
 
-            self.__search(obj_child, item, parent=new_parent, parents_ids=parents_ids_added)
+            self.__search(
+                obj_child,
+                item,
+                parent=new_parent,
+                parents_ids=parents_ids_added)
 
-    def __search_iterable(self, obj, item, parent="root", parents_ids=frozenset({})):
+    def __search_iterable(self,
+                          obj,
+                          item,
+                          parent="root",
+                          parents_ids=frozenset({})):
         """Search iterables except dictionaries, sets and strings."""
 
         for i, x in enumerate(obj):
@@ -175,13 +206,16 @@ class DeepSearch(dict):
             if self.__skip_this(x, parent=new_parent):
                 continue
             if x == item:
-                self.__report(report_key='matched_values', key=new_parent, value=x)
+                self.__report(
+                    report_key='matched_values', key=new_parent, value=x)
             else:
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
-                self.__search(x, item, "%s[%s]" % (parent, i), parents_ids_added)
+                parents_ids_added = self.__add_to_frozen_set(parents_ids,
+                                                             item_id)
+                self.__search(x, item, "%s[%s]" %
+                              (parent, i), parents_ids_added)
 
     def __search_str(self, obj, item, parent):
         """Compare strings"""
@@ -202,7 +236,8 @@ class DeepSearch(dict):
             self.__search_iterable(obj, item, parent, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__search_obj(obj, item, parent, parents_ids, is_namedtuple=True)
+            self.__search_obj(
+                obj, item, parent, parents_ids, is_namedtuple=True)
 
     def __search(self, obj, item, parent="root", parents_ids=frozenset({})):
         """The main search method"""
@@ -227,8 +262,10 @@ class DeepSearch(dict):
 
         elif isinstance(obj, (set, frozenset)):
             if self.warning_num < 10:
-                logger.warning("Set item detected in the path."
-                               "'set' objects do NOT support indexing. But DeepSearch will still report a path.")
+                logger.warning(
+                    "Set item detected in the path."
+                    "'set' objects do NOT support indexing. But DeepSearch will still report a path."
+                )
                 self.warning_num += 1
             self.__search_iterable(obj, item, parent, parents_ids)
 
