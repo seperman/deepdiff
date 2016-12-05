@@ -13,7 +13,7 @@ except:
     long_description = "Deep Difference and Search of any Python object/data."
 
 setup(name='deepdiff',
-      version='2.5.2',
+      version='2.5.3',
       description='Deep Difference and Search of any Python object/data.',
       url='https://github.com/seperman/deepdiff',
       download_url='https://github.com/seperman/deepdiff/tarball/master',
@@ -23,6 +23,7 @@ setup(name='deepdiff',
       packages=['deepdiff'],
       zip_safe=False,
       test_suite="tests",
+      tests_require=['mock'],
       long_description=long_description,
       classifiers=[
           "Intended Audience :: Developers",

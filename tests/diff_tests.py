@@ -13,9 +13,13 @@ Or using Nose:
 
 To run a specific test, run this from the root of repo:
     python -m unittest tests.DeepDiffTestCase.test_list_of_sets_difference_ignore_order
+
+or using nosetests:
+    nosetests tests/diff_tests.py:DeepDiffTestCase.test_diff_when_hash_fails
 """
 import unittest
 import datetime
+import mock
 from decimal import Decimal
 from deepdiff import DeepDiff
 from sys import version
@@ -897,3 +901,12 @@ class DeepDiffTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2)
         result = {'unprocessed': ['root: Bad Object and Bad Object']}
         self.assertEqual(ddiff, result)
+
+    @mock.patch('deepdiff.diff.logger')
+    @mock.patch('deepdiff.diff.DeepHash')
+    def test_diff_when_hash_fails(self, mock_DeepHash, mock_logger):
+        mock_DeepHash.side_effect = Exception('Boom!')
+        t1 = {"blah": {4}, 2: 1337}
+        t2 = {"blah": {4}, 2: 1337}
+        DeepDiff(t1, t2, ignore_order=True)
+        assert mock_logger.warning.called

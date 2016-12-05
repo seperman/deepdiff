@@ -575,8 +575,8 @@ class DeepDiff(RemapDict):
                 hashes_all = DeepHash(item, hashes=self.hashes)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
-                logger.warning("Can not produce a hash for %s item in %s and "
-                               "thus not counting this object: %s" % (item, parent), e)
+                logger.warning("Can not produce a hash for %s item in %s."
+                               "Not counting this object.\n%s" % (item, parent, e))
             else:
                 if item_hash is hashes_all.unprocessed:  # pragma: no cover
                     logger.warning("%s item in %s was not processed while hashing "
