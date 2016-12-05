@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 To run only the search tests:
-    python -m unittest tests.test_diff_ref
+    python -m unittest tests.test_diff_tree
 
 Or to run all the tests:
     python -m unittest discover
@@ -14,7 +14,7 @@ Or using Nose:
     nosetests --with-coverage --cover-package=deepdiff
 
 To run a specific test, run this from the root of repo:
-    python -m unittest tests.test_diff_ref.DeepDiffRefTestCase.test_same_objects
+    python -m unittest tests.test_diff_tree.DeepDiffTreeTestCase.test_same_objects
 """
 import unittest
 from deepdiff import DeepDiff
@@ -25,7 +25,7 @@ import logging
 logging.disable(logging.CRITICAL)
 
 
-class DeepDiffRefTestCase(unittest.TestCase):
+class DeepDiffTreeTestCase(unittest.TestCase):
     """DeepDiff Tests."""
 
     def test_same_objects(self):
@@ -162,7 +162,7 @@ class DeepDiffRefTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
 
 
-class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
+class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
     """DeepDiff Tests with Numpy."""
 
     def setUp(self):
@@ -185,3 +185,14 @@ class DeepDiffRefWithNumpyTestCase(unittest.TestCase):
         a2 = {"empty": []}
         ddiff = DeepDiff(a1, a2)
         self.assertEqual(ddiff, {})
+
+
+class DeepAdditionsTestCase(unittest.TestCase):
+    """Tests for Additions and Subtractions."""
+
+    def test_adding_list_diff(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        ddiff = DeepDiff(t1, t2, view='tree')
+        addition = ddiff + t1
+        self.assertEqual(addition, t2)

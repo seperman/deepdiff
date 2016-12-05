@@ -391,9 +391,10 @@ class DiffLevel(object):
         """
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
         if force in self._path:
-            return self._path[force]
+            result = self._path[force]
+            return None if result is None else "{}{}".format(root, result)
 
-        result = root
+        result = ""
         level = self.all_up  # start at the root
 
         # traverse all levels of this relationship
@@ -418,6 +419,7 @@ class DiffLevel(object):
             level = level.down
 
         self._path[force] = result
+        result = None if result is None else "{}{}".format(root, result)
         return result
 
     def create_deeper(self,

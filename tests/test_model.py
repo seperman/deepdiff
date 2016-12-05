@@ -166,6 +166,10 @@ class DiffLevelTestCase(TestCase):
         # Provides textual path all the way through
         self.assertEqual(self.lowest.path("self.t1"), "self.t1[1337].a")
 
+    def test_change_of_path_root(self):
+        self.assertEqual(self.lowest.path("root"), "root[1337].a")
+        self.assertEqual(self.lowest.path(""), "[1337].a")
+
     def test_path_when_both_children_empty(self):
         """
         This is a situation that should never happen.

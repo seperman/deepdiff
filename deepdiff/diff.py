@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from collections import Mapping
 from collections import Iterable
+from copy import copy
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
@@ -319,8 +320,7 @@ class DeepDiff(ResultDict):
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                "exclude_paths, exclude_types, verbose_level and view.") %
-                             ', '.join(kwargs.keys()))
+                "exclude_paths, exclude_types, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
@@ -353,6 +353,15 @@ class DeepDiff(ResultDict):
             self.update(
                 result_text
             )  # be compatible to DeepDiff 2.x if user didn't specify otherwise
+
+    def __add__(self, other):
+        if isinstance(other, DeepDiff):
+            result = copy(self)
+            result.update(other)
+        else:
+            result = copy(other)
+            import ipdb; ipdb.set_trace()
+            print(1)
 
     def __report_result(self, report_type, level):
         """

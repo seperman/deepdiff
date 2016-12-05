@@ -257,6 +257,29 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
         self.assertEqual(ddiff, result)
 
+    def test_list_difference4(self):
+        # TODO: Look into Levenshtein algorithm
+        # So that the result is just insertion of "c" in this test.
+        t1 = ["a", "b", "d", "e"]
+        t2 = ["a", "b", "c", "d", "e"]
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root[2]': {
+                    'new_value': 'c',
+                    'old_value': 'd'
+                },
+                'root[3]': {
+                    'new_value': 'd',
+                    'old_value': 'e'
+                }
+            },
+            'iterable_item_added': {
+                'root[4]': 'e'
+            }
+        }
+        self.assertEqual(ddiff, result)
+
     def test_list_difference_ignore_order(self):
         t1 = {1: 1, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 4: {"a": "hello", "b": [1, 3, 2, 3]}}
