@@ -186,6 +186,9 @@ Indices and tables
 Changelog
 =========
 
+- v3-0-0: TBD
+- v2-5-3: Bug fix on logging for content hash.
+- v2-5-2: Bug fixes on content hash.
 - v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
 - v2-1-0: Adding Deep Search. Now you can search for item in an object.
 - v2-0-0: Exclusion patterns better coverage. Updating docs.

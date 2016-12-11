@@ -17,7 +17,7 @@ from decimal import Decimal
 
 from collections import Mapping
 from collections import Iterable
-from copy import copy
+from copy import copy, deepcopy
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
@@ -359,8 +359,8 @@ class DeepDiff(ResultDict):
             result = copy(self)
             result.update(other)
         else:
-            result = copy(other)
             import ipdb; ipdb.set_trace()
+            result = copy(other)
             print(1)
 
     def __report_result(self, report_type, level):
@@ -609,9 +609,9 @@ class DeepDiff(ResultDict):
                 hashes_all = DeepHash(item, hashes=self.hashes)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
-                logger.warning("Can not produce a hash for %s and "
-                               "thus not counting this object: %s" %
-                               level.path(), e)
+                logger.warning("Can not produce a hash for %s."
+                               "Not counting this object.\n %s" %
+                               (level.path(), e))
             else:
                 if item_hash is hashes_all.unprocessed:  # pragma: no cover
                     logger.warning("Item %s was not processed while hashing "

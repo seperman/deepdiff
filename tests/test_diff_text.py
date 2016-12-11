@@ -15,6 +15,9 @@ Or using Nose:
 
 To run a specific test, run this from the root of repo:
     python -m unittest tests.test_diff_text.DeepDiffTextTestCase.test_same_objects
+
+or using nosetests:
+    nosetests tests/test_diff_text.py:DeepDiffTestCase.test_diff_when_hash_fails
 """
 import unittest
 import datetime
@@ -22,6 +25,10 @@ from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import py3
 from tests import CustomClass
+if py3:
+    from unittest import mock
+else:
+    import mock
 
 import logging
 logging.disable(logging.CRITICAL)
@@ -1321,3 +1328,12 @@ class DeepDiffTextTestCase(unittest.TestCase):
         # Note: In text-style results, we currently pretend this stuff is subscriptable for readability
 
         self.assertEqual(ddiff, result)
+
+    @mock.patch('deepdiff.diff.logger')
+    @mock.patch('deepdiff.diff.DeepHash')
+    def test_diff_when_hash_fails(self, mock_DeepHash, mock_logger):
+        mock_DeepHash.side_effect = Exception('Boom!')
+        t1 = {"blah": {4}, 2: 1337}
+        t2 = {"blah": {4}, 2: 1337}
+        DeepDiff(t1, t2, ignore_order=True)
+        assert mock_logger.warning.called

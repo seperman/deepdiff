@@ -23,6 +23,7 @@ setup(name='deepdiff',
       packages=['deepdiff'],
       zip_safe=False,
       test_suite="tests",
+      tests_require=['mock'],
       long_description=long_description,
       # tests_require=['numpy==1.11.2'],  # Disabling this since Numpy does not install on pypy3
       classifiers=[
