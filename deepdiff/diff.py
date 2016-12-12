@@ -17,11 +17,11 @@ from decimal import Decimal
 
 from collections import Mapping
 from collections import Iterable
-from copy import copy, deepcopy
+from copy import deepcopy
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship
+from deepdiff.model import DictRelationship, AttributeRelationship, REPORT_KEYS
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
@@ -356,12 +356,19 @@ class DeepDiff(ResultDict):
 
     def __add__(self, other):
         if isinstance(other, DeepDiff):
-            result = copy(self)
+            result = deepcopy(self)
             result.update(other)
         else:
-            import ipdb; ipdb.set_trace()
-            result = copy(other)
-            print(1)
+            result = deepcopy(other)
+            for key in REPORT_KEYS:
+                if key in self:
+                    getattr(self, "_do_{}".format(key))(result)
+
+        return result
+
+    def _do_iterable_item_added(self, result):
+        for item in self['iterable_item_added']:
+            pass
 
     def __report_result(self, report_type, level):
         """
@@ -606,7 +613,9 @@ class DeepDiff(ResultDict):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
-                hashes_all = DeepHash(item, hashes=self.hashes)
+                hashes_all = DeepHash(item,
+                                      hashes=self.hashes,
+                                      significant_digits=self.significant_digits)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s."
@@ -667,7 +676,7 @@ class DeepDiff(ResultDict):
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=t1_hashtable[hash_value]
                         .indexes[0])
-                    repetition_change_level.additional['rep'] = RemapDict(
+                    repetition_change_level.additional['repetition'] = RemapDict(
                         old_repeat=t1_indexes_len,
                         new_repeat=t2_indexes_len,
                         old_indexes=t1_indexes,

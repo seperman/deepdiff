@@ -6,6 +6,7 @@ import sys
 from collections import Iterable
 from collections import MutableMapping
 from collections import defaultdict
+from decimal import Decimal
 from hashlib import sha1
 import logging
 
@@ -51,6 +52,7 @@ class DeepHash(dict):
                  exclude_types=set(),
                  hasher=hash,
                  ignore_repetition=True,
+                 significant_digits=None,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -70,6 +72,7 @@ class DeepHash(dict):
         self.unprocessed = Unprocessed()
         self.skipped = Skipped()
         self.not_hashed = NotHashed()
+        self.significant_digits = significant_digits
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
 
@@ -99,7 +102,7 @@ class DeepHash(dict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
-    def __get_and_set_hash(self, obj):
+    def __get_and_set_str_hash(self, obj):
         obj_id = id(obj)
         result = self.hasher(obj)
         result = "str:{}".format(result)
@@ -187,7 +190,23 @@ class DeepHash(dict):
         return result
 
     def __hash_str(self, obj):
-        return self.__get_and_set_hash(obj)
+        return self.__get_and_set_str_hash(obj)
+
+    def __hash_number(self, obj):
+        # Based on diff.DeepDiff.__diff_numbers
+        if self.significant_digits is not None and isinstance(obj, (
+                float, complex, Decimal)):
+            obj_s = ("{:.%sf}" % self.significant_digits).format(obj)
+
+            # Special case for 0: "-0.00" should compare equal to "0.00"
+            if set(obj_s) <= set("-0."):
+                obj_s = "0.00"
+            result = "number:{}".format(obj_s)
+            obj_id = id(obj)
+            self[obj_id] = result
+        else:
+            result = "{}:{}".format(type(obj).__name__, obj)
+        return result
 
     def __hash_tuple(self, obj, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
@@ -218,7 +237,7 @@ class DeepHash(dict):
             result = self.__hash_str(obj)
 
         elif isinstance(obj, numbers):
-            result = "{}:{}".format(type(obj).__name__, obj)
+            result = self.__hash_number(obj)
 
         elif isinstance(obj, MutableMapping):
             result = self.__hash_dict(obj, parents_ids)

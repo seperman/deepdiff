@@ -144,21 +144,27 @@ class DeepDiffTreeTestCase(unittest.TestCase):
         self.assertEqual(change.path(force='fake'), 'root[2]')
 
     def test_significant_digits(self):
-        ddiff = DeepDiff([0.012, 0.98], [0.013, 0.99], significant_digits=1)
+        ddiff = DeepDiff(
+            [0.012, 0.98],
+            [0.013, 0.99],
+            significant_digits=1,
+            view='tree')
         self.assertEqual(ddiff, {})
 
-    @unittest.expectedFailure
     def test_significant_digits_with_sets(self):
         ddiff = DeepDiff(
-            set([0.012, 0.98]), set([0.013, 0.99]), significant_digits=1)
+            {0.012, 0.98},
+            {0.013, 0.99},
+            significant_digits=1,
+            view='tree')
         self.assertEqual(ddiff, {})
 
-    @unittest.expectedFailure
     def test_significant_digits_with_ignore_order(self):
         ddiff = DeepDiff(
             [0.012, 0.98], [0.013, 0.99],
             significant_digits=1,
-            ignore_order=True)
+            ignore_order=True,
+            view='tree')
         self.assertEqual(ddiff, {})
 
 
@@ -190,6 +196,7 @@ class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
 class DeepAdditionsTestCase(unittest.TestCase):
     """Tests for Additions and Subtractions."""
 
+    @unittest.expectedFailure
     def test_adding_list_diff(self):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]

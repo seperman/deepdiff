@@ -9,6 +9,22 @@ FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
 
 
+REPORT_KEYS = {
+    "type_changes",
+    "dictionary_item_added",
+    "dictionary_item_removed",
+    "values_changed",
+    "unprocessed",
+    "iterable_item_added",
+    "iterable_item_removed",
+    "attribute_added",
+    "attribute_removed",
+    "set_item_removed",
+    "set_item_added",
+    "repetition_change",
+}
+
+
 class ResultDict(RemapDict):
     def cleanup(self):
         """
@@ -23,21 +39,8 @@ class ResultDict(RemapDict):
 
 class TreeResult(ResultDict):
     def __init__(self):
-        # TODO: centralize keys
-        self.update({
-            "type_changes": set(),
-            "dictionary_item_added": set(),
-            "dictionary_item_removed": set(),
-            "values_changed": set(),
-            "unprocessed": set(),
-            "iterable_item_added": set(),
-            "iterable_item_removed": set(),
-            "attribute_added": set(),
-            "attribute_removed": set(),
-            "set_item_removed": set(),
-            "set_item_added": set(),
-            "repetition_change": set()
-        })
+        for key in REPORT_KEYS:
+            self[key] = set()
 
 
 class TextResult(ResultDict):
@@ -163,7 +166,7 @@ class TextResult(ResultDict):
             for change in tree['repetition_change']:
                 path = change.path(force=FORCE_DEFAULT)
                 self['repetition_change'][path] = RemapDict(change.additional[
-                    'rep'])
+                    'repetition'])
                 self['repetition_change'][path]['value'] = change.t1
 
 
@@ -294,7 +297,7 @@ class DiffLevel(object):
         # Currently, this is used for:
         # - values_changed: In case the changes data is a multi-line string,
         #                   we include a textual diff as additional['diff'].
-        # - repetition_change: additional['rep']:
+        # - repetition_change: additional['repetition']:
         #                      e.g. {'old_repeat': 2, 'new_repeat': 1, 'old_indexes': [0, 2], 'new_indexes': [2]}
         # the user supplied ChildRelationship objects for t1 and t2
 
