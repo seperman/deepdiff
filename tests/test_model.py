@@ -29,8 +29,8 @@ logging.disable(logging.CRITICAL)
 
 
 class WorkingChildRelationship(ChildRelationship):
-    def format_partial(self, partial):
-        return "|%s|" % partial
+    # param_repr_format = "|{}|"
+    pass
 
 
 class DictRelationshipTestCase(TestCase):
@@ -46,7 +46,7 @@ class DictRelationshipTestCase(TestCase):
 
     def test_numkey(self):
         rel = DictRelationship(parent=self.d, child=self.d[42], param=42)
-        self.assertEqual(rel.get_partial(), "[42]")
+        self.assertEqual(rel.get_param_repr(), "[42]")
 
     def test_strkey(self):
         rel = ChildRelationship.create(
@@ -54,20 +54,26 @@ class DictRelationshipTestCase(TestCase):
             parent=self.d,
             child=self.d['vegan'],
             param='vegan')
-        result = rel.get_partial()
+        result = rel.get_param_repr()
         self.assertEqual(result, "['vegan']")
 
     def test_objkey(self):
         rel = DictRelationship(
             parent=self.d, child=self.d[self.customkey], param=self.customkey)
-        self.assertIsNone(rel.get_partial())
+        self.assertIsNone(rel.get_param_repr())
 
     def test_objkey_misleading_repr(self):
         rel = DictRelationship(
             parent=self.d,
             child=self.d[self.customkey_misleading],
             param=self.customkey_misleading)
-        self.assertIsNone(rel.get_partial())
+        self.assertIsNone(rel.get_param_repr())
+
+    def test_get_param_from_obj(self):
+        param = 42
+        rel = DictRelationship(parent=self.d, child=self.d[param], param=param)
+        obj = {10: 10, param: 123}
+        self.assertEqual(rel.get_param_from_obj(obj), 123)
 
 
 class ListRelationshipTestCase(TestCase):
@@ -77,13 +83,19 @@ class ListRelationshipTestCase(TestCase):
 
     def test_min(self):
         rel = SubscriptableIterableRelationship(self.l, self.l[0], 0)
-        result = rel.get_partial()
+        result = rel.get_param_repr()
         self.assertEqual(result, "[0]")
 
     def test_max(self):
         rel = ChildRelationship.create(SubscriptableIterableRelationship,
                                        self.l, self.custom, 2)
-        self.assertEqual(rel.get_partial(), "[2]")
+        self.assertEqual(rel.get_param_repr(), "[2]")
+
+    def test_get_param_from_obj(self):
+        param = 0
+        rel = SubscriptableIterableRelationship(parent=self.l, child=self.l[param], param=param)
+        obj = ['a', 'b', 'c']
+        self.assertEqual(rel.get_param_from_obj(obj), 'a')
 
 
 class AttributeRelationshipTestCase(TestCase):
@@ -92,7 +104,7 @@ class AttributeRelationshipTestCase(TestCase):
 
     def test_a(self):
         rel = AttributeRelationship(self.custom, 13, "a")
-        result = rel.get_partial()
+        result = rel.get_param_repr()
         self.assertEqual(result, ".a")
 
 
@@ -160,7 +172,7 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(self.highest.t2_child_rel.parent, self.highest.t2)
 
         # Provides textual relationship from t1 to t1[1337]
-        self.assertEqual('[1337]', self.highest.t2_child_rel.get_partial())
+        self.assertEqual('[1337]', self.highest.t2_child_rel.get_param_repr())
 
     def test_path(self):
         # Provides textual path all the way through

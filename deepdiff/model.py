@@ -303,7 +303,7 @@ class DiffLevel(object):
 
         # A ChildRelationship object describing the relationship between t1 and it's child object,
         # where t1's child object equals down.t1.
-        # If this relationship is representable as a string, str(self.t1_child_rel) returns a partial parsable python string,
+        # If this relationship is representable as a string, str(self.t1_child_rel) returns a formatted param parsable python string,
         # e.g. "[2]", ".my_attribute"
         self.t1_child_rel = child_rel1
 
@@ -323,7 +323,7 @@ class DiffLevel(object):
         return result
 
     def __setattr__(self, key, value):
-        # Setting up or down, will set the opposite link too
+        # Setting up or down, will set the opposite link in this linked list.
         if key in UP_DOWN and value is not None:
             self.__dict__[key] = value
             opposite_key = UP_DOWN[key]
@@ -403,14 +403,14 @@ class DiffLevel(object):
         # traverse all levels of this relationship
         while level and level is not self:
             # get this level's relationship object
-            next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a partial from
+            next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a formatted param from
 
             # t1 and t2 both are empty
             if next_rel is None:
                 break
 
             # Build path for this level
-            item = next_rel.get_partial(force)
+            item = next_rel.get_param_repr(force)
             if item:
                 result += item
             else:
@@ -502,6 +502,15 @@ class ChildRelationship(object):
     """
     __metaclass__ = ABCMeta
 
+    # Format to a be used for representing param.
+    # E.g. for a dict, this turns a formatted param param "42" into "[42]".
+    param_repr_format = None
+
+    # This is a hook allowing subclasses to manipulate param strings.
+    # :param string: Input string
+    # :return: Manipulated string, as appropriate in this context.
+    quote_str = None
+
     @staticmethod
     def create(klass, parent, child, param=None):
         if not issubclass(klass, ChildRelationship):
@@ -525,9 +534,9 @@ class ChildRelationship(object):
         param = short_repr(self.param)
         return name.format(self.__class__.__name__, parent, child, param)
 
-    def get_partial(self, force=None):
+    def get_param_repr(self, force=None):
         """
-        Returns a partial python parsable string describing this relationship,
+        Returns a formatted param python parsable string describing this relationship,
         or None if the relationship is not representable as a string.
         This string can be appended to the parent Name.
         Subclasses representing a relationship that cannot be expressed as a string override this method to return None.
@@ -537,25 +546,25 @@ class ChildRelationship(object):
                 Will strictly return partials of Python-parsable expressions. The result those yield will compare
                 equal to the objects in question.
               If 'yes':
-                Will return a partial including '(unrepresentable)' instead of the non string-representable part.
+                Will return a formatted param including '(unrepresentable)' instead of the non string-representable part.
 
         """
-        stringified = self._param_to_partial(force)
-        if stringified:
-            return self.format_partial(stringified)
+        return self.stringify_param(force)
 
     @abstractmethod
-    def format_partial(self, partial):  # pragma: no cover
+    def get_param_from_obj(self, obj):  # pragma: no cover
         """
-        Formats a get partial to create a valid partial python string representing this relationship.
-        E.g. for a dict, this turns a partial param "42" into "[42]".
+        Get item from external object.
+
+        This is used to get the item with the same path from another object.
+        This way you can apply the path tree to any object.
         """
         pass
 
-    def _param_to_partial(self, force=None):
+    def stringify_param(self, force=None):
         """
         Convert param to a string. Return None if there is no string representation.
-        This is called by get_partial()
+        This is called by get_param_repr()
         :param force: Bends the meaning of "no string representation".
                       If None:
                         Will strictly return Python-parsable expressions. The result those yield will compare
@@ -565,7 +574,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
-            result = self.quote_str(param)
+            result = param if self.quote_str is None else self.quote_str.format(param)
         else:
             candidate = str(param)
             try:
@@ -576,33 +585,30 @@ class ChildRelationship(object):
                 result = None
             else:
                 result = candidate if resurrected == param else None
-        return result
 
-    def quote_str(self, string):
-        """
-        This is a hook allowing subclasses to manipulate param strings.
-        :param string: Input string
-        :return: Manipulated string, as appropriate in this context.
-        """
-        return string
+        if result:
+            result = self.param_repr_format.format(result)
+
+        return result
 
 
 class DictRelationship(ChildRelationship):
-    def format_partial(self, partial):
-        return "[%s]" % partial
+    param_repr_format = "[{}]"
+    quote_str = "'{}'"
 
-    def quote_str(self, string):
-        """Overriding this b/c strings as dict keys must come in quotes."""
-        return "'%s'" % string
+    def get_param_from_obj(self, obj):
+        return obj.get(self.param)
 
 
 class SubscriptableIterableRelationship(DictRelationship):
-    pass  # for our purposes, we can see lists etc. as special cases of dicts
+    # for our purposes, we can see lists etc. as special cases of dicts
+
+    def get_param_from_obj(self, obj):
+        return obj[self.param]
 
 
 class InaccessibleRelationship(ChildRelationship):
-    def format_partial(self, partial):  # pragma: no cover
-        return None
+    pass
 
 
 # there is no random access to set elements
@@ -611,17 +617,22 @@ class SetRelationship(InaccessibleRelationship):
 
 
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
-    def get_partial(self, force=None):
+
+    param_repr_format = "[{}]"
+
+    def get_param_repr(self, force=None):
         if force == 'yes':
-            return "(unrepresentable)"
+            result = "(unrepresentable)"
         elif force == 'fake' and self.param:
-            stringified = self._param_to_partial()
-            if stringified:
-                return "[%s]" % stringified
+            result = self.stringify_param()
         else:
-            return None
+            result = None
+
+        return result
 
 
 class AttributeRelationship(ChildRelationship):
-    def format_partial(self, partial):
-        return ".%s" % partial
+    param_repr_format = ".{}"
+
+    def get_param_from_obj(self, obj):
+        return getattr(obj, self.param)

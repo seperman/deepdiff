@@ -131,10 +131,7 @@ class DeepDiffTreeTestCase(unittest.TestCase):
 
     def test_non_subscriptable_iterable_path(self):
         t1 = (i for i in [42, 1337, 31337])
-        t2 = (i for i in [
-            42,
-            1337,
-        ])
+        t2 = (i for i in [42, 1337, ])
         ddiff = DeepDiff(t1, t2, view='tree')
         (change, ) = ddiff['iterable_item_removed']
 
