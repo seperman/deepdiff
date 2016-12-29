@@ -392,6 +392,21 @@ class DeepDiff(ResultDict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
+    @staticmethod
+    def __dict_from_slots(object):
+        def unmangle(attribute):
+            if attribute.startswith('__'):
+                return '_{type}{attribute}'.format(
+                    type=type(object).__name__,
+                    attribute=attribute
+                )
+            return attribute
+
+        slots = object.__slots__
+        if isinstance(slots, strings):
+            return {slots: getattr(object, unmangle(slots))}
+        return {i: getattr(object, unmangle(i)) for i in slots}
+
     def __diff_obj(self, level, parents_ids=frozenset({}),
                    is_namedtuple=False):
         """Difference of 2 objects"""
@@ -404,8 +419,8 @@ class DeepDiff(ResultDict):
                 t2 = level.t2.__dict__
         except AttributeError:
             try:
-                t1 = {i: getattr(level.t1, i) for i in level.t1.__slots__}
-                t2 = {i: getattr(level.t2, i) for i in level.t2.__slots__}
+                t1 = self.__dict_from_slots(level.t1)
+                t2 = self.__dict_from_slots(level.t2)
             except AttributeError:
                 self.__report_result('unprocessed', level)
                 return

@@ -735,6 +735,21 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
         self.assertEqual(ddiff, result)
 
+    def test_custom_objects_with_single_protected_slot(self):
+        class ClassA(object):
+            __slots__ = '__a'
+
+            def __init__(self):
+                self.__a = 1
+
+            def __str__(self):
+                return str(self.__a)
+
+        t1 = ClassA()
+        t2 = ClassA()
+        diff = DeepDiff(t1, t2)
+        self.assertEqual(diff, {})
+
     def get_custom_objects_add_and_remove(self):
         class ClassA(object):
             a = 1
