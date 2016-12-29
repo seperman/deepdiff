@@ -256,6 +256,12 @@ Linkedin:  http://www.linkedin.com/in/sepehr
 ZepWorks:   http://www.zepworks.com
 Article about Deepdiff: http://zepworks.com/blog/diff-it-to-digg-it/
 
+Victor Hahn Castell
+
+- [hahncastell.de](http://hahncastell.de)
+- [flexoptix.net](http://www.flexoptix.net)
+
+
 **Contributors**
 
 Thanks to:
@@ -266,4 +272,4 @@ Thanks to:
 - timoilya for comparing list of sets when ignoring order
 - Bernhard10 for significant digits comparison
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- Victor Hahn Castell @ Flexoptix for deep set comparison and exclusion patterns
+- finnhughes for fixing __slots__
