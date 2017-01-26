@@ -546,21 +546,24 @@ class DeepDiff(ResultDict):
                 result_text
             )  # be compatible to DeepDiff 2.x if user didn't specify otherwise
 
-    def __add__(self, other):
-        if isinstance(other, DeepDiff):
-            result = deepcopy(self)
-            result.update(other)
-        else:
-            result = deepcopy(other)
-            for key in REPORT_KEYS:
-                if key in self:
-                    getattr(self, "_do_{}".format(key))(result)
+    # TODO: adding adding functionality
+    # def __add__(self, other):
+    #     if isinstance(other, DeepDiff):
+    #         result = deepcopy(self)
+    #         result.update(other)
+    #     else:
+    #         result = deepcopy(other)
+    #         for key in REPORT_KEYS:
+    #             if key in self:
+    #                 getattr(self, "_do_{}".format(key))(result)
 
-        return result
+    #     return result
 
-    def _do_iterable_item_added(self, result):
-        for item in self['iterable_item_added']:
-            pass
+    # __radd__ = __add__
+
+    # def _do_iterable_item_added(self, result):
+    #     for item in self['iterable_item_added']:
+    #         pass
 
     def __report_result(self, report_type, level):
         """

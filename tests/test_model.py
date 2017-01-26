@@ -69,7 +69,7 @@ class DictRelationshipTestCase(TestCase):
             param=self.customkey_misleading)
         self.assertIsNone(rel.get_param_repr())
 
-    def test_get_param_from_obj(self):
+    def test_get_param_from_dict(self):
         param = 42
         rel = DictRelationship(parent=self.d, child=self.d[param], param=param)
         obj = {10: 10, param: 123}
@@ -106,6 +106,10 @@ class AttributeRelationshipTestCase(TestCase):
         rel = AttributeRelationship(self.custom, 13, "a")
         result = rel.get_param_repr()
         self.assertEqual(result, ".a")
+
+    def test_get_param_from_obj(self):
+        rel = AttributeRelationship(self.custom, 13, "a")
+        self.assertEqual(rel.get_param_from_obj(self.custom), 13)
 
 
 class DiffLevelTestCase(TestCase):
@@ -211,13 +215,14 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(item_repr,
                          "<root[1337].a t1:'very long t...', t2:313>")
 
-    def test_repetition_attribute(self):
+    def test_repetition_attribute_and_repr(self):
         t1 = [1, 1]
         t2 = [1]
         some_repetition = 'some repetition'
         node = DiffLevel(t1, t2)
         node.additional['repetition'] = some_repetition
         self.assertEqual(node.repetition, some_repetition)
+        self.assertEqual(repr(node), "<root {'repetition': 'some repetition'}>")
 
 
 class ChildRelationshipTestCase(TestCase):
