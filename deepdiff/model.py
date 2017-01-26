@@ -8,7 +8,6 @@ from copy import copy
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
 
-
 REPORT_KEYS = {
     "type_changes",
     "dictionary_item_added",
@@ -23,6 +22,10 @@ REPORT_KEYS = {
     "set_item_added",
     "repetition_change",
 }
+
+
+class DoesNotExist(Exception):
+    pass
 
 
 class ResultDict(RemapDict):
@@ -315,9 +318,13 @@ class DiffLevel(object):
 
     def __repr__(self):
         if Verbose.level:
-            t1_repr = short_repr(self.t1)
-            t2_repr = short_repr(self.t2)
-            result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
+            if self.additional:
+                additional_repr = short_repr(self.additional, max_length=35)
+                result = "<{} {}>".format(self.path(), additional_repr)
+            else:
+                t1_repr = short_repr(self.t1)
+                t2_repr = short_repr(self.t2)
+                result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
         else:
             result = "<{}>".format(self.path())
         return result
@@ -330,6 +337,10 @@ class DiffLevel(object):
             value.__dict__[opposite_key] = self
         else:
             self.__dict__[key] = value
+
+    @property
+    def repetition(self):
+        return self.additional['repetition']
 
     def auto_generate_child_rel(self, klass, param):
         """

@@ -211,6 +211,14 @@ class DiffLevelTestCase(TestCase):
         self.assertEqual(item_repr,
                          "<root[1337].a t1:'very long t...', t2:313>")
 
+    def test_repetition_attribute(self):
+        t1 = [1, 1]
+        t2 = [1]
+        some_repetition = 'some repetition'
+        node = DiffLevel(t1, t2)
+        node.additional['repetition'] = some_repetition
+        self.assertEqual(node.repetition, some_repetition)
+
 
 class ChildRelationshipTestCase(TestCase):
     def test_create_invalid_klass(self):

@@ -49,7 +49,7 @@ def short_repr(item, max_length=15):
     """Short representation of item if it is too long"""
     item = repr(item)
     if len(item) > max_length:
-        item = '{}...{}'.format(item[:12], item[-1])
+        item = '{}...{}'.format(item[:max_length - 3], item[-1])
     return item
 
 
