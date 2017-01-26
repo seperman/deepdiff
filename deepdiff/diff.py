@@ -261,7 +261,7 @@ class DeepDiff(ResultDict):
         >>> t1 = {1, 2, 8}
         >>> t2 = {1, 2, 3, 5}
         >>> ddiff = DeepDiff(t1, t2)
-        >>> pprint (DeepDiff(t1, t2))
+        >>> pprint(ddiff)
         {'set_item_added': {'root[5]', 'root[3]'}, 'set_item_removed': {'root[8]'}}
 
     Named Tuples:
@@ -314,9 +314,30 @@ class DeepDiff(ResultDict):
     the parents of the objects that are diffed and the actual objects that are being diffed.
     This view is very useful when dealing with nested objects.
     Note that tree view always returns results in the form of Python sets.
+
+    You can traverse through the tree elements by using up, down, t1, t2
+
+    +---------------------------------------------------------------+
+    |                                                               |
+    |    parent(t1)              parent node            parent(t2)  |
+    |      +                          ^                     +       |
+    +------|--------------------------|---------------------|-------+
+           |                      |   | up                  |
+           | Child                |   |                     | ChildRelationship
+           | Relationship         |   |                     |
+           |                 down |   |                     |
+    +------|----------------------|-------------------------|-------+
+    |      v                      v                         v       |
+    |    child(t1)              child node               child(t2)  |
+    |                                                               |
+    +---------------------------------------------------------------+
+
+
+    The tree view allows you to have more than mere textual representaion of the diffed objects.
+    It gives you the actual objects (t1, t2) throughout the tree of parents and children.
     We will see through examples how this affects how you retrieve the individual results:
 
-    Value of an item has changed.
+    Value of an item has changed (Tree View)
         >>> t1 = {1:1, 2:2, 3:3}
         >>> t2 = {1:1, 2:4, 3:3}
         >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
@@ -340,7 +361,7 @@ class DeepDiff(ResultDict):
         >>> changed.up
         <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
 
-    List difference
+    List difference (Tree View)
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
         >>> ddiff = DeepDiff(t1, t2, view='tree')
@@ -371,7 +392,7 @@ class DeepDiff(ResultDict):
         >>> parent.up.up.t1 == t1  # It is holding the original t1 that we passed to DeepDiff
         True
 
-    List difference 2:
+    List difference 2  (Tree View)
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
         >>> ddiff = DeepDiff(t1, t2, view='tree')
@@ -395,7 +416,7 @@ class DeepDiff(ResultDict):
         >>> added.up.up.down.down == added
         True
 
-    List difference ignoring order but reporting repetitions:
+    List difference ignoring order but reporting repetitions (Tree View)
         >>> t1 = [1, 3, 1, 4]
         >>> t2 = [4, 4, 1]
         >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree')
@@ -422,7 +443,8 @@ class DeepDiff(ResultDict):
         >>> (repeat1, repeat2) = ddiff['repetition_change']
         >>> repeat1
         <root[0]>
-        >>> # But the verbosity level does not change the actual report object:
+        >>> # But the verbosity level does not change the actual report object.
+        >>> # It only changes the textual representaion of the object. We get the actual object here:
         >>> repeat1.repetition
         {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
         >>> repeat1.t1
@@ -432,20 +454,26 @@ class DeepDiff(ResultDict):
         >>> repeat1.up
         <root>
 
-    List that contains dictionary:
+    List that contains dictionary (Tree View)
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
         >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
-        >>> ddiff = DeepDiff(t1, t2)
+        >>> ddiff = DeepDiff(t1, t2, view='tree')
         >>> pprint (ddiff, indent = 2)
-        { 'dictionary_item_removed': {"root[4]['b'][2][2]"},
-          'values_changed': {"root[4]['b'][2][1]": {'new_value': 3, 'old_value': 1}}}
+        { 'dictionary_item_removed': {<root[4]['b'][2][2] t1:2, t2:None>},
+          'values_changed': {<root[4]['b'][2][1] t1:1, t2:3>}}
 
-    Sets:
+    Sets (Tree View)
         >>> t1 = {1, 2, 8}
         >>> t2 = {1, 2, 3, 5}
-        >>> ddiff = DeepDiff(t1, t2)
-        >>> pprint (DeepDiff(t1, t2))
-        {'set_item_added': {'root[5]', 'root[3]'}, 'set_item_removed': {'root[8]'}}
+        >>> ddiff = DeepDiff(t1, t2, view='tree')
+        >>> print(ddiff)
+        {'set_item_removed': {'root[8]'}, 'set_item_added': {'root[5]', 'root[3]'}}
+        >>> # grabbing one item from set_item_removed set which has one item only
+        >>> (item,) = ddiff['set_item_removed']
+        >>> item.up
+        pp
+        >>> item.up.t1 == t1
+        True
 
     Named Tuples:
         >>> from collections import namedtuple
@@ -491,7 +519,6 @@ class DeepDiff(ResultDict):
                             'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
         >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
         {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
-
 
     """
 

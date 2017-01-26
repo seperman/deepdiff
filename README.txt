@@ -2,7 +2,7 @@
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
-Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
+Tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, Pypy, Pypy3
 
 Note: Checkout the github repo's readme for complete coverage of features:
 https://github.com/seperman/deepdiff
@@ -226,7 +226,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
-- v3-0-0: TBD
+- v3-0-0: Introducing Tree View
 - v2-5-3: Bug fix on logging for content hash.
 - v2-5-2: Bug fixes on content hash.
 - v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
