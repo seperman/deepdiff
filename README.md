@@ -211,14 +211,17 @@ Text view is the original and currently the default view of DeepDiff.
 It is called text view because the results contain texts that represent the path to the data:
 
 Example of using the text view.
-    >>> from deepdiff import DeepDiff
-    >>> t1 = {1:1, 3:3, 4:4}
-    >>> t2 = {1:1, 3:3, 5:5, 6:6}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print(ddiff)
-    {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
 
-So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
+```python
+>>> from deepdiff import DeepDiff
+>>> t1 = {1:1, 3:3, 4:4}
+>>> t2 = {1:1, 3:3, 5:5, 6:6}
+>>> ddiff = DeepDiff(t1, t2)
+>>> print(ddiff)
+{'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
+```
+
+So for example `ddiff['dictionary_item_removed']` is a set if strings thus this is called the text view.
 
     The following examples are using the *default text view.*
     The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
