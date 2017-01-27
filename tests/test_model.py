@@ -29,8 +29,8 @@ logging.disable(logging.CRITICAL)
 
 
 class WorkingChildRelationship(ChildRelationship):
-    # param_repr_format = "|{}|"
-    pass
+    def get_param_from_obj(self, obj):
+        return obj
 
 
 class DictRelationshipTestCase(TestCase):
@@ -231,8 +231,7 @@ class ChildRelationshipTestCase(TestCase):
             ChildRelationship.create(DiffLevel, "hello", 42)
 
     def test_rel_repr_short(self):
-        rel = WorkingChildRelationship(
-            parent="that parent", child="this child", param="some param")
+        rel = WorkingChildRelationship(parent="that parent", child="this child", param="some param")
         rel_repr = repr(rel)
         expected = "<WorkingChildRelationship parent:'that parent', child:'this child', param:'some param'>"
         self.assertEqual(rel_repr, expected)

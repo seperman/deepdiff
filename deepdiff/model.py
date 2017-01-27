@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose
-from abc import ABCMeta, abstractmethod
 from ast import literal_eval
 from copy import copy
 
@@ -508,10 +507,9 @@ class DiffLevel(object):
 
 class ChildRelationship(object):
     """
-    Abstract Base class. Describes the relationship between a container object (the "parent") and the contained
+    Describes the relationship between a container object (the "parent") and the contained
     "child" object.
     """
-    __metaclass__ = ABCMeta
 
     # Format to a be used for representing param.
     # E.g. for a dict, this turns a formatted param param "42" into "[42]".
@@ -562,7 +560,6 @@ class ChildRelationship(object):
         """
         return self.stringify_param(force)
 
-    @abstractmethod
     def get_param_from_obj(self, obj):  # pragma: no cover
         """
         Get item from external object.
