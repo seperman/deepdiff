@@ -248,7 +248,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
-**Primary Author**
+**Authors**
 Sep Dehpour
 
 Github:  https://github.com/seperman
@@ -261,10 +261,7 @@ Victor Hahn Castell
 - [hahncastell.de](http://hahncastell.de)
 - [flexoptix.net](http://www.flexoptix.net)
 
-
-**Contributors**
-
-Thanks to:
+Also thanks to:
 
 - nfvs for Travis-CI setup script
 - brbsix for initial Py3 porting

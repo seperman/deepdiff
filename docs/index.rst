@@ -349,8 +349,8 @@ Changelog
 - v0-5-5: Adding loop detection
 
 
-Author
-======
+Authors
+=======
 
 Sep Dehpour
 
@@ -359,7 +359,13 @@ Sep Dehpour
 - `Linkedin <http://www.linkedin.com/in/sepehr>`_
 - `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
 
-Thanks to:
+Victor Hahn Castell
+
+- `hahncastell.de <http://hahncastell.de>`_
+- `flexoptix.net <http://www.flexoptix.net>`_
+
+
+ALso thanks to:
 
 - nfvs for Travis-CI setup script
 - brbsix for initial Py3 porting
