@@ -157,17 +157,39 @@ Views
 Text View (default)
 -------------------
 
-Text view is the default view. All the examples above are using the text view.
+Text view is the original and currently the default view of DeepDiff.
+
+It is called text view because the results contain texts that represent the path to the data:
+
+Example of using the text view.
+    >>> from deepdiff import DeepDiff
+    >>> t1 = {1:1, 3:3, 4:4}
+    >>> t2 = {1:1, 3:3, 5:5, 6:6}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> print(ddiff)
+    {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
+
+So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
+
+.. seealso::
+    The following examples are using the *default text view.*
+    The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
+    Read more about the Tree View at :doc:`/diff`
 
 Tree View (new)
 ---------------
 
+Starting the version 3.0.0 You can choose the view into the deepdiff results.
 The tree view provides you with tree objects that you can traverse through to find
 the parents of the objects that are diffed and the actual objects that are being diffed.
 This view is very useful when dealing with nested objects.
 Note that tree view always returns results in the form of Python sets.
 
-You can traverse through the tree elements by using up, down, t1, t2
+You can traverse through the tree elements!
+
+.. note::
+    The Tree view is just a different representation of the diffed data.
+    Behind the scene, DeepDiff creates the tree view first and then converts it to textual representation for the text view.
 
 .. code:: text
 
@@ -186,11 +208,11 @@ You can traverse through the tree elements by using up, down, t1, t2
     |                                                               |
     +---------------------------------------------------------------+
 
+
 The tree view allows you to have more than mere textual representaion of the diffed objects.
 It gives you the actual objects (t1, t2) throughout the tree of parents and children.
-We will see through examples how this affects how you retrieve the individual results:
 
-Value of an item has changed (Tree View)
+:Example:
 
 .. code:: python
 
@@ -217,109 +239,8 @@ Value of an item has changed (Tree View)
     >>> changed.up
     <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
 
-List difference (Tree View)
-
-.. code:: python
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> ddiff
-    {'iterable_item_removed': {<root[4]['b'][3] t1:4, t2:None>, <root[4]['b'][2] t1:3, t2:None>}}
-    >>> # Note that the iterable_item_removed is a set. In this case it has 2 items in it.
-    >>> # One way to get one item from the set is to convert it to a list
-    >>> # And then get the first item of the list:
-    >>> removed = list(ddiff['iterable_item_removed'])[0]
-    >>> removed
-    <root[4]['b'][2] t1:3, t2:None>
-    >>>
-    >>> parent = removed.up
-    >>> parent
-    <root[4]['b'] t1:[1, 2, 3, 4], t2:[1, 2]>
-    >>> parent.path()
-    "root[4]['b']"
-    >>> parent.t1
-    [1, 2, 3, 4]
-    >>> parent.t2
-    [1, 2]
-    >>> parent.up
-    <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
-    >>> parent.up.up
-    <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 2,...}>
-    >>> parent.up.up.t1
-    {1: 1, 2: 2, 3: 3, 4: {'a': 'hello', 'b': [1, 2, 3, 4]}}
-    >>> parent.up.up.t1 == t1  # It is holding the original t1 that we passed to DeepDiff
-    True
-
-
-List difference 2  (Tree View)
-
-.. code:: python
-
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> pprint(ddiff, indent = 2)
-    { 'iterable_item_added': {<root[4]['b'][3] t1:None, t2:3>},
-      'values_changed': { <root[4]['b'][1] t1:2, t2:3>,
-                          <root[4]['b'][2] t1:3, t2:2>}}
-    >>>
-    >>> # Note that iterable_item_added is a set with one item.
-    >>> # So in order to get that one item from it, we can do:
-    >>> (added,) = ddiff['iterable_item_added']
-    >>> added
-    <root[4]['b'][3] t1:None, t2:3>
-    >>> added.up.up
-    <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
-    >>> added.up.up.path()
-    'root[4]'
-    >>> added.up.up.down
-    <root[4]['b'] t1:[1, 2, 3], t2:[1, 3, 2, 3]>
-    # going up twice and then down twice gives you the same node in the tree:
-    >>> added.up.up.down.down == added
-    True
-
-
-List difference ignoring order but reporting repetitions (Tree View)
-
-.. code:: python
-
-    >>> t1 = [1, 3, 1, 4]
-    >>> t2 = [4, 4, 1]
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree')
-    >>> pprint(ddiff, indent=2)
-    { 'iterable_item_removed': {<root[1] t1:3, t2:None>},
-      'repetition_change': { <root[3] {'repetition': {'old_repeat': 1,...}>,
-                             <root[0] {'repetition': {'old_repeat': 2,...}>}}
-    >>>
-    >>> # repetition_change is a set with 2 items.
-    >>> # in order to get those 2 items, we can do the following.
-    >>> # or we can convert the set to list and get the list items.
-    >>> # or we can iterate through the set items
-    >>> (repeat1, repeat2) = ddiff['repetition_change']
-    >>> repeat1  # the default verbosity is set to 1.
-    <root[0] {'repetition': {'old_repeat': 2,...}>
-    >>> # The actual data regarding the repetitions can be found in the repetition attribute:
-    >>> repeat1.repetition
-    {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
-    >>>
-    >>> # If you change the verbosity, you will see less:
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree', verbose_level=0)
-    >>> ddiff
-    {'repetition_change': {<root[3]>, <root[0]>}, 'iterable_item_removed': {<root[1]>}}
-    >>> (repeat1, repeat2) = ddiff['repetition_change']
-    >>> repeat1
-    <root[0]>
-    >>> # But the verbosity level does not change the actual report object.
-    >>> # It only changes the textual representaion of the object. We get the actual object here:
-    >>> repeat1.repetition
-    {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
-    >>> repeat1.t1
-    4
-    >>> repeat1.t2
-    4
-    >>> repeat1.up
-    <root>
+.. seealso::
+    Read more about the Tree View at :doc:`/diff`
 
 
 Verbose Level
@@ -327,11 +248,53 @@ Verbose Level
 
 Verbose level by default is 1. The possible values are 0, 1 and 2.
 
--  Verbose level 0: won’t report values when type changed.
--  Verbose level 1: default
--  Verbose level 2: will report values when custom objects or
+-  verbose_level 0: won’t report values when type changed.
+-  verbose_level 1: default
+-  verbose_level 2: will report values when custom objects or
    dictionaries have items added or removed.
 
+.. seealso::
+    Read more about the verbosity at :doc:`/diff`
+
+
+***********
+Deep Search
+***********
+
+Deep Search inside objects to find the item matching your criteria.
+
+Note that is searches for either the path to match your criteria or the word in an item.
+
+:Examples:
+
+Importing
+
+.. code:: python
+
+    >>> from deepdiff import DeepSearch
+    >>> from pprint import pprint
+
+Search in list for string
+
+.. code:: python
+
+    >>> obj = ["long somewhere", "string", 0, "somewhere great!"]
+    >>> item = "somewhere"
+    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> print(ds)
+    {'matched_values': {'root[3]': 'somewhere great!', 'root[0]': 'long somewhere'}}
+
+Search in nested data for string
+
+.. code:: python
+
+    >>> obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
+    >>> item = "somewhere"
+    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> pprint(ds, indent=2)
+    { 'matched_paths': {"root[1]['somewhere']": 'around'},
+      'matched_values': { 'root[0]': 'something somewhere',
+                          "root[1]['long']": 'somewhere'}}
 
 .. _ignore\_order: #ignore-order
 .. _report\_repetition: #report-repetitions

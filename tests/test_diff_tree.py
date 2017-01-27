@@ -164,6 +164,15 @@ class DeepDiffTreeTestCase(unittest.TestCase):
             view='tree')
         self.assertEqual(ddiff, {})
 
+    def test_repr(self):
+        t1 = {1, 2, 8}
+        t2 = {1, 2, 3, 5}
+        ddiff = DeepDiff(t1, t2, view='tree')
+        try:
+            str(ddiff)
+        except Exception as e:
+            self.fail("Converting ddiff to string raised: {}".format(e))
+
 
 class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
     """DeepDiff Tests with Numpy."""

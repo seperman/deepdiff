@@ -17,11 +17,10 @@ from decimal import Decimal
 
 from collections import Mapping
 from collections import Iterable
-from copy import deepcopy
 
 from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship, REPORT_KEYS
+from deepdiff.model import DictRelationship, AttributeRelationship  # , REPORT_KEYS
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
@@ -97,13 +96,26 @@ class DeepDiff(ResultDict):
 
     int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
 
-    **Pycon 2016 Talk**
-    I gave a talk about how DeepDiff does what it does at Pycon 2016.
-    `Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
+    **Text View**
 
-    And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
+    Text view is the original and currently the default view of DeepDiff.
 
-    **Examples Text View**
+    It is called text view because the results contain texts that represent the path to the data:
+
+    Example of using the text view.
+        >>> from deepdiff import DeepDiff
+        >>> t1 = {1:1, 3:3, 4:4}
+        >>> t2 = {1:1, 3:3, 5:5, 6:6}
+        >>> ddiff = DeepDiff(t1, t2)
+        >>> print(ddiff)
+        {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
+
+    So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
+
+    .. seealso::
+        The following examples are using the *default text view.*
+        The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
+        Read more about the Tree View at the bottom of this page.
 
     Importing
         >>> from deepdiff import DeepDiff
@@ -309,35 +321,64 @@ class DeepDiff(ResultDict):
         >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
         {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
 
-    **Examples Tree View**
+
+    .. note::
+        All the examples for the text view work for the tree view too. You just need to set view='tree' to get it in tree form.
+
+
+    **Tree View**
+
+    Starting the version 3.0.0 You can choose the view into the deepdiff results.
     The tree view provides you with tree objects that you can traverse through to find
     the parents of the objects that are diffed and the actual objects that are being diffed.
     This view is very useful when dealing with nested objects.
     Note that tree view always returns results in the form of Python sets.
 
-    You can traverse through the tree elements by using up, down, t1, t2
+    You can traverse through the tree elements!
 
-    +---------------------------------------------------------------+
-    |                                                               |
-    |    parent(t1)              parent node            parent(t2)  |
-    |      +                          ^                     +       |
-    +------|--------------------------|---------------------|-------+
-           |                      |   | up                  |
-           | Child                |   |                     | ChildRelationship
-           | Relationship         |   |                     |
-           |                 down |   |                     |
-    +------|----------------------|-------------------------|-------+
-    |      v                      v                         v       |
-    |    child(t1)              child node               child(t2)  |
-    |                                                               |
-    +---------------------------------------------------------------+
+    .. note::
+        The Tree view is just a different representation of the diffed data.
+        Behind the scene, DeepDiff creates the tree view first and then converts it to textual representation for the text view.
+
+    .. code:: text
+
+        +---------------------------------------------------------------+
+        |                                                               |
+        |    parent(t1)              parent node            parent(t2)  |
+        |      +                          ^                     +       |
+        +------|--------------------------|---------------------|-------+
+               |                      |   | up                  |
+               | Child                |   |                     | ChildRelationship
+               | Relationship         |   |                     |
+               |                 down |   |                     |
+        +------|----------------------|-------------------------|-------+
+        |      v                      v                         v       |
+        |    child(t1)              child node               child(t2)  |
+        |                                                               |
+        +---------------------------------------------------------------+
+
+
+    :up: Move up to the parent node
+    :down: Move down to the child node
+    :path(): Get the path to the current node
+    :t1: The first item in the current node that is being diffed
+    :t2: The second item in the current node that is being diffed
+    :additional: Additional information about the node i.e. repetition
+    :repetition: Shortcut to get the repetition report
 
 
     The tree view allows you to have more than mere textual representaion of the diffed objects.
     It gives you the actual objects (t1, t2) throughout the tree of parents and children.
-    We will see through examples how this affects how you retrieve the individual results:
+
+    **Examples Tree View**
+
+    .. note::
+        The Tree View is introduced in DeepDiff 3.0.0.
+        Set view='tree' in order to use this view.
 
     Value of an item has changed (Tree View)
+        >>> from deepdiff import DeepDiff
+        >>> from pprint import pprint
         >>> t1 = {1:1, 2:2, 3:3}
         >>> t2 = {1:1, 2:4, 3:3}
         >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
@@ -403,6 +444,7 @@ class DeepDiff(ResultDict):
         >>>
         >>> # Note that iterable_item_added is a set with one item.
         >>> # So in order to get that one item from it, we can do:
+        >>>
         >>> (added,) = ddiff['iterable_item_added']
         >>> added
         <root[4]['b'][3] t1:None, t2:3>
@@ -412,7 +454,8 @@ class DeepDiff(ResultDict):
         'root[4]'
         >>> added.up.up.down
         <root[4]['b'] t1:[1, 2, 3], t2:[1, 3, 2, 3]>
-        # going up twice and then down twice gives you the same node in the tree:
+        >>>
+        >>> # going up twice and then down twice gives you the same node in the tree:
         >>> added.up.up.down.down == added
         True
 
@@ -429,6 +472,7 @@ class DeepDiff(ResultDict):
         >>> # in order to get those 2 items, we can do the following.
         >>> # or we can convert the set to list and get the list items.
         >>> # or we can iterate through the set items
+        >>>
         >>> (repeat1, repeat2) = ddiff['repetition_change']
         >>> repeat1  # the default verbosity is set to 1.
         <root[0] {'repetition': {'old_repeat': 2,...}>
@@ -443,6 +487,7 @@ class DeepDiff(ResultDict):
         >>> (repeat1, repeat2) = ddiff['repetition_change']
         >>> repeat1
         <root[0]>
+        >>>
         >>> # But the verbosity level does not change the actual report object.
         >>> # It only changes the textual representaion of the object. We get the actual object here:
         >>> repeat1.repetition
@@ -462,28 +507,28 @@ class DeepDiff(ResultDict):
         { 'dictionary_item_removed': {<root[4]['b'][2][2] t1:2, t2:None>},
           'values_changed': {<root[4]['b'][2][1] t1:1, t2:3>}}
 
-    Sets (Tree View)
+    Sets (Tree View):
         >>> t1 = {1, 2, 8}
         >>> t2 = {1, 2, 3, 5}
         >>> ddiff = DeepDiff(t1, t2, view='tree')
         >>> print(ddiff)
-        {'set_item_removed': {'root[8]'}, 'set_item_added': {'root[5]', 'root[3]'}}
+        {'set_item_removed': {<root: t1:8, t2:None>}, 'set_item_added': {<root: t1:None, t2:5>, <root: t1:None, t2:3>}}
         >>> # grabbing one item from set_item_removed set which has one item only
         >>> (item,) = ddiff['set_item_removed']
         >>> item.up
-        pp
+        <root t1:{8, 1, 2}, t2:{1, 2, 3, 5}>
         >>> item.up.t1 == t1
         True
 
-    Named Tuples:
+    Named Tuples (Tree View):
         >>> from collections import namedtuple
         >>> Point = namedtuple('Point', ['x', 'y'])
         >>> t1 = Point(x=11, y=22)
         >>> t2 = Point(x=11, y=23)
-        >>> pprint (DeepDiff(t1, t2))
-        {'values_changed': {'root.y': {'new_value': 23, 'old_value': 22}}}
+        >>> print(DeepDiff(t1, t2, view='tree'))
+        {'values_changed': {<root.y t1:22, t2:23>}}
 
-    Custom objects:
+    Custom objects (Tree View):
         >>> class ClassA(object):
         ...     a = 1
         ...     def __init__(self, b):
@@ -492,33 +537,57 @@ class DeepDiff(ResultDict):
         >>> t1 = ClassA(1)
         >>> t2 = ClassA(2)
         >>>
-        >>> pprint(DeepDiff(t1, t2))
-        {'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
+        >>> print(DeepDiff(t1, t2, view='tree'))
+        {'values_changed': {<root.b t1:1, t2:2>}}
 
-    Object attribute added:
+    Object attribute added (Tree View):
         >>> t2.c = "new attribute"
-        >>> pprint(DeepDiff(t1, t2))
-        {'attribute_added': {'root.c'},
-         'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
+        >>> pprint(DeepDiff(t1, t2, view='tree'))
+        {'attribute_added': {<root.c t1:None, t2:'new attribute'>},
+         'values_changed': {<root.b t1:1, t2:2>}}
 
-    Approximate decimals comparison (Significant digits after the point):
+    Approximate decimals comparison (Significant digits after the point) (Tree View):
         >>> t1 = Decimal('1.52')
         >>> t2 = Decimal('1.57')
-        >>> DeepDiff(t1, t2, significant_digits=0)
+        >>> DeepDiff(t1, t2, significant_digits=0, view='tree')
         {}
-        >>> DeepDiff(t1, t2, significant_digits=1)
-        {'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
+        >>> ddiff = DeepDiff(t1, t2, significant_digits=1, view='tree')
+        >>> ddiff
+        {'values_changed': {<root t1:Decimal('1.52'), t2:Decimal('1.57')>}}
+        >>> (change1,) = ddiff['values_changed']
+        >>> change1
+        <root t1:Decimal('1.52'), t2:Decimal('1.57')>
+        >>> change1.t1
+        Decimal('1.52')
+        >>> change1.t2
+        Decimal('1.57')
+        >>> change1.path()
+        'root'
 
-    Approximate float comparison (Significant digits after the point):
+    Approximate float comparison (Significant digits after the point) (Tree View):
         >>> t1 = [ 1.1129, 1.3359 ]
         >>> t2 = [ 1.113, 1.3362 ]
-        >>> pprint(DeepDiff(t1, t2, significant_digits=3))
+        >>> ddiff = DeepDiff(t1, t2, significant_digits=3, view='tree')
+        >>> ddiff
         {}
-        >>> pprint(DeepDiff(t1, t2))
-        {'values_changed': {'root[0]': {'new_value': 1.113, 'old_value': 1.1129},
-                            'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
-        >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
-        {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
+        >>> ddiff = DeepDiff(t1, t2, view='tree')
+        >>> pprint(ddiff, indent=2)
+        { 'values_changed': { <root[0] t1:1.1129, t2:1.113>,
+                              <root[1] t1:1.3359, t2:1.3362>}}
+        >>> ddiff = DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1, view='tree')
+        >>> ddiff
+        {'values_changed': {<root t1:1.23e+20, t2:1.24e+20>}}
+
+
+    .. note::
+        All the examples for the text view work for the tree view too. You just need to set view='tree' to get it in tree form.
+
+    **Pycon 2016 Talk**
+    I gave a talk about how DeepDiff does what it does at Pycon 2016.
+    `Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
+
+    And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
+
 
     """
 

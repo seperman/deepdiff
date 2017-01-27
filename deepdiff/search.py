@@ -50,7 +50,6 @@ class DeepSearch(dict):
     Importing
         >>> from deepdiff import DeepSearch
         >>> from pprint import pprint
-        >>> from __future__ import print_function # In case running on Python 2
 
     Search in list for string
         >>> obj = ["long somewhere", "string", 0, "somewhere great!"]

@@ -6,7 +6,7 @@ DeepDiff Reference
 .. toctree::
    :maxdepth: 3
 
-.. automodule:: diff
+.. automodule:: deepdiff.diff
 
 .. autoclass:: DeepDiff
     :members:

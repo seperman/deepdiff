@@ -598,7 +598,7 @@ class ChildRelationship(object):
                 result = candidate if resurrected == param else None
 
         if result:
-            result = self.param_repr_format.format(result)
+            result = ':' if self.param_repr_format is None else self.param_repr_format.format(result)
 
         return result
 
