@@ -1,3 +1,4 @@
+
 # deepdiff v 3.0.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
@@ -112,6 +113,15 @@ which will print you:
 >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
 >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
 >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+{}
+```
+
+You can also exclude regular expression :
+
+```python
+>>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
+>>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
+>>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
 {}
 ```
 
@@ -442,6 +452,15 @@ And if you would like to know the values of items added or removed, please set t
 >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
 >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
 >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+{}
+```
+
+You can also exclude regular expression :
+
+```python
+>>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
+>>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
+>>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
 {}
 ```
 

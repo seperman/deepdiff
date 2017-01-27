@@ -192,6 +192,11 @@ Exclude part of your object tree from comparison:
     >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
     {}
 
+You can also exclude regular expression :
+    >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
+    >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
+    >>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
+    {}
 
 Using DeepDiff in unit tests
 result is the output of the function that is being tests.

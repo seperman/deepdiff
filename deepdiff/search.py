@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+import re
 import sys
 from collections import Iterable
 from collections import MutableMapping
@@ -75,6 +76,7 @@ class DeepSearch(dict):
                  obj,
                  item,
                  exclude_paths=set(),
+                 exclude_regex_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
                  **kwargs):
@@ -87,6 +89,7 @@ class DeepSearch(dict):
         self.obj = obj
         self.item = item
         self.exclude_paths = set(exclude_paths)
+        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in set(exclude_regex_paths)]
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(
             exclude_types)  # we need tuple for checking isinstance
@@ -143,6 +146,9 @@ class DeepSearch(dict):
     def __skip_this(self, item, parent):
         skip = False
         if parent in self.exclude_paths:
+            skip = True
+        elif self.exclude_regex_paths and any(
+                [exclude_regex_path.match(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
             if isinstance(item, self.exclude_types_tuple):

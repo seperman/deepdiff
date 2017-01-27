@@ -217,6 +217,12 @@ class DeepSearchTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ds, result)
 
+    def test_skip_regexp(self):
+        obj = [{'a': 1, 'b': "somewhere"}, {'c': 4, 'b': "somewhere"}]
+        ds = DeepSearch(obj, item, exclude_regex_paths=["root\[\d+\]"])
+        result = {}
+        self.assertEqual(ds, result)
+
     def test_skip_type_str(self):
         obj = "long string somewhere"
         result = {}

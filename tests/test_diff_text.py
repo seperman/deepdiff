@@ -1297,6 +1297,13 @@ class DeepDiffTextTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ddiff, result)
 
+    def test_skip_regexp(self):
+        t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
+        t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
+        ddiff = DeepDiff(t1, t2, exclude_regex_paths=["root\[\d+\]\['b'\]"])
+        result = {}
+        self.assertEqual(ddiff, result)
+
     def test_skip_str_type_in_dictionary(self):
         t1 = {1: {2: "a"}}
         t2 = {1: {}}
