@@ -5,7 +5,8 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
-  - "pypy"
+  - "3.6"
+  - "pypy-5.4"  # pypy on python 2.7
   - "pypy3"
 
 sudo: false

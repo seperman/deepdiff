@@ -6,7 +6,7 @@ DeepSearch Reference
 .. toctree::
    :maxdepth: 3
 
-.. automodule:: search
+.. automodule:: deepdiff.search
 
 .. autoclass:: DeepSearch
     :members:

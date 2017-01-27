@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 2.5.3 documentation!
+DeepDiff 3.0.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
 
-DeepDiff works with Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
+DeepDiff works with Python 2.7, 3.3, 3.4, 3.5, 3.6, Pypy, Pypy3
 
 ************
 Installation
@@ -33,11 +33,13 @@ Features
 Parameters
 ~~~~~~~~~~
 
-In addition to the 2 objects being compared:
-
+-  t1 (the first object)
+-  t2 (the second object)
 -  `ignore\_order`_
 -  `report\_repetition`_
--  `verbose\_level`_
+-  `exclude\_types\_or\_paths`_
+-  `significant\_digits`_
+-  `views`_
 
 Supported data types
 ~~~~~~~~~~~~~~~~~~~~
@@ -134,6 +136,7 @@ X=significant\_digits
     {'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
 
 Approximate float comparison:
+-----------------------------
 
 .. code:: python
 
@@ -147,21 +150,158 @@ Approximate float comparison:
     >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
     {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
 
+
+Views
+~~~~~
+
+Text View (default)
+-------------------
+
+Text view is the original and currently the default view of DeepDiff.
+
+It is called text view because the results contain texts that represent the path to the data:
+
+Example of using the text view.
+    >>> from deepdiff import DeepDiff
+    >>> t1 = {1:1, 3:3, 4:4}
+    >>> t2 = {1:1, 3:3, 5:5, 6:6}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> print(ddiff)
+    {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
+
+So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
+
+.. seealso::
+    The following examples are using the *default text view.*
+    The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
+    Read more about the Tree View at :doc:`/diff`
+
+Tree View (new)
+---------------
+
+Starting the version 3.0.0 You can choose the view into the deepdiff results.
+The tree view provides you with tree objects that you can traverse through to find
+the parents of the objects that are diffed and the actual objects that are being diffed.
+This view is very useful when dealing with nested objects.
+Note that tree view always returns results in the form of Python sets.
+
+You can traverse through the tree elements!
+
+.. note::
+    The Tree view is just a different representation of the diffed data.
+    Behind the scene, DeepDiff creates the tree view first and then converts it to textual representation for the text view.
+
+.. code:: text
+
+    +---------------------------------------------------------------+
+    |                                                               |
+    |    parent(t1)              parent node            parent(t2)  |
+    |      +                          ^                     +       |
+    +------|--------------------------|---------------------|-------+
+           |                      |   | up                  |
+           | Child                |   |                     | ChildRelationship
+           | Relationship         |   |                     |
+           |                 down |   |                     |
+    +------|----------------------|-------------------------|-------+
+    |      v                      v                         v       |
+    |    child(t1)              child node               child(t2)  |
+    |                                                               |
+    +---------------------------------------------------------------+
+
+
+The tree view allows you to have more than mere textual representaion of the diffed objects.
+It gives you the actual objects (t1, t2) throughout the tree of parents and children.
+
+:Example:
+
+.. code:: python
+
+    >>> t1 = {1:1, 2:2, 3:3}
+    >>> t2 = {1:1, 2:4, 3:3}
+    >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
+    >>> ddiff_verbose0
+    {'values_changed': {<root[2]>}}
+    >>>
+    >>> ddiff_verbose1 = DeepDiff(t1, t2, verbose_level=1, view='tree')
+    >>> ddiff_verbose1
+    {'values_changed': {<root[2] t1:2, t2:4>}}
+    >>> set_of_values_changed = ddiff_verbose1['values_changed']
+    >>> # since set_of_values_changed includes only one item in a set
+    >>> # in order to get that one item we can:
+    >>> (changed,) = set_of_values_changed
+    >>> changed  # Another way to get this is to do: changed=list(set_of_values_changed)[0]
+    <root[2] t1:2, t2:4>
+    >>> changed.t1
+    2
+    >>> changed.t2
+    4
+    >>> # You can traverse through the tree, get to the parents!
+    >>> changed.up
+    <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
+
+.. seealso::
+    Read more about the Tree View at :doc:`/diff`
+
+
 Verbose Level
--------------
+~~~~~~~~~~~~~
 
 Verbose level by default is 1. The possible values are 0, 1 and 2.
 
--  Verbose level 0: won’t report values when type changed.
--  Verbose level 1: default
--  Verbose level 2: will report values when custom objects or
+-  verbose_level 0: won’t report values when type changed.
+-  verbose_level 1: default
+-  verbose_level 2: will report values when custom objects or
    dictionaries have items added or removed.
 
+.. seealso::
+    Read more about the verbosity at :doc:`/diff`
+
+
+***********
+Deep Search
+***********
+
+Deep Search inside objects to find the item matching your criteria.
+
+Note that is searches for either the path to match your criteria or the word in an item.
+
+:Examples:
+
+Importing
+
+.. code:: python
+
+    >>> from deepdiff import DeepSearch
+    >>> from pprint import pprint
+
+Search in list for string
+
+.. code:: python
+
+    >>> obj = ["long somewhere", "string", 0, "somewhere great!"]
+    >>> item = "somewhere"
+    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> print(ds)
+    {'matched_values': {'root[3]': 'somewhere great!', 'root[0]': 'long somewhere'}}
+
+Search in nested data for string
+
+.. code:: python
+
+    >>> obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
+    >>> item = "somewhere"
+    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> pprint(ds, indent=2)
+    { 'matched_paths': {"root[1]['somewhere']": 'around'},
+      'matched_values': { 'root[0]': 'something somewhere',
+                          "root[1]['long']": 'somewhere'}}
 
 .. _ignore\_order: #ignore-order
 .. _report\_repetition: #report-repetitions
 .. _verbose\_level: #verbose-level
-
+.. _exclude\_types\_or\_paths: #exclude-types-or-paths
+.. _significant\_digits: #significant-digits
+.. _views: #views
 
 DeepDiff Reference
 ==================
@@ -186,6 +326,7 @@ Indices and tables
 Changelog
 =========
 
+- v3-0-0: Introducing Tree View
 - v2-5-3: Bug fix on logging for content hash.
 - v2-5-2: Bug fixes on content hash.
 - v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
@@ -208,8 +349,8 @@ Changelog
 - v0-5-5: Adding loop detection
 
 
-Author
-======
+Authors
+=======
 
 Sep Dehpour
 
@@ -218,7 +359,13 @@ Sep Dehpour
 - `Linkedin <http://www.linkedin.com/in/sepehr>`_
 - `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
 
-Thanks to:
+Victor Hahn Castell
+
+- `hahncastell.de <http://hahncastell.de>`_
+- `flexoptix.net <http://www.flexoptix.net>`_
+
+
+ALso thanks to:
 
 - nfvs for Travis-CI setup script
 - brbsix for initial Py3 porting

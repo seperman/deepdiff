@@ -1,4 +1,4 @@
-# deepdiff v 2.5.3
+# deepdiff v 3.0.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -8,7 +8,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
-Tested on Python 2.7, 3.3, 3.4, 3.5, Pypy, Pypy3
+Tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, Pypy, Pypy3
 
 ## Table of Contents
 
@@ -432,6 +432,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
+- v3-0-0: Introducing Tree View
 - v2-5-3: Bug fix on logging for content hash.
 - v2-5-2: Bug fixes on content hash.
 - v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
@@ -453,7 +454,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
-## Primary Author
+## Authors
 
 Seperman (Sep Dehpour)
 
@@ -461,9 +462,12 @@ Seperman (Sep Dehpour)
 - [Linkedin](http://www.linkedin.com/in/sepehr)
 - [ZepWorks](http://www.zepworks.com)
 
-## Contributors
+Victor Hahn Castell
 
-Thanks to:
+- [hahncastell.de](http://hahncastell.de)
+- [flexoptix.net](http://www.flexoptix.net)
+
+Also thanks to:
 
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
@@ -471,4 +475,3 @@ Thanks to:
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- [Victor Hahn Castell](http://hahncastell.de) @ [Flexoptix](http://www.flexoptix.net) for deep set comparison and exclusion patterns
