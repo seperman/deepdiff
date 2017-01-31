@@ -737,7 +737,7 @@ DeepDiff uses jsonpickle in order to serialize and deserialize its results into 
 
 ### Serialize and then deserialize back to deepdiff
 
-```py
+```python
 >>> t1 = {1: 1, 2: 2, 3: 3}
 >>> t2 = {1: 1, 2: "2", 3: 3}
 >>> ddiff = DeepDiff(t1, t2)
