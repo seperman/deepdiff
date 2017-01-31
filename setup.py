@@ -23,7 +23,7 @@ setup(name='deepdiff',
       packages=['deepdiff'],
       zip_safe=False,
       test_suite="tests",
-      tests_require=['mock', 'numpy==1.11.2'],
+      tests_require=['mock'],  # 'numpy==1.11.2' numpy is needed but comes already installed with travis
       long_description=long_description,
       install_requires=[
           'jsonpickle'
