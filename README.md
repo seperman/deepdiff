@@ -25,6 +25,7 @@ Tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, Pypy, Pypy3
 - [Views](#views)
 - [Text View](#text-view)
 - [Tree View](#tree-view)
+- [Serialization](#serialization)
 - [Documentation](http://deepdiff.readthedocs.io/en/latest/)
 
 
