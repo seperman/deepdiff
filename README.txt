@@ -240,6 +240,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-1-0: Serialization to/from json
 - v3-0-0: Introducing Tree View
 - v2-5-3: Bug fix on logging for content hash.
 - v2-5-2: Bug fixes on content hash.
