@@ -1,4 +1,4 @@
-# deepdiff v 3.0.0
+# deepdiff v 3.1.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -202,7 +202,7 @@ Example in DeepDiff for the same operation:
 
 # Views
 
-Starting with DeepDiff v3.0.0, there are two different views into your diffed data: text view (original) and tree view (new).
+Starting with DeepDiff v3.1.0, there are two different views into your diffed data: text view (original) and tree view (new).
 
 ## Text View
 
@@ -224,7 +224,7 @@ Example of using the text view.
 So for example `ddiff['dictionary_item_removed']` is a set if strings thus this is called the text view.
 
     The following examples are using the *default text view.*
-    The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
+    The Tree View is introduced in DeepDiff 3.1.0 and provides traversing capabilities through your diffed data and more!
     Read more about the Tree View at the bottom of this page.
 
 
@@ -451,7 +451,7 @@ And if you would like to know the values of items added or removed, please set t
 
 ## Tree View
 
-Starting the version 3.0.0 You can choose the view into the deepdiff results.
+Starting the version 3.1.0 You can choose the view into the deepdiff results.
 The tree view provides you with tree objects that you can traverse through to find the parents of the objects that are diffed and the actual objects that are being diffed.
 
 This view is very useful when dealing with nested objects.
@@ -493,7 +493,7 @@ It gives you the actual objects (t1, t2) throughout the tree of parents and chil
 
 ## Examples - Tree View
 
-    The Tree View is introduced in DeepDiff 3.0.0.
+    The Tree View is introduced in DeepDiff 3.1.0.
     Set view='tree' in order to use this view.
 
 ### Value of an item has changed (Tree View)
@@ -730,6 +730,23 @@ Decimal('1.57')
 
     All the examples for the text view work for the tree view too. You just need to set view='tree' to get it in tree form.
 
+## Serialization
+
+DeepDiff uses jsonpickle in order to serialize and deserialize its results into json. This works for both tree view and text view.
+
+### Serialize and then deserialize back to deepdiff
+
+```py
+>>> t1 = {1: 1, 2: 2, 3: 3}
+>>> t2 = {1: 1, 2: "2", 3: 3}
+>>> ddiff = DeepDiff(t1, t2)
+>>> jsoned = ddiff.json
+>>> jsoned
+'{"type_changes": {"root[2]": {"py/object": "deepdiff.helper.RemapDict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
+>>> ddiff_new = DeepDiff.from_json(jsoned)
+>>> ddiff == ddiff_new
+True
+```
 
 ## Pycon 2016
 

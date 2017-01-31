@@ -1,4 +1,4 @@
-**DeepDiff v 3.0.0**
+**DeepDiff v 3.1.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -199,8 +199,6 @@ expected is the expected output of the function.
     >>> assertEqual(DeepDiff(result, expected), {})
 
 
-
-
 **Difference with Json Patch**
 
 Unlike Json Patch https://tools.ietf.org/html/rfc6902 which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
@@ -213,6 +211,22 @@ Example in DeepDiff for the same operation:
     >>> item2 = {'a':{'b':{'c':42}}}
     >>> DeepDiff(item1, item2)
     {'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type '
+
+**Serialization**
+
+DeepDiff uses jsonpickle in order to serialize and deserialize its results into json. This works for both tree view and text view.
+
+Serialize and then deserialize back to deepdiff:
+    >>> t1 = {1: 1, 2: 2, 3: 3}
+    >>> t2 = {1: 1, 2: "2", 3: 3}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> jsoned = ddiff.json
+    >>> jsoned
+    '{"type_changes": {"root[2]": {"py/object": "deepdiff.helper.RemapDict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
+    >>> ddiff_new = DeepDiff.from_json(jsoned)
+    >>> ddiff == ddiff_new
+    True
+
 
 **Pycon 2016**
 

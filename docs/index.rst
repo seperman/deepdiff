@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 3.0.0 documentation!
+DeepDiff 3.1.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
@@ -173,13 +173,13 @@ So for example ddiff['dictionary_item_removed'] is a set if strings thus this is
 
 .. seealso::
     The following examples are using the *default text view.*
-    The Tree View is introduced in DeepDiff 3.0.0 and provides traversing capabilities through your diffed data and more!
+    The Tree View is introduced in DeepDiff 3.1.0 and provides traversing capabilities through your diffed data and more!
     Read more about the Tree View at :doc:`/diff`
 
 Tree View (new)
 ---------------
 
-Starting the version 3.0.0 You can choose the view into the deepdiff results.
+Starting the version 3.1.0 You can choose the view into the deepdiff results.
 The tree view provides you with tree objects that you can traverse through to find
 the parents of the objects that are diffed and the actual objects that are being diffed.
 This view is very useful when dealing with nested objects.
@@ -255,6 +255,26 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 
 .. seealso::
     Read more about the verbosity at :doc:`/diff`
+
+
+Serialization
+~~~~~~~~~~~~~
+
+DeepDiff uses jsonpickle in order to serialize and deserialize its results into json. This works for both tree view and text view.
+
+:Serialize and then deserialize back to deepdiff:
+
+.. code:: python
+
+    >>> t1 = {1: 1, 2: 2, 3: 3}
+    >>> t2 = {1: 1, 2: "2", 3: 3}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> jsoned = ddiff.json
+    >>> jsoned
+    '{"type_changes": {"root[2]": {"py/object": "deepdiff.helper.RemapDict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
+    >>> ddiff_new = DeepDiff.from_json(jsoned)
+    >>> ddiff == ddiff_new
+    True
 
 
 ***********

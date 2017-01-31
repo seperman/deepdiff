@@ -13,7 +13,7 @@ except:
     long_description = "Deep Difference and Search of any Python object/data."
 
 setup(name='deepdiff',
-      version='3.0.0',
+      version='3.1.0',
       description='Deep Difference and Search of any Python object/data.',
       url='https://github.com/seperman/deepdiff',
       download_url='https://github.com/seperman/deepdiff/tarball/master',
@@ -23,9 +23,11 @@ setup(name='deepdiff',
       packages=['deepdiff'],
       zip_safe=False,
       test_suite="tests",
-      tests_require=['mock'],
+      tests_require=['mock'],  # 'numpy==1.11.2' numpy is needed but comes already installed with travis
       long_description=long_description,
-      # tests_require=['numpy==1.11.2'],  # Disabling this since Numpy does not install on pypy3
+      install_requires=[
+          'jsonpickle'
+      ],
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
