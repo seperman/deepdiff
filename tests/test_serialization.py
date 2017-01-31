@@ -57,3 +57,13 @@ class DeepAdditionsTestCase(unittest.TestCase):
         jsoned = ddiff.json
         ddiff2 = DeepDiff.from_json(jsoned)
         self.assertTrue('type_changes' in ddiff2)
+
+    def test_deleting_serialization_cache(self):
+        t1 = {1: 1}
+        t2 = {1: 2}
+        ddiff = DeepDiff(t1, t2)
+        self.assertFalse(hasattr(ddiff, '_json'))
+        ddiff.json
+        self.assertTrue(hasattr(ddiff, '_json'))
+        del ddiff.json
+        self.assertFalse(hasattr(ddiff, '_json'))
