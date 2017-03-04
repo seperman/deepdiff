@@ -1325,6 +1325,15 @@ class DeepDiffTextTestCase(unittest.TestCase):
         result = {'unprocessed': ['root: Bad Object and Bad Object']}
         self.assertEqual(ddiff, result)
 
+    def test_dict_none_item_removed(self):
+        t1 = {1: None, 2: 2}
+        t2 = {2: 2}
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'dictionary_item_removed': {'root[1]'}
+        }
+        self.assertEqual(ddiff, result)
+
     def test_non_subscriptable_iterable(self):
         def gen1():
             yield 42
