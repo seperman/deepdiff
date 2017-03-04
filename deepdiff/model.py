@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose
+from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose, NotPresentHere
 from ast import literal_eval
 from copy import copy
 
@@ -95,7 +95,7 @@ class TextResult(ResultDict):
                 # determine change direction (added or removed)
                 # Report t2 (the new one) whenever possible.
                 # In cases where t2 doesn't exist (i.e. stuff removed), report t1.
-                if change.t2 is not None:
+                if change.t2 is not NotPresentHere:
                     item = change.t2
                 else:
                     item = change.t1
@@ -350,10 +350,10 @@ class DiffLevel(object):
         :param param: A ChildRelationship subclass-dependent parameter describing how to get from parent to child,
                       e.g. the key in a dict
         """
-        if self.down.t1 is not None:
+        if self.down.t1 is not NotPresentHere:
             self.t1_child_rel = ChildRelationship.create(
                 klass=klass, parent=self.t1, child=self.down.t1, param=param)
-        if self.down.t2 is not None:
+        if self.down.t2 is not NotPresentHere:
             self.t2_child_rel = ChildRelationship.create(
                 klass=klass, parent=self.t2, child=self.down.t2, param=param)
 

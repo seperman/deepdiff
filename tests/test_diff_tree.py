@@ -18,7 +18,7 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3
+from deepdiff.helper import pypy3, NotPresentHere
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
 import logging
@@ -70,7 +70,7 @@ class DeepDiffTreeTestCase(unittest.TestCase):
         self.assertEqual(added1.up.t1, t1)
         self.assertEqual(added1.up.t2, t2)
 
-        self.assertEqual(added1.t1, None)
+        self.assertEqual(added1.t1, NotPresentHere)
         self.assertEqual(added1.t2, 1337)
 
         # assert DiffLevel child relationships are correct
@@ -123,7 +123,7 @@ class DeepDiffTreeTestCase(unittest.TestCase):
         self.assertEqual(change.up.t2, t2)
         self.assertEqual(change.report_type, 'iterable_item_removed')
         self.assertEqual(change.t1, 31337)
-        self.assertIsNone(change.t2)
+        self.assertEqual(change.t2, NotPresentHere)
 
         self.assertIsInstance(change.up.t1_child_rel,
                               NonSubscriptableIterableRelationship)

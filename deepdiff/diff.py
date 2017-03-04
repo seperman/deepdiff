@@ -19,7 +19,7 @@ from decimal import Decimal
 from collections import Mapping
 from collections import Iterable
 
-from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, IndexedHash, Verbose
+from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, NotPresentHere, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship  # , REPORT_KEYS
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -791,7 +791,7 @@ class DeepDiff(ResultDict):
 
         for key in t_keys_added:
             change_level = level.branch_deeper(
-                None,
+                NotPresentHere,
                 t2[key],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
@@ -800,7 +800,7 @@ class DeepDiff(ResultDict):
         for key in t_keys_removed:
             change_level = level.branch_deeper(
                 t1[key],
-                None,
+                NotPresentHere,
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
             self.__report_result(item_removed_key, change_level)
@@ -868,14 +868,14 @@ class DeepDiff(ResultDict):
             if y is ListItemRemovedOrAdded:  # item removed completely
                 change_level = level.branch_deeper(
                     x,
-                    None,
+                    NotPresentHere,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
                 self.__report_result('iterable_item_removed', change_level)
 
             elif x is ListItemRemovedOrAdded:  # new item added
                 change_level = level.branch_deeper(
-                    None,
+                    NotPresentHere,
                     y,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
@@ -967,7 +967,7 @@ class DeepDiff(ResultDict):
             for hash_value in hashes_added:
                 for i in t2_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
-                        None,
+                        NotPresentHere,
                         t2_hashtable[hash_value].item,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i
@@ -978,7 +978,7 @@ class DeepDiff(ResultDict):
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
-                        None,
+                        NotPresentHere,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i)
                     self.__report_result('iterable_item_removed', change_level)
@@ -1009,7 +1009,7 @@ class DeepDiff(ResultDict):
         else:
             for hash_value in hashes_added:
                 change_level = level.branch_deeper(
-                    None,
+                    NotPresentHere,
                     t2_hashtable[hash_value].item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t2_hashtable[hash_value].indexes[
@@ -1019,7 +1019,7 @@ class DeepDiff(ResultDict):
             for hash_value in hashes_removed:
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
-                    None,
+                    NotPresentHere,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])

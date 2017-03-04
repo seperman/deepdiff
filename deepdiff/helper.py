@@ -58,6 +58,15 @@ class ListItemRemovedOrAdded(object):  # pragma: no cover
     pass
 
 
+class NotPresentHere(object):  # pragma: no cover
+    """
+    In a change tree, this indicated that a previously existing object has been removed -- or will only be added
+    in the future.
+    We previously used None for this but this caused problem when users actually added and removed None. Srsly guys? :D
+    """
+    pass
+
+
 WARNING_NUM = 0
 
 
