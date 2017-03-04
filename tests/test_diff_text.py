@@ -1334,6 +1334,15 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
         self.assertEqual(ddiff, result)
 
+    def test_list_none_item_removed(self):
+        t1 = [1, 2, None]
+        t2 = [1, 2]
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'iterable_item_removed': {'root[2]': None}
+        }
+        self.assertEqual(ddiff, result)
+
     def test_non_subscriptable_iterable(self):
         def gen1():
             yield 42
