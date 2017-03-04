@@ -58,21 +58,13 @@ class ListItemRemovedOrAdded(object):  # pragma: no cover
     pass
 
 
-class NotPresentHere(object):
+class NotPresentHere(object):  # pragma: no cover
     """
     In a change tree, this indicated that a previously existing object has been removed -- or will only be added
     in the future.
     We previously used None for this but this caused problem when users actually added and removed None. Srsly guys? :D
     """
-    def __repr__(self):
-        return "Not present"
-
-    def __eq__(self, other):
-        if isinstance(other, NotPresentHere):
-            return True
-        else:
-            return False
-
+    pass
 
 
 WARNING_NUM = 0
