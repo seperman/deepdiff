@@ -84,7 +84,7 @@ class DeepDiff(ResultDict):
         List of object types to exclude from the report.
 
     view: string, default = text
-        Starting the version 3.1.0 You can choose the view into the deepdiff results.
+        Starting the version 3 you can choosethe view into the deepdiff results.
         The default is the text view which has been the only view up until now.
         The new view is called the tree view which allows you to traverse through
         the tree of changed items.
@@ -115,7 +115,8 @@ class DeepDiff(ResultDict):
 
     .. seealso::
         The following examples are using the *default text view.*
-        The Tree View is introduced in DeepDiff 3.1.0 and provides traversing capabilities through your diffed data and more!
+        The Tree View is introduced in DeepDiff v3 and provides
+        traversing capabilitie through your diffed data and more!
         Read more about the Tree View at the bottom of this page.
 
     Importing
@@ -329,7 +330,7 @@ class DeepDiff(ResultDict):
 
     **Tree View**
 
-    Starting the version 3.1.0 You can choose the view into the deepdiff results.
+    Starting the version 3 You can chooe the view into the deepdiff results.
     The tree view provides you with tree objects that you can traverse through to find
     the parents of the objects that are diffed and the actual objects that are being diffed.
     This view is very useful when dealing with nested objects.
@@ -374,7 +375,7 @@ class DeepDiff(ResultDict):
     **Examples Tree View**
 
     .. note::
-        The Tree View is introduced in DeepDiff 3.1.0.
+        The Tree View is introduced in DeepDiff 3.
         Set view='tree' in order to use this view.
 
     Value of an item has changed (Tree View)

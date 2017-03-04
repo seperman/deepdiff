@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 3.1.0 documentation!
+DeepDiff 3.1.1 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
@@ -173,13 +173,13 @@ So for example ddiff['dictionary_item_removed'] is a set if strings thus this is
 
 .. seealso::
     The following examples are using the *default text view.*
-    The Tree View is introduced in DeepDiff 3.1.0 and provides traversing capabilities through your diffed data and more!
+    The Tree View is introduced in DeepDiff v3 and provides traversing capabilities through your diffed data and more!
     Read more about the Tree View at :doc:`/diff`
 
 Tree View (new)
 ---------------
 
-Starting the version 3.1.0 You can choose the view into the deepdiff results.
+Starting the version v3 You can choose the view into the deepdiff results.
 The tree view provides you with tree objects that you can traverse through to find
 the parents of the objects that are diffed and the actual objects that are being diffed.
 This view is very useful when dealing with nested objects.
@@ -346,6 +346,7 @@ Indices and tables
 Changelog
 =========
 
+- v3-1-1: Bug fix when item value is None (#58)
 - v3-1-0: Serialization to/from json
 - v3-0-0: Introducing Tree View
 - v2-5-3: Bug fix on logging for content hash.
