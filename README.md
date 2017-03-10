@@ -534,13 +534,13 @@ It gives you the actual objects (t1, t2) throughout the tree of parents and chil
 >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
 >>> ddiff = DeepDiff(t1, t2, view='tree')
 >>> ddiff
-{'iterable_item_removed': {<root[4]['b'][3] t1:4, t2:None>, <root[4]['b'][2] t1:3, t2:None>}}
+{'iterable_item_removed': {<root[4]['b'][3] t1:4, t2:Not Present>, <root[4]['b'][2] t1:3, t2:Not Present>}}
 >>> # Note that the iterable_item_removed is a set. In this case it has 2 items in it.
 >>> # One way to get one item from the set is to convert it to a list
 >>> # And then get the first item of the list:
 >>> removed = list(ddiff['iterable_item_removed'])[0]
 >>> removed
-<root[4]['b'][2] t1:3, t2:None>
+<root[4]['b'][2] t1:3, t2:Not Present>
 >>>
 >>> parent = removed.up
 >>> parent
@@ -568,7 +568,7 @@ True
 >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
 >>> ddiff = DeepDiff(t1, t2, view='tree')
 >>> pprint(ddiff, indent = 2)
-{ 'iterable_item_added': {<root[4]['b'][3] t1:None, t2:3>},
+{ 'iterable_item_added': {<root[4]['b'][3] t1:Not Present, t2:3>},
   'values_changed': { <root[4]['b'][1] t1:2, t2:3>,
                       <root[4]['b'][2] t1:3, t2:2>}}
 >>>
@@ -577,7 +577,7 @@ True
 >>>
 >>> (added,) = ddiff['iterable_item_added']
 >>> added
-<root[4]['b'][3] t1:None, t2:3>
+<root[4]['b'][3] t1:Not Present, t2:3>
 >>> added.up.up
 <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
 >>> added.up.up.path()
@@ -597,7 +597,7 @@ True
 >>> t2 = [4, 4, 1]
 >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree')
 >>> pprint(ddiff, indent=2)
-{ 'iterable_item_removed': {<root[1] t1:3, t2:None>},
+{ 'iterable_item_removed': {<root[1] t1:3, t2:Not Present>},
   'repetition_change': { <root[3] {'repetition': {'old_repeat': 1,...}>,
                          <root[0] {'repetition': {'old_repeat': 2,...}>}}
 >>>
@@ -640,7 +640,7 @@ True
 >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
 >>> ddiff = DeepDiff(t1, t2, view='tree')
 >>> pprint (ddiff, indent = 2)
-{ 'dictionary_item_removed': {<root[4]['b'][2][2] t1:2, t2:None>},
+{ 'dictionary_item_removed': {<root[4]['b'][2][2] t1:2, t2:Not Present>},
   'values_changed': {<root[4]['b'][2][1] t1:1, t2:3>}}
 
 Sets (Tree View):
@@ -648,7 +648,7 @@ Sets (Tree View):
 >>> t2 = {1, 2, 3, 5}
 >>> ddiff = DeepDiff(t1, t2, view='tree')
 >>> print(ddiff)
-{'set_item_removed': {<root: t1:8, t2:None>}, 'set_item_added': {<root: t1:None, t2:5>, <root: t1:None, t2:3>}}
+{'set_item_removed': {<root: t1:8, t2:Not Present>}, 'set_item_added': {<root: t1:Not Present, t2:5>, <root: t1:Not Present, t2:3>}}
 >>> # grabbing one item from set_item_removed set which has one item only
 >>> (item,) = ddiff['set_item_removed']
 >>> item.up
@@ -688,7 +688,7 @@ True
 ```python
 >>> t2.c = "new attribute"
 >>> pprint(DeepDiff(t1, t2, view='tree'))
-{'attribute_added': {<root.c t1:None, t2:'new attribute'>},
+{'attribute_added': {<root.c t1:Not Present, t2:'new attribute'>},
  'values_changed': {<root.b t1:1, t2:2>}}
 ```
 
