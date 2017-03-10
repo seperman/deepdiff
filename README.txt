@@ -1,4 +1,4 @@
-**DeepDiff v 3.1.1**
+**DeepDiff v 3.1.2**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -240,6 +240,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-1-2: NotPresent Fix when item is added or removed.
 - v3-1-1: Bug fix when item value is None (#58)
 - v3-1-0: Serialization to/from json
 - v3-0-0: Introducing Tree View
