@@ -20,11 +20,15 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 if py3:  # pragma: no cover
     from builtins import int
     strings = (str, bytes)  # which are both basestring
+    unicode_type = str
+    bytes_type = bytes
     numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
     items = 'items'
 else:  # pragma: no cover
     int = int
     strings = (str, unicode)
+    unicode_type = unicode
+    bytes_type = str
     numbers = (int, float, long, complex, datetime.datetime, datetime.date,
                Decimal)
 

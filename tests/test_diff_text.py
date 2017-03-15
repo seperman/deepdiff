@@ -23,7 +23,7 @@ import unittest
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import py3
+from deepdiff.helper import py3, bytes_type
 from tests import CustomClass
 if py3:
     from unittest import mock
@@ -173,6 +173,54 @@ class DeepDiffTextTestCase(unittest.TestCase):
                     '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
                     'new_value': 'world\n1\n2\nEnd',
                     'old_value': 'world!\nGoodbye!\n1\n2\nEnd'
+                }
+            }
+        }
+        self.assertEqual(ddiff, result)
+        
+    def test_bytes(self):
+        t1 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": b"hello",
+                "b": b"world!\nGoodbye!\n1\n2\nEnd"
+            }
+        }
+        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": b"hello", "b": b"world\n1\n2\nEnd"}}
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                "root[4]['b']": {
+                    'diff':
+                    '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
+                    'new_value': b'world\n1\n2\nEnd',
+                    'old_value': b'world!\nGoodbye!\n1\n2\nEnd'
+                }
+            }
+        }
+        self.assertEqual(ddiff, result)
+        
+    def test_unicode(self):
+        t1 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": u"hello",
+                "b": u"world!\nGoodbye!\n1\n2\nEnd"
+            }
+        }
+        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": u"hello", "b": u"world\n1\n2\nEnd"}}
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                "root[4]['b']": {
+                    'diff':
+                    '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
+                    'new_value': u'world\n1\n2\nEnd',
+                    'old_value': u'world!\nGoodbye!\n1\n2\nEnd'
                 }
             }
         }
