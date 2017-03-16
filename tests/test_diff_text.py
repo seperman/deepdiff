@@ -186,7 +186,7 @@ class DeepDiffTextTestCase(unittest.TestCase):
             4: {
                 "a": b"hello",
                 "b": b"world!\nGoodbye!\n1\n2\nEnd",
-                "c": b"\x00",
+                "c": b"\x80",
             }
         }
         t2 = {1: 1, 
@@ -195,7 +195,7 @@ class DeepDiffTextTestCase(unittest.TestCase):
               4: {
                   "a": b"hello", 
                   "b": b"world\n1\n2\nEnd",
-                  "c": b'\x01',
+                  "c": b'\x81',
               }
         }
         ddiff = DeepDiff(t1, t2)
@@ -208,8 +208,8 @@ class DeepDiffTextTestCase(unittest.TestCase):
                     'old_value': b'world!\nGoodbye!\n1\n2\nEnd'
                 },
                 "root[4]['c']": {
-                    'new_value': b'\x01',
-                    'old_value': b'\x00'
+                    'new_value': b'\x81',
+                    'old_value': b'\x80'
                 }
             }
         }

@@ -913,12 +913,13 @@ class DeepDiff(ResultDict):
         else:
             t1_str = level.t1
             t2_str = level.t2
-        if do_diff and u'\n' in t1_str or u'\n' in t2_str:
-            diff = difflib.unified_diff(
-                t1_str.splitlines(), t2_str.splitlines(), lineterm='')
-            diff = list(diff)
-            if diff:
-                level.additional['diff'] = u'\n'.join(diff)
+        if do_diff:
+            if u'\n' in t1_str or u'\n' in t2_str:
+                diff = difflib.unified_diff(
+                    t1_str.splitlines(), t2_str.splitlines(), lineterm='')
+                diff = list(diff)
+                if diff:
+                    level.additional['diff'] = u'\n'.join(diff)
 
         self.__report_result('values_changed', level)
 
