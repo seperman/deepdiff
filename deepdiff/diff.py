@@ -19,7 +19,7 @@ from decimal import Decimal
 from collections import Mapping
 from collections import Iterable
 
-from deepdiff.helper import py3, strings, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose
+from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship  # , REPORT_KEYS
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -901,14 +901,25 @@ class DeepDiff(ResultDict):
         """Compare strings"""
         if level.t1 == level.t2:
             return
-
+        
         # do we add a diff for convenience?
-        if '\n' in level.t1 or '\n' in level.t2:
-            diff = difflib.unified_diff(
-                level.t1.splitlines(), level.t2.splitlines(), lineterm='')
-            diff = list(diff)
-            if diff:
-                level.additional['diff'] = '\n'.join(diff)
+        do_diff = True
+        if isinstance(level.t1, bytes_type):
+            try:
+                t1_str = level.t1.decode('ascii')
+                t2_str = level.t2.decode('ascii')
+            except UnicodeDecodeError:
+                do_diff = False
+        else:
+            t1_str = level.t1
+            t2_str = level.t2
+        if do_diff:
+            if u'\n' in t1_str or u'\n' in t2_str:
+                diff = difflib.unified_diff(
+                    t1_str.splitlines(), t2_str.splitlines(), lineterm='')
+                diff = list(diff)
+                if diff:
+                    level.additional['diff'] = u'\n'.join(diff)
 
         self.__report_result('values_changed', level)
 
