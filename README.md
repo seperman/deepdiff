@@ -1,4 +1,4 @@
-# deepdiff v 3.1.2
+# deepdiff v 3.1.3
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -764,6 +764,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
+- v3-1-3: Unicode vs. Bytes default fix
 - v3-1-2: NotPresent Fix when item is added or removed.
 - v3-1-1: Bug fix when item value is None (#58)
 - v3-1-0: Serialization to/from json
@@ -810,3 +811,5 @@ Also thanks to:
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
+- finnhughes for fixing __slots__
+- moloney for Unicode vs. Bytes default

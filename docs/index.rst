@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 3.1.2 documentation!
+DeepDiff 3.1.3 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
@@ -346,6 +346,7 @@ Indices and tables
 Changelog
 =========
 
+- v3-1-3: Unicode vs. Bytes default fix
 - v3-1-2: NotPresent Fix when item is added or removed.
 - v3-1-1: Bug fix when item value is None (#58)
 - v3-1-0: Serialization to/from json

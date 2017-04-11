@@ -1,9 +1,8 @@
-Primary Authors:
+Authors:
     * Seperman
     * Victor Hahn Castell @ Flexoptix
 
-
-Thanks to:
+Also thanks to:
     * nfvs for Travis-CI setup script.
     * brbsix for initial Py3 porting.
     * WangFenjin for unicode support.
@@ -11,3 +10,4 @@ Thanks to:
     * Bernhard10 for significant digits comparison.
     * b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
     * finnhughes for fixing __slots__
+    * moloney for Unicode vs. Bytes default
