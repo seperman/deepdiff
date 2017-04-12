@@ -10,7 +10,7 @@ from collections import Iterable
 from collections import MutableMapping
 import logging
 
-from deepdiff.helper import py3, strings, numbers, items
+from deepdiff.helper import py3, strings, numbers, items, filtered
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,7 @@ class DeepSearch(dict):
                  exclude_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
+                 case_sensitive=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -85,7 +86,8 @@ class DeepSearch(dict):
             ) % ', '.join(kwargs.keys()))
 
         self.obj = obj
-        self.item = item
+        self.case_sensitive = case_sensitive if isinstance(item, strings) else True
+        item = item if self.case_sensitive else item.lower()
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(
@@ -180,8 +182,9 @@ class DeepSearch(dict):
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
 
             new_parent = parent_text % (parent, item_key_str)
+            new_parent_cased = new_parent if self.case_sensitive else new_parent.lower()
 
-            if str(item) in new_parent:
+            if str(item) in new_parent_cased:
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -200,25 +203,31 @@ class DeepSearch(dict):
                           parents_ids=frozenset({})):
         """Search iterables except dictionaries, sets and strings."""
 
-        for i, x in enumerate(obj):
+        for i, thing in enumerate(obj):
             new_parent = "%s[%s]" % (parent, i)
-            if self.__skip_this(x, parent=new_parent):
+            if self.__skip_this(thing, parent=new_parent):
                 continue
-            if x == item:
-                self.__report(
-                    report_key='matched_values', key=new_parent, value=x)
+
+            if self.case_sensitive or not isinstance(thing, strings):
+                thing_cased = thing
             else:
-                item_id = id(x)
+                thing_cased = thing.lower()
+
+            if thing_cased == item:
+                self.__report(
+                    report_key='matched_values', key=new_parent, value=thing)
+            else:
+                item_id = id(thing)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = self.__add_to_frozen_set(parents_ids,
-                                                             item_id)
-                self.__search(x, item, "%s[%s]" %
+                parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+                self.__search(thing, item, "%s[%s]" %
                               (parent, i), parents_ids_added)
 
     def __search_str(self, obj, item, parent):
         """Compare strings"""
-        if item in obj:
+        obj_text = obj if self.case_sensitive else obj.lower()
+        if item in obj_text:
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
@@ -273,6 +282,21 @@ class DeepSearch(dict):
 
         else:
             self.__search_obj(obj, item, parent, parents_ids)
+
+
+class grep(object):
+    """
+    Grep!
+    """
+
+    def __init__(self,
+                 item,
+                 **kwargs):
+        self.item = item
+        self.kwargs = kwargs
+
+    def __ror__(self, other):
+        return DeepSearch(obj=other, item=self.item, **self.kwargs)
 
 
 if __name__ == "__main__":  # pragma: no cover
