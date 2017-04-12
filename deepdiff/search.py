@@ -10,7 +10,7 @@ from collections import Iterable
 from collections import MutableMapping
 import logging
 
-from deepdiff.helper import py3, strings, numbers, items, filtered
+from deepdiff.helper import py3, strings, numbers, items
 
 logger = logging.getLogger(__name__)
 
