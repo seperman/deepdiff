@@ -1,4 +1,4 @@
-**DeepDiff v 3.1.3**
+**DeepDiff v 3.2.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -240,6 +240,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-2-0: Adding grep for search: object | grep(item)
 - v3-1-3: Unicode vs. Bytes default fix
 - v3-1-2: NotPresent Fix when item is added or removed.
 - v3-1-1: Bug fix when item value is None (#58)

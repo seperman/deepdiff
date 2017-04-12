@@ -1,4 +1,4 @@
-# deepdiff v 3.1.3
+# deepdiff v 3.2.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -154,6 +154,8 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 ## Deep Search
 (New in v2-1-0)
 
+Tip: Take a look at [grep](#grep) which gives you a new interface for DeepSearch!
+
 DeepDiff comes with a utility to find the path to the item you are looking for.
 It is called DeepSearch and it has a similar interface to DeepDiff.
 
@@ -174,6 +176,33 @@ Which will print:
 ```
 
 Tip: An interesting use case is to search inside `locals()` when doing pdb.
+
+## Grep
+(New in v3-2-0)
+
+Grep is another interface for DeepSearch.
+Just grep through your objects as you would in shell!
+
+```py
+from deepdiff import grep
+obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
+ds = obj | grep(item)
+print(ds)
+```
+
+Which will print:
+
+```py
+{'matched_paths': {"root['somewhere']"},
+ 'matched_values': {"root['long']"}}
+```
+
+And you can pass all the same kwargs as DeepSearch to grep too:
+
+```py
+>>> obj | grep(item, verbose_level=2)
+{'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
+```
 
 ## Using DeepDiff in unit tests
 
@@ -764,6 +793,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ##Changelog
 
+- v3-2-0: Adding grep for search: object | grep(item)
 - v3-1-3: Unicode vs. Bytes default fix
 - v3-1-2: NotPresent Fix when item is added or removed.
 - v3-1-1: Bug fix when item value is None (#58)
