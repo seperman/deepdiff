@@ -83,6 +83,20 @@ class DeepDiff(ResultDict):
     exclude_types: list, default = None.
         List of object types to exclude from the report.
 
+    strcmp_function: function, default = None.
+        Function that takes two string arguments and returns True (for equality) or
+        False (for inequality). Use this to modify equality for strings. For example,
+        if you want the diff to ignore differences in whitespace, pass the
+        function ``equal_modulo_whitespace``, which is defined as follows::
+
+              import re
+              whitespace_re = re.compile(r"\s+")
+
+              def equal_modulo_whitespace(str1,str2):
+
+                  return (whitespace_re.sub("",str1) == whitespace_re.sub("",str2))
+
+
     view: string, default = text
         Starting the version 3 you can choosethe view into the deepdiff results.
         The default is the text view which has been the only view up until now.
@@ -619,8 +633,9 @@ class DeepDiff(ResultDict):
                  exclude_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
+                strcmp_function = None,
                  view='text',
-                 **kwargs):
+                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
@@ -639,6 +654,8 @@ class DeepDiff(ResultDict):
             raise ValueError(
                 "significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
+
+        self.strcmp_function = strcmp_function
 
         self.tree = TreeResult()
 
@@ -899,7 +916,10 @@ class DeepDiff(ResultDict):
 
     def __diff_str(self, level):
         """Compare strings"""
-        if level.t1 == level.t2:
+        if self.strcmp_function:
+            if self.strcmp_function(level.t1,level.t2):
+                return
+        elif level.t1 == level.t2:
             return
         
         # do we add a diff for convenience?
