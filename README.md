@@ -1,5 +1,7 @@
 # deepdiff v 3.2.0
 
+[![Join the chat at https://gitter.im/deepdiff/Lobby](https://badges.gitter.im/deepdiff/Lobby.svg)](https://gitter.im/deepdiff/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
