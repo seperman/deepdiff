@@ -608,8 +608,6 @@ class DeepDiff(ResultDict):
 
     """
 
-    show_warning = True
-
     def __init__(self,
                  t1,
                  t2,
@@ -901,7 +899,7 @@ class DeepDiff(ResultDict):
         """Compare strings"""
         if level.t1 == level.t2:
             return
-        
+
         # do we add a diff for convenience?
         do_diff = True
         if isinstance(level.t1, bytes_type):
