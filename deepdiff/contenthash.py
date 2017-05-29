@@ -44,8 +44,6 @@ class DeepHash(dict):
     **DeepHash**
     """
 
-    show_warning = True
-
     def __init__(self,
                  obj,
                  hashes=None,
@@ -76,7 +74,9 @@ class DeepHash(dict):
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
 
-        if not self['unprocessed']:
+        if self['unprocessed']:
+            logger.warning("Can not hash the following items: {}.".format(self['unprocessed']))
+        else:
             del self['unprocessed']
 
     @staticmethod
@@ -232,6 +232,9 @@ class DeepHash(dict):
 
         if self.__skip_this(obj):
             result = self.skipped
+
+        elif obj is None:
+            result = 'NONE'
 
         elif isinstance(obj, strings):
             result = self.__hash_str(obj)

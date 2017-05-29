@@ -23,7 +23,7 @@ import unittest
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import py3, bytes_type
+from deepdiff.helper import py3
 from tests import CustomClass
 if py3:
     from unittest import mock
@@ -177,7 +177,7 @@ class DeepDiffTextTestCase(unittest.TestCase):
             }
         }
         self.assertEqual(ddiff, result)
-        
+
     def test_bytes(self):
         t1 = {
             1: 1,
@@ -189,11 +189,11 @@ class DeepDiffTextTestCase(unittest.TestCase):
                 "c": b"\x80",
             }
         }
-        t2 = {1: 1, 
-              2: 2, 
-              3: 3, 
+        t2 = {1: 1,
+              2: 2,
+              3: 3,
               4: {
-                  "a": b"hello", 
+                  "a": b"hello",
                   "b": b"world\n1\n2\nEnd",
                   "c": b'\x81',
               }
@@ -214,7 +214,7 @@ class DeepDiffTextTestCase(unittest.TestCase):
             }
         }
         self.assertEqual(ddiff, result)
-        
+
     def test_unicode(self):
         t1 = {
             1: 1,
@@ -542,6 +542,13 @@ class DeepDiffTextTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         result = {'iterable_item_added': {'root[0]': {4}}}
         self.assertEqual(ddiff, result)
+
+    def test_set_of_none(self):
+        """
+        https://github.com/seperman/deepdiff/issues/64
+        """
+        ddiff = DeepDiff(set(), set([None]))
+        self.assertEqual(ddiff, {'set_item_added': {'root[None]'}})
 
     def test_list_that_contains_dictionary(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, {1: 1, 2: 2}]}}
