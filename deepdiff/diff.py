@@ -197,8 +197,8 @@ class DeepDiff(ResultDict):
 
         >>>
         >>> print (ddiff['values_changed']["root[4]['b']"]["diff"])
-        ---
-        +++
+        --- 
+        +++ 
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
