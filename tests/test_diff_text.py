@@ -354,6 +354,12 @@ class DeepDiffTextTestCase(unittest.TestCase):
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         self.assertEqual(ddiff, {})
 
+    def test_list_difference_ignore_order_with_threshold(self):
+        t1 = [1000, 2000]
+        t2 = [2001, 1001]
+        ddiff = DeepDiff(t1, t2, threshold=2, ignore_order=True)
+        self.assertEqual(ddiff, {})
+
     def test_dictionary_difference_ignore_order(self):
         t1 = {"a": [[{"b": 2, "c": 4}, {"b": 2, "c": 3}]]}
         t2 = {"a": [[{"b": 2, "c": 3}, {"b": 2, "c": 4}]]}
@@ -1173,6 +1179,32 @@ class DeepDiffTextTestCase(unittest.TestCase):
                     }
                 }
             }
+        self.assertEqual(ddiff, result)
+
+    def test_invalid_threshold_for_decimals(self):
+        t1 = 1000
+        t2 = 1001
+        with self.assertRaises(ValueError):
+            DeepDiff(t1, t2, threshold=-1)
+
+    def test_threshold_for_decimals_ignore(self):
+        t1 = 1000
+        t2 = 1001
+        ddiff = DeepDiff(t1, t2, threshold=1)
+        self.assertEqual(ddiff, {})
+
+    def test_threshold_for_decimals(self):
+        t1 = 1000
+        t2 = 1011
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': 1011,
+                    'old_value': 1000
+                }
+            }
+        }
+        ddiff = DeepDiff(t1, t2, threshold=1)
         self.assertEqual(ddiff, result)
 
     def test_significant_digits_for_decimals(self):
