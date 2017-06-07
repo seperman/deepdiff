@@ -72,6 +72,10 @@ class DeepDiff(ResultDict):
 
         For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
+    threshold : int/float >= 0, default=None.
+        It's the allowed percentage for which the difference can be ignnored.
+        If threshold is 1% then the diff between 1000 and 1001 is ignored.
+
     verbose_level : int >= 0, default = 1.
         Higher verbose level shows you more details.
         For example verbose level 1 shows what dictionary item are added or removed.
