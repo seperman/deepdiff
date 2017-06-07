@@ -982,8 +982,8 @@ class DeepDiff(ResultDict):
         t1_hashtable = self.__create_hashtable(level.t1, level)
         t2_hashtable = self.__create_hashtable(level.t2, level)
 
-        t1_hashes = t1_hashtable.keys()
-        t2_hashes = t2_hashtable.keys()
+        t1_hashes = list(t1_hashtable.keys())
+        t2_hashes = list(t2_hashtable.keys())
 
         if self.threshold is not None and t1_hashes:
             for hash_value in t1_hashes:
