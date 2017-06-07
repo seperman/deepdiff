@@ -1181,32 +1181,6 @@ class DeepDiffTextTestCase(unittest.TestCase):
             }
         self.assertEqual(ddiff, result)
 
-    def test_invalid_threshold_for_decimals(self):
-        t1 = 1000
-        t2 = 1001
-        with self.assertRaises(ValueError):
-            DeepDiff(t1, t2, threshold=-1)
-
-    def test_threshold_for_decimals_ignore(self):
-        t1 = 1000
-        t2 = 1001
-        ddiff = DeepDiff(t1, t2, threshold=1)
-        self.assertEqual(ddiff, {})
-
-    def test_threshold_for_decimals(self):
-        t1 = 1000
-        t2 = 1011
-        result = {
-            'values_changed': {
-                'root': {
-                    'new_value': 1011,
-                    'old_value': 1000
-                }
-            }
-        }
-        ddiff = DeepDiff(t1, t2, threshold=1)
-        self.assertEqual(ddiff, result)
-
     def test_significant_digits_for_decimals(self):
         t1 = Decimal('2.5')
         t2 = Decimal('1.5')
