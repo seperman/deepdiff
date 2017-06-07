@@ -72,6 +72,10 @@ class DeepDiff(ResultDict):
 
         For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
+    threshold : int/float >= 0, default=None.
+        It's the allowed percentage for which the difference can be ignnored.
+        If threshold is 1% then the diff between 1000 and 1001 is ignored.
+
     verbose_level : int >= 0, default = 1.
         Higher verbose level shows you more details.
         For example verbose level 1 shows what dictionary item are added or removed.
@@ -322,6 +326,12 @@ class DeepDiff(ResultDict):
                             'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
         >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
         {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
+
+    Threshold Ignore:
+        >>> t1 = {1: 1000}
+        >>> t2 = {1: 1001}
+        >>> pprint(DeepDiff(t1, t2, threshold=10))
+        {}
 
 
     .. note::
@@ -614,6 +624,7 @@ class DeepDiff(ResultDict):
                  ignore_order=False,
                  report_repetition=False,
                  significant_digits=None,
+                 threshold=None,
                  exclude_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
@@ -637,6 +648,10 @@ class DeepDiff(ResultDict):
             raise ValueError(
                 "significant_digits must be None or a non-negative integer")
         self.significant_digits = significant_digits
+
+        if threshold is not None and threshold < 0:
+            raise ValueError("threshold must be None or a non-negative integer/float")
+        self.threshold = threshold
 
         self.tree = TreeResult()
 
@@ -683,7 +698,7 @@ class DeepDiff(ResultDict):
         (We'll create the text-style report from there later.)
         :param report_type: A well defined string key describing the type of change.
                             Examples: "set_item_added", "values_changed"
-        :param parent: A DiffLevel object describing the objects in question in their
+        :param level: A DiffLevel object describing the objects in question in their
                        before-change and after-change object structure.
 
         :rtype: None
@@ -967,8 +982,20 @@ class DeepDiff(ResultDict):
         t1_hashtable = self.__create_hashtable(level.t1, level)
         t2_hashtable = self.__create_hashtable(level.t2, level)
 
-        t1_hashes = set(t1_hashtable.keys())
-        t2_hashes = set(t2_hashtable.keys())
+        t1_hashes = t1_hashtable.keys()
+        t2_hashes = t2_hashtable.keys()
+
+        if self.threshold is not None and t1_hashes:
+            for hash_value in t1_hashes:
+                if isinstance(hash_value, (int, float, complex, Decimal)):
+                    delta = float((hash_value * self.threshold) / 100)
+                    for i, value in enumerate(t2_hashes):
+                        if isinstance(hash_value, (int, float, complex, Decimal)) \
+                                    and (hash_value - delta) <= value <= (hash_value + delta):
+                            t2_hashes[i] = hash_value
+
+        t1_hashes = set(t1_hashes)
+        t2_hashes = set(t2_hashes)
 
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
@@ -1038,7 +1065,12 @@ class DeepDiff(ResultDict):
     def __diff_numbers(self, level):
         """Diff Numbers"""
 
-        if self.significant_digits is not None and isinstance(level.t1, (
+        if self.threshold is not None:
+            delta = float((level.t1 * self.threshold) / 100)
+            if not level.t1 - delta <= level.t2 <= level.t1 + delta:
+                self.__report_result('values_changed', level)
+
+        elif self.significant_digits is not None and isinstance(level.t1, (
                 float, complex, Decimal)):
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
             # data is read from files that were previousely written from python and
