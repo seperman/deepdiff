@@ -990,7 +990,8 @@ class DeepDiff(ResultDict):
                 if isinstance(hash_value, (int, float, complex, Decimal)):
                     delta = float((hash_value * self.threshold) / 100)
                     for i, value in enumerate(t2_hashes):
-                        if (hash_value - delta) <= value <= (hash_value + delta):
+                        if isinstance(hash_value, (int, float, complex, Decimal)) \
+                                and (hash_value - delta) <= value <= (hash_value + delta):
                             t2_hashes[i] = hash_value
 
         t1_hashes = set(t1_hashes)
