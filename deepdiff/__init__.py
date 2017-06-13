@@ -1,3 +1,4 @@
+"""This module offers the DeepDiff, DeepSearch, grep and DeepHash classes."""
 import logging
 
 if __name__ == '__main__':
