@@ -165,7 +165,7 @@ Let's say you have a huge nested object and want to see if any item with the wor
 ```py
 from deepdiff import DeepSearch
 obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-ds = DeepSearch(obj, item, verbose_level=2)
+ds = DeepSearch(obj, "somewhere", verbose_level=2)
 print(ds)
 ```
 
@@ -187,7 +187,7 @@ Just grep through your objects as you would in shell!
 ```py
 from deepdiff import grep
 obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
-ds = obj | grep(item)
+ds = obj | grep("somewhere")
 print(ds)
 ```
 
