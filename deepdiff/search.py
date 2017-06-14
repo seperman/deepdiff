@@ -131,7 +131,10 @@ class DeepSearch(dict):
             if is_namedtuple:
                 obj = obj._asdict()
             else:
-                obj = obj.__dict__
+                # Skip magic methods. Slightly hacky, but unless people are defining
+                # new magic methods they want to search, it should work fine.
+                obj = {i: getattr(obj, i) for i in dir(obj)
+                    if not (i.startswith('__') and i.endswith('__'))}
         except AttributeError:
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
