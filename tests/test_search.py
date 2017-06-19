@@ -15,6 +15,7 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepSearch, grep
+from datetime import datetime
 import logging
 logging.disable(logging.CRITICAL)
 
@@ -285,6 +286,30 @@ class DeepSearchTestCase(unittest.TestCase):
         item = "WHAT"
         result = {'matched_values': {'root'}}
         self.assertEqual(DeepSearch(obj, item, verbose_level=1, case_sensitive=False), result)
+
+    def test_none(self):
+        obj = item = None
+        result = {'matched_values': {'root'}}
+        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+
+    def test_complex_obj(self):
+        obj  = datetime(2017, 5, 4, 1, 1, 1)
+        item = datetime(2017, 5, 4, 1, 1, 1)
+        result = {'matched_values': {'root'}}
+        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+
+    def test_keep_searching_after_obj_match(self):
+        class AlwaysEqual:
+            def __init__(self, recurse=True):
+                if recurse:
+                    self.some_attr = AlwaysEqual(recurse=False)
+            def __eq__(self, other):
+                return True
+
+        obj = AlwaysEqual()
+        item = AlwaysEqual()
+        result = {'matched_values': {'root', 'root.some_attr'}}
+        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
 
 
 class GrepTestCase(unittest.TestCase):
