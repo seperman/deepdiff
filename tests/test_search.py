@@ -312,6 +312,17 @@ class DeepSearchTestCase(unittest.TestCase):
         obj = AlwaysEqual()
         item = AlwaysEqual()
         result = {'matched_values': {'root', 'root.some_attr'}}
+
+    def test_search_inherited_attributes(self):
+        class Parent(object):
+            a = 1
+
+        class Child(Parent):
+            b = 2
+
+        obj = Child()
+        item = 1
+        result = {'matched_values': {'root.a'}}
         self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
 
 
