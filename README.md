@@ -1,4 +1,4 @@
-# deepdiff v 3.2.1
+# deepdiff v 3.3.0
 
 [![Join the chat at https://gitter.im/deepdiff/Lobby](https://badges.gitter.im/deepdiff/Lobby.svg)](https://gitter.im/deepdiff/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
@@ -788,12 +788,14 @@ I was honored to give a talk about how DeepDiff does what it does at Pycon 2016.
 And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 
-##Documentation
+## Documentation
 
 <http://deepdiff.readthedocs.io/en/latest/>
 
-##Changelog
+## Change log
 
+- v3-3-0: Searching for objects and class attributes
+- v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
 - v3-2-0: Adding grep for search: object | grep(item)
 - v3-1-3: Unicode vs. Bytes default fix
@@ -845,3 +847,7 @@ Also thanks to:
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
 - finnhughes for fixing __slots__
 - moloney for Unicode vs. Bytes default
+- serv-inc for adding help(deepdiff)
+- movermeyer for updating docs
+- maxrothman for search in inherited class attributes
+- maxrothman for search for types/objects
