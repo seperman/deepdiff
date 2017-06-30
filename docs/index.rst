@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-DeepDiff 3.2.1 documentation!
+DeepDiff 3.3.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
@@ -346,6 +346,7 @@ Indices and tables
 Changelog
 =========
 
+- v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
 - v3-2-0: Adding grep for search: object | grep(item)

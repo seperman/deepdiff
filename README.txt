@@ -1,4 +1,4 @@
-**DeepDiff v 3.2.1**
+**DeepDiff v 3.3.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -240,6 +240,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
 - v3-2-0: Adding grep for search: object | grep(item)
@@ -294,3 +295,5 @@ Also thanks to:
 - moloney for Unicode vs. Bytes default
 - serv-inc for adding help(deepdiff)
 - movermeyer for updating docs
+- maxrothman for search in inherited class attributes
+- maxrothman for search for types/objects

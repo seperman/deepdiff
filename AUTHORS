@@ -13,3 +13,5 @@ Also thanks to:
 - moloney for Unicode vs. Bytes default
 - serv-inc for adding help(deepdiff)
 - movermeyer for updating docs
+- maxrothman for search in inherited class attributes
+- maxrothman for search for types/objects
