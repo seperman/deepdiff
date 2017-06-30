@@ -1,13 +1,15 @@
 Authors:
-    * Seperman
-    * Victor Hahn Castell @ Flexoptix
+- Seperman
+- Victor Hahn Castell @ Flexoptix
 
 Also thanks to:
-    * nfvs for Travis-CI setup script.
-    * brbsix for initial Py3 porting.
-    * WangFenjin for unicode support.
-    * timoilya for comparing list of sets when ignoring order.
-    * Bernhard10 for significant digits comparison.
-    * b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-    * finnhughes for fixing __slots__
-    * moloney for Unicode vs. Bytes default
+- nfvs for Travis-CI setup script.
+- brbsix for initial Py3 porting.
+- WangFenjin for unicode support.
+- timoilya for comparing list of sets when ignoring order.
+- Bernhard10 for significant digits comparison.
+- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
+- finnhughes for fixing __slots__
+- moloney for Unicode vs. Bytes default
+- serv-inc for adding help(deepdiff)
+- movermeyer for updating docs

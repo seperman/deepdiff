@@ -346,6 +346,7 @@ Indices and tables
 Changelog
 =========
 
+- v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
 - v3-2-0: Adding grep for search: object | grep(item)
 - v3-1-3: Unicode vs. Bytes default fix

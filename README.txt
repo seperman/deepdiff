@@ -240,6 +240,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
 - v3-2-0: Adding grep for search: object | grep(item)
 - v3-1-3: Unicode vs. Bytes default fix
@@ -291,3 +292,5 @@ Also thanks to:
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
 - finnhughes for fixing __slots__
 - moloney for Unicode vs. Bytes default
+- serv-inc for adding help(deepdiff)
+- movermeyer for updating docs
