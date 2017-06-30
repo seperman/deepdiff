@@ -130,8 +130,10 @@ class DeepSearch(dict):
         found = False
         if obj == item:
             found = True
+            # We report the match but also continue inside the match to see if there are
+            # furthur matches inside the `looped` object.
             self.__report(report_key='matched_values', key=parent, value=obj)
-        
+
         try:
             if is_namedtuple:
                 obj = obj._asdict()
@@ -143,7 +145,7 @@ class DeepSearch(dict):
             except AttributeError:
                 if not found:
                     self['unprocessed'].append("%s" % parent)
-                
+
                 return
 
         self.__search_dict(

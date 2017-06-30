@@ -293,16 +293,19 @@ class DeepSearchTestCase(unittest.TestCase):
         self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
 
     def test_complex_obj(self):
-        obj  = datetime(2017, 5, 4, 1, 1, 1)
+        obj = datetime(2017, 5, 4, 1, 1, 1)
         item = datetime(2017, 5, 4, 1, 1, 1)
         result = {'matched_values': {'root'}}
         self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
 
     def test_keep_searching_after_obj_match(self):
+
         class AlwaysEqual:
+
             def __init__(self, recurse=True):
                 if recurse:
                     self.some_attr = AlwaysEqual(recurse=False)
+
             def __eq__(self, other):
                 return True
 
