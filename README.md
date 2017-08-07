@@ -1,6 +1,5 @@
-# deepdiff v 3.3.0
+# DeepDiff v 3.5.0
 
-[![Join the chat at https://gitter.im/deepdiff/Lobby](https://badges.gitter.im/deepdiff/Lobby.svg)](https://gitter.im/deepdiff/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
 ![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
@@ -804,6 +803,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ## Change log
 
+- v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
@@ -861,3 +861,4 @@ Also thanks to:
 - movermeyer for updating docs
 - maxrothman for search in inherited class attributes
 - maxrothman for search for types/objects
+- MartyHub for exclude regex paths

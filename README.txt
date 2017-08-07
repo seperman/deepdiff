@@ -1,4 +1,4 @@
-**DeepDiff v 3.3.0**
+**DeepDiff v 3.5.0**
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 
@@ -245,6 +245,7 @@ http://zepworks.com/blog/diff-it-to-digg-it/
 
 **Changelog**
 
+- v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
 - v3-2-1: Fixing hash of None
@@ -302,3 +303,4 @@ Also thanks to:
 - movermeyer for updating docs
 - maxrothman for search in inherited class attributes
 - maxrothman for search for types/objects
+- MartyHub for exclude regex paths

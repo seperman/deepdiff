@@ -585,6 +585,41 @@ class DeepDiff(ResultDict):
         {'values_changed': {<root t1:1.23e+20, t2:1.24e+20>}}
 
 
+    **Exclude types**
+
+    Exclude certain types from comparison:
+        >>> l1 = logging.getLogger("test")
+        >>> l2 = logging.getLogger("test2")
+        >>> t1 = {"log": l1, 2: 1337}
+        >>> t2 = {"log": l2, 2: 1337}
+        >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
+        {}
+
+    **Exclude paths**
+
+    Exclude part of your object tree from comparison
+    use `exclude_paths` and pass a set or list of paths to exclude:
+        >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+        >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+        >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+        {}
+
+    You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude:
+        >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
+        >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
+        >>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
+        {}
+
+    example 2:
+        >>> t1 = {'a': [1, 2, [3, {'foo1': 'bar'}]]}
+        >>> t2 = {'a': [1, 2, [3, {'foo2': 'bar'}]]}
+        >>> DeepDiff(t1, t2, exclude_regex_paths={"\['foo.'\]"})
+        {}
+
+    Tip: DeepDiff is using re.search on the path. So if you want to force it to match from the beginning of the path, add `^` to the beginning of regex.
+
+
+
     .. note::
         All the examples for the text view work for the tree view too. You just need to set view='tree' to get it in tree form.
 
@@ -628,7 +663,7 @@ class DeepDiff(ResultDict):
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                "exclude_paths, exclude_types, verbose_level and view.") % ', '.join(kwargs.keys()))
+                "exclude_paths, exclude_types, exclude_regex_paths, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
