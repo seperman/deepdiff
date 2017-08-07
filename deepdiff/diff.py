@@ -10,6 +10,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import re
 import difflib
 import logging
 import jsonpickle
@@ -615,6 +616,7 @@ class DeepDiff(ResultDict):
                  report_repetition=False,
                  significant_digits=None,
                  exclude_paths=set(),
+                 exclude_regex_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
                  view='text',
@@ -628,6 +630,7 @@ class DeepDiff(ResultDict):
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
+        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in set(exclude_regex_paths)]
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(
             exclude_types)  # we need tuple for checking isinstance
@@ -746,6 +749,9 @@ class DeepDiff(ResultDict):
         """
         skip = False
         if self.exclude_paths and level.path() in self.exclude_paths:
+            skip = True
+        elif self.exclude_regex_paths and any(
+                [exclude_regex_path.match(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
             if isinstance(level.t1, self.exclude_types_tuple) or isinstance(
