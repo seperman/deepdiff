@@ -81,6 +81,9 @@ class DeepDiff(ResultDict):
     exclude_paths: list, default = None.
         List of paths to exclude from the report.
 
+    exclude_regex_paths: list, default = None.
+        List of regex paths to exclude from the report.
+
     exclude_types: list, default = None.
         List of object types to exclude from the report.
 
@@ -751,7 +754,7 @@ class DeepDiff(ResultDict):
         if self.exclude_paths and level.path() in self.exclude_paths:
             skip = True
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.match(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
             if isinstance(level.t1, self.exclude_types_tuple) or isinstance(

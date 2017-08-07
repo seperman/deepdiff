@@ -247,6 +247,12 @@ class DeepSearchTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ds, result)
 
+    def test_skip_regexp2(self):
+        obj = {'a': [1, 2, [3, [item]]]}
+        ds = DeepSearch(obj, item, exclude_regex_paths=["\[\d+\]"])
+        result = {}
+        self.assertEqual(ds, result)
+
     def test_unknown_parameters(self):
         with self.assertRaises(ValueError):
             DeepSearch(1, 1, wrong_param=2)

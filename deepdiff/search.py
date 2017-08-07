@@ -162,7 +162,7 @@ class DeepSearch(dict):
         if parent in self.exclude_paths:
             skip = True
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.match(parent) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
             if isinstance(item, self.exclude_types_tuple):

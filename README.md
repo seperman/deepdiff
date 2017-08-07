@@ -99,7 +99,10 @@ which will print you:
 
 ## Exclude types or paths
 
-### Exclude certain types from comparison:
+### Exclude types
+
+#### Exclude certain types from comparison:
+
 ```python
 >>> l1 = logging.getLogger("test")
 >>> l2 = logging.getLogger("test2")
@@ -109,7 +112,12 @@ which will print you:
 {}
 ```
 
-### Exclude part of your object tree from comparison:
+### Exclude paths
+
+#### Exclude part of your object tree from comparison
+
+use `exclude_paths` and pass a set or list of paths to exclude:
+
 ```python
 >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
 >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
@@ -117,7 +125,7 @@ which will print you:
 {}
 ```
 
-You can also exclude regular expression:
+You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude:
 
 ```python
 >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
@@ -125,6 +133,17 @@ You can also exclude regular expression:
 >>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
 {}
 ```
+
+example 2:
+
+```python
+>>> t1 = {'a': [1, 2, [3, {'foo1': 'bar'}]]}
+>>> t2 = {'a': [1, 2, [3, {'foo2': 'bar'}]]}
+>>> DeepDiff(t1, t2, exclude_regex_paths={"\['foo.'\]"})
+{}
+```
+
+Tip: DeepDiff is using re.search on the path. So if you want to force it to match from the beginning of the path, add `^` to the beginning of regex.
 
 ## Significant Digits
 
@@ -466,33 +485,6 @@ And if you would like to know the values of items added or removed, please set t
 >>> pprint(DeepDiff(t1, t2))
 {'attribute_added': ['root.c'],
  'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
-```
-
-### Exclude certain types from comparison:
-```python
->>> l1 = logging.getLogger("test")
->>> l2 = logging.getLogger("test2")
->>> t1 = {"log": l1, 2: 1337}
->>> t2 = {"log": l2, 2: 1337}
->>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
-{}
-```
-
-### Exclude part of your object tree from comparison:
-```python
->>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
->>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
->>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
-{}
-```
-
-You can also exclude regular expression :
-
-```python
->>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
->>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
->>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
-{}
 ```
 
 
