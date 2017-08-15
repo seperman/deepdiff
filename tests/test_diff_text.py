@@ -1430,6 +1430,58 @@ class DeepDiffTextTestCase(unittest.TestCase):
 
         self.assertEqual(ddiff, result)
 
+    def test_custom_key_extractor(self):
+        def name_is_key(item, **kwargs):
+            if not hasattr(item, 'get'):
+                return None
+
+            return item.get('name')
+
+        t1 = [
+            {'name': 'bim', 'value': 3},
+            {'name': 'bam', 'value': 4},
+        ]
+        t2 = [
+            {'name': 'bam', 'value': 4},
+            {'name': 'bim', 'value': 4},
+        ]
+        ddiff = DeepDiff(t1, t2, key_extractor=name_is_key)
+        result = {
+            "values_changed": {
+                "root['bim']['value']": {
+                    'new_value': 4,
+                    'old_value': 3
+                }
+            }
+        }
+
+        self.assertEqual(ddiff, result)
+
+    def test_custom_key_extractor_key_missing(self):
+        def name_is_key(item, **kwargs):
+            if not hasattr(item, 'get'):
+                return None
+
+            return item.get('name')
+
+        t1 = [
+            {'not_name': 'bim', 'value': 3},
+            {'name': 'bam', 'value': 4},
+        ]
+        t2 = [
+            {'not_name': 'bam', 'value': 4},
+            {'name': 'bim', 'value': 4},
+        ]
+        ddiff = DeepDiff(t1, t2, key_extractor=name_is_key)
+        result = {
+            'values_changed': {
+                "root[1]['name']": {'new_value': 'bim', 'old_value': 'bam'},
+                "root[0]['value']": {'new_value': 4, 'old_value': 3},
+                "root[0]['not_name']": {'new_value': 'bam', 'old_value': 'bim'}}
+        }
+
+        self.assertEqual(ddiff, result)
+
     @mock.patch('deepdiff.diff.logger')
     @mock.patch('deepdiff.diff.DeepHash')
     def test_diff_when_hash_fails(self, mock_DeepHash, mock_logger):

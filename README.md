@@ -97,6 +97,47 @@ which will print you:
                                     'new_repeat': 2}}}
 ```
 
+## Extract keys from iterables
+
+Sometimes nested iterable can actually be considered as a dictionary. You can define a function that will attempt to extract the key from the items themselves.
+
+```.py
+def name_is_key(item, **kwargs):
+    if not hasattr(item, 'get'):
+        return None
+
+    return item.get('name')
+
+t1 = [
+    {'name': 'bim', 'value': 3},
+    {'name': 'bam', 'value': 4},
+]
+t2 = [
+    {'name': 'bam', 'value': 4},
+    {'name': 'bim', 'value': 4},
+]
+ddiff = DeepDiff(t1, t2, key_extractor=name_is_key)
+print(ddiff)
+```
+
+will print out:
+
+```.py
+{
+    "values_changed": {
+        "root['bim']['value']": {
+            'new_value': 4,
+            'old_value': 3
+        }
+    }
+}
+```
+
+The extractor function must return `None` when it cannot find a key.
+
+If any item cannot extract its key, the diff will use default (or ignore order if configured so) strategy diffing will be applied on the iterable.
+
+
 ## Exclude types or paths
 
 ### Exclude certain types from comparison:

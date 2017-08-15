@@ -72,6 +72,10 @@ class DeepDiff(ResultDict):
 
         For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
+    key_extractor(item, index, significant_digits): function, attempts to transform lists into dicts
+        when defined it is run on all items in an iterable. If all the extracted keys are not None and
+        different, the iterator will be considered as a dict.
+
     verbose_level : int >= 0, default = 1.
         Higher verbose level shows you more details.
         For example verbose level 1 shows what dictionary item are added or removed.
@@ -193,8 +197,8 @@ class DeepDiff(ResultDict):
 
         >>>
         >>> print (ddiff['values_changed']["root[4]['b']"]["diff"])
-        --- 
-        +++ 
+        ---
+        +++
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
@@ -613,6 +617,7 @@ class DeepDiff(ResultDict):
                  t2,
                  ignore_order=False,
                  report_repetition=False,
+                 key_extractor=None,
                  significant_digits=None,
                  exclude_paths=set(),
                  exclude_types=set(),
@@ -626,6 +631,7 @@ class DeepDiff(ResultDict):
                 "exclude_paths, exclude_types, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
+        self.key_extractor = key_extractor
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
@@ -1065,6 +1071,17 @@ class DeepDiff(ResultDict):
         level.report_type = 'type_changes'
         self.__report_result('type_changes', level)
 
+    def __create_dict(self, iterable):
+        keys = [
+            self.key_extractor(item,
+                               index=i,
+                               significant_digits=self.significant_digits)
+            for i, item in enumerate(iterable)
+        ]
+        if len({k for k in keys if k is not None}) != len(keys):
+            return
+        return dict(zip(keys, iterable))
+
     def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
         if level.t1 is level.t2:
@@ -1092,6 +1109,17 @@ class DeepDiff(ResultDict):
             self.__diff_set(level)
 
         elif isinstance(level.t1, Iterable):
+            if self.key_extractor:
+                d1 = self.__create_dict(level.t1)
+                d2 = self.__create_dict(level.t2)
+
+                if d1 is not None and d2 is not None:
+                    self.__diff_dict(
+                        level, parents_ids,
+                        override=True, override_t1=d1, override_t2=d2
+                    )
+                    return
+
             if self.ignore_order:
                 self.__diff_iterable_with_contenthash(level)
             else:
