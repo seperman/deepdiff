@@ -175,7 +175,21 @@ Which will print:
 {'matched_paths': {"root['somewhere']": "around"},
  'matched_values': {"root['long']": "somewhere"}}
 ```
+Now, think of a case where you want to match a value as a word.
 
+```py
+from deepdiff import DeepSearch
+obj = {"long": "somewhere around", "string": 2, 0: 0, "somewhere": "around"}
+ds = DeepSearch(obj, "around", match_string=True, verbose_level=2)
+print(ds)
+ds = DeepSearch(obj, "around", verbose_level=2)
+print(ds)
+``` 
+Which will print:
+```py
+{'matched_values': {"root['somewhere']": 'around'}}
+{'matched_values': {"root['long']": 'somewhere around',"root['somewhere']": 'around'}}
+```
 Tip: An interesting use case is to search inside `locals()` when doing pdb.
 
 ## Grep
