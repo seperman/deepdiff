@@ -51,6 +51,7 @@ class DeepHash(dict):
                  hasher=hash,
                  ignore_repetition=True,
                  significant_digits=None,
+                 constant_size=True,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -63,7 +64,7 @@ class DeepHash(dict):
             exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
-        self.hasher = hasher
+        self.hasher = lambda x: str(hasher(x))
         hashes = hashes if hashes else {}
         self.update(hashes)
         self['unprocessed'] = []
@@ -71,6 +72,10 @@ class DeepHash(dict):
         self.skipped = Skipped()
         self.not_hashed = NotHashed()
         self.significant_digits = significant_digits
+        # makes the hash return constant size result if true
+        # the only time it should be set to False is when
+        # testing the individual hash functions for different types of objects.
+        self.constant_size = constant_size
 
         self.__hash(obj, parents_ids=frozenset({id(obj)}))
 
@@ -102,14 +107,7 @@ class DeepHash(dict):
         parents_ids.add(item_id)
         return frozenset(parents_ids)
 
-    def __get_and_set_str_hash(self, obj):
-        obj_id = id(obj)
-        result = self.hasher(obj)
-        result = "str:{}".format(result)
-        self[obj_id] = result
-        return result
-
-    def __hash_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
+    def __prep_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
@@ -123,7 +121,7 @@ class DeepHash(dict):
                 self['unprocessed'].append(obj)
                 return self.unprocessed
 
-        result = self.__hash_dict(obj, parents_ids)
+        result = self.__prep_dict(obj, parents_ids)
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(
             result)
         return result
@@ -135,7 +133,7 @@ class DeepHash(dict):
 
         return skip
 
-    def __hash_dict(self, obj, parents_ids=frozenset({})):
+    def __prep_dict(self, obj, parents_ids=frozenset({})):
 
         result = []
         obj_keys = set(obj.keys())
@@ -157,10 +155,10 @@ class DeepHash(dict):
 
         return result
 
-    def __hash_set(self, obj):
-        return "set:{}".format(self.__hash_iterable(obj))
+    def __prep_set(self, obj):
+        return "set:{}".format(self.__prep_iterable(obj))
 
-    def __hash_iterable(self, obj, parents_ids=frozenset({})):
+    def __prep_iterable(self, obj, parents_ids=frozenset({})):
 
         result = defaultdict(int)
 
@@ -174,13 +172,15 @@ class DeepHash(dict):
 
             parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
             hashed = self.__hash(x, parents_ids_added)
+            # counting repetitions
             result[hashed] += 1
 
         if self.ignore_repetition:
             result = list(result.keys())
         else:
+            # items could be iteritems based on py version so we use getattr
             result = [
-                '{}|{}'.format(i[0], i[1]) for i in getattr(result, items)()
+                '{}|{}'.format(i, v) for i, v in getattr(result, items)()
             ]
 
         result.sort()
@@ -189,10 +189,10 @@ class DeepHash(dict):
 
         return result
 
-    def __hash_str(self, obj):
-        return self.__get_and_set_str_hash(obj)
+    def __prep_str(self, obj):
+        return 'str:{}'.format(obj)
 
-    def __hash_number(self, obj):
+    def __prep_number(self, obj):
         # Based on diff.DeepDiff.__diff_numbers
         if self.significant_digits is not None and isinstance(obj, (
                 float, complex, Decimal)):
@@ -202,30 +202,29 @@ class DeepHash(dict):
             if set(obj_s) <= set("-0."):
                 obj_s = "0.00"
             result = "number:{}".format(obj_s)
-            obj_id = id(obj)
-            self[obj_id] = result
         else:
             result = "{}:{}".format(type(obj).__name__, obj)
         return result
 
-    def __hash_tuple(self, obj, parents_ids):
+    def __prep_tuple(self, obj, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
             obj._asdict
         # It must be a normal tuple
         except AttributeError:
-            result = self.__hash_iterable(obj, parents_ids)
+            result = self.__prep_iterable(obj, parents_ids)
         # We assume it is a namedtuple then
         else:
-            result = self.__hash_obj(obj, parents_ids, is_namedtuple=True)
+            result = self.__prep_obj(obj, parents_ids, is_namedtuple=True)
         return result
 
-    def __hash(self, obj, parent="root", parents_ids=frozenset({})):
+    def __hash(self, obj, parents_ids=frozenset({})):
         """The main diff method"""
 
         obj_id = id(obj)
         if obj_id in self:
+            print('obj is already there')
             return self[obj_id]
 
         result = self.not_hashed
@@ -237,33 +236,38 @@ class DeepHash(dict):
             result = 'NONE'
 
         elif isinstance(obj, strings):
-            result = self.__hash_str(obj)
+            result = self.__prep_str(obj)
 
         elif isinstance(obj, numbers):
-            result = self.__hash_number(obj)
+            result = self.__prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
-            result = self.__hash_dict(obj, parents_ids)
+            result = self.__prep_dict(obj, parents_ids)
 
         elif isinstance(obj, tuple):
-            result = self.__hash_tuple(obj, parents_ids)
+            result = self.__prep_tuple(obj, parents_ids)
 
         elif isinstance(obj, (set, frozenset)):
-            result = self.__hash_set(obj)
+            result = self.__prep_set(obj)
 
         elif isinstance(obj, Iterable):
-            result = self.__hash_iterable(obj, parents_ids)
+            result = self.__prep_iterable(obj, parents_ids)
 
         else:
-            result = self.__hash_obj(obj, parents_ids)
-
-        if result != self.not_hashed and obj_id not in self and not isinstance(
-                obj, numbers):
-            self[obj_id] = result
+            result = self.__prep_obj(obj, parents_ids)
 
         if result is self.not_hashed:  # pragma: no cover
-            self[obj_id] = self.not_hashed
             self['unprocessed'].append(obj)
+
+        elif self.constant_size:
+            # from nose.tools import set_trace; set_trace()
+            temp = result
+            result = self.hasher(result)
+            print('-' * 10)
+            print(obj)
+            print("{} -> {}".format(temp, result))
+
+        self[obj_id] = result
 
         return result
 
