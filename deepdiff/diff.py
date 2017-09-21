@@ -1073,7 +1073,7 @@ class DeepDiff(ResultDict):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2):
+        if type(level.t1) != type(level.t2) and not isinstance(level.t1, strings) and not isinstance(level.t2, strings):
             self.__diff_types(level)
 
         elif isinstance(level.t1, strings):
