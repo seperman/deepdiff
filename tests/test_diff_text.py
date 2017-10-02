@@ -128,6 +128,24 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
         self.assertEqual(ddiff, result)
 
+    def test_diffs_timedeltas(self):
+        t1 = datetime.timedelta(days=1, seconds=12)
+        t2 = datetime.timedelta(days=1, seconds=10)
+        t3 = datetime.timedelta(seconds=(60*60*24) + 12)
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        self.assertEqual(ddiff, result)
+        ddiff = DeepDiff(t1, t3)
+        result = {}
+        self.assertEqual(ddiff, result)
+
     def test_string_difference(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world"}}
         t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": "world!"}}
