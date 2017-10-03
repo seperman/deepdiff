@@ -48,7 +48,7 @@ class DeepHash(dict):
                  obj,
                  hashes=None,
                  exclude_types=set(),
-                 hasher=hash,
+                 hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
                  constant_size=True,
@@ -64,7 +64,7 @@ class DeepHash(dict):
             exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
-        self.hasher = lambda x: str(hasher(x))
+        self.hasher = self.basic_hash if hasher is None else hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
         self['unprocessed'] = []
@@ -83,6 +83,10 @@ class DeepHash(dict):
             logger.warning("Can not hash the following items: {}.".format(self['unprocessed']))
         else:
             del self['unprocessed']
+
+    @staticmethod
+    def basic_hash(obj):
+        return str(hash(obj))
 
     @staticmethod
     def sha1hex(obj):
