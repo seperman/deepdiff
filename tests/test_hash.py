@@ -81,8 +81,6 @@ class DeepHashTestCase(unittest.TestCase):
         expected_result = {
             id(string1): string1_prepped,
             id(obj): '{}:int:10,int:20,{}'.format(func_str, string1_prepped),
-            id(10): 'int:10',
-            id(20): 'int:20'
         }
         result = DeepHashPrep(obj)
         self.assertEqual(result, expected_result)
@@ -107,7 +105,6 @@ class DeepHashTestCase(unittest.TestCase):
             expected_result = {
                 x_id: x_prep,
                 id(obj): 'ntdict:{str:%s:int:11}' % x,
-                id(11): 'int:11',
             }
             self.assertEqual(result, expected_result)
 
@@ -118,10 +115,6 @@ class DeepHashTestCase(unittest.TestCase):
         key1_prepped = prep_str(key1)
         obj = {key1: string1, 1: 10, 2: 20}
         expected_result = {
-            id(1): "int:1",
-            id(2): "int:2",
-            id(10): "int:10",
-            id(20): "int:20",
             id(key1): key1_prepped,
             id(string1): string1_prepped,
             id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (key1, string1)
@@ -131,19 +124,17 @@ class DeepHashTestCase(unittest.TestCase):
 
     def test_dict_in_list(self):
         string1 = "a"
-        hash_string1 = hash(string1)
         key1 = "key1"
-        hash_key1 = hash(key1)
         dict1 = {key1: string1, 1: 10, 2: 20}
         obj = [0, dict1]
         expected_result = {
-            id(key1): "str:{}".format(hash_key1),
-            id(string1): "str:{}".format(hash_string1),
+            id(key1): "str:{}".format(key1),
+            id(string1): "str:{}".format(string1),
             id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' %
-            (hash_key1, hash_string1),
+            (key1, string1),
             id(obj):
             'list:dict:{int:1:int:10;int:2:int:20;str:%s:str:%s},int:0' %
-            (hash_key1, hash_string1)
+            (key1, string1)
         }
         result = DeepHashPrep(obj)
         self.assertEqual(result, expected_result)
@@ -261,7 +252,6 @@ class DeepHashTestCase(unittest.TestCase):
 
         obj = "a"
         expected_result = {id(obj): '0'}
-        from nose.tools import set_trace; set_trace()
         result = DeepHash(obj, hasher=hasher)
         self.assertEqual(result, expected_result)
 
@@ -366,5 +356,5 @@ class DeepHashSHA1TestCase(unittest.TestCase):
             id(obj):
             'dict:{int:1:int:10;int:2:int:20;str:63216212fdf88fe0c838c36ab65278b9953000d6:str:48591f1d794734cabf55f96f5a5a72c084f13ac0}'
         }
-        result = DeepHashPrep(obj, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)

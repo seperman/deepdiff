@@ -263,7 +263,7 @@ class DeepHash(dict):
         if result is self.not_hashed:  # pragma: no cover
             self['unprocessed'].append(obj)
 
-        elif self.constant_size:
+        elif self.constant_size and not isinstance(obj, numbers):
             # from nose.tools import set_trace; set_trace()
             temp = result
             result = self.hasher(result)
@@ -271,7 +271,8 @@ class DeepHash(dict):
             print(obj)
             print("{} -> {}".format(temp, result))
 
-        self[obj_id] = result
+        if not isinstance(obj, numbers):
+            self[obj_id] = result
 
         return result
 
