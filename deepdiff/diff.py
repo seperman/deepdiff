@@ -984,7 +984,7 @@ class DeepDiff(ResultDict):
             if item_hash in hashes:
                 hashes[item_hash].indexes.append(i)
             else:
-                hashes[item_hash] = IndexedHash([i], item)
+                hashes[item_hash] = IndexedHash(indexes=[i], item=item)
 
         hashes = {}
         for (i, item) in enumerate(t):

@@ -42,7 +42,7 @@ class CustomClass:
         return self.__str__()
 
 
-# Only the prep part of DeepHashPrep. We don't need to test the actual hash function.
+# Only the prep part of DeepHash. We don't need to test the actual hash function.
 DeepHashPrep = partial(DeepHash, constant_size=False)
 
 
@@ -176,6 +176,14 @@ class DeepHashTestCase(unittest.TestCase):
         t2 = {2, 3, 1}
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
+
+        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+
+    def test_similar_sets_with_significant_digits_same_hash(self):
+        t1 = {0.012, 0.98}
+        t2 = {0.013, 0.99}
+        t1_hash = DeepHashPrep(t1, significant_digits=1)
+        t2_hash = DeepHashPrep(t2, significant_digits=1)
 
         self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
 
