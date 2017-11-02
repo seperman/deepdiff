@@ -11,6 +11,11 @@ py_major_version = sys.version[0]
 py_minor_version = sys.version[2]
 
 py3 = py_major_version == '3'
+py4 = py_major_version == '4'
+
+if py4:
+    logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')
+    py3 = True
 
 if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
     sys.exit('Python 2.6 is not supported.')

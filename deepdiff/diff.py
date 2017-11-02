@@ -656,6 +656,7 @@ class DeepDiff(ResultDict):
                  exclude_paths=set(),
                  exclude_regex_paths=set(),
                  exclude_types=set(),
+                 include_string_type_changes=False,
                  verbose_level=1,
                  view='text',
                  **kwargs):
@@ -670,8 +671,8 @@ class DeepDiff(ResultDict):
         self.exclude_paths = set(exclude_paths)
         self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in set(exclude_regex_paths)]
         self.exclude_types = set(exclude_types)
-        self.exclude_types_tuple = tuple(
-            exclude_types)  # we need tuple for checking isinstance
+        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
+        self.include_string_type_changes = include_string_type_changes
         self.hashes = {}
 
         if significant_digits is not None and significant_digits < 0:
@@ -991,7 +992,8 @@ class DeepDiff(ResultDict):
             try:
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
-                                      significant_digits=self.significant_digits)
+                                      significant_digits=self.significant_digits,
+                                      include_string_type_changes=self.include_string_type_changes)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s."

@@ -337,7 +337,7 @@ class DeepHashSHA1TestCase(unittest.TestCase):
     def test_prep_str(self):
         obj = "a"
         expected_result = {
-            id(obj): 'c2a00c48d4713267a2ab9ca9739214127830e9be'
+            id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -351,7 +351,7 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         obj1 = "a"
         id_obj1 = id(obj1)
         expected_result = {
-            id_obj1: 'c2a00c48d4713267a2ab9ca9739214127830e9be'
+            id_obj1: '48591f1d794734cabf55f96f5a5a72c084f13ac0'
         }
         result = DeepHash(obj1, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -363,11 +363,11 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         obj = b"a"
         if py3:
             expected_result = {
-                id(obj): '64a91ccb03c69f78d076d884de9bc5355849cc12'
+                id(obj): '1283c61f8aa47c22d22552b742c93f6f6dac83ab'
             }
         else:
             expected_result = {
-                id(obj): 'c2a00c48d4713267a2ab9ca9739214127830e9be'
+                id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'
             }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -376,7 +376,7 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         string1 = "a"
         obj = [string1, 10, 20]
         expected_result = {
-            id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
+            id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
             id(obj): 'ad8e2f1479d6a5e1b01304f18f04bbe3ea0673ca',
             id(10): DeepHash.sha1hex('int:10'),
             id(20): DeepHash.sha1hex('int:20'),
@@ -394,8 +394,33 @@ class DeepHashSHA1TestCase(unittest.TestCase):
             id(2): DeepHash.sha1hex('int:2'),
             id(20): DeepHash.sha1hex('int:20'),
             id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
-            id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
+            id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
             id(obj): '8fa42fa0aa950885c4c1ec95a3d6423fc673bf49'
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
+
+
+class TestHasher(unittest.TestCase):
+
+    def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
+        if py3:
+            a = 'hello'
+            b = b'hello'
+        else:
+            a = u'hello'
+            b = b'hello'
+        a_hash = DeepHash(a)[id(a)]
+        b_hash = DeepHash(b)[id(b)]
+        self.assertEqual(a_hash, b_hash)
+
+    def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
+        if py3:
+            a = 'hello'
+            b = b'hello'
+        else:
+            a = u'hello'
+            b = b'hello'
+        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[id(a)]
+        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[id(b)]
+        self.assertEqual(a_hash, b_hash)

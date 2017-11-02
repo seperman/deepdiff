@@ -39,6 +39,27 @@ class NotHashed(object):
         return "Error: NotHashed"  # pragma: no cover
 
 
+def clean_type(obj, include_string_type_changes=False):
+    """
+    Clean type conversions
+    """
+    if py3:
+        if isinstance(obj, str):
+            if include_string_type_changes:
+                obj = "{}:{}".format(type(obj).__name__, obj)
+            obj = obj.encode('utf-8')
+        elif isinstance(obj, bytes) and include_string_type_changes:
+            obj = type(obj).__name__.encode('utf-8') + b":" + obj
+    else:
+        if isinstance(obj, unicode):
+            if include_string_type_changes:
+                obj = u"{}:{}".format(type(obj).__name__, obj)
+            obj = obj.encode('utf-8')
+        elif isinstance(obj, str) and include_string_type_changes:
+            obj = type(obj).__name__ + ":" + obj
+    return obj
+
+
 class DeepHash(dict):
     r"""
     **DeepHash**
@@ -101,6 +122,10 @@ class DeepHash(dict):
         The only time you want the constant_size to be False is if you want to know what
         the string representation of your object is BEFORE it gets hashed.
 
+    include_string_type_changes: Boolean, default = False
+        string type conversions should not affect the hash output when this is set to False.
+        For example "Hello" and b"Hello" should produce the same hash.
+
     **Returns**
         A dictionary of {item id: item hash}.
         If your object is nested, it will include hashes of all the objects it includes!
@@ -131,6 +156,7 @@ class DeepHash(dict):
                  ignore_repetition=True,
                  significant_digits=None,
                  constant_size=True,
+                 include_string_type_changes=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -151,6 +177,7 @@ class DeepHash(dict):
         self.skipped = Skipped()
         self.not_hashed = NotHashed()
         self.significant_digits = significant_digits
+        self.include_string_type_changes = include_string_type_changes
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
@@ -166,18 +193,6 @@ class DeepHash(dict):
     @staticmethod
     def sha1hex(obj):
         """Use Sha1 for more accuracy."""
-        if py3:  # pragma: no cover
-            if isinstance(obj, str):
-                obj = "{}:{}".format(type(obj).__name__, obj)
-                obj = obj.encode('utf-8')
-            elif isinstance(obj, bytes):
-                obj = type(obj).__name__.encode('utf-8') + b":" + obj
-        else:  # pragma: no cover
-            if isinstance(obj, unicode):
-                obj = u"{}:{}".format(type(obj).__name__, obj)
-                obj = obj.encode('utf-8')
-            elif isinstance(obj, str):
-                obj = type(obj).__name__ + ":" + obj
         return sha1(obj).hexdigest()
 
     @staticmethod
@@ -339,7 +354,8 @@ class DeepHash(dict):
             self['unprocessed'].append(obj)
 
         elif self.constant_size:
-            result = self.hasher(result)
+            result_cleaned = clean_type(result, self.include_string_type_changes)
+            result = self.hasher(result_cleaned)
 
         # It is important to keep the hash of all objects.
         # The hashes will be later used for comparing the objects.
