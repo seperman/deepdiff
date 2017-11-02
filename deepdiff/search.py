@@ -80,6 +80,7 @@ class DeepSearch(dict):
                  exclude_types=set(),
                  verbose_level=1,
                  case_sensitive=False,
+                 match_string=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -100,6 +101,9 @@ class DeepSearch(dict):
             matched_paths=self.__set_or_dict(),
             matched_values=self.__set_or_dict(),
             unprocessed=[])
+
+        # Cases where user wants to match exact string item
+        self.match_string = match_string
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
@@ -245,8 +249,14 @@ class DeepSearch(dict):
     def __search_str(self, obj, item, parent):
         """Compare strings"""
         obj_text = obj if self.case_sensitive else obj.lower()
-        if item in obj_text:
-            self.__report(report_key='matched_values', key=parent, value=obj)
+
+        if self.match_string:
+            if item == obj_text:
+                self.__report(report_key='matched_values', key=parent, value=obj) 
+
+        else:
+            if item in obj_text:
+                self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
         if item == obj:
