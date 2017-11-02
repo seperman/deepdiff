@@ -264,13 +264,10 @@ class DeepHash(dict):
             self['unprocessed'].append(obj)
 
         elif self.constant_size and not isinstance(obj, numbers):
-            # temp = result
             result = self.hasher(result)
-            # print('-' * 10)
-            # print(obj)
-            # print("{} -> {}".format(temp, result))
 
-        # if not isinstance(obj, numbers):
+        # It is important to keep the hash of all objects.
+        # The hashes will be later used for comparing the objects.
         self[obj_id] = result
 
         return result
