@@ -977,14 +977,14 @@ class DeepDiff(ResultDict):
         else:
             self.__diff_obj(level, parents_ids, is_namedtuple=True)
 
-    def __create_hashtable(self, t, level):
-        """Create hashtable of {item_hash: item}"""
+    def _add_hash(self, hashes, item_hash, item, i):
+        if item_hash in hashes:
+            hashes[item_hash].indexes.append(i)
+        else:
+            hashes[item_hash] = IndexedHash(indexes=[i], item=item)
 
-        def add_hash(hashes, item_hash, item, i):
-            if item_hash in hashes:
-                hashes[item_hash].indexes.append(i)
-            else:
-                hashes[item_hash] = IndexedHash(indexes=[i], item=item)
+    def __create_hashtable(self, t, level):
+        """Create hashtable of {item_hash: (indexes, item)}"""
 
         hashes = {}
         for (i, item) in enumerate(t):
@@ -1003,7 +1003,7 @@ class DeepDiff(ResultDict):
                                    "thus not counting this object." %
                                    level.path())
                 else:
-                    add_hash(hashes, item_hash, item, i)
+                    self._add_hash(hashes=hashes, item_hash=item_hash, item=item, i=i)
         return hashes
 
     def __diff_iterable_with_contenthash(self, level):

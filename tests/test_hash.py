@@ -79,6 +79,8 @@ class DeepHashTestCase(unittest.TestCase):
         obj = func([string1, 10, 20])
         string1_prepped = prep_str(string1)
         expected_result = {
+            id(10): 'int:10',
+            id(20): 'int:20',
             id(string1): string1_prepped,
             id(obj): '{}:int:10,int:20,{}'.format(func_str, string1_prepped),
         }
@@ -105,6 +107,7 @@ class DeepHashTestCase(unittest.TestCase):
             expected_result = {
                 x_id: x_prep,
                 id(obj): 'ntdict:{str:%s:int:11}' % x,
+                id(11): 'int:11',
             }
             self.assertEqual(result, expected_result)
 
@@ -115,6 +118,10 @@ class DeepHashTestCase(unittest.TestCase):
         key1_prepped = prep_str(key1)
         obj = {key1: string1, 1: 10, 2: 20}
         expected_result = {
+            id(1): 'int:1',
+            id(10): 'int:10',
+            id(2): 'int:2',
+            id(20): 'int:20',
             id(key1): key1_prepped,
             id(string1): string1_prepped,
             id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (key1, string1)
@@ -128,6 +135,11 @@ class DeepHashTestCase(unittest.TestCase):
         dict1 = {key1: string1, 1: 10, 2: 20}
         obj = [0, dict1]
         expected_result = {
+            id(0): 'int:0',
+            id(1): 'int:1',
+            id(10): 'int:10',
+            id(2): 'int:2',
+            id(20): 'int:20',
             id(key1): "str:{}".format(key1),
             id(string1): "str:{}".format(string1),
             id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' %
@@ -285,14 +297,14 @@ class DeepHashTestCase(unittest.TestCase):
         obj = {2: 1337}
         obj[1] = obj
         result = DeepHashPrep(obj)
-        expected_result = {id(obj): 'dict:{int:2:int:1337}'}
+        expected_result = {id(obj): 'dict:{int:2:int:1337}', id(1): 'int:1', id(2): 'int:2', id(1337): 'int:1337'}
         self.assertEqual(result, expected_result)
 
     def test_prep_iterable_with_loop(self):
         obj = [1]
         obj.append(obj)
         result = DeepHashPrep(obj)
-        expected_result = {id(obj): 'list:int:1'}
+        expected_result = {id(obj): 'list:int:1', id(1): 'int:1'}
         self.assertEqual(result, expected_result)
 
     def test_prep_iterable_with_excluded_type(self):
@@ -349,7 +361,9 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         expected_result = {
             id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
             id(obj):
-            '5af30c367e2e176f7c362356559f3e8cc73302e5'
+            '5af30c367e2e176f7c362356559f3e8cc73302e5',
+            id(10): 'int:10',
+            id(20): 'int:20',
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -359,6 +373,10 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         key1 = "key1"
         obj = {key1: string1, 1: 10, 2: 20}
         expected_result = {
+            id(1): 'int:1',
+            id(10): 'int:10',
+            id(2): 'int:2',
+            id(20): 'int:20',
             id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
             id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
             id(obj):

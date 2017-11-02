@@ -264,15 +264,14 @@ class DeepHash(dict):
             self['unprocessed'].append(obj)
 
         elif self.constant_size and not isinstance(obj, numbers):
-            # from nose.tools import set_trace; set_trace()
             # temp = result
             result = self.hasher(result)
             # print('-' * 10)
             # print(obj)
             # print("{} -> {}".format(temp, result))
 
-        if not isinstance(obj, numbers):
-            self[obj_id] = result
+        # if not isinstance(obj, numbers):
+        self[obj_id] = result
 
         return result
 
