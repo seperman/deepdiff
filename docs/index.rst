@@ -25,6 +25,7 @@ Importing
 
     >>> from deepdiff import DeepDiff  # For Deep Difference of 2 objects
     >>> from deepdiff import DeepSearch  # For finding if item exists in an object
+    >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 
 ********
 Features
@@ -334,6 +335,11 @@ DeepSearch Reference
 
 :doc:`/dsearch`
 
+
+DeepHash Reference
+====================
+
+:doc:`/contenthash`
 
 Indices and tables
 ==================

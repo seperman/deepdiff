@@ -51,7 +51,24 @@ def prep_str(obj):
 
 
 class DeepHashTestCase(unittest.TestCase):
-    """DeepHashPrep Tests."""
+
+    def test_dictionary(self):
+
+        obj = {1: 1}
+        result = DeepHash(obj)
+        self.assertEqual(set(result.keys()), {id(1), id(obj)})
+
+    def test_list_of_sets(self):
+        a = {1}
+        b = {2}
+        obj = [a, b]
+        result = DeepHash(obj)
+        expected_result = {id(1), id(2), id(a), id(b), id(obj)}
+        self.assertEqual(set(result.keys()), expected_result)
+
+
+class DeepHashPrepTestCase(unittest.TestCase):
+    """DeepHashPrep Tests covering object serialization."""
 
     def test_prep_str(self):
         obj = "a"
@@ -360,10 +377,9 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         obj = [string1, 10, 20]
         expected_result = {
             id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
-            id(obj):
-            '5af30c367e2e176f7c362356559f3e8cc73302e5',
-            id(10): 'int:10',
-            id(20): 'int:20',
+            id(obj): 'ad8e2f1479d6a5e1b01304f18f04bbe3ea0673ca',
+            id(10): DeepHash.sha1hex('int:10'),
+            id(20): DeepHash.sha1hex('int:20'),
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)
@@ -373,14 +389,13 @@ class DeepHashSHA1TestCase(unittest.TestCase):
         key1 = "key1"
         obj = {key1: string1, 1: 10, 2: 20}
         expected_result = {
-            id(1): 'int:1',
-            id(10): 'int:10',
-            id(2): 'int:2',
-            id(20): 'int:20',
+            id(1): DeepHash.sha1hex('int:1'),
+            id(10): DeepHash.sha1hex('int:10'),
+            id(2): DeepHash.sha1hex('int:2'),
+            id(20): DeepHash.sha1hex('int:20'),
             id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
             id(string1): 'c2a00c48d4713267a2ab9ca9739214127830e9be',
-            id(obj):
-            'b13e2e23ed7e46208157e45bfbe0113782804e17'
+            id(obj): '8fa42fa0aa950885c4c1ec95a3d6423fc673bf49'
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         self.assertEqual(result, expected_result)

@@ -38,6 +38,12 @@ class DeepSearch(dict):
     exclude_types: list, default = None.
         List of object types to exclude from the report.
 
+    case_sensitive: Boolean, default = False
+
+    match_string: Boolean, default = False
+        If True, the value of the object or its children have to exactly match the item.
+        If False, the value of the item can be a part of the value of the object or its children
+
     **Returns**
 
         A DeepSearch object that has the matched paths and matched values.
@@ -85,7 +91,8 @@ class DeepSearch(dict):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are obj, item, exclude_paths, exclude_types and verbose_level."
+                "The valid parameters are obj, item, exclude_paths, exclude_types,\n"
+                "case_sensitive, match_string and verbose_level."
             ) % ', '.join(kwargs.keys()))
 
         self.obj = obj
@@ -206,7 +213,9 @@ class DeepSearch(dict):
             new_parent = parent_text % (parent, item_key_str)
             new_parent_cased = new_parent if self.case_sensitive else new_parent.lower()
 
-            if str(item) in new_parent_cased:
+            str_item = str(item)
+            if (self.match_string and str_item == new_parent_cased) or\
+               (not self.match_string and str_item in new_parent_cased):
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -250,13 +259,8 @@ class DeepSearch(dict):
         """Compare strings"""
         obj_text = obj if self.case_sensitive else obj.lower()
 
-        if self.match_string:
-            if item == obj_text:
-                self.__report(report_key='matched_values', key=parent, value=obj) 
-
-        else:
-            if item in obj_text:
-                self.__report(report_key='matched_values', key=parent, value=obj)
+        if (self.match_string and item == obj_text) or (not self.match_string and item in obj_text):
+            self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
         if item == obj:

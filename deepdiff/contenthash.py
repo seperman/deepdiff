@@ -42,6 +42,85 @@ class NotHashed(object):
 class DeepHash(dict):
     r"""
     **DeepHash**
+
+    DeepHash calculates the hash of objects based on their contents in a deterministic way.
+    This way 2 objects with the same content should have the same hash.
+
+    The main usage of DeepHash is to calculate the hash of otherwise unhashable objects.
+    For example you can use DeepHash to calculate the hash of a set or a dictionary!
+
+    The core of DeepHash is a deterministic serialization of your object into a string so it
+    can be passed to a hash function. By default it uses Python's built-in hash function
+    but you can pass another hash function to it if you want.
+    For example the Murmur3 hash function or a cryptographic hash function.
+
+
+    **Parameters**
+
+    obj : any object, The object to be hashed based on its content.
+
+    hashes : dictionary, default = empty dictionary.
+        A dictionary of {object id: object hash} to start with.
+        Any object that is encountered and its id is already in the hashes dictionary,
+        will re-use the hash that is provided by this dictionary instead of re-calculating
+        its hash.
+
+    exclude_types: list, default = None.
+        List of object types to exclude from hashing.
+        Note that the deepdiff diffing functionality lets this to be the default at all times.
+        But if you are using DeepHash directly, you can set this parameter.
+
+    hasher: function. default = hash
+        hasher is the hashing function. The default is built-in hash function.
+        But you can pass another hash function to it if you want.
+        For example the Murmur3 hash function or a cryptographic hash function.
+        All it needs is a function that takes the input in string format
+        and return the hash.
+
+        SHA1 is already provided as an alternative to the built-in hash function.
+        You can use it by passing: hasher=DeepHash.sha1hex
+
+    ignore_repetition: Boolean, default = True
+        If repetitions in an iterable should cause the hash of iterable to be different.
+        Note that the deepdiff diffing functionality lets this to be the default at all times.
+        But if you are using DeepHash directly, you can set this parameter.
+
+    significant_digits : int >= 0, default=None.
+        If it is a non negative integer, it compares only that many digits AFTER
+        the decimal point.
+
+        This only affects floats, decimal.Decimal and complex.
+
+        Takse a look at DeepDiff.diff docs for explanation of how this works.
+
+    constant_size: Boolean, default = True
+        What DeepHash does is to "prep" the contents of objects into strings.
+        If constant_size is set, then it actually goes ahead and hashes the string
+        using the hasher function.
+
+        The only time you want the constant_size to be False is if you want to know what
+        the string representation of your object is BEFORE it gets hashed.
+
+    **Returns**
+        A dictionary of {item id: item hash}.
+        If your object is nested, it will include hashes of all the objects it includes!
+
+
+    **Examples**
+
+    Let's say you have a dictionary object.
+        >>> from deepdiff import DeepHash
+        >>>
+        >>> obj = {1: 2, 'a': 'b'}
+
+    If you try to hash itL
+        >>> hash(obj)
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        TypeError: unhashable type: 'dict'
+
+    But with DeepHash:
+
     """
 
     def __init__(self,
@@ -64,7 +143,7 @@ class DeepHash(dict):
             exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
-        self.hasher = self.basic_hash if hasher is None else hasher
+        self.hasher = hash if hasher is None else hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
         self['unprocessed'] = []
@@ -83,10 +162,6 @@ class DeepHash(dict):
             logger.warning("Can not hash the following items: {}.".format(self['unprocessed']))
         else:
             del self['unprocessed']
-
-    @staticmethod
-    def basic_hash(obj):
-        return str(hash(obj))
 
     @staticmethod
     def sha1hex(obj):
@@ -188,6 +263,7 @@ class DeepHash(dict):
             ]
 
         result.sort()
+        result = map(str, result)  # making sure the result items are string so join command works.
         result = ','.join(result)
         result = "{}:{}".format(type(obj).__name__, result)
 
@@ -228,7 +304,6 @@ class DeepHash(dict):
 
         obj_id = id(obj)
         if obj_id in self:
-            print('obj is already there')
             return self[obj_id]
 
         result = self.not_hashed
@@ -263,7 +338,7 @@ class DeepHash(dict):
         if result is self.not_hashed:  # pragma: no cover
             self['unprocessed'].append(obj)
 
-        elif self.constant_size and not isinstance(obj, numbers):
+        elif self.constant_size:
             result = self.hasher(result)
 
         # It is important to keep the hash of all objects.

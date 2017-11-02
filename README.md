@@ -179,7 +179,7 @@ Verbose level by default is 1. The possible values are 0, 1 and 2.
 - Verbose level 1: default
 - Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
-## Deep Search
+# Deep Search
 (New in v2-1-0)
 
 Tip: Take a look at [grep](#grep) which gives you a new interface for DeepSearch!
@@ -202,6 +202,7 @@ Which will print:
 {'matched_paths': {"root['somewhere']": "around"},
  'matched_values': {"root['long']": "somewhere"}}
 ```
+
 Now, think of a case where you want to match a value as a word.
 
 ```py
@@ -211,12 +212,15 @@ ds = DeepSearch(obj, "around", match_string=True, verbose_level=2)
 print(ds)
 ds = DeepSearch(obj, "around", verbose_level=2)
 print(ds)
-``` 
+```
+
 Which will print:
+
 ```py
 {'matched_values': {"root['somewhere']": 'around'}}
 {'matched_values': {"root['long']": 'somewhere around',"root['somewhere']": 'around'}}
 ```
+
 Tip: An interesting use case is to search inside `locals()` when doing pdb.
 
 ## Grep
@@ -876,3 +880,4 @@ Also thanks to:
 - maxrothman for search in inherited class attributes
 - maxrothman for search for types/objects
 - MartyHub for exclude regex paths
+- sreecodeslayer for DeepSearch match_string
