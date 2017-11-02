@@ -22,14 +22,14 @@ if py3:  # pragma: no cover
     strings = (str, bytes)  # which are both basestring
     unicode_type = str
     bytes_type = bytes
-    numbers = (int, float, complex, datetime.datetime, datetime.date, Decimal)
+    numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
     items = 'items'
 else:  # pragma: no cover
     int = int
     strings = (str, unicode)
     unicode_type = unicode
     bytes_type = str
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date,
+    numbers = (int, float, long, complex, datetime.datetime, datetime.date, datetime.timedelta,
                Decimal)
 
     items = 'iteritems'
