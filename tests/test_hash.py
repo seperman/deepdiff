@@ -22,6 +22,7 @@ To run a specific test, run this from the root of repo:
 """
 import unittest
 from deepdiff import DeepHash
+from deepdiff.contenthash import clean_type
 from deepdiff.helper import py3, pypy3
 from collections import namedtuple
 from functools import partial
@@ -424,3 +425,27 @@ class TestHasher(unittest.TestCase):
         a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[id(a)]
         b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[id(b)]
         self.assertEqual(a_hash, b_hash)
+
+
+class TestCleaningString(unittest.TestCase):
+
+    def test_clean_type(self):
+
+        if py3:
+
+            params = (
+                (b'hello', b'bytes:hello'),
+                ('hello', 'str:hello')
+            )
+        else:
+            params = (
+                ('hello', 'str:hello'),
+                (u'hello', u'unicode:hello')
+            )
+
+        for text, expected_result in params:
+            result = clean_type(text, include_string_type_changes=True)
+            self.assertEqual(result, expected_result)
+
+            result = clean_type(text, include_string_type_changes=False)
+            self.assertEqual(result, text)
