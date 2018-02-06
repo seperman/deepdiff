@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose, notpresent
+from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose, notpresent, gen_compatible_str
 from ast import literal_eval
 from copy import copy
 
@@ -148,6 +148,7 @@ class TextResult(ResultDict):
                 )  # we want't the set's path, the removed item is not directly accessible
                 item = change.t1
                 if isinstance(item, strings):
+                    item = gen_compatible_str(item)
                     item = "'%s'" % item
                 self['set_item_removed'].add("%s[%s]" % (path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
@@ -159,6 +160,7 @@ class TextResult(ResultDict):
                 )  # we want't the set's path, the added item is not directly accessible
                 item = change.t2
                 if isinstance(item, strings):
+                    item = gen_compatible_str(item)
                     item = "'%s'" % item
                 self['set_item_added'].add("%s[%s]" % (path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
@@ -582,6 +584,7 @@ class ChildRelationship(object):
         """
         param = self.param
         if isinstance(param, strings):
+            param = gen_compatible_str(param)
             result = param if self.quote_str is None else self.quote_str.format(param)
         else:
             candidate = str(param)
@@ -595,6 +598,7 @@ class ChildRelationship(object):
                 result = candidate if resurrected == param else None
 
         if result:
+            result = gen_compatible_str(result)
             result = ':' if self.param_repr_format is None else self.param_repr_format.format(result)
 
         return result

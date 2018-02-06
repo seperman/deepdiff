@@ -239,6 +239,43 @@ class DeepDiffTextTestCase(unittest.TestCase):
         }
         self.assertEqual(ddiff, result)
 
+    def test_dict_with_unicode_key(self):
+        t1 = {u'中文': 2}
+        t2 = {u'中文': 3}
+        ddiff = DeepDiff(t1, t2)
+        if py3:
+            result = {
+                'values_changed': {
+                    "root['中文']": {
+                        'new_value': 3,
+                        'old_value': 2
+                    }
+                }
+            }
+        else:
+            result = {
+                'values_changed': {
+                    "root['u'\\u4e2d\\u6587'']": {
+                        'new_value': 3,
+                        'old_value': 2
+                    }
+                }
+            }
+        self.assertEqual(ddiff, result)
+
+    def test_set_with_unicode(self):
+        t1 = set((u'中文',))
+        t2 = set(('中文',))
+        ddiff = DeepDiff(t1, t2)
+        if py3:
+            result = {}
+        else:
+            result = {
+                'set_item_added': set(["root['\xe4\xb8\xad\xe6\x96\x87']"]),
+                'set_item_removed': set(["root['u'\\u4e2d\\u6587'']"])
+            }
+        self.assertEqual(ddiff, result)
+
     def test_type_change(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}

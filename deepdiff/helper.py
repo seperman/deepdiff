@@ -113,3 +113,18 @@ class Verbose(object):
     Global verbose level
     """
     level = 1
+
+
+def gen_compatible_str(s):
+    """Generate compatible str for PY2.
+
+    The function convert unicode object to str with `repr`.
+    :param s: str/unicode in PY2, str in Py3.
+    """
+    if py3:
+        return s
+    else:
+        if isinstance(s, str):
+            return s
+        else:  # unicode
+            return repr(s)
