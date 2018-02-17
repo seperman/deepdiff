@@ -197,8 +197,8 @@ class DeepDiff(ResultDict):
 
         >>>
         >>> print (ddiff['values_changed']["root[4]['b']"]["diff"])
-        --- 
-        +++ 
+        ---
+        +++
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!
@@ -992,6 +992,7 @@ class DeepDiff(ResultDict):
             try:
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
+                                      exclude_types=self.exclude_types,
                                       significant_digits=self.significant_digits,
                                       include_string_type_changes=self.include_string_type_changes)
                 item_hash = hashes_all.get(id(item), item)

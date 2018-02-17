@@ -233,6 +233,8 @@ class DeepHash(dict):
         obj_keys = set(obj.keys())
 
         for key in obj_keys:
+            if self.__skip_this(obj[key]):
+                continue
             key_hash = self.__hash(key)
             item = obj[key]
             item_id = id(item)

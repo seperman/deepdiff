@@ -1397,6 +1397,20 @@ class DeepDiffTextTestCase(unittest.TestCase):
         result = {}
         self.assertEqual(ddiff, result)
 
+    def test_skip_str_type_in_dict_on_list(self):
+        t1 = [{1: "a"}]
+        t2 = [{}]
+        ddiff = DeepDiff(t1, t2, exclude_types=[str])
+        result = {}
+        self.assertEqual(ddiff, result)
+
+    def test_skip_str_type_in_dict_on_list_when_ignored_order(self):
+        t1 = [{1: "a"}]
+        t2 = [{}]
+        ddiff = DeepDiff(t1, t2, exclude_types=[str], ignore_order=True)
+        result = {}
+        self.assertEqual(ddiff, result)
+
     def test_unknown_parameters(self):
         with self.assertRaises(ValueError):
             DeepDiff(1, 1, wrong_param=2)
