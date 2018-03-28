@@ -54,7 +54,7 @@ def clean_type(obj, include_string_type_changes=False):
         if isinstance(obj, unicode):
             if include_string_type_changes:
                 obj = u"{}:{}".format(type(obj).__name__, obj)
-            obj = obj.encode('utf-8')
+            # obj = obj.encode('utf-8')
         elif isinstance(obj, str) and include_string_type_changes:
             obj = type(obj).__name__ + ":" + obj
     return obj

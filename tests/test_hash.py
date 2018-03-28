@@ -432,20 +432,19 @@ class TestCleaningString(unittest.TestCase):
     def test_clean_type(self):
 
         if py3:
-
             params = (
-                (b'hello', b'bytes:hello'),
-                ('hello', 'str:hello')
+                (b'hello', b'hello', b'bytes:hello'),
+                ('hello', b'hello', b'str:hello')
             )
         else:
             params = (
-                ('hello', 'str:hello'),
-                (u'hello', u'unicode:hello')
+                ('hello', 'hello', 'str:hello'),
+                (u'hello', 'hello', 'unicode:hello')
             )
 
-        for text, expected_result in params:
+        for text, text_in_byte, expected_result in params:
             result = clean_type(text, include_string_type_changes=True)
-            self.assertEqual(result, expected_result)
+            assert result == expected_result
 
             result = clean_type(text, include_string_type_changes=False)
-            self.assertEqual(result, text)
+            assert result == text_in_byte
