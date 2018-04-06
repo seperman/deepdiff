@@ -657,6 +657,7 @@ class DeepDiff(ResultDict):
                  exclude_regex_paths=set(),
                  exclude_types=set(),
                  include_string_type_changes=False,
+                 eq_types = set(),
                  verbose_level=1,
                  view='text',
                  **kwargs):
@@ -673,7 +674,9 @@ class DeepDiff(ResultDict):
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.include_string_type_changes = include_string_type_changes
+        self.eq_types = set(eq_types)
         self.hashes = {}
+
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError(
@@ -758,6 +761,14 @@ class DeepDiff(ResultDict):
     def __diff_obj(self, level, parents_ids=frozenset({}),
                    is_namedtuple=False):
         """Difference of 2 objects"""
+
+        if type(level.t1) in self.eq_types:
+            if level.t1 == level.t2:
+                return
+            else:
+                self.__report_result('values_changed', level)
+                return
+
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
