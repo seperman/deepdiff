@@ -56,6 +56,8 @@ class DeepDiff(ResultDict):
         Normally ignore_order does not report duplicates and repetition changes.
         In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
+    ignore_type_number : Boolean, default=False ignores types when t1 and t2 are numbers.
+
     report_repetition : Boolean, default=False reports repetitions when set True
         ONLY when ignore_order is set True too. This works for iterables.
         This feature currently is experimental and is not production ready.
@@ -262,6 +264,44 @@ class DeepDiff(ResultDict):
                                               'old_indexes': [3],
                                               'old_repeat': 1,
                                               'value': 4}}}
+
+    Dictionary that contains float and integer:
+        >>> from deepdiff import DeepDiff
+        >>> from pprint import pprint
+        >>> t1 = {1: 1, 2: 2.22}
+        >>> t2 = {1: 1.0, 2: 2.22}
+        >>> ddiff = DeepDiff(t1, t2)
+        >>> pprint(ddiff, indent=2)
+        { 'type_changes': { 'root[1]': { 'new_type': <class 'float'>,
+                                 'new_value': 1.0,
+                                 'old_type': <class 'int'>,
+                                 'old_value': 1}}}
+        >>> ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        >>> pprint(ddiff, indent=2)
+        {}
+    
+    List that contains float and integer:
+        >>> from deepdiff import DeepDiff
+        >>> from pprint import pprint
+        >>> t1 = [1, 2, 3]
+        >>> t2 = [1.0, 2.0, 3.0]
+        >>> ddiff = DeepDiff(t1, t2)
+        >>> pprint(ddiff, indent=2)
+        { 'type_changes': { 'root[0]': { 'new_type': <class 'float'>,
+                                 'new_value': 1.0,
+                                 'old_type': <class 'int'>,
+                                 'old_value': 1},
+                    'root[1]': { 'new_type': <class 'float'>,
+                                 'new_value': 2.0,
+                                 'old_type': <class 'int'>,
+                                 'old_value': 2},
+                    'root[2]': { 'new_type': <class 'float'>,
+                                 'new_value': 3.0,
+                                 'old_type': <class 'int'>,
+                                 'old_value': 3}}}
+        >>> ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        >>> pprint(ddiff, indent=2)
+        {}
 
     List that contains dictionary:
         >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
@@ -612,6 +652,7 @@ class DeepDiff(ResultDict):
                  t1,
                  t2,
                  ignore_order=False,
+                 ignore_type_number=False,
                  report_repetition=False,
                  significant_digits=None,
                  exclude_paths=set(),
@@ -622,10 +663,11 @@ class DeepDiff(ResultDict):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are ignore_order, report_repetition, significant_digits,"
+                "The valid parameters are ignore_order, ignore_type_number, report_repetition, significant_digits,"
                 "exclude_paths, exclude_types, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
+        self.ignore_type_number = ignore_type_number
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
         self.exclude_types = set(exclude_types)
@@ -1073,7 +1115,7 @@ class DeepDiff(ResultDict):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2):
+        if not isinstance(level.t1, type(level.t2)) and not (self.ignore_type_number and isinstance(level.t1, numbers) and isinstance(level.t2, numbers)):
             self.__diff_types(level)
 
         elif isinstance(level.t1, strings):
