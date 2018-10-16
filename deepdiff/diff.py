@@ -16,8 +16,10 @@ import jsonpickle
 
 from decimal import Decimal
 
-from collections import Mapping
-from collections import Iterable
+try:
+    from collections.abc import Mapping, Iterable
+except ImportError:
+    from collections import Mapping, Iterable
 
 from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
@@ -193,8 +195,8 @@ class DeepDiff(ResultDict):
 
         >>>
         >>> print (ddiff['values_changed']["root[4]['b']"]["diff"])
-        --- 
-        +++ 
+        ---
+        +++
         @@ -1,5 +1,4 @@
         -world!
         -Goodbye!

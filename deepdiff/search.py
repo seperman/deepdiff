@@ -6,8 +6,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-from collections import Iterable
-from collections import MutableMapping
+
+try:
+    from collections.abc import Iterable, MutableMapping
+except ImportError:
+    from collections import Itarable, MutableMapping
+
 import logging
 
 from deepdiff.helper import py3, strings, numbers, items

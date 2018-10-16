@@ -3,8 +3,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-from collections import Iterable
-from collections import MutableMapping
+
+try:
+    from collections.abc import Iterable, MutableMapping
+except ImportError:
+    from collections import Iterable, MutableMapping
+
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1
