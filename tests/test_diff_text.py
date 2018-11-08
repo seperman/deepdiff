@@ -836,6 +836,26 @@ class DeepDiffTextTestCase(unittest.TestCase):
         diff = DeepDiff(t1, t2)
         self.assertEqual(diff, {})
 
+    def test_custom_objects_with_weakref_in_slots(self):
+        class ClassA(object):
+            __slots__ = ['a', '__weakref__']
+
+            def __init__(self, a):
+                self.a = a
+
+        t1 = ClassA(1)
+        t2 = ClassA(2)
+        diff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root.a': {
+                    'new_value': 2,
+                    'old_value': 1
+                }
+            },
+        }
+        self.assertEqual(diff, result)
+
     def get_custom_objects_add_and_remove(self):
         class ClassA(object):
             a = 1

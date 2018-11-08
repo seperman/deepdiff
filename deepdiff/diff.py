@@ -743,7 +743,7 @@ class DeepDiff(ResultDict):
     @staticmethod
     def __dict_from_slots(object):
         def unmangle(attribute):
-            if attribute.startswith('__'):
+            if attribute.startswith('__') and attribute != '__weakref__':
                 return '_{type}{attribute}'.format(
                     type=type(object).__name__,
                     attribute=attribute
