@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 from deepdiff import DeepHash
-from deepdiff.contenthash import prepare_string_for_hashing
+from deepdiff.contenthash import prepare_string_for_hashing, skipped, unprocessed
 from deepdiff.helper import pypy3
 from collections import namedtuple
 from functools import partial
@@ -83,7 +83,7 @@ class TestDeepHashPrep:
             id(10): 'int:10',
             id(20): 'int:20',
             id(string1): string1_prepped,
-            id(obj): '{}:int:10,int:20,{}'.format(func_str, string1_prepped),
+            id(obj): '{}:{},int:10,int:20'.format(func_str, string1_prepped),
         }
         result = DeepHashPrep(obj)
         assert expected_result == result
@@ -125,7 +125,7 @@ class TestDeepHashPrep:
             id(20): 'int:20',
             id(key1): key1_prepped,
             id(string1): string1_prepped,
-            id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (key1, string1)
+            id(obj): 'dict:{int:1:int:10;int:2:int:20;%s:%s}' % (key1, string1)
         }
         result = DeepHashPrep(obj)
         assert expected_result == result
@@ -141,12 +141,12 @@ class TestDeepHashPrep:
             id(10): 'int:10',
             id(2): 'int:2',
             id(20): 'int:20',
-            id(key1): "str:{}".format(key1),
-            id(string1): "str:{}".format(string1),
-            id(dict1): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' %
+            id(key1): key1,
+            id(string1): string1,
+            id(dict1): 'dict:{int:1:int:10;int:2:int:20;%s:%s}' %
             (key1, string1),
             id(obj):
-            'list:dict:{int:1:int:10;int:2:int:20;str:%s:str:%s},int:0' %
+            'list:dict:{int:1:int:10;int:2:int:20;%s:%s},int:0' %
             (key1, string1)
         }
         result = DeepHashPrep(obj)
@@ -209,7 +209,7 @@ class TestDeepHashPrep:
         assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_unknown_parameters(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             DeepHashPrep(1, wrong_param=2)
 
     def test_bad_attribute(self):
@@ -225,7 +225,7 @@ class TestDeepHashPrep:
         t1 = Bad()
 
         result = DeepHashPrep(t1)
-        expected_result = {id(t1): result.unprocessed, 'unprocessed': [t1]}
+        expected_result = {id(t1): unprocessed, 'unprocessed': [t1]}
         assert expected_result == result
 
     def test_repetition_by_default_does_not_effect(self):
@@ -259,8 +259,8 @@ class TestDeepHashPrep:
         hash_a = DeepHashPrep(a, ignore_repetition=False)
         hash_b = DeepHashPrep(b, ignore_repetition=False)
 
-        self.assertNotEqual(hash_a[list1_id], hash_b[list2_id])
-        self.assertNotEqual(hash_a[a_id], hash_b[b_id])
+        assert not hash_a[list1_id] == hash_b[list2_id]
+        assert not hash_a[a_id] == hash_b[b_id]
 
         assert hash_a[list1_id].replace('3|1', '3|2') == hash_b[list2_id]
 
@@ -291,7 +291,7 @@ class TestDeepHashPrep:
         l1 = logging.getLogger("test")
         obj = {"log": l1, 2: 1337}
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
-        assert result[id(l1)] == result.skipped
+        assert result[id(l1)] is skipped
 
     def test_prep_dic_with_loop(self):
         obj = {2: 1337}
@@ -384,15 +384,15 @@ class TestHasher:
     def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
         a = 'hello'
         b = b'hello'
-        a_hash = DeepHash(a)[id(a)]
-        b_hash = DeepHash(b)[id(b)]
+        a_hash = DeepHash(a)[a]
+        b_hash = DeepHash(b)[b]
         assert a_hash == b_hash
 
     def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
         a = 'hello'
         b = b'hello'
-        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[id(a)]
-        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[id(b)]
+        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[a]
+        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[b]
         assert a_hash == b_hash
 
 

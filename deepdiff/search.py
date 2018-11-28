@@ -2,16 +2,11 @@
 # -*- coding: utf-8 -*-
 # In order to run the docstrings:
 # python3 -m deepdiff.search
-
-from __future__ import absolute_import
-from __future__ import print_function
 import re
-import sys
-from collections import Iterable
-from collections import MutableMapping
+from collections.abc import MutableMapping, Iterable
 import logging
 
-from deepdiff.helper import py3, strings, numbers, items
+from deepdiff.helper import strings, numbers
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +109,7 @@ class DeepSearch(dict):
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
+        empty_keys = [k for k, v in self.items() if not v]
 
         for k in empty_keys:
             del self[k]
@@ -155,7 +150,7 @@ class DeepSearch(dict):
                 # Skip magic methods. Slightly hacky, but unless people are defining
                 # new magic methods they want to search, it should work fine.
                 obj = {i: getattr(obj, i) for i in dir(obj)
-                    if not (i.startswith('__') and i.endswith('__'))}
+                       if not (i.startswith('__') and i.endswith('__'))}
         except AttributeError:
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
@@ -357,7 +352,5 @@ class grep(object):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    if not py3:
-        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()

@@ -28,7 +28,6 @@ strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
 numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
-items = 'items'
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 

@@ -7,9 +7,6 @@
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import re
 import difflib
 import logging
@@ -17,8 +14,7 @@ import jsonpickle
 
 from decimal import Decimal
 
-from collections import Mapping
-from collections import Iterable
+from collections.abc import Mapping, Iterable
 
 from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel

@@ -1,4 +1,6 @@
 """This module offers the DeepDiff, DeepSearch, grep and DeepHash classes."""
+# flake8: noqa
+__version__ = '4.0.0'
 import logging
 
 if __name__ == '__main__':
@@ -7,4 +9,3 @@ if __name__ == '__main__':
 from .diff import DeepDiff
 from .search import DeepSearch, grep
 from .contenthash import DeepHash
-from .helper import py3

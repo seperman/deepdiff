@@ -5,11 +5,15 @@ from collections import MutableMapping
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1
+import mmh3
 import logging
 
-from deepdiff.helper import strings, numbers, items
+from deepdiff.helper import strings, numbers
 
 logger = logging.getLogger(__name__)
+
+UNPROCESSED = 'unprocessed'
+RESERVED_DICT_KEYS = {UNPROCESSED}
 
 
 class OtherTypes:
@@ -29,6 +33,11 @@ class Unprocessed(OtherTypes):
 
 class NotHashed(OtherTypes):
     pass
+
+
+unprocessed = Unprocessed()
+skipped = Skipped()
+not_hashed = NotHashed()
 
 
 def prepare_string_for_hashing(obj, include_string_type_changes=False):
@@ -155,10 +164,7 @@ class DeepHash(dict):
         self.hasher = hash if hasher is None else hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
-        self['unprocessed'] = []
-        self.unprocessed = Unprocessed()
-        self.skipped = Skipped()
-        self.not_hashed = NotHashed()
+        self[UNPROCESSED] = []
         self.significant_digits = significant_digits
         self.include_string_type_changes = include_string_type_changes
         # makes the hash return constant size result if true
@@ -168,15 +174,28 @@ class DeepHash(dict):
 
         self._hash(obj, parents_ids=frozenset({id(obj)}))
 
-        if self['unprocessed']:
-            logger.warning("Can not hash the following items: {}.".format(self['unprocessed']))
+        if self[UNPROCESSED]:
+            logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
         else:
-            del self['unprocessed']
+            del self[UNPROCESSED]
 
     @staticmethod
     def sha1hex(obj):
-        """Use Sha1 for more accuracy."""
+        """Use Sha1 as a cryptographic hash."""
+        obj = obj.encode('utf-8')
         return sha1(obj).hexdigest()
+
+    @staticmethod
+    def murmur3(obj):
+        """Use Sha1 as a cryptographic hash."""
+        obj = obj.encode('utf-8')
+        return mmh3.hash(obj)
+
+    def __getitem__(self, key):
+        if not isinstance(key, int) and key not in RESERVED_DICT_KEYS:
+            key = id(key)
+
+        return super().__getitem__(key)
 
     @staticmethod
     def _add_to_frozen_set(parents_ids, item_id):
@@ -195,8 +214,8 @@ class DeepHash(dict):
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
-                self['unprocessed'].append(obj)
-                return self.unprocessed
+                self[UNPROCESSED].append(obj)
+                return unprocessed
 
         result = self._prep_dict(obj, parents_ids)
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
@@ -254,13 +273,11 @@ class DeepHash(dict):
         if self.ignore_repetition:
             result = list(result.keys())
         else:
-            # items could be iteritems based on py version so we use getattr
             result = [
-                '{}|{}'.format(i, v) for i, v in getattr(result, items)()
+                '{}|{}'.format(i, v) for i, v in result.items()
             ]
 
-        result = sorted(map(str, result))  # making sure the result items are string so join command works.
-        # result.sort()
+        result = sorted(map(str, result))  # making sure the result items are string and sorted so join command works.
         result = ','.join(result)
         result = "{}:{}".format(type(obj).__name__, result)
 
@@ -300,10 +317,10 @@ class DeepHash(dict):
         if obj_id in self:
             return self[obj_id]
 
-        result = self.not_hashed
+        result = not_hashed
 
         if self._skip_this(obj):
-            result = self.skipped
+            result = skipped
 
         elif obj is None:
             result = 'NONE'
@@ -329,8 +346,8 @@ class DeepHash(dict):
         else:
             result = self._prep_obj(obj, parents_ids)
 
-        if result is self.not_hashed:  # pragma: no cover
-            self['unprocessed'].append(obj)
+        if result is not_hashed:  # pragma: no cover
+            self[UNPROCESSED].append(obj)
 
         elif self.constant_size:
             if isinstance(obj, strings):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from deepdiff.helper import items, RemapDict, strings, short_repr, Verbose, notpresent
+from deepdiff.helper import RemapDict, strings, short_repr, Verbose, notpresent
 from ast import literal_eval
 from copy import copy
 
@@ -33,7 +33,7 @@ class ResultDict(RemapDict):
         Remove empty keys from this object. Should always be called after the result is final.
         :return:
         """
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
+        empty_keys = [k for k, v in self.items() if not v]
 
         for k in empty_keys:
             del self[k]
