@@ -329,7 +329,8 @@ class DeepDiff(ResultDict):
 
 
     .. note::
-        All the examples for the text view work for the tree view too. You just need to set view='tree' to get it in tree form.
+        All the examples for the text view work for the tree view too.
+        You just need to set view='tree' to get it in tree form.
 
 
     **Tree View**
@@ -344,7 +345,8 @@ class DeepDiff(ResultDict):
 
     .. note::
         The Tree view is just a different representation of the diffed data.
-        Behind the scene, DeepDiff creates the tree view first and then converts it to textual representation for the text view.
+        Behind the scene, DeepDiff creates the tree view first and then converts it to textual
+        representation for the text view.
 
     .. code:: text
 
@@ -1119,7 +1121,7 @@ class DeepDiff(ResultDict):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2):
+        if type(level.t1) != type(level.t2):  # NOQA
             self.__diff_types(level)
 
         elif isinstance(level.t1, strings):

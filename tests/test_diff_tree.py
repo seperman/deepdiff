@@ -16,7 +16,7 @@ Or using Nose:
 To run a specific test, run this from the root of repo:
     python -m unittest tests.test_diff_tree.DeepDiffTreeTestCase.test_same_objects
 """
-import unittest
+import pytest
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, notpresent
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
@@ -25,7 +25,7 @@ import logging
 logging.disable(logging.CRITICAL)
 
 
-class DeepDiffTreeTestCase(unittest.TestCase):
+class DeepDiffTreeTestCase:
     """DeepDiff Tests."""
 
     def test_same_objects(self):
@@ -174,7 +174,7 @@ class DeepDiffTreeTestCase(unittest.TestCase):
             self.fail("Converting ddiff to string raised: {}".format(e))
 
 
-class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
+class DeepDiffTreeWithNumpyTestCase:
     """DeepDiff Tests with Numpy."""
 
     def setUp(self):
@@ -185,13 +185,13 @@ class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
             self.d1 = {'np': a1}
             self.d2 = {'np': a2}
 
-    @unittest.skipIf(pypy3, "Numpy is not compatible with pypy3")
+    @pytest.mark.skipif(pypy3, "Numpy is not compatible with pypy3")
     def test_diff_with_numpy(self):
         ddiff = DeepDiff(self.d1, self.d2)
         res = ddiff.tree
         self.assertEqual(res, {})
 
-    @unittest.skipIf(pypy3, "Numpy is not compatible with pypy3")
+    @pytest.mark.skipif(pypy3, "Numpy is not compatible with pypy3")
     def test_diff_with_empty_seq(self):
         a1 = {"empty": []}
         a2 = {"empty": []}
@@ -199,10 +199,10 @@ class DeepDiffTreeWithNumpyTestCase(unittest.TestCase):
         self.assertEqual(ddiff, {})
 
 
-class DeepAdditionsTestCase(unittest.TestCase):
+class DeepAdditionsTestCase:
     """Tests for Additions and Subtractions."""
 
-    @unittest.expectedFailure
+    @pytest.mark.skip(reason="Not currently implemented")
     def test_adding_list_diff(self):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]

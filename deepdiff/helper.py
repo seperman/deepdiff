@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 py_major_version = sys.version[0]
 py_minor_version = sys.version[2]
 
+py2 = py_major_version == '2'
 py3 = py_major_version == '3'
 py4 = py_major_version == '4'
 
@@ -17,27 +18,17 @@ if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')
     py3 = True
 
-if (py_major_version, py_minor_version) == (2.6):  # pragma: no cover
-    sys.exit('Python 2.6 is not supported.')
+if py2:  # pragma: no cover
+    sys.exit('Python 2 is not supported. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 
-if py3:  # pragma: no cover
-    from builtins import int
-    strings = (str, bytes)  # which are both basestring
-    unicode_type = str
-    bytes_type = bytes
-    numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
-    items = 'items'
-else:  # pragma: no cover
-    int = int
-    strings = (str, unicode)
-    unicode_type = unicode
-    bytes_type = str
-    numbers = (int, float, long, complex, datetime.datetime, datetime.date, datetime.timedelta,
-               Decimal)
-
-    items = 'iteritems'
+# from builtins import int
+strings = (str, bytes)  # which are both basestring
+unicode_type = str
+bytes_type = bytes
+numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
+items = 'items'
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 

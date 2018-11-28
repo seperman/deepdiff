@@ -1,29 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-To run only the search tests:
-    python -m unittest tests.test_hash
-
-Or to run all the tests:
-    python -m unittest discover
-
-Or to run all the tests with coverage:
-    coverage run --source deepdiff setup.py test
-
-Or using Nose:
-    nosetests --with-coverage --cover-package=deepdiff
-
-To run a specific test, run this from the root of repo:
-    On linux:
-    nosetests ./tests/test_hash.py:DeepHashTestCase.test_bytecode
-
-    On windows:
-    nosetests .\tests\test_hash.py:DeepHashTestCase.test_string_in_root
-"""
-import unittest
+import pytest
 from deepdiff import DeepHash
-from deepdiff.contenthash import clean_type
-from deepdiff.helper import py3, pypy3
+from deepdiff.contenthash import prepare_string_for_hashing
+from deepdiff.helper import pypy3
 from collections import namedtuple
 from functools import partial
 import logging
@@ -47,17 +27,17 @@ class CustomClass:
 DeepHashPrep = partial(DeepHash, constant_size=False)
 
 
-def prep_str(obj):
-    return 'str:{}'.format(obj)
+def prep_str(obj, include_string_type_changes=False):
+    return 'str:{}'.format(obj) if include_string_type_changes else obj
 
 
-class DeepHashTestCase(unittest.TestCase):
+class TestDeepHash:
 
     def test_dictionary(self):
 
         obj = {1: 1}
         result = DeepHash(obj)
-        self.assertEqual(set(result.keys()), {id(1), id(obj)})
+        assert set(result.keys()) == {id(1), id(obj)}
 
     def test_list_of_sets(self):
         a = {1}
@@ -65,17 +45,20 @@ class DeepHashTestCase(unittest.TestCase):
         obj = [a, b]
         result = DeepHash(obj)
         expected_result = {id(1), id(2), id(a), id(b), id(obj)}
-        self.assertEqual(set(result.keys()), expected_result)
+        assert set(result.keys()) == expected_result
 
 
-class DeepHashPrepTestCase(unittest.TestCase):
+class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
 
     def test_prep_str(self):
         obj = "a"
         expected_result = {id(obj): prep_str(obj)}
         result = DeepHashPrep(obj)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
+        expected_result = {id(obj): prep_str(obj, include_string_type_changes=True)}
+        result = DeepHashPrep(obj, include_string_type_changes=True)
+        assert expected_result == result
 
     def test_prep_str_fail_if_mutable(self):
         """
@@ -87,10 +70,10 @@ class DeepHashPrepTestCase(unittest.TestCase):
         id_obj1 = id(obj1)
         expected_result = {id_obj1: prep_str(obj1)}
         result = DeepHashPrep(obj1)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
         obj2 = "b"
         result = DeepHashPrep(obj2)
-        self.assertTrue(id_obj1 not in result)
+        assert id_obj1 not in result
 
     def do_list_or_tuple(self, func, func_str):
         string1 = "a"
@@ -103,7 +86,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
             id(obj): '{}:int:10,int:20,{}'.format(func_str, string1_prepped),
         }
         result = DeepHashPrep(obj)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_list_and_tuple(self):
         for func, func_str in ((list, 'list'), (tuple, 'tuple')):
@@ -120,16 +103,16 @@ class DeepHashPrepTestCase(unittest.TestCase):
         obj = Point(x=11)
         result = DeepHashPrep(obj)
         if pypy3:
-            self.assertEqual(result[id(obj)], 'ntdict:{str:%s:int:11}' % x)
+            assert result[id(obj)] == 'ntdict:{%s:int:11}' % x
         else:
             expected_result = {
                 x_id: x_prep,
-                id(obj): 'ntdict:{str:%s:int:11}' % x,
+                id(obj): 'ntdict:{%s:int:11}' % x,
                 id(11): 'int:11',
             }
-            self.assertEqual(result, expected_result)
+            assert expected_result == result
 
-    def test_dict(self):
+    def test_dict_hash(self):
         string1 = "a"
         string1_prepped = prep_str(string1)
         key1 = "key1"
@@ -145,7 +128,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
             id(obj): 'dict:{int:1:int:10;int:2:int:20;str:%s:str:%s}' % (key1, string1)
         }
         result = DeepHashPrep(obj)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_dict_in_list(self):
         string1 = "a"
@@ -167,7 +150,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
             (key1, string1)
         }
         result = DeepHashPrep(obj)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_nested_lists_same_hash(self):
         t1 = [1, 2, [3, 4]]
@@ -175,7 +158,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_nested_lists_same_hash2(self):
         t1 = [1, 2, [3, [4, 5]]]
@@ -183,7 +166,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_nested_lists_same_hash3(self):
         t1 = [{1: [2, 3], 4: [5, [6, 7]]}]
@@ -191,7 +174,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_nested_lists_in_dictionary_same_hash(self):
         t1 = [{"c": 4}, {"c": 3}]
@@ -199,7 +182,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_same_sets_same_hash(self):
         t1 = {1, 3, 2}
@@ -207,7 +190,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_similar_sets_with_significant_digits_same_hash(self):
         t1 = {0.012, 0.98}
@@ -215,7 +198,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1, significant_digits=1)
         t2_hash = DeepHashPrep(t2, significant_digits=1)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_same_sets_in_lists_same_hash(self):
         t1 = ["a", {1, 3, 2}]
@@ -223,7 +206,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         t1_hash = DeepHashPrep(t1)
         t2_hash = DeepHashPrep(t2)
 
-        self.assertEqual(t1_hash[id(t1)], t2_hash[id(t2)])
+        assert t1_hash[id(t1)] == t2_hash[id(t2)]
 
     def test_unknown_parameters(self):
         with self.assertRaises(ValueError):
@@ -243,7 +226,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
 
         result = DeepHashPrep(t1)
         expected_result = {id(t1): result.unprocessed, 'unprocessed': [t1]}
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]
@@ -259,8 +242,8 @@ class DeepHashPrepTestCase(unittest.TestCase):
         hash_a = DeepHashPrep(a)
         hash_b = DeepHashPrep(b)
 
-        self.assertEqual(hash_a[list1_id], hash_b[list2_id])
-        self.assertEqual(hash_a[a_id], hash_b[b_id])
+        assert hash_a[list1_id] == hash_b[list2_id]
+        assert hash_a[a_id] == hash_b[b_id]
 
     def test_setting_repetition_off_unequal_hash(self):
         list1 = [3, 4]
@@ -279,8 +262,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         self.assertNotEqual(hash_a[list1_id], hash_b[list2_id])
         self.assertNotEqual(hash_a[a_id], hash_b[b_id])
 
-        self.assertEqual(hash_a[list1_id].replace('3|1', '3|2'),
-                         hash_b[list2_id])
+        assert hash_a[list1_id].replace('3|1', '3|2') == hash_b[list2_id]
 
     def test_already_calculated_hash_wont_be_recalculated(self):
         hashes = (i for i in range(10))
@@ -291,7 +273,7 @@ class DeepHashPrepTestCase(unittest.TestCase):
         obj = "a"
         expected_result = {id(obj): '0'}
         result = DeepHash(obj, hasher=hasher)
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
         # we simply feed the last result to DeepHash
         # So it can re-use the results.
@@ -299,152 +281,129 @@ class DeepHashPrepTestCase(unittest.TestCase):
         # if hashes are not cached and re-used,
         # then the next time hasher runs, it returns
         # number 1 instead of 0.
-        self.assertEqual(result2, expected_result)
+        assert expected_result == result2
 
         result3 = DeepHash(obj, hasher=hasher)
         expected_result = {id(obj): '1'}
-        self.assertEqual(result3, expected_result)
+        assert expected_result == result3
 
     def test_skip_type(self):
         l1 = logging.getLogger("test")
         obj = {"log": l1, 2: 1337}
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
-        self.assertEqual(result[id(l1)], result.skipped)
+        assert result[id(l1)] == result.skipped
 
     def test_prep_dic_with_loop(self):
         obj = {2: 1337}
         obj[1] = obj
         result = DeepHashPrep(obj)
         expected_result = {id(obj): 'dict:{int:2:int:1337}', id(1): 'int:1', id(2): 'int:2', id(1337): 'int:1337'}
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_prep_iterable_with_loop(self):
         obj = [1]
         obj.append(obj)
         result = DeepHashPrep(obj)
         expected_result = {id(obj): 'list:int:1', id(1): 'int:1'}
-        self.assertEqual(result, expected_result)
+        assert expected_result == result
 
     def test_prep_iterable_with_excluded_type(self):
         l1 = logging.getLogger("test")
         obj = [1, l1]
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
-        self.assertTrue(id(l1) not in result)
+        assert id(l1) not in result
 
 
-class DeepHashSHA1TestCase(unittest.TestCase):
-    """DeepHash with SHA1 Tests."""
+# class TestDeepHashSHA1:
+#     """DeepHash with SHA1 Tests."""
 
-    def test_prep_str(self):
-        obj = "a"
-        expected_result = {
-            id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'
-        }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
-        self.assertEqual(result, expected_result)
+#     def test_prep_str_sha1(self):
+#         obj = "a"
+#         expected_result = {
+#             id(obj): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
+#         }
+#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
+#         assert expected_result == result
 
-    def test_prep_str_fail_if_mutable(self):
-        """
-        This test fails if ContentHash is getting a mutable copy of hashes
-        which means each init of the ContentHash will have hashes from
-        the previous init.
-        """
-        obj1 = "a"
-        id_obj1 = id(obj1)
-        expected_result = {
-            id_obj1: '48591f1d794734cabf55f96f5a5a72c084f13ac0'
-        }
-        result = DeepHash(obj1, hasher=DeepHash.sha1hex)
-        self.assertEqual(result, expected_result)
-        obj2 = "b"
-        result = DeepHash(obj2, hasher=DeepHash.sha1hex)
-        self.assertTrue(id_obj1 not in result)
+#     def test_prep_str_sha1_fail_if_mutable(self):
+#         """
+#         This test fails if ContentHash is getting a mutable copy of hashes
+#         which means each init of the ContentHash will have hashes from
+#         the previous init.
+#         """
+#         obj1 = "a"
+#         id_obj1 = id(obj1)
+#         expected_result = {
+#             id_obj1: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
+#         }
+#         result = DeepHash(obj1, hasher=DeepHash.sha1hex)
+#         assert expected_result == result
+#         obj2 = "b"
+#         result = DeepHash(obj2, hasher=DeepHash.sha1hex)
+#         assert id_obj1 not in result)
 
-    def test_bytecode(self):
-        obj = b"a"
-        if py3:
-            expected_result = {
-                id(obj): '1283c61f8aa47c22d22552b742c93f6f6dac83ab'
-            }
-        else:
-            expected_result = {
-                id(obj): '48591f1d794734cabf55f96f5a5a72c084f13ac0'
-            }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
-        self.assertEqual(result, expected_result)
+#     def test_bytecode(self):
+#         obj = b"a"
+#         expected_result = {
+#             id(obj): '1283c61f8aa47c22d22552b742c93f6f6dac83ab'
+#         }
+#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
+#         assert expected_result == result
 
-    def test_list1(self):
-        string1 = "a"
-        obj = [string1, 10, 20]
-        expected_result = {
-            id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
-            id(obj): 'ad8e2f1479d6a5e1b01304f18f04bbe3ea0673ca',
-            id(10): DeepHash.sha1hex('int:10'),
-            id(20): DeepHash.sha1hex('int:20'),
-        }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
-        self.assertEqual(result, expected_result)
+#     def test_list1(self):
+#         string1 = "a"
+#         obj = [string1, 10, 20]
+#         expected_result = {
+#             id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
+#             id(obj): 'ad8e2f1479d6a5e1b01304f18f04bbe3ea0673ca',
+#             id(10): DeepHash.sha1hex('int:10'),
+#             id(20): DeepHash.sha1hex('int:20'),
+#         }
+#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
+#         assert expected_result == result
 
-    def test_dict1(self):
-        string1 = "a"
-        key1 = "key1"
-        obj = {key1: string1, 1: 10, 2: 20}
-        expected_result = {
-            id(1): DeepHash.sha1hex('int:1'),
-            id(10): DeepHash.sha1hex('int:10'),
-            id(2): DeepHash.sha1hex('int:2'),
-            id(20): DeepHash.sha1hex('int:20'),
-            id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
-            id(string1): '48591f1d794734cabf55f96f5a5a72c084f13ac0',
-            id(obj): '8fa42fa0aa950885c4c1ec95a3d6423fc673bf49'
-        }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
-        self.assertEqual(result, expected_result)
+#     def test_dict1(self):
+#         string1 = "a"
+#         key1 = "key1"
+#         obj = {key1: string1, 1: 10, 2: 20}
+#         expected_result = {
+#             id(1): DeepHash.sha1hex('int:1'),
+#             id(10): DeepHash.sha1hex('int:10'),
+#             id(2): DeepHash.sha1hex('int:2'),
+#             id(20): DeepHash.sha1hex('int:20'),
+#             id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
+#             id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
+#             id(obj): '8fa42fa0aa950885c4c1ec95a3d6423fc673bf49'
+#         }
+#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
+#         assert expected_result == result
 
 
-class TestHasher(unittest.TestCase):
+class TestHasher:
 
     def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
-        if py3:
-            a = 'hello'
-            b = b'hello'
-        else:
-            a = u'hello'
-            b = b'hello'
+        a = 'hello'
+        b = b'hello'
         a_hash = DeepHash(a)[id(a)]
         b_hash = DeepHash(b)[id(b)]
-        self.assertEqual(a_hash, b_hash)
+        assert a_hash == b_hash
 
     def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
-        if py3:
-            a = 'hello'
-            b = b'hello'
-        else:
-            a = u'hello'
-            b = b'hello'
+        a = 'hello'
+        b = b'hello'
         a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[id(a)]
         b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[id(b)]
-        self.assertEqual(a_hash, b_hash)
+        assert a_hash == b_hash
 
 
-class TestCleaningString(unittest.TestCase):
+class TestCleaningString:
 
-    def test_clean_type(self):
-
-        if py3:
-            params = (
-                (b'hello', b'hello', b'bytes:hello'),
-                ('hello', b'hello', b'str:hello')
-            )
-        else:
-            params = (
-                ('hello', 'hello', 'str:hello'),
-                (u'hello', 'hello', 'unicode:hello')
-            )
-
-        for text, text_in_byte, expected_result in params:
-            result = clean_type(text, include_string_type_changes=True)
-            assert result == expected_result
-
-            result = clean_type(text, include_string_type_changes=False)
-            assert result == text_in_byte
+    @pytest.mark.parametrize("text, include_string_type_changes, expected_result", [
+        (b'hello', False, 'hello'),
+        (b'hello', True, 'bytes:hello'),
+        ('hello', False, 'hello'),
+        ('hello', True, 'str:hello'),
+    ])
+    def test_clean_type(self, text, include_string_type_changes, expected_result):
+        result = prepare_string_for_hashing(text, include_string_type_changes=include_string_type_changes)
+        assert expected_result == result
