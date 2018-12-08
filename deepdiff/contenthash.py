@@ -8,36 +8,12 @@ from hashlib import sha1
 import mmh3
 import logging
 
-from deepdiff.helper import strings, numbers
+from deepdiff.helper import strings, numbers, unprocessed, skipped, not_hashed
 
 logger = logging.getLogger(__name__)
 
 UNPROCESSED = 'unprocessed'
 RESERVED_DICT_KEYS = {UNPROCESSED}
-
-
-class OtherTypes:
-    def __repr__(self):
-        return "Error: {}".format(self.__class__.__name__)  # pragma: no cover
-
-    __str__ = __repr__
-
-
-class Skipped(OtherTypes):
-    pass
-
-
-class Unprocessed(OtherTypes):
-    pass
-
-
-class NotHashed(OtherTypes):
-    pass
-
-
-unprocessed = Unprocessed()
-skipped = Skipped()
-not_hashed = NotHashed()
 
 
 def prepare_string_for_hashing(obj, include_string_type_changes=False):
@@ -143,7 +119,7 @@ class DeepHash(dict):
     def __init__(self,
                  obj,
                  hashes=None,
-                 exclude_types=set(),
+                 exclude_types=None,
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
@@ -156,9 +132,8 @@ class DeepHash(dict):
                  "The valid parameters are obj, hashes, exclude_types."
                  "hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
         self.obj = obj
-        self.exclude_types = set(exclude_types)
-        self.exclude_types_tuple = tuple(
-            exclude_types)  # we need tuple for checking isinstance
+        exclude_types = set() if exclude_types is None else set(exclude_types)
+        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
         self.hasher = hash if hasher is None else hasher

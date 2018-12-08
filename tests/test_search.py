@@ -243,13 +243,13 @@ class DeepSearchTestCase(unittest.TestCase):
 
     def test_skip_regexp(self):
         obj = [{'a': 1, 'b': "somewhere"}, {'c': 4, 'b': "somewhere"}]
-        ds = DeepSearch(obj, item, exclude_regex_paths=["root\[\d+\]"])
+        ds = DeepSearch(obj, item, exclude_regex_paths=[r"root\[\d+\]"])
         result = {}
         self.assertEqual(ds, result)
 
     def test_skip_regexp2(self):
         obj = {'a': [1, 2, [3, [item]]]}
-        ds = DeepSearch(obj, item, exclude_regex_paths=["\[\d+\]"])
+        ds = DeepSearch(obj, item, exclude_regex_paths=[r"\[\d+\]"])
         result = {}
         self.assertEqual(ds, result)
 
@@ -324,6 +324,7 @@ class DeepSearchTestCase(unittest.TestCase):
         obj = AlwaysEqual()
         item = AlwaysEqual()
         result = {'matched_values': {'root', 'root.some_attr'}}
+        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
 
     def test_search_inherited_attributes(self):
         class Parent(object):

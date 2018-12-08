@@ -94,7 +94,7 @@ class DeepSearch(dict):
         self.case_sensitive = case_sensitive if isinstance(item, strings) else True
         item = item if self.case_sensitive else item.lower()
         self.exclude_paths = set(exclude_paths)
-        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in set(exclude_regex_paths)]
+        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in exclude_regex_paths]
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(
             exclude_types)  # we need tuple for checking isinstance

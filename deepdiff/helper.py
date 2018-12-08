@@ -57,20 +57,39 @@ class ListItemRemovedOrAdded(object):  # pragma: no cover
     pass
 
 
-class NotPresent(object):  # pragma: no cover
+class OtherTypes:
+    def __repr__(self):
+        return "Error: {}".format(self.__class__.__name__)  # pragma: no cover
+
+    __str__ = __repr__
+
+
+class Skipped(OtherTypes):
+    pass
+
+
+class Unprocessed(OtherTypes):
+    pass
+
+
+class NotHashed(OtherTypes):
+    pass
+
+
+class NotPresent(OtherTypes):  # pragma: no cover
     """
     In a change tree, this indicated that a previously existing object has been removed -- or will only be added
     in the future.
     We previously used None for this but this caused problem when users actually added and removed None. Srsly guys? :D
     """
-    def __repr__(self):
-        return "Not Present"
-
-    def __str__(self):
-        return self.__repr__()
+    pass
 
 
+unprocessed = Unprocessed()
+skipped = Skipped()
+not_hashed = NotHashed()
 notpresent = NotPresent()
+
 
 WARNING_NUM = 0
 

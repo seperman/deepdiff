@@ -16,16 +16,13 @@ from decimal import Decimal
 
 from collections.abc import Mapping, Iterable
 
-from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose
+from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose, unprocessed
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship  # , REPORT_KEYS
+from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
-if py3:  # pragma: no cover
-    from itertools import zip_longest
-else:  # pragma: no cover
-    from itertools import izip_longest as zip_longest
+from itertools import zip_longest
 
 logger = logging.getLogger(__name__)
 
@@ -998,7 +995,7 @@ class DeepDiff(ResultDict):
                                "Not counting this object.\n %s" %
                                (level.path(), e))
             else:
-                if item_hash is hashes_all.unprocessed:  # pragma: no cover
+                if item_hash is unprocessed:  # pragma: no cover
                     logger.warning("Item %s was not processed while hashing "
                                    "thus not counting this object." %
                                    level.path())
