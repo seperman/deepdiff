@@ -1,4 +1,4 @@
-# DeepDiff v 3.5.0
+# DeepDiff v 4.0.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -8,7 +8,9 @@
 [![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
 
 Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
-Tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, Pypy, Pypy3
+Tested on Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
+
+**NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2**
 
 ## Table of Contents
 

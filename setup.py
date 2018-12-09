@@ -28,11 +28,8 @@ def get_reqs(filename):
 
 reqs = get_reqs("requirements.txt")
 
-try:
-    with open('README.rst') as file:
-        long_description = file.read()
-except Exception:
-    long_description = "Deep Difference and Search of any Python object/data."
+with open('README.md') as file:
+    long_description = file.read()
 
 
 setup(name='deepdiff',
@@ -48,9 +45,8 @@ setup(name='deepdiff',
       test_suite="tests",
       tests_require=['mock'],  # 'numpy==1.11.2' numpy is needed but comes already installed with travis
       long_description=long_description,
-      install_requires=[
-          'mmh3>=2.5.1'
-      ],
+      long_description_content_type='text/markdown',
+      install_requires=reqs,
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",

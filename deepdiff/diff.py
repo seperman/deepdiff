@@ -16,7 +16,8 @@ from decimal import Decimal
 
 from collections.abc import Mapping, Iterable
 
-from deepdiff.helper import py3, strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent, IndexedHash, Verbose, unprocessed
+from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
+                             IndexedHash, Verbose, unprocessed)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -1162,10 +1163,5 @@ class DeepDiff(ResultDict):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    if not py3:
-        import sys
-        sys.exit(
-            "Please run with Python 3 to verify the doc strings: python3 -m deepdiff.diff"
-        )
     import doctest
     doctest.testmod()
