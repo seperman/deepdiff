@@ -39,10 +39,8 @@ class DeepHash(dict):
     For example you can use DeepHash to calculate the hash of a set or a dictionary!
 
     The core of DeepHash is a deterministic serialization of your object into a string so it
-    can be passed to a hash function. By default it uses Python's built-in hash function
+    can be passed to a hash function. By default it uses Murmur 3 128 bit hash function.
     but you can pass another hash function to it if you want.
-    For example the Murmur3 hash function or a cryptographic hash function.
-
 
     **Parameters**
 
@@ -67,7 +65,7 @@ class DeepHash(dict):
 
         You can use it by passing: hasher=DeepHash.murmur3 for 32bit hash and hasher=hash for Python's builtin hash.
 
-        SHA1 is already provided as an alternative to the built-in hash function.
+        SHA1 is already provided as an alternative too:
         You can use it by passing: hasher=DeepHash.sha1hex
 
     ignore_repetition: Boolean, default = True
@@ -200,13 +198,13 @@ class DeepHash(dict):
 
     @staticmethod
     def murmur3(obj):
-        """Use Sha1 as a cryptographic hash."""
+        """Use murmur3 for 32 bit hash."""
         obj = obj.encode('utf-8')
         return mmh3.hash(obj, 123)
 
     @staticmethod
     def murmur3_128bit(obj):
-        """Use Sha1 as a cryptographic hash."""
+        """Use murmur3_128bit for 128 bit hash (default)."""
         obj = obj.encode('utf-8')
         # hash64 is actually 128bit. Weird.
         # 123 is the seed

@@ -6,7 +6,11 @@
 DeepDiff 4.0.0 documentation!
 =============================
 
-**DeepDiff: Deep Difference of dictionaries, iterables and almost any other object recursively.**
+**DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
+
+**DeepSearch: Search for objects within other objects.**
+
+**DeepHash: Hash any object based on their content even if they are not "hashable".**
 
 DeepDiff works with Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
 
@@ -26,7 +30,7 @@ Importing
 .. code:: python
 
     >>> from deepdiff import DeepDiff  # For Deep Difference of 2 objects
-    >>> from deepdiff import DeepSearch  # For finding if item exists in an object
+    >>> from deepdiff import grep, DeepSearch  # For finding if item exists in an object
     >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 
 ********
@@ -280,6 +284,10 @@ DeepDiff uses jsonpickle in order to serialize and deserialize its results into 
     True
 
 
+Read more in
+
+:doc:`/diff`
+
 ***********
 Deep Search
 ***********
@@ -294,8 +302,10 @@ Importing
 
 .. code:: python
 
-    >>> from deepdiff import DeepSearch
+    >>> from deepdiff import DeepSearch, grep
     >>> from pprint import pprint
+
+DeepSearch comes with grep function which is easier to remember!
 
 Search in list for string
 
@@ -303,7 +313,7 @@ Search in list for string
 
     >>> obj = ["long somewhere", "string", 0, "somewhere great!"]
     >>> item = "somewhere"
-    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> ds = obj | grep(item, verbose_level=2)
     >>> print(ds)
     {'matched_values': {'root[3]': 'somewhere great!', 'root[0]': 'long somewhere'}}
 
@@ -313,11 +323,71 @@ Search in nested data for string
 
     >>> obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
     >>> item = "somewhere"
-    >>> ds = DeepSearch(obj, item, verbose_level=2)
+    >>> ds = obj | grep(item, verbose_level=2)
     >>> pprint(ds, indent=2)
     { 'matched_paths': {"root[1]['somewhere']": 'around'},
       'matched_values': { 'root[0]': 'something somewhere',
                           "root[1]['long']": 'somewhere'}}
+
+
+Read more in the Deep Search references:
+
+:doc:`/dsearch`
+
+
+*********
+Deep Hash
+*********
+DeepHash calculates the hash of objects based on their contents in a deterministic way.
+This way 2 objects with the same content should have the same hash.
+
+The main usage of DeepHash is to calculate the hash of otherwise unhashable objects.
+For example you can use DeepHash to calculate the hash of a set or a dictionary!
+
+The core of DeepHash is a deterministic serialization of your object into a string so it
+can be passed to a hash function. By default it uses Murmur 3 128 bit hash function.
+but you can pass another hash function to it if you want.
+
+Let's say you have a dictionary object.
+
+.. code:: python
+
+    >>> from deepdiff import DeepHash
+    >>>
+    >>> obj = {1: 2, 'a': 'b'}
+
+If you try to hash it:
+
+.. code:: python
+
+    >>> hash(obj)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: unhashable type: 'dict'
+
+But with DeepHash:
+
+.. code:: python
+
+    >>> from deepdiff import DeepHash
+    >>> obj = {1: 2, 'a': 'b'}
+    >>> DeepHash(obj)
+    {4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
+
+So what is exactly the hash of obj in this case?
+DeepHash is calculating the hash of the obj and any other object that obj contains.
+The output of DeepHash is a dictionary of object IDs to their hashes.
+In order to get the hash of obj itself, you need to use the object (or the id of object) to get its hash:
+
+.. code:: python
+
+    >>> hashes = DeepHash(obj)
+    >>> hashes[obj]
+    (3415089864575009947, 7987229399128149852)
+
+Read more in the Deep Hash reference:
+
+:doc:`/contenthash`
 
 .. _ignore\_order: #ignore-order
 .. _report\_repetition: #report-repetitions
@@ -354,6 +424,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)

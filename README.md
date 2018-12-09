@@ -7,7 +7,10 @@
 [![Build Status](https://travis-ci.org/seperman/deepdiff.svg?branch=master)](https://travis-ci.org/seperman/deepdiff)
 [![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
 
-Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+- DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+- DeepSearch: Search for objects within other objects.
+- DeepHash: Hash any object based on their content.
+
 Tested on Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
 
 **NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2**
@@ -42,8 +45,13 @@ Tested on Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
 
 ```python
 >>> from deepdiff import DeepDiff  # For Deep Difference of 2 objects
->>> from deepdiff import DeepSearch  # For finding if item exists in an object
+>>> from deepdiff import grep, DeepSearch  # For finding if item exists in an object
+>>> from deepdiff import DeepHash  # For hashing objects based on their contents
 ```
+
+# Deep Diff
+
+DeepDiff gets the difference of 2 objects.
 
 ## Parameters
 
@@ -51,7 +59,12 @@ In addition to the 2 objects being compared:
 
 - [ignore_order](#ignore-order)
 - [report_repetition](#report-repetitions)
+- [exclude_types](#exclude-types)
+- [exclude_paths](#exclude-paths)
+- [exclude_regex_paths](#exclude-regex-paths)
 - [verbose_level](#verbose-level)
+- [significant_digits](#significant-digits)
+- [view](#views)
 
 ## Supported data types
 
@@ -126,6 +139,9 @@ use `exclude_paths` and pass a set or list of paths to exclude:
 >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
 {}
 ```
+
+### Exclude Regex Paths
+
 
 You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude:
 
@@ -389,7 +405,7 @@ So for example `ddiff['dictionary_item_removed']` is a set if strings thus this 
     The following examples are using the *default text view.*
     The Tree View is introduced in DeepDiff v3
     and provides traversing capabilities through your diffed data and more!
-    Read more about the Tree View at the bottom of this page.
+    Read more about the Tree View at the [tree view section](#tree-view) of this page.
 
 
 ### Importing

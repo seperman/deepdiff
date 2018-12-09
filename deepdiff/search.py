@@ -311,7 +311,7 @@ class DeepSearch(dict):
             self.__search_obj(obj, item, parent, parents_ids)
 
 
-class grep(object):
+class grep:
     """
     **Grep!**
 

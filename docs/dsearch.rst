@@ -8,6 +8,9 @@ DeepSearch Reference
 
 .. automodule:: deepdiff.search
 
+.. autoclass:: grep
+    :members:
+
 .. autoclass:: DeepSearch
     :members:
 
