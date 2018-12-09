@@ -12,7 +12,7 @@ DeepDiff 4.0.0 documentation!
 
 **DeepHash: Hash any object based on their content even if they are not "hashable".**
 
-DeepDiff works with Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
+DeepDiff works with Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
 
