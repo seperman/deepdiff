@@ -1,6 +1,10 @@
 import os
 import re
+import sys
 from setuptools import setup
+
+if sys.version[0] == '2':  # pragma: no cover
+    sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 # if you are not using vagrant, just delete os.link directly,
 # The hard link only saves a little disk space, so you should not care
@@ -51,7 +55,6 @@ setup(name='deepdiff',
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
           "Topic :: Software Development",
-          "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
