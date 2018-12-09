@@ -11,9 +11,9 @@ python:
 sudo: false
 
 install:
-  - pip install coveralls
+  - pip install -r requirements-dev.txt
 
-script: coverage run --source deepdiff setup.py test
+script: pytest --cov=deepdiff tests/
 
 after_success:
   - coveralls
