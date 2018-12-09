@@ -1,21 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-To run only the search tests:
-    python -m unittest tests.test_diff_tree
-
-Or to run all the tests:
-    python -m unittest discover
-
-Or to run all the tests with coverage:
-    coverage run --source deepdiff setup.py test
-
-Or using Nose:
-    nosetests --with-coverage --cover-package=deepdiff
-
-To run a specific test, run this from the root of repo:
-    python -m unittest tests.test_diff_tree.DeepDiffTreeTestCase.test_same_objects
-"""
 import pytest
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, notpresent

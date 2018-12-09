@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# To run all the tests:
-# python -m unittest discover
 
 
 class CustomClass(object):
