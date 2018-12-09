@@ -175,17 +175,14 @@ class TestDeepDiffTree:
 class TestDeepDiffTreeWithNumpy:
     """DeepDiff Tests with Numpy."""
 
-    def setUp(self):
-        if not pypy3:
-            import numpy as np
-            a1 = np.array([1.23, 1.66, 1.98])
-            a2 = np.array([1.23, 1.66, 1.98])
-            self.d1 = {'np': a1}
-            self.d2 = {'np': a2}
-
     @pytest.mark.skipif(pypy3, reason="Numpy is not compatible with pypy3")
     def test_diff_with_numpy(self):
-        ddiff = DeepDiff(self.d1, self.d2)
+        import numpy as np
+        a1 = np.array([1.23, 1.66, 1.98])
+        a2 = np.array([1.23, 1.66, 1.98])
+        d1 = {'np': a1}
+        d2 = {'np': a2}
+        ddiff = DeepDiff(d1, d2)
         res = ddiff.tree
         assert res == {}
 

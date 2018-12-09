@@ -19,7 +19,7 @@ if py4:
     py3 = True
 
 if py2:  # pragma: no cover
-    sys.exit('Python 2 is not supported. The last version of DeepDiff that supported Py2 was 3.3.0')
+    sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 
