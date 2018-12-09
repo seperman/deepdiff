@@ -22,6 +22,7 @@ Tested on Python 3.3, 3.4, 3.5, 3.6, 3.7, Pypy3
 - [Significant Digits](#significant-digits)
 - [Verbose Level](#verbose-level)
 - [Deep Search](#deep-search)
+- [Deep Hash](#deep-hash)
 - [Using DeepDiff in unit tests](#using-deepdiff-in-unit-tests)
 - [Difference with Json Patch](#difference-with-json-patch)
 - [Views](#views)
@@ -131,7 +132,7 @@ You can also exclude using regular expressions by using `exclude_regex_paths` an
 ```python
 >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
 >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
->>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
+>>> print (DeepDiff(t1, t2, exclude_regex_paths={r"root\[\d+\]\['b'\]"}))
 {}
 ```
 
@@ -140,7 +141,7 @@ example 2:
 ```python
 >>> t1 = {'a': [1, 2, [3, {'foo1': 'bar'}]]}
 >>> t2 = {'a': [1, 2, [3, {'foo2': 'bar'}]]}
->>> DeepDiff(t1, t2, exclude_regex_paths={"\['foo.'\]"})
+>>> DeepDiff(t1, t2, exclude_regex_paths={r"\['foo.'\]"})
 {}
 ```
 
@@ -252,16 +253,100 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 {'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
 ```
 
-## Using DeepDiff in unit tests
+# Deep Hash
+(New in v4-0-0)
+
+DeepHash is designed to give you hash of ANY python object based on its contents even if the object is not considered hashable!
+DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
+
+Let's say you have a dictionary object.
+
+```py
+>>> from deepdiff import DeepHash
+>>>
+>>> obj = {1: 2, 'a': 'b'}
+```
+
+If you try to hash it:
+
+```py
+>>> hash(obj)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: unhashable type: 'dict'
+```
+
+But with DeepHash:
+
+```py
+>>> from deepdiff import DeepHash
+>>> obj = {1: 2, 'a': 'b'}
+>>> DeepHash(obj)
+{4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
+```
+
+So what is exactly the hash of obj in this case?
+DeepHash is calculating the hash of the obj and any other object that obj contains.
+The output of DeepHash is a dictionary of object IDs to their hashes.
+In order to get the hash of obj itself, you need to use the object (or the id of object) to get its hash:
+
+```py
+>>> hashes = DeepHash(obj)
+>>> hashes[obj]
+(3415089864575009947, 7987229399128149852)
+```
+
+Which you can write as:
+
+```py
+>>> hashes = DeepHash(obj)[obj]
+```
+
+At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
+
+The result hash is `(3415089864575009947, 7987229399128149852)`.
+In this case the hash of the obj is 128 bit that is divided into 2 64bit integers.
+Using Murmur3 128bit for hashing is preferred (and is the default behaviour)
+since the chance of hash collision will be minimal and hashing will be deterministic
+and will not depend on the version of the Python.
+
+If you do a deep copy of obj, it should still give you the same hash:
+
+```py
+>>> from copy import deepcopy
+2481013017017307534
+>>> DeepHash(obj2)[obj2]
+(3415089864575009947, 7987229399128149852)
+```
+
+Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
+    >>> obj3 = {1: 2, b'a': b'b'}
+    >>> DeepHash(obj3)[obj3]
+    (3415089864575009947, 7987229399128149852)
+
+But if you want a different hash if string types are different, set include_string_type_changes to True:
+    >>> DeepHash(obj3, include_string_type_changes=True)[obj3]
+    (6406752576584602448, -8103933101621212760)
+
+# Using DeepDiff in unit tests
 
 `result` is the output of the function that is being tests.
 `expected` is the expected output of the function.
 
 ```python
-assertEqual(DeepDiff(result, expected), {})
+self.assertEqual(DeepDiff(expected, result), {})
 ```
 
-## Difference with Json Patch
+or if you are using Pytest:
+
+
+```python
+assert not DeepDiff(expected, result)
+```
+
+In other words, assert that there is no diff between the expected and the result.
+
+# Difference with Json Patch
 
 Unlike [Json Patch](https://tools.ietf.org/html/rfc6902) which is designed only for Json objects, DeepDiff is designed specifically for almost all Python types. In addition to that, DeepDiff checks for type changes and attribute value changes that Json Patch does not cover since there are no such things in Json. Last but not least, DeepDiff gives you the exact path of the item(s) that were changed in Python syntax.
 
@@ -311,8 +396,6 @@ So for example `ddiff['dictionary_item_removed']` is a set if strings thus this 
 
 ```python
 >>> from deepdiff import DeepDiff
->>> from pprint import pprint
->>> from __future__ import print_function # In case running on Python 2
 ```
 
 ### Same object returns empty
@@ -823,6 +906,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ## Change log
 
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)

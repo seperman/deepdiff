@@ -81,6 +81,10 @@ class DeepDiff(ResultDict):
     exclude_types: list, default = None.
         List of object types to exclude from the report.
 
+    hasher: default = DeepHash.murmur3_128bit
+        Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
+        by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
+
     view: string, default = text
         Starting the version 3 you can choosethe view into the deepdiff results.
         The default is the text view which has been the only view up until now.
@@ -655,6 +659,7 @@ class DeepDiff(ResultDict):
                  include_string_type_changes=False,
                  verbose_level=1,
                  view='text',
+                 hasher=DeepHash.murmur3_128bit,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -670,6 +675,7 @@ class DeepDiff(ResultDict):
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.include_string_type_changes = include_string_type_changes
         self.hashes = {}
+        self.hasher = hasher
 
         if significant_digits is not None and significant_digits < 0:
             raise ValueError(
@@ -989,7 +995,8 @@ class DeepDiff(ResultDict):
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
                                       significant_digits=self.significant_digits,
-                                      include_string_type_changes=self.include_string_type_changes)
+                                      include_string_type_changes=self.include_string_type_changes,
+                                      hasher=self.hasher)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s."

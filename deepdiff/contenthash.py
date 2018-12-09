@@ -59,12 +59,13 @@ class DeepHash(dict):
         Note that the deepdiff diffing functionality lets this to be the default at all times.
         But if you are using DeepHash directly, you can set this parameter.
 
-    hasher: function. default = hash
-        hasher is the hashing function. The default is built-in hash function.
+    hasher: function. default = DeepHash.murmur3_128bit
+        hasher is the hashing function. The default is DeepHash.murmur3_128bit.
         But you can pass another hash function to it if you want.
-        For example the Murmur3 hash function or a cryptographic hash function.
-        All it needs is a function that takes the input in string format
-        and return the hash.
+        For example the Murmur3 32bit hash function or a cryptographic hash function or Python's builtin hash function.
+        All it needs is a function that takes the input in string format and returns the hash.
+
+        You can use it by passing: hasher=DeepHash.murmur3 for 32bit hash and hasher=hash for Python's builtin hash.
 
         SHA1 is already provided as an alternative to the built-in hash function.
         You can use it by passing: hasher=DeepHash.sha1hex
@@ -96,7 +97,7 @@ class DeepHash(dict):
 
     **Returns**
         A dictionary of {item id: item hash}.
-        If your object is nested, it will include hashes of all the objects it includes!
+        If your object is nested, it will build hashes of all the objects it contains!
 
 
     **Examples**
@@ -106,14 +107,51 @@ class DeepHash(dict):
         >>>
         >>> obj = {1: 2, 'a': 'b'}
 
-    If you try to hash itL
+    If you try to hash it:
         >>> hash(obj)
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
         TypeError: unhashable type: 'dict'
 
     But with DeepHash:
+        >>> from deepdiff import DeepHash
+        >>> obj = {1: 2, 'a': 'b'}
+        >>> DeepHash(obj)
+        {4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
 
+    So what is exactly the hash of obj in this case?
+    DeepHash is calculating the hash of the obj and any other object that obj contains.
+    The output of DeepHash is a dictionary of object IDs to their hashes.
+    In order to get the hash of obj itself, you need to use the object (or the id of object) to get its hash:
+        >>> hashes = DeepHash(obj)
+        >>> hashes[obj]
+        (3415089864575009947, 7987229399128149852)
+
+    Which you can write as:
+        >>> hashes = DeepHash(obj)[obj]
+
+    At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
+
+    The result hash is (3415089864575009947, 7987229399128149852).
+    In this case the hash of the obj is 128 bit that is divided into 2 64bit integers.
+    Using Murmur 3 64bit for hashing is preferred (and is the default behaviour)
+    since the chance of hash collision will be minimal and hashing will be deterministic
+    and will not depend on the version of the Python.
+
+    If you do a deep copy of obj, it should still give you the same hash:
+        >>> from copy import deepcopy
+        2481013017017307534
+        >>> DeepHash(obj2)[obj2]
+        (3415089864575009947, 7987229399128149852)
+
+    Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
+        >>> obj3 = {1: 2, b'a': b'b'}
+        >>> DeepHash(obj3)[obj3]
+        (3415089864575009947, 7987229399128149852)
+
+    But if you want a different hash if string types are different, set include_string_type_changes to True:
+        >>> DeepHash(obj3, include_string_type_changes=True)[obj3]
+        (6406752576584602448, -8103933101621212760)
     """
 
     def __init__(self,
@@ -136,7 +174,7 @@ class DeepHash(dict):
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
 
-        self.hasher = hash if hasher is None else hasher
+        self.hasher = self.murmur3_128bit if hasher is None else hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
         self[UNPROCESSED] = []
@@ -164,10 +202,23 @@ class DeepHash(dict):
     def murmur3(obj):
         """Use Sha1 as a cryptographic hash."""
         obj = obj.encode('utf-8')
-        return mmh3.hash(obj)
+        return mmh3.hash(obj, 123)
+
+    @staticmethod
+    def murmur3_128bit(obj):
+        """Use Sha1 as a cryptographic hash."""
+        obj = obj.encode('utf-8')
+        # hash64 is actually 128bit. Weird.
+        # 123 is the seed
+        return mmh3.hash64(obj, 123)
 
     def __getitem__(self, key):
-        if not isinstance(key, int) and key not in RESERVED_DICT_KEYS:
+        if not isinstance(key, int):
+            try:
+                if key in RESERVED_DICT_KEYS:
+                    return super().__getitem__(key)
+            except Exception:
+                pass
             key = id(key)
 
         return super().__getitem__(key)
