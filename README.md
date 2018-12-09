@@ -983,3 +983,4 @@ Also thanks to:
 - maxrothman for search for types/objects
 - MartyHub for exclude regex paths
 - sreecodeslayer for DeepSearch match_string
+- Brian Maissy (brianmaissy) for weakref fix and enum tests

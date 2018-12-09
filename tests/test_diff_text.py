@@ -829,7 +829,7 @@ class TestDeepDiffText:
                 }
             },
         }
-        self.assertEqual(diff, result)
+        assert result == diff
 
     def get_custom_objects_add_and_remove(self):
         class ClassA(object):
