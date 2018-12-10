@@ -31,18 +31,6 @@ numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timed
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
-EXPANDED_KEY_MAP = {  # pragma: no cover
-    'dic_item_added': 'dictionary_item_added',
-    'dic_item_removed': 'dictionary_item_removed',
-    'newindexes': 'new_indexes',
-    'newrepeat': 'new_repeat',
-    'newtype': 'new_type',
-    'newvalue': 'new_value',
-    'oldindexes': 'old_indexes',
-    'oldrepeat': 'old_repeat',
-    'oldtype': 'old_type',
-    'oldvalue': 'old_value'}
-
 
 def short_repr(item, max_length=15):
     """Short representation of item if it is too long"""
@@ -91,35 +79,29 @@ not_hashed = NotHashed()
 notpresent = NotPresent()
 
 
-WARNING_NUM = 0
+# Disabling remapping from old to new keys since the mapping is deprecated.
+RemapDict = dict
 
 
-def warn(*args, **kwargs):
-    global WARNING_NUM
+# class RemapDict(dict):
+#     """
+#     DISABLED
+#     Remap Dictionary.
 
-    if WARNING_NUM < 10:
-        WARNING_NUM += 1
-        logger.warning(*args, **kwargs)
+#     For keys that have a new, longer name, remap the old key to the new key.
+#     Other keys that don't have a new name are handled as before.
+#     """
 
-
-class RemapDict(dict):
-    """
-    Remap Dictionary.
-
-    For keys that have a new, longer name, remap the old key to the new key.
-    Other keys that don't have a new name are handled as before.
-    """
-
-    def __getitem__(self, old_key):
-        new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
-        if new_key != old_key:
-            warn(
-                "DeepDiff Deprecation: %s is renamed to %s. Please start using "
-                "the new unified naming convention.", old_key, new_key)
-        if new_key in self:
-            return self.get(new_key)
-        else:  # pragma: no cover
-            raise KeyError(new_key)
+#     def __getitem__(self, old_key):
+#         new_key = EXPANDED_KEY_MAP.get(old_key, old_key)
+#         if new_key != old_key:
+#             logger.warning(
+#                 "DeepDiff Deprecation: %s is renamed to %s. Please start using "
+#                 "the new unified naming convention.", old_key, new_key)
+#         if new_key in self:
+#             return self.get(new_key)
+#         else:  # pragma: no cover
+#             raise KeyError(new_key)
 
 
 class Verbose(object):

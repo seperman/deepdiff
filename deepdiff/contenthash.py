@@ -54,8 +54,6 @@ class DeepHash(dict):
 
     exclude_types: list, default = None.
         List of object types to exclude from hashing.
-        Note that the deepdiff diffing functionality lets this to be the default at all times.
-        But if you are using DeepHash directly, you can set this parameter.
 
     hasher: function. default = DeepHash.murmur3_128bit
         hasher is the hashing function. The default is DeepHash.murmur3_128bit.
@@ -255,13 +253,11 @@ class DeepHash(dict):
     def _prep_dict(self, obj, parents_ids=frozenset({})):
 
         result = []
-        obj_keys = set(obj.keys())
 
-        for key in obj_keys:
+        for key, item in obj.items():
             key_hash = self._hash(key)
-            item = obj[key]
             item_id = id(item)
-            if parents_ids and item_id in parents_ids:
+            if (parents_ids and item_id in parents_ids) or self._skip_this(item):
                 continue
             parents_ids_added = self._add_to_frozen_set(parents_ids, item_id)
             hashed = self._hash(item, parents_ids_added)
@@ -281,16 +277,16 @@ class DeepHash(dict):
 
         result = defaultdict(int)
 
-        for i, x in enumerate(obj):
-            if self._skip_this(x):
+        for item in obj:
+            if self._skip_this(item):
                 continue
 
-            item_id = id(x)
+            item_id = id(item)
             if parents_ids and item_id in parents_ids:
                 continue
 
             parents_ids_added = self._add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(x, parents_ids_added)
+            hashed = self._hash(item, parents_ids_added)
             # counting repetitions
             result[hashed] += 1
 

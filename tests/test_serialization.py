@@ -32,7 +32,7 @@ class TestDeepAdditions:
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        assert "deepdiff.helper.RemapDict" in ddiff.json
+        assert "builtins.list" in ddiff.json
 
     def test_deserialization(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}

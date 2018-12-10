@@ -475,10 +475,20 @@ Victor Hahn Castell
 
 ALso thanks to:
 
-- nfvs for Travis-CI setup script
-- brbsix for initial Py3 porting
-- WangFenjin for unicode support
-- timoilya for comparing list of sets when ignoring order
-- Bernhard10 for significant digits comparison
+- nfvs for Travis-CI setup script.
+- brbsix for initial Py3 porting.
+- WangFenjin for unicode support.
+- timoilya for comparing list of sets when ignoring order.
+- Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- Victor Hahn Castell @ Flexoptix for deep set comparison
+- finnhughes for fixing __slots__
+- moloney for Unicode vs. Bytes default
+- serv-inc for adding help(deepdiff)
+- movermeyer for updating docs
+- maxrothman for search in inherited class attributes
+- maxrothman for search for types/objects
+- MartyHub for exclude regex paths
+- sreecodeslayer for DeepSearch match_string
+- Brian Maissy (brianmaissy) for weakref fix and enum tests
+- Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
+

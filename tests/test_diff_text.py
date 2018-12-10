@@ -1253,6 +1253,7 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
+    @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):
         """
         Since subclassed dictionaries that override __getitem__ treat newdict.get(key)
@@ -1266,6 +1267,7 @@ class TestDeepDiffText:
         assert ddiff['dic_item_added'] == ddiff['dictionary_item_added']
         assert ddiff['dic_item_removed'] == ddiff['dictionary_item_removed']
 
+    @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_index_and_repeat_dictionary_remapping(self):
         t1 = [1, 3, 1, 4]
         t2 = [4, 4, 1]
@@ -1275,6 +1277,7 @@ class TestDeepDiffText:
         assert ddiff['repetition_change']['root[0]']['oldindexes'] == ddiff['repetition_change']['root[0]']['old_indexes']
         assert ddiff['repetition_change']['root[0]']['oldrepeat'] == ddiff['repetition_change']['root[0]']['old_repeat']
 
+    @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_value_and_type_dictionary_remapping(self):
         t1 = {1: 1, 2: 2}
         t2 = {1: 1, 2: '2'}
@@ -1379,6 +1382,20 @@ class TestDeepDiffText:
         t1 = {1: {2: "a"}}
         t2 = {1: {}}
         ddiff = DeepDiff(t1, t2, exclude_types=[str])
+        result = {}
+        assert result == ddiff
+
+    def test_skip_str_type_in_dict_on_list(self):
+        t1 = [{1: "a"}]
+        t2 = [{}]
+        ddiff = DeepDiff(t1, t2, exclude_types=[str])
+        result = {}
+        assert result == ddiff
+
+    def test_skip_str_type_in_dict_on_list_when_ignored_order(self):
+        t1 = [{1: "a"}]
+        t2 = [{}]
+        ddiff = DeepDiff(t1, t2, exclude_types=[str], ignore_order=True)
         result = {}
         assert result == ddiff
 

@@ -994,6 +994,7 @@ class DeepDiff(ResultDict):
             try:
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
+                                      exclude_types=self.exclude_types,
                                       significant_digits=self.significant_digits,
                                       include_string_type_changes=self.include_string_type_changes,
                                       hasher=self.hasher)

@@ -291,7 +291,7 @@ class TestDeepHashPrep:
         l1 = logging.getLogger("test")
         obj = {"log": l1, 2: 1337}
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
-        assert result[id(l1)] is skipped
+        assert id(l1) not in result
 
     def test_prep_dic_with_loop(self):
         obj = {2: 1337}
@@ -313,70 +313,80 @@ class TestDeepHashPrep:
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
         assert id(l1) not in result
 
+    def test_skip_str_type_in_dict_on_list(self):
+        dic1 = {1: "a"}
+        t1 = [dic1]
+        dic2 = {}
+        t2 = [dic2]
+        t1_hash = DeepHashPrep(t1, exclude_types=[str])
+        t2_hash = DeepHashPrep(t2, exclude_types=[str])
+        assert id(1) in t1_hash
+        assert t1_hash[dic1] == t2_hash[dic2]
 
-# class TestDeepHashSHA1:
-#     """DeepHash with SHA1 Tests."""
 
-#     def test_prep_str_sha1(self):
-#         obj = "a"
-#         expected_result = {
-#             id(obj): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
-#         }
-#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
-#         assert expected_result == result
+class TestDeepHashSHA1:
+    """DeepHash with SHA1 Tests."""
 
-#     def test_prep_str_sha1_fail_if_mutable(self):
-#         """
-#         This test fails if ContentHash is getting a mutable copy of hashes
-#         which means each init of the ContentHash will have hashes from
-#         the previous init.
-#         """
-#         obj1 = "a"
-#         id_obj1 = id(obj1)
-#         expected_result = {
-#             id_obj1: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
-#         }
-#         result = DeepHash(obj1, hasher=DeepHash.sha1hex)
-#         assert expected_result == result
-#         obj2 = "b"
-#         result = DeepHash(obj2, hasher=DeepHash.sha1hex)
-#         assert id_obj1 not in result)
+    def test_prep_str_sha1(self):
+        obj = "a"
+        expected_result = {
+            id(obj): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
+        }
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        assert expected_result == result
 
-#     def test_bytecode(self):
-#         obj = b"a"
-#         expected_result = {
-#             id(obj): '1283c61f8aa47c22d22552b742c93f6f6dac83ab'
-#         }
-#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
-#         assert expected_result == result
+    def test_prep_str_sha1_fail_if_mutable(self):
+        """
+        This test fails if ContentHash is getting a mutable copy of hashes
+        which means each init of the ContentHash will have hashes from
+        the previous init.
+        """
+        obj1 = "a"
+        id_obj1 = id(obj1)
+        expected_result = {
+            id_obj1: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
+        }
+        result = DeepHash(obj1, hasher=DeepHash.sha1hex)
+        assert expected_result == result
+        obj2 = "b"
+        result = DeepHash(obj2, hasher=DeepHash.sha1hex)
+        assert id_obj1 not in result
 
-#     def test_list1(self):
-#         string1 = "a"
-#         obj = [string1, 10, 20]
-#         expected_result = {
-#             id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
-#             id(obj): 'ad8e2f1479d6a5e1b01304f18f04bbe3ea0673ca',
-#             id(10): DeepHash.sha1hex('int:10'),
-#             id(20): DeepHash.sha1hex('int:20'),
-#         }
-#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
-#         assert expected_result == result
+    def test_bytecode(self):
+        obj = b"a"
+        expected_result = {
+            id(obj): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
+        }
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        assert expected_result == result
 
-#     def test_dict1(self):
-#         string1 = "a"
-#         key1 = "key1"
-#         obj = {key1: string1, 1: 10, 2: 20}
-#         expected_result = {
-#             id(1): DeepHash.sha1hex('int:1'),
-#             id(10): DeepHash.sha1hex('int:10'),
-#             id(2): DeepHash.sha1hex('int:2'),
-#             id(20): DeepHash.sha1hex('int:20'),
-#             id(key1): '35624f541de8d2cc9c31deba03c7dda9b1da09f7',
-#             id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
-#             id(obj): '8fa42fa0aa950885c4c1ec95a3d6423fc673bf49'
-#         }
-#         result = DeepHash(obj, hasher=DeepHash.sha1hex)
-#         assert expected_result == result
+    def test_list1(self):
+        string1 = "a"
+        obj = [string1, 10, 20]
+        expected_result = {
+            id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
+            id(obj): 'eac61cbd194e5e03c210a3dce67b9bfd6a7b7acb',
+            id(10): DeepHash.sha1hex('int:10'),
+            id(20): DeepHash.sha1hex('int:20'),
+        }
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        assert expected_result == result
+
+    def test_dict1(self):
+        string1 = "a"
+        key1 = "key1"
+        obj = {key1: string1, 1: 10, 2: 20}
+        expected_result = {
+            id(1): DeepHash.sha1hex('int:1'),
+            id(10): DeepHash.sha1hex('int:10'),
+            id(2): DeepHash.sha1hex('int:2'),
+            id(20): DeepHash.sha1hex('int:20'),
+            id(key1): '1073ab6cda4b991cd29f9e83a307f34004ae9327',
+            id(string1): '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
+            id(obj): '11e23f096df81b1ccab0c309cdf8b4ba5a0a6895'
+        }
+        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        assert expected_result == result
 
 
 class TestHasher:
