@@ -32,13 +32,13 @@ class TestDeepAdditions:
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        assert "builtins.list" in ddiff.json
+        assert "builtins.list" in ddiff.to_json_pickle()
 
     def test_deserialization(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        jsoned = ddiff.json
+        jsoned = ddiff.to_json_pickle()
         ddiff2 = DeepDiff.from_json(jsoned)
         assert ddiff == ddiff2
 
@@ -46,18 +46,18 @@ class TestDeepAdditions:
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2, view='tree')
-        jsoned = ddiff.json
+        jsoned = ddiff.to_json_pickle()
         assert "world" in jsoned
 
     def test_deserialization_tree(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2, view='tree')
-        jsoned = ddiff.json
+        jsoned = ddiff.to_json_pickle()
         ddiff2 = DeepDiff.from_json(jsoned)
         assert 'type_changes' in ddiff2
 
-    def test_deleting_serialization_cache(self):
+    def test_deleting_serialization_cache_when_using_the_property(self):
         t1 = {1: 1}
         t2 = {1: 2}
         ddiff = DeepDiff(t1, t2)

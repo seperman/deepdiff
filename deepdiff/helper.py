@@ -109,3 +109,9 @@ class Verbose(object):
     Global verbose level
     """
     level = 1
+
+
+def json_convertor_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError

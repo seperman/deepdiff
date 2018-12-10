@@ -10,14 +10,16 @@
 import re
 import difflib
 import logging
+import json
 import jsonpickle
+import warnings
 
 from decimal import Decimal
 
 from collections.abc import Mapping, Iterable
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, Verbose, unprocessed)
+                             IndexedHash, Verbose, unprocessed, json_convertor_default)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -26,6 +28,7 @@ from deepdiff.contenthash import DeepHash
 from itertools import zip_longest
 
 logger = logging.getLogger(__name__)
+warnings.simplefilter('once', DeprecationWarning)
 
 
 class DeepDiff(ResultDict):
@@ -1154,6 +1157,10 @@ class DeepDiff(ResultDict):
 
     @property
     def json(self):
+        warnings.warn(
+            "json property will be deprecated. Instead use: to_json_pickle() to get the json pickle or to_json() for bare-bone json.",
+            DeprecationWarning
+        )
         if not hasattr(self, '_json'):
             # copy of self removes all the extra attributes since it assumes
             # we have only a simple dictionary.
@@ -1161,13 +1168,44 @@ class DeepDiff(ResultDict):
             self._json = jsonpickle.encode(copied)
         return self._json
 
+    def to_json_pickle(self):
+        """
+        Get the json pickle of the diff object. Unless you need all the attributes and functionality of DeepDiff, doing to_json is the safer option.
+        """
+        copied = self.copy()
+        return jsonpickle.encode(copied)
+
     @json.deleter
     def json(self):
         del self._json
 
     @classmethod
-    def from_json(self, value):
+    def from_json(cls, value):
+        warnings.warn(
+            "from_json is renamed to from_json_pickle",
+            DeprecationWarning
+        )
+        return cls.from_json_pickle(value)
+
+    @classmethod
+    def from_json_pickle(cls, value):
+        """
+        Load DeepDiff object with all the bells and whistles from the json pickle dump.
+        Note that json pickle dump comes from to_json_pickle
+        """
         return jsonpickle.decode(value)
+
+    def to_json(self):
+        """
+        Dump json of the text view
+        """
+        return json.dumps(self, default=json_convertor_default)
+
+    def to_dict(self):
+        """
+        Dump dictionary of the text view
+        """
+        return dict(self)
 
 
 if __name__ == "__main__":  # pragma: no cover
