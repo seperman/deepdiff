@@ -148,7 +148,7 @@ Approximate float comparison:
 
 Verbose level by default is 1. The possible values are 0, 1 and 2.
 
-- Verbose level 0: won't report values when type changed. [Example](##type-of-an-item-has-changed)
+- Verbose level 0: won't report values when type changed. [Example](#type-of-an-item-has-changed)
 - Verbose level 1: default
 - Verbose level 2: will report values when custom objects or dictionaries have items added or removed. [Example](#items-added-or-removed-verbose)
 
