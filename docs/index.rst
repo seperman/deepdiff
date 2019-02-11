@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+
 DeepDiff 4.0.0 documentation!
 =============================
 
@@ -396,22 +397,17 @@ Read more in the Deep Hash reference:
 .. _significant\_digits: #significant-digits
 .. _views: #views
 
-DeepDiff Reference
-==================
 
-:doc:`/diff`
+References
+==========
 
+.. toctree::
+   :maxdepth: 2
 
-DeepSearch Reference
-====================
+   diff
+   dsearch
+   contenthash
 
-:doc:`/dsearch`
-
-
-DeepHash Reference
-====================
-
-:doc:`/contenthash`
 
 Indices and tables
 ==================
@@ -424,7 +420,7 @@ Indices and tables
 Changelog
 =========
 
-- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing.
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)

@@ -40,10 +40,19 @@ class ResultDict(RemapDict):
             del self[k]
 
 
+class PrettyOrderedSet(OrderedSet):
+    """
+    From the perspective of the users of the library, they are dealing with lists.
+    Behind the scene, we have ordered sets.
+    """
+    def __repr__(self):
+        return '[{}]'.format(", ".join(map(str, self)))
+
+
 class TreeResult(ResultDict):
     def __init__(self):
         for key in REPORT_KEYS:
-            self[key] = OrderedSet()
+            self[key] = PrettyOrderedSet()
 
 
 class TextResult(ResultDict):
@@ -60,8 +69,8 @@ class TextResult(ResultDict):
             "iterable_item_removed": {},
             "attribute_added": self.__set_or_dict(),
             "attribute_removed": self.__set_or_dict(),
-            "set_item_removed": OrderedSet(),
-            "set_item_added": OrderedSet(),
+            "set_item_removed": PrettyOrderedSet(),
+            "set_item_added": PrettyOrderedSet(),
             "repetition_change": {}
         })
 
@@ -69,7 +78,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if Verbose.level >= 2 else OrderedSet()
+        return {} if Verbose.level >= 2 else PrettyOrderedSet()
 
     def _from_tree_results(self, tree):
         """
@@ -103,7 +112,7 @@ class TextResult(ResultDict):
 
                 # do the reporting
                 report = self[report_type]
-                if isinstance(report, OrderedSet):
+                if isinstance(report, PrettyOrderedSet):
                     report.add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(report, dict):
                     report[change.path(force=FORCE_DEFAULT)] = item

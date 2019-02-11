@@ -44,7 +44,7 @@ exclude_paths: list, default = None.
     List of paths to exclude from the report.
 
 exclude_regex_paths: list, default = None.
-    List of regex paths to exclude from the report.
+    List of string regex paths or compiled regex paths objects to exclude from the report.
 
 exclude_types: list, default = None.
     List of object types to exclude from the report.
@@ -572,10 +572,13 @@ use `exclude_paths` and pass a set or list of paths to exclude:
     >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
     {}
 
-You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude:
+You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude. The items in the list could be raw regex strings or compiled regex objects.
     >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
     >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
-    >>> print (DeepDiff(t1, t2, exclude_regex_paths={"root\[\d+\]\['b'\]"}))
+    >>> print(DeepDiff(t1, t2, exclude_regex_paths={r"root\[\d+\]\['b'\]"}))
+    {}
+    >>> exclude_path = re.compile(r"root\[\d+\]\['b'\]")
+    >>> print(DeepDiff(t1, t2, exclude_regex_paths=[exclude_path]))
     {}
 
 example 2:
