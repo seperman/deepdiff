@@ -23,7 +23,7 @@ from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
-from itertools import zip_longest
+from itertools import zip_longest, chain
 
 logger = logging.getLogger(__name__)
 
@@ -752,10 +752,21 @@ class DeepDiff(ResultDict):
                 )
             return attribute
 
-        slots = object.__slots__
-        if isinstance(slots, strings):
-            return {slots: getattr(object, unmangle(slots))}
-        return {i: getattr(object, unmangle(i)) for i in slots}
+        all_slots = []
+
+        if isinstance(object, type):
+            mro = object.__mro__
+        else:
+            mro = object.__class__.__mro__
+
+        for type_in_mro in mro:
+            slots = getattr(type_in_mro, '__slots__', ())
+            if isinstance(slots, strings):
+                all_slots.append(slots)
+            else:
+                all_slots.extend(slots)
+
+        return {i: getattr(object, unmangle(i)) for i in all_slots}
 
     def __diff_obj(self, level, parents_ids=frozenset({}),
                    is_namedtuple=False):
