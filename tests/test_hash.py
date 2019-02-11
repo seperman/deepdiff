@@ -47,6 +47,22 @@ class TestDeepHash:
         expected_result = {id(1), id(2), id(a), id(b), id(obj)}
         assert set(result.keys()) == expected_result
 
+    def test_bad_attribute(self):
+        class Bad(object):
+            __slots__ = ['x', 'y']
+
+            def __getattr__(self, key):
+                raise AttributeError("Bad item")
+
+            def __str__(self):
+                return "Bad Object"
+
+        t1 = Bad()
+
+        result = DeepHash(t1)
+        expected_result = {id(t1): unprocessed, 'unprocessed': [t1]}
+        assert expected_result == result
+
 
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
