@@ -895,18 +895,43 @@ Decimal('1.57')
 
 ## Serialization
 
-DeepDiff uses jsonpickle in order to serialize and deserialize its results into json. This works for both tree view and text view.
+In order to convert the DeepDiff object into a normal Python dictionary, use the to_dict() method.
+Note that to_dict will use the text view even if you did the diff in tree view.
 
-### Serialize and then deserialize back to deepdiff
+Example:
+
+```python
+>>> t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+>>> t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+>>> ddiff = DeepDiff(t1, t2, view='tree')
+>>> ddiff.to_dict()
+{'type_changes': {"root[4]['b']": {'old_type': <class 'list'>, 'new_type': <class 'str'>, 'old_value': [1, 2, 3], 'new_value': 'world\n\n\nEnd'}}}
+```
+
+In order to do safe json serialization, use the to_json() method.
+
+Example:
+
+```python
+>>> t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+>>> t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+>>> ddiff = DeepDiff(t1, t2, view='tree')
+>>> ddiff.to_json()
+'{"type_changes": {"root[4][\'b\']": {"old_type": "list", "new_type": "str", "old_value": [1, 2, 3], "new_value": "world\\n\\n\\nEnd"}}}'
+```
+
+If you want the original DeepDiff object to be serialized with all the bells and whistles, you can use the to_json_pickle() and to_json_pickle() in order to serialize and deserialize its results into json.
+
+Serialize and then deserialize back to deepdiff
 
 ```python
 >>> t1 = {1: 1, 2: 2, 3: 3}
 >>> t2 = {1: 1, 2: "2", 3: 3}
 >>> ddiff = DeepDiff(t1, t2)
->>> jsoned = ddiff.json
+>>> jsoned = ddiff.to_json_pickle
 >>> jsoned
 '{"type_changes": {"root[2]": {"py/object": "deepdiff.helper.RemapDict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
->>> ddiff_new = DeepDiff.from_json(jsoned)
+>>> ddiff_new = DeepDiff.from_json_pickle(jsoned)
 >>> ddiff == ddiff_new
 True
 ```

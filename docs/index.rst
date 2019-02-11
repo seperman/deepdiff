@@ -487,4 +487,5 @@ ALso thanks to:
 - sreecodeslayer for DeepSearch match_string
 - Brian Maissy (brianmaissy) for weakref fix and enum tests
 - Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
+- Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
 
