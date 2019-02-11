@@ -761,6 +761,32 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_enums(self):
+        from enum import Enum
+
+        class MyEnum(Enum):
+            A = 1
+            B = 2
+
+        ddiff = DeepDiff(MyEnum.A, MyEnum(1))
+        result = {}
+        assert ddiff == result
+
+        ddiff = DeepDiff(MyEnum.A, MyEnum.B)
+        result = {
+            'values_changed': {
+                'root._name_': {
+                    'old_value': 'A',
+                    'new_value': 'B'
+                },
+                'root._value_': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
+        assert ddiff == result
+
     def test_custom_objects_change(self):
         t1 = CustomClass(1)
         t2 = CustomClass(2)

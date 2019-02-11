@@ -7,6 +7,7 @@ from deepdiff.helper import pypy3
 from collections import namedtuple
 from functools import partial
 import logging
+from enum import Enum
 
 logging.disable(logging.CRITICAL)
 
@@ -110,7 +111,7 @@ class TestDeepHashPrep:
 
     def test_named_tuples(self):
         # checking if pypy3 is running the test
-        # in that case due to a pypy3 bug or something
+        # in that case due to a difference of string interning implementation
         # the id of x inside the named tuple changes.
         x = "x"
         x_id = id(x)
@@ -127,6 +128,38 @@ class TestDeepHashPrep:
                 id(11): 'int:11',
             }
             assert expected_result == result
+
+    def test_enum(self):
+        class MyEnum(Enum):
+            A = 1
+            B = 2
+
+        # checking if pypy3 is running the test
+        # in that case due to a difference of string interning implementation
+        # the ids of strings change
+        if pypy3:
+            # only compare the hashes for the enum instances themselves
+            assert DeepHashPrep(MyEnum.A)[id(MyEnum.A)] == (
+                'objdict:{'
+                '__objclass__:EnumMeta:objdict:{_name_:B;_value_:int:2};'
+                '_name_:A;_value_:int:1}'
+            )
+            assert DeepHashPrep(MyEnum.B)[id(MyEnum.B)] == (
+                'objdict:{'
+                '__objclass__:EnumMeta:objdict:{_name_:A;_value_:int:1};'
+                '_name_:B;_value_:int:2}'
+            )
+            assert DeepHashPrep(MyEnum(1))[id(MyEnum.A)] == (
+                'objdict:{'
+                '__objclass__:EnumMeta:objdict:{_name_:B;_value_:int:2};'
+                '_name_:A;_value_:int:1}'
+            )
+        else:
+            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum.A)
+            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
+            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
+            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
+            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
 
     def test_dict_hash(self):
         string1 = "a"
