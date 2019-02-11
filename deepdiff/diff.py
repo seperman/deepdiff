@@ -28,7 +28,6 @@ from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.contenthash import DeepHash
 
-
 logger = logging.getLogger(__name__)
 warnings.simplefilter('once', DeprecationWarning)
 
@@ -68,7 +67,7 @@ class DeepDiff(ResultDict):
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
         self.exclude_paths = set(exclude_paths)
-        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in set(exclude_regex_paths)]
+        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths]
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.include_string_type_changes = include_string_type_changes
@@ -155,10 +154,21 @@ class DeepDiff(ResultDict):
                 )
             return attribute
 
-        slots = object.__slots__
-        if isinstance(slots, strings):
-            return {slots: getattr(object, unmangle(slots))}
-        return {i: getattr(object, unmangle(i)) for i in slots}
+        all_slots = []
+
+        if isinstance(object, type):
+            mro = object.__mro__
+        else:
+            mro = object.__class__.__mro__
+
+        for type_in_mro in mro:
+            slots = getattr(type_in_mro, '__slots__', ())
+            if isinstance(slots, strings):
+                all_slots.append(slots)
+            else:
+                all_slots.extend(slots)
+
+        return {i: getattr(object, unmangle(i)) for i in all_slots}
 
     def __diff_obj(self, level, parents_ids=frozenset({}),
                    is_namedtuple=False):

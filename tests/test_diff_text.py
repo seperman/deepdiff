@@ -796,6 +796,30 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_custom_objects_slot_in_parent_class_change(self):
+        class ClassA(object):
+            __slots__ = ['x']
+
+        class ClassB(ClassA):
+            __slots__ = ['y']
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        t1 = ClassB(1, 1)
+        t2 = ClassB(2, 1)
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root.x': {
+                    'old_value': 1,
+                    'new_value': 2
+                }
+            }
+        }
+        assert result == ddiff
+
     def test_custom_objects_with_single_protected_slot(self):
         class ClassA(object):
             __slots__ = '__a'

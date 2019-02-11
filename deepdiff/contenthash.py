@@ -363,6 +363,9 @@ class DeepHash(dict):
         if result is not_hashed:  # pragma: no cover
             self[UNPROCESSED].append(obj)
 
+        elif result is unprocessed:
+            pass
+
         elif self.constant_size:
             if isinstance(obj, strings):
                 result_cleaned = result

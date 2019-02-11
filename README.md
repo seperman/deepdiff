@@ -148,7 +148,7 @@ You can also exclude using regular expressions by using `exclude_regex_paths` an
 ```python
 >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
 >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
->>> print (DeepDiff(t1, t2, exclude_regex_paths={r"root\[\d+\]\['b'\]"}))
+>>> print(DeepDiff(t1, t2, exclude_regex_paths={r"root\[\d+\]\['b'\]"}))
 {}
 ```
 
@@ -922,7 +922,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 ## Change log
 
-- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing.
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
