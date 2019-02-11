@@ -58,10 +58,10 @@ class DeepHash(dict):
     hasher: function. default = DeepHash.murmur3_128bit
         hasher is the hashing function. The default is DeepHash.murmur3_128bit.
         But you can pass another hash function to it if you want.
-        For example the Murmur3 32bit hash function or a cryptographic hash function or Python's builtin hash function.
+        For example a cryptographic hash function or Python's builtin hash function.
         All it needs is a function that takes the input in string format and returns the hash.
 
-        You can use it by passing: hasher=DeepHash.murmur3 for 32bit hash and hasher=hash for Python's builtin hash.
+        You can use it by passing: hasher=hash for Python's builtin hash.
 
         SHA1 is already provided as an alternative too:
         You can use it by passing: hasher=DeepHash.sha1hex
@@ -195,18 +195,12 @@ class DeepHash(dict):
         return sha1(obj).hexdigest()
 
     @staticmethod
-    def murmur3(obj):
-        """Use murmur3 for 32 bit hash."""
-        obj = obj.encode('utf-8')
-        return mmh3.hash(obj, 123)
-
-    @staticmethod
     def murmur3_128bit(obj):
         """Use murmur3_128bit for 128 bit hash (default)."""
         obj = obj.encode('utf-8')
         # hash64 is actually 128bit. Weird.
-        # 123 is the seed
-        return mmh3.hash64(obj, 123)
+        # 1203 is the seed
+        return mmh3.hash64(obj, 1203)
 
     def __getitem__(self, key):
         if not isinstance(key, int):

@@ -3,6 +3,7 @@
 from deepdiff.helper import RemapDict, strings, short_repr, Verbose, notpresent
 from ast import literal_eval
 from copy import copy
+from ordered_set import OrderedSet
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -42,7 +43,7 @@ class ResultDict(RemapDict):
 class TreeResult(ResultDict):
     def __init__(self):
         for key in REPORT_KEYS:
-            self[key] = set()
+            self[key] = OrderedSet()
 
 
 class TextResult(ResultDict):
@@ -59,8 +60,8 @@ class TextResult(ResultDict):
             "iterable_item_removed": {},
             "attribute_added": self.__set_or_dict(),
             "attribute_removed": self.__set_or_dict(),
-            "set_item_removed": set(),
-            "set_item_added": set(),
+            "set_item_removed": OrderedSet(),
+            "set_item_added": OrderedSet(),
             "repetition_change": {}
         })
 
@@ -68,7 +69,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if Verbose.level >= 2 else set()
+        return {} if Verbose.level >= 2 else OrderedSet()
 
     def _from_tree_results(self, tree):
         """
@@ -102,7 +103,7 @@ class TextResult(ResultDict):
 
                 # do the reporting
                 report = self[report_type]
-                if isinstance(report, set):
+                if isinstance(report, OrderedSet):
                     report.add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(report, dict):
                     report[change.path(force=FORCE_DEFAULT)] = item

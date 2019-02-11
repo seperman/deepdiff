@@ -1,2 +1,3 @@
 mmh3==2.5.1
 jsonpickle==1.0
+ordered-set==3.1

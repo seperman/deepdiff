@@ -3,6 +3,7 @@ import sys
 import datetime
 from decimal import Decimal
 from collections import namedtuple
+from ordered_set import OrderedSet
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def short_repr(item, max_length=15):
     return item
 
 
-class ListItemRemovedOrAdded(object):  # pragma: no cover
+class ListItemRemovedOrAdded:  # pragma: no cover
     """Class of conditions to be checked"""
     pass
 
@@ -104,14 +105,41 @@ RemapDict = dict
 #             raise KeyError(new_key)
 
 
-class Verbose(object):
+class Verbose:
     """
     Global verbose level
     """
     level = 1
 
 
-def json_convertor_default(obj):
-    if isinstance(obj, Decimal):
-        return float(obj)
-    raise TypeError
+class indexed_set(set):
+    """
+    A set class that lets you get an item by index
+
+    >>> a = indexed_set()
+    >>> a.add(10)
+    >>> a.add(20)
+    >>> a[0]
+    10
+    """
+
+
+JSON_CONVERTOR = {
+    Decimal: float,
+    OrderedSet: list,
+    type: lambda x: x.__name__,
+}
+
+
+def json_convertor_default(default_mapping=None):
+    _convertor_mapping = JSON_CONVERTOR.copy()
+    if default_mapping:
+        _convertor_mapping.update(default_mapping)
+
+    def _convertor(obj):
+        for original_type, convert_to in _convertor_mapping.items():
+            if isinstance(obj, original_type):
+                return convert_to(obj)
+        raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
+
+    return _convertor

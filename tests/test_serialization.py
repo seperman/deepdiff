@@ -46,7 +46,9 @@ class TestDeepAdditions:
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2, view='tree')
-        jsoned = ddiff.to_json_pickle()
+        pickle_jsoned = ddiff.to_json_pickle()
+        assert "world" in pickle_jsoned
+        jsoned = ddiff.to_json()
         assert "world" in jsoned
 
     def test_deserialization_tree(self):
