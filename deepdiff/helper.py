@@ -146,3 +146,7 @@ def json_convertor_default(default_mapping=None):
         raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
 
     return _convertor
+
+
+def add_to_frozen_set(parents_ids, item_id):
+    return parents_ids | {item_id}

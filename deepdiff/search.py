@@ -6,7 +6,7 @@ import re
 from collections.abc import MutableMapping, Iterable
 import logging
 
-from deepdiff.helper import strings, numbers
+from deepdiff.helper import strings, numbers, add_to_frozen_set
 
 logger = logging.getLogger(__name__)
 
@@ -123,12 +123,6 @@ class DeepSearch(dict):
         else:
             self[report_key].add(key)
 
-    @staticmethod
-    def __add_to_frozen_set(parents_ids, item_id):
-        parents_ids = set(parents_ids)
-        parents_ids.add(item_id)
-        return frozenset(parents_ids)
-
     def __search_obj(self,
                      obj,
                      item,
@@ -203,7 +197,7 @@ class DeepSearch(dict):
             if parents_ids and item_id in parents_ids:
                 continue
 
-            parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
             new_parent = parent_text % (parent, item_key_str)
             new_parent_cased = new_parent if self.case_sensitive else new_parent.lower()
@@ -246,7 +240,7 @@ class DeepSearch(dict):
                 item_id = id(thing)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                 self.__search(thing, item, "%s[%s]" %
                               (parent, i), parents_ids_added)
 

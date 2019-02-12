@@ -22,7 +22,7 @@ from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, Verbose, unprocessed, json_convertor_default)
+                             IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -50,26 +50,27 @@ class DeepDiff(ResultDict):
                  ignore_order=False,
                  report_repetition=False,
                  significant_digits=None,
-                 exclude_paths=set(),
-                 exclude_regex_paths=set(),
-                 exclude_types=set(),
+                 exclude_paths=None,
+                 exclude_regex_paths=None,
+                 exclude_types=None,
                  include_string_type_changes=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=DeepHash.murmur3_128bit,
+                 transformer=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits,"
-                "exclude_paths, exclude_types, exclude_regex_paths, verbose_level and view.") % ', '.join(kwargs.keys()))
+                "exclude_paths, exclude_types, exclude_regex_paths, transformer, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
-        self.exclude_paths = set(exclude_paths)
-        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths]
-        self.exclude_types = set(exclude_types)
-        self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
+        self.exclude_paths = set(exclude_paths) if exclude_paths else None
+        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths] if exclude_regex_paths else None
+        self.exclude_types = set(exclude_types) if exclude_types else None
+        self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
         self.include_string_type_changes = include_string_type_changes
         self.hashes = {}
         self.hasher = hasher
@@ -82,6 +83,10 @@ class DeepDiff(ResultDict):
         self.tree = TreeResult()
 
         Verbose.level = verbose_level
+
+        if transformer:
+            t1 = transformer(t1)
+            t2 = transformer(t2)
 
         root = DiffLevel(t1, t2)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
@@ -137,12 +142,6 @@ class DeepDiff(ResultDict):
         if not self.__skip_this(level):
             level.report_type = report_type
             self.tree[report_type].add(level)
-
-    @staticmethod
-    def __add_to_frozen_set(parents_ids, item_id):
-        parents_ids = set(parents_ids)
-        parents_ids.add(item_id)
-        return frozenset(parents_ids)
 
     @staticmethod
     def __dict_from_slots(object):
@@ -208,8 +207,8 @@ class DeepDiff(ResultDict):
                 [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
-            if isinstance(level.t1, self.exclude_types_tuple) or isinstance(
-                    level.t2, self.exclude_types_tuple):
+            if self.exclude_types_tuple and (isinstance(level.t1, self.exclude_types_tuple) or
+                                             isinstance(level.t2, self.exclude_types_tuple)):
                 skip = True
 
         return skip
@@ -268,7 +267,7 @@ class DeepDiff(ResultDict):
             item_id = id(t1[key])
             if parents_ids and item_id in parents_ids:
                 continue
-            parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
             # Go one level deeper
             next_level = level.branch_deeper(
@@ -344,8 +343,7 @@ class DeepDiff(ResultDict):
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = self.__add_to_frozen_set(parents_ids,
-                                                             item_id)
+                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
                 # Go one level deeper
                 next_level = level.branch_deeper(

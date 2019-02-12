@@ -8,7 +8,7 @@ from hashlib import sha1
 import mmh3
 import logging
 
-from deepdiff.helper import strings, numbers, unprocessed, skipped, not_hashed
+from deepdiff.helper import strings, numbers, unprocessed, skipped, not_hashed, add_to_frozen_set
 
 logger = logging.getLogger(__name__)
 
@@ -213,12 +213,6 @@ class DeepHash(dict):
 
         return super().__getitem__(key)
 
-    @staticmethod
-    def _add_to_frozen_set(parents_ids, item_id):
-        parents_ids = set(parents_ids)
-        parents_ids.add(item_id)
-        return frozenset(parents_ids)
-
     def _prep_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
         """Difference of 2 objects"""
         try:
@@ -253,7 +247,7 @@ class DeepHash(dict):
             item_id = id(item)
             if (parents_ids and item_id in parents_ids) or self._skip_this(item):
                 continue
-            parents_ids_added = self._add_to_frozen_set(parents_ids, item_id)
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
             hashed = self._hash(item, parents_ids_added)
             hashed = "{}:{}".format(key_hash, hashed)
             result.append(hashed)
@@ -279,7 +273,7 @@ class DeepHash(dict):
             if parents_ids and item_id in parents_ids:
                 continue
 
-            parents_ids_added = self._add_to_frozen_set(parents_ids, item_id)
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
             hashed = self._hash(item, parents_ids_added)
             # counting repetitions
             result[hashed] += 1
