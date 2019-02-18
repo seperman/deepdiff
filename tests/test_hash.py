@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 from deepdiff import DeepHash
-from deepdiff.contenthash import prepare_string_for_hashing, skipped, unprocessed
+from deepdiff.deephash import prepare_string_for_hashing, skipped, unprocessed
 from deepdiff.helper import pypy3
 from collections import namedtuple
 from functools import partial
@@ -79,8 +79,8 @@ class TestDeepHashPrep:
 
     def test_prep_str_fail_if_mutable(self):
         """
-        This test fails if ContentHash is getting a mutable copy of hashes
-        which means each init of the ContentHash will have hashes from
+        This test fails if DeepHash is getting a mutable copy of hashes
+        which means each init of the DeepHash will have hashes from
         the previous init.
         """
         obj1 = "a"
@@ -378,9 +378,9 @@ class TestDeepHashPrep:
         dic2 = {}
         t2 = [dic2, 2]
         t1_hash = DeepHashPrep(t1, exclude_paths=['root[0]'])
-        t2_hash = DeepHashPrep(t2, exclude_paths=['root[0]'])
-        # assert id(1) not in t1_hash
-        # assert id(2) in t1_hash
+        t2_hash = DeepHashPrep(t2, exclude_paths='root[0]')
+        assert id(1) not in t1_hash
+        assert id(2) in t1_hash
         assert t1_hash[2] == t2_hash[2]
 
 
@@ -397,8 +397,8 @@ class TestDeepHashSHA1:
 
     def test_prep_str_sha1_fail_if_mutable(self):
         """
-        This test fails if ContentHash is getting a mutable copy of hashes
-        which means each init of the ContentHash will have hashes from
+        This test fails if DeepHash is getting a mutable copy of hashes
+        which means each init of the DeepHash will have hashes from
         the previous init.
         """
         obj1 = "a"

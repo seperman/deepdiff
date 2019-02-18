@@ -388,7 +388,7 @@ In order to get the hash of obj itself, you need to use the object (or the id of
 
 Read more in the Deep Hash reference:
 
-:doc:`/contenthash`
+:doc:`/deephash`
 
 .. _ignore\_order: #ignore-order
 .. _report\_repetition: #report-repetitions
@@ -406,7 +406,7 @@ References
 
    diff
    dsearch
-   contenthash
+   deephash
 
 
 Indices and tables
@@ -420,7 +420,7 @@ Indices and tables
 Changelog
 =========
 
-- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared.
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)

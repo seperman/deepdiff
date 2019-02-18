@@ -6,7 +6,7 @@ DeepHash Reference
 .. toctree::
    :maxdepth: 3
 
-.. automodule:: deepdiff.contenthash
+.. automodule:: deepdiff.deephash
 
 .. autoclass:: DeepHash
     :members:

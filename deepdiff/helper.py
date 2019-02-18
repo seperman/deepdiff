@@ -2,6 +2,7 @@
 import sys
 import datetime
 import re
+import os
 import logging
 from decimal import Decimal
 from collections import namedtuple
@@ -32,6 +33,8 @@ bytes_type = bytes
 numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def short_repr(item, max_length=15):

@@ -8,4 +8,4 @@ if __name__ == '__main__':
 
 from .diff import DeepDiff
 from .search import DeepSearch, grep
-from .contenthash import DeepHash
+from .deephash import DeepHash

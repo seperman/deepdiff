@@ -22,11 +22,13 @@ from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set)
+                             IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
+                             current_dir, convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_compiled_regexes_else_none)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
-from deepdiff.contenthash import DeepHash
+from deepdiff.deephash import DeepHash
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('once', DeprecationWarning)
@@ -34,8 +36,6 @@ warnings.simplefilter('once', DeprecationWarning)
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
 
 with open(os.path.join(current_dir, 'diff_doc.rst'), 'r') as doc_file:
     doc = doc_file.read()
@@ -67,8 +67,8 @@ class DeepDiff(ResultDict):
 
         self.ignore_order = ignore_order
         self.report_repetition = report_repetition
-        self.exclude_paths = set(exclude_paths) if exclude_paths else None
-        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths] if exclude_regex_paths else None
+        self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+        self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.exclude_types = set(exclude_types) if exclude_types else None
         self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
         self.include_string_type_changes = include_string_type_changes
@@ -423,7 +423,7 @@ class DeepDiff(ResultDict):
                     self._add_hash(hashes=hashes, item_hash=item_hash, item=item, i=i)
         return hashes
 
-    def __diff_iterable_with_contenthash(self, level):
+    def __diff_iterable_with_deephash(self, level):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(level.t1, level)
         t2_hashtable = self.__create_hashtable(level.t2, level)
@@ -554,7 +554,7 @@ class DeepDiff(ResultDict):
 
         elif isinstance(level.t1, Iterable):
             if self.ignore_order:
-                self.__diff_iterable_with_contenthash(level)
+                self.__diff_iterable_with_deephash(level)
             else:
                 self.__diff_iterable(level, parents_ids)
 
