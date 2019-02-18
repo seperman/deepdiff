@@ -359,7 +359,7 @@ class DeepDiff(ResultDict):
 
     def __diff_str(self, level):
         """Compare strings"""
-        if level.t1 == level.t2:
+        if type(level.t1) == type(level.t2) and level.t1 == level.t2:
             return
 
         # do we add a diff for convenience?
@@ -378,6 +378,9 @@ class DeepDiff(ResultDict):
                 t2_str = level.t2.decode('ascii')
             except UnicodeDecodeError:
                 do_diff = False
+
+        if t1_str == t2_str:
+            return
 
         if do_diff:
             if u'\n' in t1_str or u'\n' in t2_str:

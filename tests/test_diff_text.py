@@ -5,7 +5,6 @@ import pytest
 import logging
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import py3
 from tests import CustomClass
 from unittest import mock
 logging.disable(logging.CRITICAL)
@@ -1106,136 +1105,73 @@ class TestDeepDiffText:
         unicode_string = {"hello": u"你好"}
         ascii_string = {"hello": "你好"}
         ddiff = DeepDiff(unicode_string, ascii_string)
-        if py3:
-            # In python3, all string is unicode, so diff is empty
-            result = {}
-        else:
-            # In python2, these are 2 different type of strings
-            result = {
-                'type_changes': {
-                    "root['hello']": {
-                        'old_type': unicode,
-                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd',
-                        'old_value': u'\u4f60\u597d',
-                        'new_type': str
-                    }
-                }
-            }
+        result = {}
         assert result == ddiff
 
     def test_unicode_string_value_changes(self):
         unicode_string = {"hello": u"你好"}
         ascii_string = {"hello": u"你好hello"}
         ddiff = DeepDiff(unicode_string, ascii_string)
-        if py3:
-            result = {
-                'values_changed': {
-                    "root['hello']": {
-                        'old_value': '你好',
-                        'new_value': '你好hello'
-                    }
+        result = {
+            'values_changed': {
+                "root['hello']": {
+                    'old_value': '你好',
+                    'new_value': '你好hello'
                 }
             }
-        else:
-            result = {
-                'values_changed': {
-                    "root['hello']": {
-                        'new_value': u'\u4f60\u597dhello',
-                        'old_value': u'\u4f60\u597d'
-                    }
-                }
-            }
+        }
         assert result == ddiff
 
     def test_unicode_string_value_and_type_changes(self):
         unicode_string = {"hello": u"你好"}
         ascii_string = {"hello": "你好hello"}
         ddiff = DeepDiff(unicode_string, ascii_string)
-        if py3:
-            # In python3, all string is unicode, so these 2 strings only diff
-            # in values
-            result = {
-                'values_changed': {
-                    "root['hello']": {
-                        'new_value': '你好hello',
-                        'old_value': '你好'
-                    }
+        # In python3, all string is unicode, so these 2 strings only diff
+        # in values
+        result = {
+            'values_changed': {
+                "root['hello']": {
+                    'new_value': '你好hello',
+                    'old_value': '你好'
                 }
             }
-        else:
-            # In python2, these are 2 different type of strings
-            result = {
-                'type_changes': {
-                    "root['hello']": {
-                        'old_type': unicode,
-                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbdhello',
-                        'old_value': u'\u4f60\u597d',
-                        'new_type': str
-                    }
-                }
-            }
+        }
         assert result == ddiff
 
     def test_int_to_unicode_string(self):
         t1 = 1
         ascii_string = "你好"
         ddiff = DeepDiff(t1, ascii_string)
-        if py3:
-            # In python3, all string is unicode, so these 2 strings only diff
-            # in values
-            result = {
-                'type_changes': {
-                    'root': {
-                        'old_type': int,
-                        'new_type': str,
-                        'old_value': 1,
-                        'new_value': '你好'
-                    }
+        # In python3, all string is unicode, so these 2 strings only diff
+        # in values
+        result = {
+            'type_changes': {
+                'root': {
+                    'old_type': int,
+                    'new_type': str,
+                    'old_value': 1,
+                    'new_value': '你好'
                 }
             }
-        else:
-            # In python2, these are 2 different type of strings
-            result = {
-                'type_changes': {
-                    'root': {
-                        'old_type': int,
-                        'new_value': '\xe4\xbd\xa0\xe5\xa5\xbd',
-                        'old_value': 1,
-                        'new_type': str
-                    }
-                }
-            }
+        }
         assert result == ddiff
 
     def test_int_to_unicode(self):
         t1 = 1
         unicode_string = u"你好"
         ddiff = DeepDiff(t1, unicode_string)
-        if py3:
-            # In python3, all string is unicode, so these 2 strings only diff
-            # in values
-            result = {
-                'type_changes': {
-                    'root': {
-                        'old_type': int,
-                        'new_type': str,
-                        'old_value': 1,
-                        'new_value': '你好'
-                    }
+        # In python3, all string is unicode, so these 2 strings only diff
+        # in values
+        result = {
+            'type_changes': {
+                'root': {
+                    'old_type': int,
+                    'new_type': str,
+                    'old_value': 1,
+                    'new_value': '你好'
                 }
             }
-        else:
-            # In python2, these are 2 different type of strings
-            result = {
-                'type_changes': {
-                    'root': {
-                        'old_type': int,
-                        'new_value': u'\u4f60\u597d',
-                        'old_value': 1,
-                        'new_type': unicode
-                    }
-                }
-            }
+        }
         assert result == ddiff
 
     def test_significant_digits_for_decimals(self):
@@ -1316,7 +1252,19 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
-    def test_ignore_type_in_groups3(self):
+    def test_ignore_type_in_groups_just_numbers(self):
+        t1 = [1, 2, 3, 'a']
+        t2 = [1.0, 2.0, 3.3, b'a']
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[DeepDiff.numbers])
+        result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}},
+                  'type_changes': {'root[3]': {'new_type': bytes,
+                                               'new_value': b'a',
+                                               'old_type': str,
+                                               'old_value': 'a'}}
+                  }
+        assert result == ddiff
+
+    def test_ignore_type_in_groups_numbers_and_strings(self):
         t1 = [1, 2, 3, 'a']
         t2 = [1.0, 2.0, 3.3, b'a']
         ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[DeepDiff.numbers, DeepDiff.strings])
