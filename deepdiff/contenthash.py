@@ -5,6 +5,7 @@ from collections import MutableMapping
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1
+import re
 import mmh3
 import logging
 
@@ -154,6 +155,8 @@ class DeepHash(dict):
                  obj,
                  hashes=None,
                  exclude_types=None,
+                 exclude_paths=None,
+                 exclude_regex_paths=None,
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
@@ -169,6 +172,8 @@ class DeepHash(dict):
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
+        self.exclude_paths = set(exclude_paths) if exclude_paths else None
+        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths] if exclude_regex_paths else None
 
         self.hasher = self.murmur3_128bit if hasher is None else hasher
         hashes = hashes if hashes else {}
@@ -231,12 +236,37 @@ class DeepHash(dict):
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
         return result
 
+    # def _skip_this(self, obj):
+    #     skip = False
+    #     if isinstance(obj, self.exclude_types_tuple):
+    #         skip = True
+
+    #     return skip
+
+
     def _skip_this(self, obj):
+        # TODO: we need to have access to the path of this object in order to be able to exclude it when needed.
         skip = False
         if isinstance(obj, self.exclude_types_tuple):
             skip = True
 
         return skip
+
+
+        skip = False
+        if self.exclude_paths and level.path() in self.exclude_paths:
+            skip = True
+        elif self.exclude_regex_paths and any(
+                [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
+            skip = True
+        else:
+            if self.exclude_types_tuple and (isinstance(level.t1, self.exclude_types_tuple) or
+                                             isinstance(level.t2, self.exclude_types_tuple)):
+                skip = True
+
+        return skip
+
+
 
     def _prep_dict(self, obj, parents_ids=frozenset({})):
 
