@@ -1029,6 +1029,13 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
 
+## Contribute
+
+1. Please make your PR against the dev branch
+2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we maintain 100% test coverage on the code. There are occasiannly exceptions to that rule but that is rare.
+
+Thank you!
+
 ## Authors
 
 Seperman (Sep Dehpour)
