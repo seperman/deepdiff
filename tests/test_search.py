@@ -1,18 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-To run only the search tests:
-    python -m unittest tests.search_tests
-
-Or to run all the tests with coverage:
-    coverage run --source deepdiff setup.py test
-
-Or using Nose:
-    nosetests --with-coverage --cover-package=deepdiff
-
-To run a specific test, run this from the root of repo:
-    nosetests tests/test_search.py:DeepSearchTestCase.test_case_insensitive_of_str_in_list
-"""
 import pytest
 from deepdiff import DeepSearch, grep
 from datetime import datetime
