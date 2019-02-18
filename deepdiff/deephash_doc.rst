@@ -14,14 +14,20 @@ but you can pass another hash function to it if you want.
 
 obj : any object, The object to be hashed based on its content.
 
-hashes : dictionary, default = empty dictionary.
+hashes: dictionary, default = empty dictionary
     A dictionary of {object id: object hash} to start with.
     Any object that is encountered and its id is already in the hashes dictionary,
     will re-use the hash that is provided by this dictionary instead of re-calculating
     its hash.
 
-exclude_types: list, default = None.
+exclude_types: list, default = None
     List of object types to exclude from hashing.
+
+exclude_paths: list, default = None
+    List of paths to exclude from the report. If only one item, you can path it as a string.
+
+exclude_regex_paths: list, default = None
+    List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.
 
 hasher: function. default = DeepHash.murmur3_128bit
     hasher is the hashing function. The default is DeepHash.murmur3_128bit.
@@ -39,7 +45,7 @@ ignore_repetition: Boolean, default = True
     Note that the deepdiff diffing functionality lets this to be the default at all times.
     But if you are using DeepHash directly, you can set this parameter.
 
-significant_digits : int >= 0, default=None.
+significant_digits : int >= 0, default=None
     If it is a non negative integer, it compares only that many digits AFTER
     the decimal point.
 

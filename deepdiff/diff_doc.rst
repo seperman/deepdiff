@@ -40,13 +40,13 @@ verbose_level : int >= 0, default = 1.
     For example verbose level 1 shows what dictionary item are added or removed.
     And verbose level 2 shows the value of the items that are added or removed too.
 
-exclude_paths: list, default = None.
-    List of paths to exclude from the report.
+exclude_paths: list, default = None
+    List of paths to exclude from the report. If only one item, you can path it as a string.
 
-exclude_regex_paths: list, default = None.
-    List of string regex paths or compiled regex paths objects to exclude from the report.
+exclude_regex_paths: list, default = None
+    List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.
 
-exclude_types: list, default = None.
+exclude_types: list, default = None
     List of object types to exclude from the report.
 
 hasher: default = DeepHash.murmur3_128bit
@@ -566,16 +566,18 @@ Exclude certain types from comparison:
 **Exclude paths**
 
 Exclude part of your object tree from comparison
-use `exclude_paths` and pass a set or list of paths to exclude:
+use `exclude_paths` and pass a set or list of paths to exclude, if only one item is being passed, then just put it there as a string. No need to pass it as a list then.
     >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
     >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
-    >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
+    >>> print (DeepDiff(t1, t2, exclude_paths="root['ingredients']"))  # one item pass it as a string
+    {}
+    >>> print (DeepDiff(t1, t2, exclude_paths=["root['ingredients']", "root['ingredients2']"]))  # multiple items pass as a list or a set.
     {}
 
 You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude. The items in the list could be raw regex strings or compiled regex objects.
     >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
     >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
-    >>> print(DeepDiff(t1, t2, exclude_regex_paths={r"root\[\d+\]\['b'\]"}))
+    >>> print(DeepDiff(t1, t2, exclude_regex_paths=r"root\[\d+\]\['b'\]"))
     {}
     >>> exclude_path = re.compile(r"root\[\d+\]\['b'\]")
     >>> print(DeepDiff(t1, t2, exclude_regex_paths=[exclude_path]))
@@ -584,7 +586,7 @@ You can also exclude using regular expressions by using `exclude_regex_paths` an
 example 2:
     >>> t1 = {'a': [1, 2, [3, {'foo1': 'bar'}]]}
     >>> t2 = {'a': [1, 2, [3, {'foo2': 'bar'}]]}
-    >>> DeepDiff(t1, t2, exclude_regex_paths={"\['foo.'\]"})
+    >>> DeepDiff(t1, t2, exclude_regex_paths="\['foo.'\]")  # since it is one item in exclude_regex_paths, you don't have to put it in a list or a set.
     {}
 
 Tip: DeepDiff is using re.search on the path. So if you want to force it to match from the beginning of the path, add `^` to the beginning of regex.
