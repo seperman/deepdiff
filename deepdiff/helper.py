@@ -167,11 +167,14 @@ def convert_item_or_items_into_set_else_none(items):
     return items
 
 
+RE_COMPILED_TYPE = type(re.compile(''))
+
+
 def convert_item_or_items_into_compiled_regexes_else_none(items):
     if items:
-        if isinstance(items, (strings, re.Pattern)):
+        if isinstance(items, (strings, RE_COMPILED_TYPE)):
             items = [items]
-        items = [i if isinstance(i, re.Pattern) else re.compile(i) for i in items]
+        items = [i if isinstance(i, RE_COMPILED_TYPE) else re.compile(i) for i in items]
     else:
         items = None
     return items
