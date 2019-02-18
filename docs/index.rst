@@ -420,7 +420,7 @@ Indices and tables
 Changelog
 =========
 
-- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_number.
+- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_number. Adding match_string to DeepSearch. Adding Timedelta object diffing.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
 - v3-2-2: Adding help(deepdiff)
@@ -485,7 +485,9 @@ ALso thanks to:
 - maxrothman for search for types/objects
 - MartyHub for exclude regex paths
 - sreecodeslayer for DeepSearch match_string
-- Brian Maissy (brianmaissy) for weakref fix and enum tests
+- Brian Maissy (brianmaissy) for weakref fix, enum tests
 - Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
 - Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
+- Juan Soler (Soleronline) for adding ignore_type_number
+- mthaddon for adding timedelta diffing support
 
