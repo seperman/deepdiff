@@ -1303,16 +1303,23 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
-    def test_ignore_type_number(self):
+    def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.0]
-        ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
         assert not ddiff
 
-    def test_ignore_type_number2(self):
+    def test_ignore_type_in_groups2(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.3]
-        ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
+        result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
+        assert result == ddiff
+
+    def test_ignore_type_in_groups3(self):
+        t1 = [1, 2, 3, 'a']
+        t2 = [1.0, 2.0, 3.3, b'a']
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[DeepDiff.numbers, DeepDiff.strings])
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 

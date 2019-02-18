@@ -7,8 +7,6 @@
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
 
-import re
-import os
 import difflib
 import logging
 import json
@@ -23,7 +21,7 @@ from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
-                             current_dir, convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_set_else_none,
                              convert_item_or_items_into_compiled_regexes_else_none)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
@@ -36,13 +34,16 @@ warnings.simplefilter('once', DeprecationWarning)
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
+
 class DeepDiff(ResultDict):
+    numbers = numbers
+    strings = strings
 
     def __init__(self,
                  t1,
                  t2,
                  ignore_order=False,
-                 ignore_type_number=False,
+                 ignore_type_in_groups=None,
                  report_repetition=False,
                  significant_digits=None,
                  exclude_paths=None,
@@ -57,11 +58,18 @@ class DeepDiff(ResultDict):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are ignore_order, report_repetition, significant_digits, ignore_type_number"
+                "The valid parameters are ignore_order, report_repetition, significant_digits, ignore_type_in_groups"
                 "exclude_paths, exclude_types, exclude_regex_paths, transformer, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
-        self.ignore_type_number = ignore_type_number
+        if ignore_type_in_groups:
+            if isinstance(ignore_type_in_groups[0], type):
+                ignore_type_in_groups = [tuple(ignore_type_in_groups)]
+            else:
+                ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
+        else:
+            ignore_type_in_groups = []
+        self.ignore_type_in_groups = ignore_type_in_groups
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
@@ -356,15 +364,21 @@ class DeepDiff(ResultDict):
 
         # do we add a diff for convenience?
         do_diff = True
+        t1_str = level.t1
+        t2_str = level.t2
+
         if isinstance(level.t1, bytes_type):
             try:
                 t1_str = level.t1.decode('ascii')
+            except UnicodeDecodeError:
+                do_diff = False
+
+        if isinstance(level.t2, bytes_type):
+            try:
                 t2_str = level.t2.decode('ascii')
             except UnicodeDecodeError:
                 do_diff = False
-        else:
-            t1_str = level.t1
-            t2_str = level.t2
+
         if do_diff:
             if u'\n' in t1_str or u'\n' in t2_str:
                 diff = difflib.unified_diff(
@@ -530,10 +544,17 @@ class DeepDiff(ResultDict):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2) and not (self.ignore_type_number and isinstance(level.t1, numbers) and isinstance(level.t2, numbers)):
-            self.__diff_types(level)
+        if type(level.t1) != type(level.t2):  # NOQA
+            report_type_change = True
+            for type_group in self.ignore_type_in_groups:
+                if isinstance(level.t1, type_group) and isinstance(level.t2, type_group):
+                    report_type_change = False
+                    break
+            if report_type_change:
+                self.__diff_types(level)
+                return
 
-        elif isinstance(level.t1, strings):
+        if isinstance(level.t1, strings):
             self.__diff_str(level)
 
         elif isinstance(level.t1, numbers):
