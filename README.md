@@ -23,6 +23,7 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 - [Report repetitions](#report-repetitions)
 - [Exclude types or paths](#exclude-type-or-paths)
 - [Significant Digits](#significant-digits)
+- [Ignore Type Number](#ignore-type-number)
 - [Verbose Level](#verbose-level)
 - [Deep Search](#deep-search)
 - [Deep Hash](#deep-hash)
@@ -191,6 +192,52 @@ Approximate float comparison:
                     'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
 >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
 {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
+```
+
+## Ignore Type Number
+
+Ignore Type Number - Dictionary that contains float and integer:
+
+```py
+>>> from deepdiff import DeepDiff
+>>> from pprint import pprint
+>>> t1 = {1: 1, 2: 2.22}
+>>> t2 = {1: 1.0, 2: 2.22}
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint(ddiff, indent=2)
+{ 'type_changes': { 'root[1]': { 'new_type': <class 'float'>,
+                         'new_value': 1.0,
+                         'old_type': <class 'int'>,
+                         'old_value': 1}}}
+>>> ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+>>> pprint(ddiff, indent=2)
+{}
+```
+
+Ignore Type Number - List that contains float and integer:
+
+```py
+>>> from deepdiff import DeepDiff
+>>> from pprint import pprint
+>>> t1 = [1, 2, 3]
+>>> t2 = [1.0, 2.0, 3.0]
+>>> ddiff = DeepDiff(t1, t2)
+>>> pprint(ddiff, indent=2)
+{ 'type_changes': { 'root[0]': { 'new_type': <class 'float'>,
+                         'new_value': 1.0,
+                         'old_type': <class 'int'>,
+                         'old_value': 1},
+            'root[1]': { 'new_type': <class 'float'>,
+                         'new_value': 2.0,
+                         'old_type': <class 'int'>,
+                         'old_value': 2},
+            'root[2]': { 'new_type': <class 'float'>,
+                         'new_value': 3.0,
+                         'old_type': <class 'int'>,
+                         'old_value': 3}}}
+>>> ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+>>> pprint(ddiff, indent=2)
+{}
 ```
 
 ## Verbose Level

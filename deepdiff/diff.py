@@ -36,18 +36,13 @@ warnings.simplefilter('once', DeprecationWarning)
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
-
-with open(os.path.join(current_dir, 'diff_doc.rst'), 'r') as doc_file:
-    doc = doc_file.read()
-
-
 class DeepDiff(ResultDict):
-    __doc__ = doc
 
     def __init__(self,
                  t1,
                  t2,
                  ignore_order=False,
+                 ignore_type_number=False,
                  report_repetition=False,
                  significant_digits=None,
                  exclude_paths=None,
@@ -62,10 +57,11 @@ class DeepDiff(ResultDict):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are ignore_order, report_repetition, significant_digits,"
+                "The valid parameters are ignore_order, report_repetition, significant_digits, ignore_type_number"
                 "exclude_paths, exclude_types, exclude_regex_paths, transformer, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
+        self.ignore_type_number = ignore_type_number
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
@@ -534,7 +530,7 @@ class DeepDiff(ResultDict):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2):  # NOQA
+        if type(level.t1) != type(level.t2) and not (self.ignore_type_number and isinstance(level.t1, numbers) and isinstance(level.t2, numbers)):
             self.__diff_types(level)
 
         elif isinstance(level.t1, strings):

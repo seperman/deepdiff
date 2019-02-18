@@ -1303,6 +1303,19 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
+    def test_ignore_type_number(self):
+        t1 = [1, 2, 3]
+        t2 = [1.0, 2.0, 3.0]
+        ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        assert not ddiff
+
+    def test_ignore_type_number2(self):
+        t1 = [1, 2, 3]
+        t2 = [1.0, 2.0, 3.3]
+        ddiff = DeepDiff(t1, t2, ignore_type_number=True)
+        result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
+        assert result == ddiff
+
     @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):
         """
