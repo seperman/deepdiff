@@ -5,16 +5,20 @@ from collections import MutableMapping
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1
-import re
 import mmh3
 import logging
 
-from deepdiff.helper import strings, numbers, unprocessed, skipped, not_hashed, add_to_frozen_set
+from deepdiff.helper import (strings, numbers, unprocessed, skipped, not_hashed, add_to_frozen_set,
+                             convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_compiled_regexes_else_none)
 
 logger = logging.getLogger(__name__)
 
 UNPROCESSED = 'unprocessed'
 RESERVED_DICT_KEYS = {UNPROCESSED}
+EMPTY_FROZENSET = frozenset({})
+
+INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 
 def prepare_string_for_hashing(obj, include_string_type_changes=False):
@@ -166,14 +170,14 @@ class DeepHash(dict):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
-                 "The valid parameters are obj, hashes, exclude_types."
-                 "hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
+                 "The valid parameters are obj, hashes, exclude_types,"
+                 "exclude_paths, exclude_regex_paths, hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
-        self.exclude_paths = set(exclude_paths) if exclude_paths else None
-        self.exclude_regex_paths = [i if isinstance(i, re.Pattern) else re.compile(i) for i in exclude_regex_paths] if exclude_regex_paths else None
+        self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+        self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
 
         self.hasher = self.murmur3_128bit if hasher is None else hasher
         hashes = hashes if hashes else {}
@@ -186,7 +190,7 @@ class DeepHash(dict):
         # testing the individual hash functions for different types of objects.
         self.constant_size = constant_size
 
-        self._hash(obj, parents_ids=frozenset({id(obj)}))
+        self._hash(obj, parent="root", parents_ids=frozenset({id(obj)}))
 
         if self[UNPROCESSED]:
             logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
@@ -207,7 +211,20 @@ class DeepHash(dict):
         # 1203 is the seed
         return mmh3.hash64(obj, 1203)
 
+    def _get_item(self, key, changed_to_id=False):
+        try:
+            value = super().__getitem__(key)
+        except KeyError:
+            if changed_to_id:
+                raise KeyError('{} is not one of the hashed items.'.format(key)) from None
+            else:
+                key = id(key)
+                value = self._get_item(key, changed_to_id=True)
+        else:
+            return value
+
     def __getitem__(self, key):
+        changed_to_id = False
         if not isinstance(key, int):
             try:
                 if key in RESERVED_DICT_KEYS:
@@ -215,10 +232,11 @@ class DeepHash(dict):
             except Exception:
                 pass
             key = id(key)
+            changed_to_id = True
 
-        return super().__getitem__(key)
+        return self._get_item(key, changed_to_id=changed_to_id)
 
-    def _prep_obj(self, obj, parents_ids=frozenset({}), is_namedtuple=False):
+    def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
@@ -232,53 +250,38 @@ class DeepHash(dict):
                 self[UNPROCESSED].append(obj)
                 return unprocessed
 
-        result = self._prep_dict(obj, parents_ids)
+        result = self._prep_dict(obj, parent, parents_ids, print_as_attribute=True)
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
         return result
 
-    # def _skip_this(self, obj):
-    #     skip = False
-    #     if isinstance(obj, self.exclude_types_tuple):
-    #         skip = True
-
-    #     return skip
-
-
-    def _skip_this(self, obj):
-        # TODO: we need to have access to the path of this object in order to be able to exclude it when needed.
+    def _skip_this(self, obj, parent):
         skip = False
-        if isinstance(obj, self.exclude_types_tuple):
-            skip = True
-
-        return skip
-
-
-        skip = False
-        if self.exclude_paths and level.path() in self.exclude_paths:
+        if self.exclude_paths and parent in self.exclude_paths:
             skip = True
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
-            if self.exclude_types_tuple and (isinstance(level.t1, self.exclude_types_tuple) or
-                                             isinstance(level.t2, self.exclude_types_tuple)):
+            if self.exclude_types_tuple and isinstance(obj, self.exclude_types_tuple):
                 skip = True
 
         return skip
 
-
-
-    def _prep_dict(self, obj, parents_ids=frozenset({})):
+    def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False):
 
         result = []
 
+        key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key, item in obj.items():
-            key_hash = self._hash(key)
+            key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
+            key_in_report = key_text % (parent, key_formatted)
+
+            key_hash = self._hash(key, parent=key_in_report, parents_ids=parents_ids)
             item_id = id(item)
-            if (parents_ids and item_id in parents_ids) or self._skip_this(item):
+            if (parents_ids and item_id in parents_ids) or self._skip_this(item, parent=key_in_report):
                 continue
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(item, parents_ids_added)
+            hashed = self._hash(item, parent=key_in_report, parents_ids=parents_ids_added)
             hashed = "{}:{}".format(key_hash, hashed)
             result.append(hashed)
 
@@ -288,15 +291,15 @@ class DeepHash(dict):
 
         return result
 
-    def _prep_set(self, obj):
-        return "set:{}".format(self._prep_iterable(obj))
+    def _prep_set(self, obj, parent, parents_ids=EMPTY_FROZENSET):
+        return "set:{}".format(self._prep_iterable(obj, parent, parents_ids))
 
-    def _prep_iterable(self, obj, parents_ids=frozenset({})):
+    def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
         result = defaultdict(int)
 
-        for item in obj:
-            if self._skip_this(item):
+        for i, item in enumerate(obj):
+            if self._skip_this(item, parent="{}[{}]".format(parent, i)):
                 continue
 
             item_id = id(item)
@@ -304,7 +307,7 @@ class DeepHash(dict):
                 continue
 
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(item, parents_ids_added)
+            hashed = self._hash(item, parent=parent, parents_ids=parents_ids_added)
             # counting repetitions
             result[hashed] += 1
 
@@ -335,20 +338,20 @@ class DeepHash(dict):
             result = "{}:{}".format(type(obj).__name__, obj)
         return result
 
-    def _prep_tuple(self, obj, parents_ids):
+    def _prep_tuple(self, obj, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
             obj._asdict
         # It must be a normal tuple
         except AttributeError:
-            result = self._prep_iterable(obj, parents_ids)
+            result = self._prep_iterable(obj, parent, parents_ids)
         # We assume it is a namedtuple then
         else:
-            result = self._prep_obj(obj, parents_ids, is_namedtuple=True)
+            result = self._prep_obj(obj, parent, parents_ids=parents_ids, is_namedtuple=True)
         return result
 
-    def _hash(self, obj, parents_ids=frozenset({})):
+    def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main diff method"""
 
         obj_id = id(obj)
@@ -357,7 +360,7 @@ class DeepHash(dict):
 
         result = not_hashed
 
-        if self._skip_this(obj):
+        if self._skip_this(obj, parent):
             result = skipped
 
         elif obj is None:
@@ -370,19 +373,19 @@ class DeepHash(dict):
             result = self._prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
-            result = self._prep_dict(obj, parents_ids)
+            result = self._prep_dict(obj, parent, parents_ids)
 
         elif isinstance(obj, tuple):
-            result = self._prep_tuple(obj, parents_ids)
+            result = self._prep_tuple(obj, parent, parents_ids)
 
         elif isinstance(obj, (set, frozenset)):
-            result = self._prep_set(obj)
+            result = self._prep_set(obj, parent, parents_ids)
 
         elif isinstance(obj, Iterable):
-            result = self._prep_iterable(obj, parents_ids)
+            result = self._prep_iterable(obj, parent, parents_ids)
 
         else:
-            result = self._prep_obj(obj, parents_ids)
+            result = self._prep_obj(obj, parent, parents_ids)
 
         if result is not_hashed:  # pragma: no cover
             self[UNPROCESSED].append(obj)

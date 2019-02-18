@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
 import datetime
+import re
+import logging
 from decimal import Decimal
 from collections import namedtuple
 from ordered_set import OrderedSet
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -150,3 +151,24 @@ def json_convertor_default(default_mapping=None):
 
 def add_to_frozen_set(parents_ids, item_id):
     return parents_ids | {item_id}
+
+
+def convert_item_or_items_into_set_else_none(items):
+    if items:
+        if isinstance(items, strings):
+            items = set([items])
+        else:
+            items = set(items)
+    else:
+        items = None
+    return items
+
+
+def convert_item_or_items_into_compiled_regexes_else_none(items):
+    if items:
+        if isinstance(items, (strings, re.Pattern)):
+            items = [items]
+        items = [i if isinstance(i, re.Pattern) else re.compile(i) for i in items]
+    else:
+        items = None
+    return items

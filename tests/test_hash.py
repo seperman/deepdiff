@@ -372,6 +372,17 @@ class TestDeepHashPrep:
         assert id(1) in t1_hash
         assert t1_hash[dic1] == t2_hash[dic2]
 
+    def test_skip_path(self):
+        dic1 = {1: "a"}
+        t1 = [dic1, 2]
+        dic2 = {}
+        t2 = [dic2, 2]
+        t1_hash = DeepHashPrep(t1, exclude_paths=['root[0]'])
+        t2_hash = DeepHashPrep(t2, exclude_paths=['root[0]'])
+        # assert id(1) not in t1_hash
+        # assert id(2) in t1_hash
+        assert t1_hash[2] == t2_hash[2]
+
 
 class TestDeepHashSHA1:
     """DeepHash with SHA1 Tests."""
