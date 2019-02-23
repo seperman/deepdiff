@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
 import pytest
+import logging
 from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, skipped, unprocessed
+from deepdiff.deephash import prepare_string_for_hashing, unprocessed
 from deepdiff.helper import pypy3
 from collections import namedtuple
 from functools import partial
-import logging
 from enum import Enum
 
 logging.disable(logging.CRITICAL)
@@ -40,6 +41,19 @@ class TestDeepHash:
         result = DeepHash(obj)
         assert set(result.keys()) == {id(1), id(obj)}
 
+    def test_get_hash_by_obj_is_the_same_as_by_obj_id(self):
+        a = "a"
+        obj = {1: a}
+        result = DeepHash(obj)
+        assert result[id(a)] == result[a]
+
+    def test_get_hash_by_obj_when_does_not_exist(self):
+        a = "a"
+        obj = {1: a}
+        result = DeepHash(obj)
+        with pytest.raises(KeyError):
+            result[2]
+
     def test_list_of_sets(self):
         a = {1}
         b = {2}
@@ -63,6 +77,20 @@ class TestDeepHash:
         result = DeepHash(t1)
         expected_result = {id(t1): unprocessed, 'unprocessed': [t1]}
         assert expected_result == result
+
+    def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
+        a = 'hello'
+        b = b'hello'
+        a_hash = DeepHash(a)[a]
+        b_hash = DeepHash(b)[b]
+        assert a_hash == b_hash
+
+    def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
+        a = 'hello'
+        b = b'hello'
+        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[a]
+        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[b]
+        assert a_hash == b_hash
 
 
 class TestDeepHashPrep:
@@ -342,6 +370,11 @@ class TestDeepHashPrep:
         result = DeepHashPrep(obj, exclude_types={logging.Logger})
         assert id(l1) not in result
 
+    def test_skip_type2(self):
+        l1 = logging.getLogger("test")
+        result = DeepHashPrep(l1, exclude_types={logging.Logger})
+        assert not result
+
     def test_prep_dic_with_loop(self):
         obj = {2: 1337}
         obj[1] = obj
@@ -379,6 +412,16 @@ class TestDeepHashPrep:
         t2 = [dic2, 2]
         t1_hash = DeepHashPrep(t1, exclude_paths=['root[0]'])
         t2_hash = DeepHashPrep(t2, exclude_paths='root[0]')
+        assert id(1) not in t1_hash
+        assert id(2) in t1_hash
+        assert t1_hash[2] == t2_hash[2]
+
+    def test_skip_regex_path(self):
+        dic1 = {1: "a"}
+        t1 = [dic1, 2]
+        exclude_re = re.compile(r'\[0\]')
+        t1_hash = DeepHashPrep(t1, exclude_regex_paths=r'\[0\]')
+        t2_hash = DeepHashPrep(t1, exclude_regex_paths=[exclude_re])
         assert id(1) not in t1_hash
         assert id(2) in t1_hash
         assert t1_hash[2] == t2_hash[2]
@@ -447,23 +490,6 @@ class TestDeepHashSHA1:
         }
         result = DeepHash(obj, hasher=DeepHash.sha1hex)
         assert expected_result == result
-
-
-class TestHasher:
-
-    def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
-        a = 'hello'
-        b = b'hello'
-        a_hash = DeepHash(a)[a]
-        b_hash = DeepHash(b)[b]
-        assert a_hash == b_hash
-
-    def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
-        a = 'hello'
-        b = b'hello'
-        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[a]
-        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[b]
-        assert a_hash == b_hash
 
 
 class TestCleaningString:

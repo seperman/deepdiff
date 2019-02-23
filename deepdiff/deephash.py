@@ -247,7 +247,7 @@ class DeepHash(dict):
         result = not_hashed
 
         if self._skip_this(obj, parent):
-            result = skipped
+            return
 
         elif obj is None:
             result = 'NONE'
