@@ -194,7 +194,7 @@ Approximate float comparison:
 {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
 ```
 
-## Ignore Type Number
+## Ignore Type In Groups
 
 Ignore Type Number - Dictionary that contains float and integer:
 
@@ -209,7 +209,7 @@ Ignore Type Number - Dictionary that contains float and integer:
                          'new_value': 1.0,
                          'old_type': <class 'int'>,
                          'old_value': 1}}}
->>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=True)
+>>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
 >>> pprint(ddiff, indent=2)
 {}
 ```
@@ -382,17 +382,23 @@ If you do a deep copy of obj, it should still give you the same hash:
 >>> from copy import deepcopy
 2481013017017307534
 >>> DeepHash(obj2)[obj2]
-(3415089864575009947, 7987229399128149852)
+34150898645750099477987229399128149852
 ```
 
 Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
-    >>> obj3 = {1: 2, b'a': b'b'}
-    >>> DeepHash(obj3)[obj3]
-    (3415089864575009947, 7987229399128149852)
 
-But if you want a different hash if string types are different, set include_string_type_changes to True:
-    >>> DeepHash(obj3, include_string_type_changes=True)[obj3]
-    (6406752576584602448, -8103933101621212760)
+```py
+>>> obj3 = {1: 2, b'a': b'b'}
+>>> DeepHash(obj3)[obj3]
+34150898645750099477987229399128149852
+```
+
+But if you want a different hash if string types are different, set ignore_string_type_changes to False:
+
+```py
+>>> DeepHash(obj3, ignore_string_type_changes=False)[obj3]
+64067525765846024488103933101621212760
+```
 
 # Using DeepDiff in unit tests
 

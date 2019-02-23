@@ -49,7 +49,8 @@ class DeepDiff(ResultDict):
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
-                 include_string_type_changes=False,
+                 ignore_string_type_changes=None,
+                 include_numeric_type_changes=True,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=DeepHash.murmur3_128bit,
@@ -62,20 +63,20 @@ class DeepDiff(ResultDict):
                 "exclude_paths, exclude_types, exclude_regex_paths, transformer, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
-        if ignore_type_in_groups:
-            if isinstance(ignore_type_in_groups[0], type):
-                ignore_type_in_groups = [tuple(ignore_type_in_groups)]
-            else:
-                ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
-        else:
-            ignore_type_in_groups = []
-        self.ignore_type_in_groups = ignore_type_in_groups
+        if ignore_string_type_changes is not None and ignore_type_in_groups is not None:
+            raise ValueError('Please set either ignore_string_type_changes or ignore_type_in_groups but not both.')
+        if ignore_type_in_groups is None and ignore_string_type_changes is None:
+            ignore_string_type_changes = True
+        self.ignore_type_in_groups = self._get_ignore_types_in_groups(
+            ignore_type_in_groups,
+            ignore_string_type_changes, include_numeric_type_changes)
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.exclude_types = set(exclude_types) if exclude_types else None
         self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
-        self.include_string_type_changes = include_string_type_changes
+        self.ignore_string_type_changes = ignore_string_type_changes
+        self.include_numeric_type_changes = include_numeric_type_changes
         self.hashes = {}
         self.hasher = hasher
 
@@ -100,6 +101,24 @@ class DeepDiff(ResultDict):
         self.view = view
         view_results = self._get_view_results(view)
         self.update(view_results)
+
+    def _get_ignore_types_in_groups(self, ignore_type_in_groups,
+                                    ignore_string_type_changes, include_numeric_type_changes):
+        if ignore_type_in_groups:
+            if isinstance(ignore_type_in_groups[0], type):
+                ignore_type_in_groups = [tuple(ignore_type_in_groups)]
+            else:
+                ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
+        else:
+            ignore_type_in_groups = []
+
+        if ignore_string_type_changes:
+            ignore_type_in_groups.append(self.strings)
+
+        if not include_numeric_type_changes:
+            ignore_type_in_groups.append(self.numbers)
+
+        return ignore_type_in_groups
 
     def _get_view_results(self, view):
         """
@@ -420,7 +439,7 @@ class DeepDiff(ResultDict):
                                       hashes=self.hashes,
                                       exclude_types=self.exclude_types,
                                       significant_digits=self.significant_digits,
-                                      include_string_type_changes=self.include_string_type_changes,
+                                      ignore_string_type_changes=self.ignore_string_type_changes,
                                       hasher=self.hasher)
                 item_hash = hashes_all.get(id(item), item)
             except Exception as e:  # pragma: no cover

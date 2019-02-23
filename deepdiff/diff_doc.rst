@@ -195,6 +195,19 @@ And if you don't care about the value of items that have changed type, please se
 
 ignore_type_in_groups
 
+Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
+The shortcuts are ignore_string_type_changes which by default is True and include_numeric_type_changes which is by default true. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more power compared to the shortcuts. For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
+
+1. Set ignore_string_type_changes=True which is the default.
+2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
+
+Now what if you want also typeA and typeB to be ignored when comparing agains each other?
+
+1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
+2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
+
+Note that you can either set the ignore_type_in_groups or the shortcuts but not both.
+
 Ignore Type Number - Dictionary that contains float and integer:
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint
@@ -234,6 +247,8 @@ Ignore Type Number - List that contains float and integer:
     {}
 
 You can pass a list of tuples if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+
+ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
 
 
 List difference

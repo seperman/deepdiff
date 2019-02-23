@@ -43,6 +43,30 @@ class TestDeepDiffText:
                 }
                 }} == DeepDiff(t1, t2, verbose_level=0)
 
+    def test_item_type_change_for_strings_ignored_by_default(self):
+        """ ignore_string_type_changes = True by default """
+
+        t1 = 'hello'
+        t2 = b'hello'
+        ddiff = DeepDiff(t1, t2)
+        assert not ddiff
+
+    def test_item_type_change_for_strings_override(self):
+
+        t1 = 'hello'
+        t2 = b'hello'
+        ddiff = DeepDiff(t1, t2, ignore_string_type_changes=False)
+        assert {
+            'type_changes': {
+                'root': {
+                    'old_type': str,
+                    'new_type': bytes,
+                    'old_value': 'hello',
+                    'new_value': b'hello'
+                }
+            }
+        } == ddiff
+
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: 4, 3: 3}

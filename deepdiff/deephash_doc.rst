@@ -61,8 +61,8 @@ constant_size: Boolean, default = True
     The only time you want the constant_size to be False is if you want to know what
     the string representation of your object is BEFORE it gets hashed.
 
-include_string_type_changes: Boolean, default = False
-    string type conversions should not affect the hash output when this is set to False.
+ignore_string_type_changes: Boolean, default = True
+    string type conversions should not affect the hash output when this is set to True.
     For example "Hello" and b"Hello" should produce the same hash.
 
 **Returns**
@@ -119,6 +119,6 @@ Note that by default DeepHash will ignore string type differences. So if your st
     >>> DeepHash(obj3)[obj3]
     (3415089864575009947, 7987229399128149852)
 
-But if you want a different hash if string types are different, set include_string_type_changes to True:
-    >>> DeepHash(obj3, include_string_type_changes=True)[obj3]
+But if you want a different hash if string types are different, set ignore_string_type_changes to True:
+    >>> DeepHash(obj3, ignore_string_type_changes=True)[obj3]
     (6406752576584602448, -8103933101621212760)

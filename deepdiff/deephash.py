@@ -22,14 +22,14 @@ EMPTY_FROZENSET = frozenset({})
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 
-def prepare_string_for_hashing(obj, include_string_type_changes=False):
+def prepare_string_for_hashing(obj, ignore_string_type_changes=False):
     """
     Clean type conversions
     """
     original_type = obj.__class__.__name__
     if isinstance(obj, bytes):
         obj = obj.decode('utf-8')
-    if include_string_type_changes:
+    if not ignore_string_type_changes:
         obj = "{}:{}".format(original_type, obj)
     return obj
 
@@ -53,7 +53,7 @@ class DeepHash(dict):
                  ignore_repetition=True,
                  significant_digits=None,
                  constant_size=True,
-                 include_string_type_changes=False,
+                 ignore_string_type_changes=True,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -72,7 +72,7 @@ class DeepHash(dict):
         self.update(hashes)
         self[UNPROCESSED] = []
         self.significant_digits = significant_digits
-        self.include_string_type_changes = include_string_type_changes
+        self.ignore_string_type_changes = ignore_string_type_changes
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
@@ -253,7 +253,7 @@ class DeepHash(dict):
             result = 'NONE'
 
         elif isinstance(obj, strings):
-            result = prepare_string_for_hashing(obj, include_string_type_changes=self.include_string_type_changes)
+            result = prepare_string_for_hashing(obj, ignore_string_type_changes=self.ignore_string_type_changes)
 
         elif isinstance(obj, numbers):
             result = self._prep_number(obj)
@@ -283,7 +283,7 @@ class DeepHash(dict):
             if isinstance(obj, strings):
                 result_cleaned = result
             else:
-                result_cleaned = prepare_string_for_hashing(result, include_string_type_changes=self.include_string_type_changes)
+                result_cleaned = prepare_string_for_hashing(result, ignore_string_type_changes=self.ignore_string_type_changes)
             result = self.hasher(result_cleaned)
 
         # It is important to keep the hash of all objects.

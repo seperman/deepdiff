@@ -29,8 +29,8 @@ class CustomClass:
 DeepHashPrep = partial(DeepHash, constant_size=False)
 
 
-def prep_str(obj, include_string_type_changes=False):
-    return 'str:{}'.format(obj) if include_string_type_changes else obj
+def prep_str(obj, ignore_string_type_changes=True):
+    return obj if ignore_string_type_changes else 'str:{}'.format(obj)
 
 
 class TestDeepHash:
@@ -101,8 +101,8 @@ class TestDeepHashPrep:
         expected_result = {id(obj): prep_str(obj)}
         result = DeepHashPrep(obj)
         assert expected_result == result
-        expected_result = {id(obj): prep_str(obj, include_string_type_changes=True)}
-        result = DeepHashPrep(obj, include_string_type_changes=True)
+        expected_result = {id(obj): prep_str(obj, ignore_string_type_changes=False)}
+        result = DeepHashPrep(obj, ignore_string_type_changes=False)
         assert expected_result == result
 
     def test_prep_str_fail_if_mutable(self):
@@ -494,12 +494,12 @@ class TestDeepHashSHA1:
 
 class TestCleaningString:
 
-    @pytest.mark.parametrize("text, include_string_type_changes, expected_result", [
-        (b'hello', False, 'hello'),
-        (b'hello', True, 'bytes:hello'),
-        ('hello', False, 'hello'),
-        ('hello', True, 'str:hello'),
+    @pytest.mark.parametrize("text, ignore_string_type_changes, expected_result", [
+        (b'hello', True, 'hello'),
+        (b'hello', False, 'bytes:hello'),
+        ('hello', True, 'hello'),
+        ('hello', False, 'str:hello'),
     ])
-    def test_clean_type(self, text, include_string_type_changes, expected_result):
-        result = prepare_string_for_hashing(text, include_string_type_changes=include_string_type_changes)
+    def test_clean_type(self, text, ignore_string_type_changes, expected_result):
+        result = prepare_string_for_hashing(text, ignore_string_type_changes=ignore_string_type_changes)
         assert expected_result == result
