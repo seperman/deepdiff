@@ -9,9 +9,10 @@ from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1
 
-from deepdiff.helper import (strings, numbers, unprocessed, skipped, not_hashed, add_to_frozen_set,
+from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, current_dir,
-                             convert_item_or_items_into_compiled_regexes_else_none)
+                             convert_item_or_items_into_compiled_regexes_else_none,
+                             get_id)
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,11 @@ RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
+
+KEY_TO_VAL_STR = "{}:{}"
+
+DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 55
+ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 
 def prepare_string_for_hashing(obj, ignore_string_type_changes=False):
@@ -30,7 +36,7 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False):
     if isinstance(obj, bytes):
         obj = obj.decode('utf-8')
     if not ignore_string_type_changes:
-        obj = "{}:{}".format(original_type, obj)
+        obj = KEY_TO_VAL_STR.format(original_type, obj)
     return obj
 
 
@@ -54,12 +60,15 @@ class DeepHash(dict):
                  significant_digits=None,
                  constant_size=True,
                  ignore_string_type_changes=True,
+                 ignore_numeric_type_changes=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
                  "The valid parameters are obj, hashes, exclude_types,"
-                 "exclude_paths, exclude_regex_paths, hasher and ignore_repetition.") % ', '.join(kwargs.keys()))
+                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition,"
+                 "significant_digits, constant_size, ignore_string_type_changes,"
+                 "ignore_numeric_type_changes") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -71,14 +80,18 @@ class DeepHash(dict):
         hashes = hashes if hashes else {}
         self.update(hashes)
         self[UNPROCESSED] = []
-        self.significant_digits = significant_digits
+        if ignore_numeric_type_changes and not significant_digits:
+            self.significant_digits = DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES
+        else:
+            self.significant_digits = significant_digits
         self.ignore_string_type_changes = ignore_string_type_changes
+        self.ignore_numeric_type_changes = ignore_numeric_type_changes
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
         self.constant_size = constant_size
 
-        self._hash(obj, parent="root", parents_ids=frozenset({id(obj)}))
+        self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
 
         if self[UNPROCESSED]:
             logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
@@ -97,30 +110,29 @@ class DeepHash(dict):
         obj = obj.encode('utf-8')
         return mmh3.hash128(obj, DeepHash.MURMUR_SEED)
 
-    def _get_item(self, key, changed_to_id=False):
+    def __getitem__(self, obj):
+        # changed_to_id = False
+        key = obj
+        result = None
+
         try:
-            value = super().__getitem__(key)
-        except KeyError:
-            if changed_to_id:
-                raise KeyError('{} is not one of the hashed items.'.format(key)) from None
-            else:
-                key = id(key)
-                value = self._get_item(key, changed_to_id=True)
-        else:
-            return value
-
-    def __getitem__(self, key):
-        changed_to_id = False
-        if not isinstance(key, int):
+            result = super().__getitem__(key)
+        except (TypeError, KeyError):
+            key = get_id(obj)
             try:
-                if key in RESERVED_DICT_KEYS:
-                    return super().__getitem__(key)
-            except Exception:
-                pass
-            key = id(key)
-            changed_to_id = True
+                result = super().__getitem__(key)
+            except KeyError:
+                raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
+        return result
 
-        return self._get_item(key, changed_to_id=changed_to_id)
+    def __contains__(self, obj):
+        try:
+            hash(obj)
+        except TypeError:
+            key = get_id(obj)
+        else:
+            key = obj
+        return super().__contains__(key)
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """Difference of 2 objects"""
@@ -163,12 +175,12 @@ class DeepHash(dict):
             key_in_report = key_text % (parent, key_formatted)
 
             key_hash = self._hash(key, parent=key_in_report, parents_ids=parents_ids)
-            item_id = id(item)
+            item_id = get_id(item)
             if (parents_ids and item_id in parents_ids) or self._skip_this(item, parent=key_in_report):
                 continue
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
             hashed = self._hash(item, parent=key_in_report, parents_ids=parents_ids_added)
-            hashed = "{}:{}".format(key_hash, hashed)
+            hashed = KEY_TO_VAL_STR.format(key_hash, hashed)
             result.append(hashed)
 
         result.sort()
@@ -188,7 +200,7 @@ class DeepHash(dict):
             if self._skip_this(item, parent="{}[{}]".format(parent, i)):
                 continue
 
-            item_id = id(item)
+            item_id = get_id(item)
             if parents_ids and item_id in parents_ids:
                 continue
 
@@ -206,22 +218,21 @@ class DeepHash(dict):
 
         result = sorted(map(str, result))  # making sure the result items are string and sorted so join command works.
         result = ','.join(result)
-        result = "{}:{}".format(type(obj).__name__, result)
+        result = KEY_TO_VAL_STR.format(type(obj).__name__, result)
 
         return result
 
     def _prep_number(self, obj):
-        # Based on diff.DeepDiff.__diff_numbers
-        if self.significant_digits is not None and isinstance(obj, (
-                float, complex, Decimal)):
+        if self.significant_digits is not None and (
+                self.ignore_numeric_type_changes or isinstance(obj, (float, complex, Decimal))):
             obj_s = ("{:.%sf}" % self.significant_digits).format(obj)
 
             # Special case for 0: "-0.00" should compare equal to "0.00"
-            if set(obj_s) <= set("-0."):
+            if set(obj_s) <= ZERO_DECIMAL_CHARACTERS:
                 obj_s = "0.00"
             result = "number:{}".format(obj_s)
         else:
-            result = "{}:{}".format(type(obj).__name__, obj)
+            result = KEY_TO_VAL_STR.format(type(obj).__name__, obj)
         return result
 
     def _prep_tuple(self, obj, parent, parents_ids):
@@ -240,9 +251,12 @@ class DeepHash(dict):
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main diff method"""
 
-        obj_id = id(obj)
-        if obj_id in self:
-            return self[obj_id]
+        try:
+            result = self[obj]
+        except (TypeError, KeyError):
+            pass
+        else:
+            return result
 
         result = not_hashed
 
@@ -288,7 +302,11 @@ class DeepHash(dict):
 
         # It is important to keep the hash of all objects.
         # The hashes will be later used for comparing the objects.
-        self[obj_id] = result
+        try:
+            self[obj] = result
+        except TypeError:
+            obj_id = get_id(obj)
+            self[obj_id] = result
 
         return result
 

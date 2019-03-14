@@ -196,7 +196,7 @@ And if you don't care about the value of items that have changed type, please se
 ignore_type_in_groups
 
 Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
-The shortcuts are ignore_string_type_changes which by default is True and include_numeric_type_changes which is by default true. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more power compared to the shortcuts. For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
+The shortcuts are ignore_string_type_changes which by default is True and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more power compared to the shortcuts. For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
 
 1. Set ignore_string_type_changes=True which is the default.
 2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .

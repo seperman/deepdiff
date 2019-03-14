@@ -52,7 +52,6 @@ class TestDeepDiffText:
         assert not ddiff
 
     def test_item_type_change_for_strings_override(self):
-
         t1 = 'hello'
         t2 = b'hello'
         ddiff = DeepDiff(t1, t2, ignore_string_type_changes=False)
@@ -66,6 +65,24 @@ class TestDeepDiffText:
                 }
             }
         } == ddiff
+
+    def test_type_change_numeric(self):
+        t1 = 10
+        t2 = 10.0
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
+        assert {} == ddiff
+
+    @pytest.mark.parametrize("t1, t2, expected_result",
+                             [
+                                 (10, 10.0, {}),
+                                 (10, 10.2, {'values_changed': {'root': {'new_value': 10.2, 'old_value': 10}}}),
+                                 (Decimal(10), 10.0, {}),
+                                 ({"a": Decimal(10), "b": 12}, {b"b": 12, "a": 10.0}, {}),
+                             ]
+    )
+    def test_type_change_numeric_when_ignore_order(self, t1, t2, expected_result):
+        ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True)
+        assert expected_result == ddiff
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}

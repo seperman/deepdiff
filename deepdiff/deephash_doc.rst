@@ -87,7 +87,7 @@ But with DeepHash:
     >>> from deepdiff import DeepHash
     >>> obj = {1: 2, 'a': 'b'}
     >>> DeepHash(obj)
-    {4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
+    {4355639248: 2468916477072481777512283587789292749, 4355639280: -35787773492556653776377555218122431491, 4358636128: -88390647972316138151822486391929534118, 4358009664: 8833996863197925870419376694314494743, 4357467952: 34150898645750099477987229399128149852}
 
 So what is exactly the hash of obj in this case?
 DeepHash is calculating the hash of the obj and any other object that obj contains.
@@ -95,14 +95,14 @@ The output of DeepHash is a dictionary of object IDs to their hashes.
 In order to get the hash of obj itself, you need to use the object (or the id of object) to get its hash:
     >>> hashes = DeepHash(obj)
     >>> hashes[obj]
-    (3415089864575009947, 7987229399128149852)
+    34150898645750099477987229399128149852
 
 Which you can write as:
     >>> hashes = DeepHash(obj)[obj]
 
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
-The result hash is (3415089864575009947, 7987229399128149852).
+The result hash is 34150898645750099477987229399128149852.
 In this case the hash of the obj is 128 bit that is divided into 2 64bit integers.
 Using Murmur 3 64bit for hashing is preferred (and is the default behaviour)
 since the chance of hash collision will be minimal and hashing will be deterministic
@@ -110,15 +110,15 @@ and will not depend on the version of the Python.
 
 If you do a deep copy of obj, it should still give you the same hash:
     >>> from copy import deepcopy
-    2481013017017307534
+    >>> obj2 = deepcopy(obj)
     >>> DeepHash(obj2)[obj2]
-    (3415089864575009947, 7987229399128149852)
+    34150898645750099477987229399128149852
 
 Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
     >>> obj3 = {1: 2, b'a': b'b'}
     >>> DeepHash(obj3)[obj3]
-    (3415089864575009947, 7987229399128149852)
+    34150898645750099477987229399128149852
 
 But if you want a different hash if string types are different, set ignore_string_type_changes to True:
     >>> DeepHash(obj3, ignore_string_type_changes=True)[obj3]
-    (6406752576584602448, -8103933101621212760)
+    64067525765846024488103933101621212760

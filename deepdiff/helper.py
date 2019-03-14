@@ -36,6 +36,8 @@ IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+ID_PREFIX = '!>*id'
+
 
 def short_repr(item, max_length=15):
     """Short representation of item if it is too long"""
@@ -178,3 +180,10 @@ def convert_item_or_items_into_compiled_regexes_else_none(items):
     else:
         items = None
     return items
+
+
+def get_id(obj):
+    """
+    Adding some characters to id so they are not just integers to reduce the risk of collision.
+    """
+    return "{}{}".format(ID_PREFIX, id(obj))

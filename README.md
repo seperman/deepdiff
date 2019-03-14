@@ -348,7 +348,7 @@ But with DeepHash:
 >>> from deepdiff import DeepHash
 >>> obj = {1: 2, 'a': 'b'}
 >>> DeepHash(obj)
-{4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
+{4355639248: 2468916477072481777512283587789292749, 4355639280: -35787773492556653776377555218122431491, 4358636128: -88390647972316138151822486391929534118, 4358009664: 8833996863197925870419376694314494743, 4357467952: 34150898645750099477987229399128149852}
 ```
 
 So what is exactly the hash of obj in this case?
@@ -359,7 +359,7 @@ In order to get the hash of obj itself, you need to use the object (or the id of
 ```py
 >>> hashes = DeepHash(obj)
 >>> hashes[obj]
-(3415089864575009947, 7987229399128149852)
+34150898645750099477987229399128149852
 ```
 
 Which you can write as:
@@ -370,7 +370,7 @@ Which you can write as:
 
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
-The result hash is `(3415089864575009947, 7987229399128149852)`.
+The result hash is `34150898645750099477987229399128149852`.
 In this case the hash of the obj is 128 bit that is divided into 2 64bit integers.
 Using Murmur3 128bit for hashing is preferred (and is the default behaviour)
 since the chance of hash collision will be minimal and hashing will be deterministic
@@ -380,7 +380,7 @@ If you do a deep copy of obj, it should still give you the same hash:
 
 ```py
 >>> from copy import deepcopy
-2481013017017307534
+>>> obj2 = deepcopy(obj)
 >>> DeepHash(obj2)[obj2]
 34150898645750099477987229399128149852
 ```

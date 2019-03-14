@@ -50,17 +50,16 @@ class DeepDiff(ResultDict):
                  exclude_regex_paths=None,
                  exclude_types=None,
                  ignore_string_type_changes=None,
-                 include_numeric_type_changes=True,
+                 ignore_numeric_type_changes=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=DeepHash.murmur3_128bit,
-                 transformer=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, ignore_type_in_groups"
-                "exclude_paths, exclude_types, exclude_regex_paths, transformer, verbose_level and view.") % ', '.join(kwargs.keys()))
+                "exclude_paths, exclude_types, exclude_regex_paths, verbose_level and view.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         if ignore_string_type_changes is not None and ignore_type_in_groups is not None:
@@ -69,14 +68,14 @@ class DeepDiff(ResultDict):
             ignore_string_type_changes = True
         self.ignore_type_in_groups = self._get_ignore_types_in_groups(
             ignore_type_in_groups,
-            ignore_string_type_changes, include_numeric_type_changes)
+            ignore_string_type_changes, ignore_numeric_type_changes)
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.exclude_types = set(exclude_types) if exclude_types else None
         self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
         self.ignore_string_type_changes = ignore_string_type_changes
-        self.include_numeric_type_changes = include_numeric_type_changes
+        self.ignore_numeric_type_changes = ignore_numeric_type_changes
         self.hashes = {}
         self.hasher = hasher
 
@@ -89,10 +88,6 @@ class DeepDiff(ResultDict):
 
         Verbose.level = verbose_level
 
-        if transformer:
-            t1 = transformer(t1)
-            t2 = transformer(t2)
-
         root = DiffLevel(t1, t2)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
@@ -103,7 +98,7 @@ class DeepDiff(ResultDict):
         self.update(view_results)
 
     def _get_ignore_types_in_groups(self, ignore_type_in_groups,
-                                    ignore_string_type_changes, include_numeric_type_changes):
+                                    ignore_string_type_changes, ignore_numeric_type_changes):
         if ignore_type_in_groups:
             if isinstance(ignore_type_in_groups[0], type):
                 ignore_type_in_groups = [tuple(ignore_type_in_groups)]
@@ -112,10 +107,10 @@ class DeepDiff(ResultDict):
         else:
             ignore_type_in_groups = []
 
-        if ignore_string_type_changes:
+        if ignore_string_type_changes and self.strings not in ignore_type_in_groups:
             ignore_type_in_groups.append(self.strings)
 
-        if not include_numeric_type_changes:
+        if ignore_numeric_type_changes and self.numbers not in ignore_type_in_groups:
             ignore_type_in_groups.append(self.numbers)
 
         return ignore_type_in_groups
