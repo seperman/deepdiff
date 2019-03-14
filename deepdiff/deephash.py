@@ -12,7 +12,7 @@ from hashlib import sha1
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, current_dir,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             get_id)
+                             get_id, get_significant_digits)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,6 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 KEY_TO_VAL_STR = "{}:{}"
 
-DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 55
 ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 
@@ -80,10 +79,8 @@ class DeepHash(dict):
         hashes = hashes if hashes else {}
         self.update(hashes)
         self[UNPROCESSED] = []
-        if ignore_numeric_type_changes and not significant_digits:
-            self.significant_digits = DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES
-        else:
-            self.significant_digits = significant_digits
+
+        self.significant_digits = get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
         # makes the hash return constant size result if true

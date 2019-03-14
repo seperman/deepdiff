@@ -21,7 +21,7 @@ from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
-                             convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_set_else_none, get_significant_digits,
                              convert_item_or_items_into_compiled_regexes_else_none)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
@@ -79,10 +79,7 @@ class DeepDiff(ResultDict):
         self.hashes = {}
         self.hasher = hasher
 
-        if significant_digits is not None and significant_digits < 0:
-            raise ValueError(
-                "significant_digits must be None or a non-negative integer")
-        self.significant_digits = significant_digits
+        self.significant_digits = get_significant_digits(significant_digits, ignore_numeric_type_changes)
 
         self.tree = TreeResult()
 
@@ -231,6 +228,23 @@ class DeepDiff(ResultDict):
 
         return skip
 
+    def __get_clean_to_keys_mapping(self, keys, level):
+        result = {}
+        for key in keys:
+            if self.ignore_string_type_changes and isinstance(key, bytes):
+                clean_key = key.decode('utf-8')
+            elif self.ignore_numeric_type_changes and isinstance(key, numbers):
+                clean_key = ("{:.%sf}" % self.significant_digits).format(key)
+            else:
+                clean_key = key
+            if clean_key in result:
+                logger.warning(('{} and {} in {} become the same key when ignore_numeric_type_changes'
+                                'or ignore_numeric_type_changes are set to be true.').format(
+                                    key, result[clean_key], level.path()))
+            else:
+                result[clean_key] = key
+        return result
+
     def __diff_dict(self,
                     level,
                     parents_ids=frozenset({}),
@@ -259,6 +273,13 @@ class DeepDiff(ResultDict):
 
         t1_keys = set(t1.keys())
         t2_keys = set(t2.keys())
+        if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
+            t1_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t1_keys, level=level)
+            t2_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t2_keys, level=level)
+            t1_keys = set(t1_clean_to_keys.keys())
+            t2_keys = set(t2_clean_to_keys.keys())
+        else:
+            t1_clean_to_keys = t2_clean_to_keys = None
 
         t_keys_intersect = t2_keys.intersection(t1_keys)
 
@@ -266,6 +287,7 @@ class DeepDiff(ResultDict):
         t_keys_removed = t1_keys - t_keys_intersect
 
         for key in t_keys_added:
+            key = t2_clean_to_keys[key] if t2_clean_to_keys else key
             change_level = level.branch_deeper(
                 notpresent,
                 t2[key],
@@ -274,6 +296,7 @@ class DeepDiff(ResultDict):
             self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
+            key = t1_clean_to_keys[key] if t1_clean_to_keys else key
             change_level = level.branch_deeper(
                 t1[key],
                 notpresent,
@@ -282,15 +305,17 @@ class DeepDiff(ResultDict):
             self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
-            item_id = id(t1[key])
+            key1 = t1_clean_to_keys[key] if t1_clean_to_keys else key
+            key2 = t2_clean_to_keys[key] if t2_clean_to_keys else key
+            item_id = id(t1[key1])
             if parents_ids and item_id in parents_ids:
                 continue
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
             # Go one level deeper
             next_level = level.branch_deeper(
-                t1[key],
-                t2[key],
+                t1[key1],
+                t2[key2],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
             self.__diff(next_level, parents_ids_added)

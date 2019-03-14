@@ -112,6 +112,7 @@ class TestDeepHashPrep:
         result1 = DeepHashPrep(obj1, ignore_string_type_changes=True)
         result2 = DeepHashPrep(obj2, ignore_string_type_changes=True)
         assert result1[obj1] == result2[obj2]
+        assert result1["b"] == result2[b"b"]
 
     def test_number_type_change(self):
         obj1 = 10
