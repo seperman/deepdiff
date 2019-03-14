@@ -433,10 +433,15 @@ class DeepDiff(ResultDict):
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
                                       exclude_types=self.exclude_types,
+                                      exclude_paths=self.exclude_paths,
+                                      exclude_regex_paths=self.exclude_regex_paths,
+                                      hasher=self.hasher,
+                                      ignore_repetition=not self.report_repetition,
                                       significant_digits=self.significant_digits,
                                       ignore_string_type_changes=self.ignore_string_type_changes,
-                                      hasher=self.hasher)
-                item_hash = hashes_all.get(id(item), item)
+                                      ignore_numeric_type_changes=self.ignore_numeric_type_changes
+                                      )
+                item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
                 logger.warning("Can not produce a hash for %s."
                                "Not counting this object.\n %s" %
