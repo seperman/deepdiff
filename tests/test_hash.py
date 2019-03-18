@@ -26,7 +26,7 @@ class CustomClass:
 
 
 # Only the prep part of DeepHash. We don't need to test the actual hash function.
-DeepHashPrep = partial(DeepHash, constant_size=False)
+DeepHashPrep = partial(DeepHash, apply_hash=False)
 
 
 def prep_str(obj, ignore_string_type_changes=True):
@@ -81,15 +81,15 @@ class TestDeepHash:
     def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
         a = 'hello'
         b = b'hello'
-        a_hash = DeepHash(a)[a]
-        b_hash = DeepHash(b)[b]
+        a_hash = DeepHash(a, ignore_string_type_changes=True)[a]
+        b_hash = DeepHash(b, ignore_string_type_changes=True)[b]
         assert a_hash == b_hash
 
     def test_sha1_hash_not_sensitive_to_bytecode_vs_unicode(self):
         a = 'hello'
         b = b'hello'
-        a_hash = DeepHash(a, hasher=DeepHash.sha1hex)[a]
-        b_hash = DeepHash(b, hasher=DeepHash.sha1hex)[b]
+        a_hash = DeepHash(a, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)[a]
+        b_hash = DeepHash(b, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)[b]
         assert a_hash == b_hash
 
 
@@ -99,7 +99,7 @@ class TestDeepHashPrep:
     def test_prep_str(self):
         obj = "a"
         expected_result = {obj: prep_str(obj)}
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result
         expected_result = {obj: prep_str(obj, ignore_string_type_changes=False)}
         result = DeepHashPrep(obj, ignore_string_type_changes=False)
@@ -134,16 +134,16 @@ class TestDeepHashPrep:
         """
         obj1 = "a"
         expected_result = {obj1: prep_str(obj1)}
-        result = DeepHashPrep(obj1)
+        result = DeepHashPrep(obj1, ignore_string_type_changes=True)
         assert expected_result == result
         obj2 = "b"
-        result = DeepHashPrep(obj2)
+        result = DeepHashPrep(obj2, ignore_string_type_changes=True)
         assert obj1 not in result
 
     def test_dict_in_dict(self):
         obj2 = {2: 3}
         obj = {'a': obj2}
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert 'a' in result
         assert obj2 in result
 
@@ -161,7 +161,7 @@ class TestDeepHashPrep:
             string1: string1_prepped,
             obj_id: '{}:{},int:10,int:20'.format(func_str, string1_prepped),
         }
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result
 
     def test_list_and_tuple(self):
@@ -176,7 +176,7 @@ class TestDeepHashPrep:
         x_prep = prep_str(x)
         Point = namedtuple('Point', [x])
         obj = Point(x=11)
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         if pypy3:
             assert result[get_id(obj)] == 'ntdict:{%s:int:11}' % x
         else:
@@ -234,7 +234,7 @@ class TestDeepHashPrep:
             string1: string1_prepped,
             get_id(obj): 'dict:{int:1:int:10;int:2:int:20;%s:%s}' % (key1, string1)
         }
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result
 
     def test_dict_in_list(self):
@@ -256,7 +256,7 @@ class TestDeepHashPrep:
             'list:dict:{int:1:int:10;int:2:int:20;%s:%s},int:0' %
             (key1, string1)
         }
-        result = DeepHashPrep(obj)
+        result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result
 
     def test_nested_lists_same_hash(self):
@@ -465,7 +465,7 @@ class TestDeepHashSHA1:
         expected_result = {
             obj: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
         }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
 
     def test_prep_str_sha1_fail_if_mutable(self):
@@ -478,10 +478,10 @@ class TestDeepHashSHA1:
         expected_result = {
             obj1: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
         }
-        result = DeepHash(obj1, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj1, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
         obj2 = "b"
-        result = DeepHash(obj2, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj2, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert obj1 not in result
 
     def test_bytecode(self):
@@ -489,7 +489,7 @@ class TestDeepHashSHA1:
         expected_result = {
             obj: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
         }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
 
     def test_list1(self):
@@ -501,7 +501,7 @@ class TestDeepHashSHA1:
             10: DeepHash.sha1hex('int:10'),
             20: DeepHash.sha1hex('int:20'),
         }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
 
     def test_dict1(self):
@@ -517,7 +517,7 @@ class TestDeepHashSHA1:
             string1: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8',
             get_id(obj): '11e23f096df81b1ccab0c309cdf8b4ba5a0a6895'
         }
-        result = DeepHash(obj, hasher=DeepHash.sha1hex)
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
 
 
@@ -531,4 +531,24 @@ class TestCleaningString:
     ])
     def test_clean_type(self, text, ignore_string_type_changes, expected_result):
         result = prepare_string_for_hashing(text, ignore_string_type_changes=ignore_string_type_changes)
+        assert expected_result == result
+
+
+class TestDeepHashMurmur3:
+    """DeepHash with Murmur3 Hash Tests."""
+
+    def test_prep_str_murmur3_64bit(self):
+        obj = "a"
+        expected_result = {
+            obj: 424475663186367154
+        }
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_64bit)
+        assert expected_result == result
+
+    def test_prep_str_murmur3_128bit(self):
+        obj = "a"
+        expected_result = {
+            obj: 119173504597196970070553896747624927922
+        }
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_128bit)
         assert expected_result == result

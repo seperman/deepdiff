@@ -12,6 +12,7 @@ import logging
 import json
 import jsonpickle
 import warnings
+import os
 
 from decimal import Decimal
 from itertools import zip_longest
@@ -21,12 +22,13 @@ from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
-                             convert_item_or_items_into_set_else_none, get_significant_digits,
-                             convert_item_or_items_into_compiled_regexes_else_none)
+                             convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_compiled_regexes_else_none, current_dir)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
 from deepdiff.deephash import DeepHash
+from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('once', DeprecationWarning)
@@ -34,22 +36,24 @@ warnings.simplefilter('once', DeprecationWarning)
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
+with open(os.path.join(current_dir, 'diff_doc.rst'), 'r') as doc_file:
+    doc = doc_file.read()
 
-class DeepDiff(ResultDict):
-    numbers = numbers
-    strings = strings
+
+class DeepDiff(ResultDict, Base):
+    __doc__ = doc
 
     def __init__(self,
                  t1,
                  t2,
                  ignore_order=False,
-                 ignore_type_in_groups=None,
                  report_repetition=False,
                  significant_digits=None,
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
-                 ignore_string_type_changes=None,
+                 ignore_type_in_groups=None,
+                 ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
@@ -58,15 +62,13 @@ class DeepDiff(ResultDict):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are ignore_order, report_repetition, significant_digits, ignore_type_in_groups"
-                "exclude_paths, exclude_types, exclude_regex_paths, verbose_level and view.") % ', '.join(kwargs.keys()))
+                "The valid parameters are ignore_order, report_repetition, significant_digits, "
+                "exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                "ignore_string_type_changes, ignore_numeric_type_changes, verbose_level, view, "
+                "and hasher.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
-        if ignore_string_type_changes is not None and ignore_type_in_groups is not None:
-            raise ValueError('Please set either ignore_string_type_changes or ignore_type_in_groups but not both.')
-        if ignore_type_in_groups is None and ignore_string_type_changes is None:
-            ignore_string_type_changes = True
-        self.ignore_type_in_groups = self._get_ignore_types_in_groups(
+        self.ignore_type_in_groups = self.get_ignore_types_in_groups(
             ignore_type_in_groups,
             ignore_string_type_changes, ignore_numeric_type_changes)
         self.report_repetition = report_repetition
@@ -79,7 +81,7 @@ class DeepDiff(ResultDict):
         self.hashes = {}
         self.hasher = hasher
 
-        self.significant_digits = get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
 
         self.tree = TreeResult()
 
@@ -93,24 +95,6 @@ class DeepDiff(ResultDict):
         self.view = view
         view_results = self._get_view_results(view)
         self.update(view_results)
-
-    def _get_ignore_types_in_groups(self, ignore_type_in_groups,
-                                    ignore_string_type_changes, ignore_numeric_type_changes):
-        if ignore_type_in_groups:
-            if isinstance(ignore_type_in_groups[0], type):
-                ignore_type_in_groups = [tuple(ignore_type_in_groups)]
-            else:
-                ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
-        else:
-            ignore_type_in_groups = []
-
-        if ignore_string_type_changes and self.strings not in ignore_type_in_groups:
-            ignore_type_in_groups.append(self.strings)
-
-        if ignore_numeric_type_changes and self.numbers not in ignore_type_in_groups:
-            ignore_type_in_groups.append(self.numbers)
-
-        return ignore_type_in_groups
 
     def _get_view_results(self, view):
         """

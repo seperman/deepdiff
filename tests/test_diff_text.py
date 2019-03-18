@@ -48,7 +48,7 @@ class TestDeepDiffText:
 
         t1 = 'hello'
         t2 = b'hello'
-        ddiff = DeepDiff(t1, t2)
+        ddiff = DeepDiff(t1, t2, ignore_string_type_changes=True)
         assert not ddiff
 
     def test_item_type_change_for_strings_override(self):

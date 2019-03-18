@@ -12,7 +12,8 @@ from hashlib import sha1
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, current_dir,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             get_id, get_significant_digits)
+                             get_id)
+from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ with open(os.path.join(current_dir, 'deephash_doc.rst'), 'r') as doc_file:
     doc = doc_file.read()
 
 
-class DeepHash(dict):
+class DeepHash(dict, Base):
     __doc__ = doc
 
     MURMUR_SEED = 1203
@@ -57,8 +58,9 @@ class DeepHash(dict):
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
-                 constant_size=True,
-                 ignore_string_type_changes=True,
+                 apply_hash=True,
+                 ignore_type_in_groups=None,
+                 ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
                  **kwargs):
         if kwargs:
@@ -66,7 +68,7 @@ class DeepHash(dict):
                 ("The following parameter(s) are not valid: %s\n"
                  "The valid parameters are obj, hashes, exclude_types,"
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition,"
-                 "significant_digits, constant_size, ignore_string_type_changes,"
+                 "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes,"
                  "ignore_numeric_type_changes") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
@@ -80,13 +82,16 @@ class DeepHash(dict):
         self.update(hashes)
         self[UNPROCESSED] = []
 
-        self.significant_digits = get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.ignore_type_in_groups = self.get_ignore_types_in_groups(
+            ignore_type_in_groups,
+            ignore_string_type_changes, ignore_numeric_type_changes)
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
-        self.constant_size = constant_size
+        self.apply_hash = apply_hash
 
         self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
 
@@ -102,8 +107,22 @@ class DeepHash(dict):
         return sha1(obj).hexdigest()
 
     @staticmethod
+    def murmur3_64bit(obj):
+        """
+        Use murmur3_64bit for 64 bit hash by passing this method:
+        hasher=DeepHash.murmur3_64bit
+        """
+        obj = obj.encode('utf-8')
+        # This version of murmur3 returns two 64bit integers.
+        return mmh3.hash64(obj, DeepHash.MURMUR_SEED)[0]
+
+    @staticmethod
     def murmur3_128bit(obj):
-        """Use murmur3_128bit for 128 bit hash (default)."""
+        """
+        Use murmur3_128bit for bit hash by passing this method:
+        hasher=DeepHash.murmur3_128bit
+        This hasher is the default hasher.
+        """
         obj = obj.encode('utf-8')
         return mmh3.hash128(obj, DeepHash.MURMUR_SEED)
 
@@ -290,7 +309,7 @@ class DeepHash(dict):
         elif result is unprocessed:
             pass
 
-        elif self.constant_size:
+        elif self.apply_hash:
             if isinstance(obj, strings):
                 result_cleaned = result
             else:

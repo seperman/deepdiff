@@ -187,15 +187,3 @@ def get_id(obj):
     Adding some characters to id so they are not just integers to reduce the risk of collision.
     """
     return "{}{}".format(ID_PREFIX, id(obj))
-
-
-DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 55
-
-
-def get_significant_digits(significant_digits, ignore_numeric_type_changes):
-    if ignore_numeric_type_changes and not significant_digits:
-        significant_digits = DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES
-    if significant_digits is not None and significant_digits < 0:
-        raise ValueError(
-            "significant_digits must be None or a non-negative integer")
-    return significant_digits
