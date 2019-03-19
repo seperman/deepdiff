@@ -89,7 +89,7 @@ Example of using the text view.
     >>> t2 = {1:1, 3:3, 5:5, 6:6}
     >>> ddiff = DeepDiff(t1, t2)
     >>> print(ddiff)
-    {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
+    {'dictionary_item_added': [root[5], root[6]], 'dictionary_item_removed': [root[4]]}
 
 So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
 
@@ -129,8 +129,8 @@ Item added and/or removed
     >>> t2 = {1:1, 3:3, 5:5, 6:6}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff)
-    {'dictionary_item_added': {'root[5]', 'root[6]'},
-     'dictionary_item_removed': {'root[4]'}}
+    {'dictionary_item_added': [root[5], root[6]],
+     'dictionary_item_removed': [root[4]]}
 
 Set verbose level to 2 in order to see the added or removed items with their values
     >>> t1 = {1:1, 3:3, 4:4}
@@ -230,7 +230,7 @@ List that contains dictionary:
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint (ddiff, indent = 2)
-    { 'dictionary_item_removed': {"root[4]['b'][2][2]"},
+    { 'dictionary_item_removed': [root[4]['b'][2][2]],
       'values_changed': {"root[4]['b'][2][1]": {'new_value': 3, 'old_value': 1}}}
 
 Sets:
@@ -238,7 +238,7 @@ Sets:
     >>> t2 = {1, 2, 3, 5}
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint(ddiff)
-    {'set_item_added': {'root[5]', 'root[3]'}, 'set_item_removed': {'root[8]'}}
+    {'set_item_added': [root[3], root[5]], 'set_item_removed': [root[8]]}
 
 Named Tuples:
     >>> from collections import namedtuple
@@ -263,7 +263,7 @@ Custom objects:
 Object attribute added:
     >>> t2.c = "new attribute"
     >>> pprint(DeepDiff(t1, t2))
-    {'attribute_added': {'root.c'},
+    {'attribute_added': [root.c],
      'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
 Approximate decimals comparison (Significant digits after the point):
@@ -272,7 +272,7 @@ Approximate decimals comparison (Significant digits after the point):
     >>> DeepDiff(t1, t2, significant_digits=0)
     {}
     >>> DeepDiff(t1, t2, significant_digits=1)
-    {'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
+    {'values_changed': {'root': {'new_value': Decimal('1.57'), 'old_value': Decimal('1.52')}}}
 
 Approximate float comparison (Significant digits after the point):
     >>> t1 = [ 1.1129, 1.3359 ]
@@ -354,9 +354,9 @@ Ignore Type Number - Dictionary that contains float and integer:
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint(ddiff, indent=2)
     { 'type_changes': { 'root[1]': { 'new_type': <class 'float'>,
-                             'new_value': 1.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 1}}}
+                                     'new_value': 1.0,
+                                     'old_type': <class 'int'>,
+                                     'old_value': 1}}}
     >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
     >>> pprint(ddiff, indent=2)
     {}
@@ -369,17 +369,17 @@ Ignore Type Number - List that contains float and integer:
     >>> ddiff = DeepDiff(t1, t2)
     >>> pprint(ddiff, indent=2)
     { 'type_changes': { 'root[0]': { 'new_type': <class 'float'>,
-                             'new_value': 1.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 1},
-                'root[1]': { 'new_type': <class 'float'>,
-                             'new_value': 2.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 2},
-                'root[2]': { 'new_type': <class 'float'>,
-                             'new_value': 3.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 3}}}
+                                     'new_value': 1.0,
+                                     'old_type': <class 'int'>,
+                                     'old_value': 1},
+                        'root[1]': { 'new_type': <class 'float'>,
+                                     'new_value': 2.0,
+                                     'old_type': <class 'int'>,
+                                     'old_value': 2},
+                        'root[2]': { 'new_type': <class 'float'>,
+                                     'new_value': 3.0,
+                                     'old_type': <class 'int'>,
+                                     'old_value': 3}}}
     >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
     >>> pprint(ddiff, indent=2)
     {}
@@ -469,11 +469,11 @@ Value of an item has changed (Tree View)
     >>> t2 = {1:1, 2:4, 3:3}
     >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
     >>> ddiff_verbose0
-    {'values_changed': {<root[2]>}}
+    {'values_changed': [<root[2]>]}
     >>>
     >>> ddiff_verbose1 = DeepDiff(t1, t2, verbose_level=1, view='tree')
     >>> ddiff_verbose1
-    {'values_changed': {<root[2] t1:2, t2:4>}}
+    {'values_changed': [<root[2] t1:2, t2:4>]}
     >>> set_of_values_changed = ddiff_verbose1['values_changed']
     >>> # since set_of_values_changed includes only one item in a set
     >>> # in order to get that one item we can:
@@ -493,13 +493,13 @@ List difference (Tree View)
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> ddiff
-    {'iterable_item_removed': {<root[4]['b'][3] t1:4, t2:Not Present>, <root[4]['b'][2] t1:3, t2:Not Present>}}
+    {'iterable_item_removed': [<root[4]['b'][2] t1:3, t2:not present>, <root[4]['b'][3] t1:4, t2:not present>]}
     >>> # Note that the iterable_item_removed is a set. In this case it has 2 items in it.
     >>> # One way to get one item from the set is to convert it to a list
     >>> # And then get the first item of the list:
     >>> removed = list(ddiff['iterable_item_removed'])[0]
     >>> removed
-    <root[4]['b'][2] t1:3, t2:Not Present>
+    <root[4]['b'][2] t1:3, t2:not present>
     >>>
     >>> parent = removed.up
     >>> parent
@@ -524,16 +524,15 @@ List difference 2  (Tree View)
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> pprint(ddiff, indent = 2)
-    { 'iterable_item_added': {<root[4]['b'][3] t1:Not Present, t2:3>},
-      'values_changed': { <root[4]['b'][1] t1:2, t2:3>,
-                          <root[4]['b'][2] t1:3, t2:2>}}
+    { 'iterable_item_added': [<root[4]['b'][3] t1:not present, t2:3>],
+      'values_changed': [<root[4]['b'][1] t1:2, t2:3>, <root[4]['b'][2] t1:3, t2:2>]}
     >>>
     >>> # Note that iterable_item_added is a set with one item.
     >>> # So in order to get that one item from it, we can do:
     >>>
     >>> (added,) = ddiff['iterable_item_added']
     >>> added
-    <root[4]['b'][3] t1:Not Present, t2:3>
+    <root[4]['b'][3] t1:not present, t2:3>
     >>> added.up.up
     <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
     >>> added.up.up.path()
@@ -550,9 +549,8 @@ List difference ignoring order but reporting repetitions (Tree View)
     >>> t2 = [4, 4, 1]
     >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree')
     >>> pprint(ddiff, indent=2)
-    { 'iterable_item_removed': {<root[1] t1:3, t2:Not Present>},
-      'repetition_change': { <root[3] {'repetition': {'old_repeat': 1,...}>,
-                             <root[0] {'repetition': {'old_repeat': 2,...}>}}
+    { 'iterable_item_removed': [<root[1] t1:3, t2:not present>],
+      'repetition_change': [<root[3] {'repetition': {'old_repeat': 1,...}>, <root[0] {'repetition': {'old_repeat': 2,...}>]}
     >>>
     >>> # repetition_change is a set with 2 items.
     >>> # in order to get those 2 items, we can do the following.
@@ -561,7 +559,7 @@ List difference ignoring order but reporting repetitions (Tree View)
     >>>
     >>> (repeat1, repeat2) = ddiff['repetition_change']
     >>> repeat1  # the default verbosity is set to 1.
-    <root[0] {'repetition': {'old_repeat': 2,...}>
+    <root[3] {'repetition': {'old_repeat': 1,...}>
     >>> # The actual data regarding the repetitions can be found in the repetition attribute:
     >>> repeat1.repetition
     {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
@@ -569,7 +567,7 @@ List difference ignoring order but reporting repetitions (Tree View)
     >>> # If you change the verbosity, you will see less:
     >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree', verbose_level=0)
     >>> ddiff
-    {'repetition_change': {<root[3]>, <root[0]>}, 'iterable_item_removed': {<root[1]>}}
+    {'repetition_change': [<root[3]>, <root[0]>], 'iterable_item_removed': [<root[1]>]}
     >>> (repeat1, repeat2) = ddiff['repetition_change']
     >>> repeat1
     <root[0]>
@@ -590,15 +588,15 @@ List that contains dictionary (Tree View)
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> pprint (ddiff, indent = 2)
-    { 'dictionary_item_removed': {<root[4]['b'][2][2] t1:2, t2:Not Present>},
-      'values_changed': {<root[4]['b'][2][1] t1:1, t2:3>}}
+    { 'dictionary_item_removed': [<root[4]['b'][2][2] t1:2, t2:not present>],
+      'values_changed': [<root[4]['b'][2][1] t1:1, t2:3>]}
 
 Sets (Tree View):
     >>> t1 = {1, 2, 8}
     >>> t2 = {1, 2, 3, 5}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> print(ddiff)
-    {'set_item_removed': {<root: t1:8, t2:Not Present>}, 'set_item_added': {<root: t1:Not Present, t2:5>, <root: t1:Not Present, t2:3>}}
+    {'set_item_removed': [<root: t1:8, t2:not present>], 'set_item_added': [<root: t1:not present, t2:3>, <root: t1:not present, t2:5>]}
     >>> # grabbing one item from set_item_removed set which has one item only
     >>> (item,) = ddiff['set_item_removed']
     >>> item.up
@@ -612,7 +610,7 @@ Named Tuples (Tree View):
     >>> t1 = Point(x=11, y=22)
     >>> t2 = Point(x=11, y=23)
     >>> print(DeepDiff(t1, t2, view='tree'))
-    {'values_changed': {<root.y t1:22, t2:23>}}
+    {'values_changed': [<root.y t1:22, t2:23>]}
 
 Custom objects (Tree View):
     >>> class ClassA(object):
@@ -624,13 +622,13 @@ Custom objects (Tree View):
     >>> t2 = ClassA(2)
     >>>
     >>> print(DeepDiff(t1, t2, view='tree'))
-    {'values_changed': {<root.b t1:1, t2:2>}}
+    {'values_changed': [<root.b t1:1, t2:2>]}
 
 Object attribute added (Tree View):
     >>> t2.c = "new attribute"
     >>> pprint(DeepDiff(t1, t2, view='tree'))
-    {'attribute_added': {<root.c t1:Not Present, t2:'new attribute'>},
-     'values_changed': {<root.b t1:1, t2:2>}}
+    {'attribute_added': [<root.c t1:not present, t2:'new attribute'>],
+     'values_changed': [<root.b t1:1, t2:2>]}
 
 Approximate decimals comparison (Significant digits after the point) (Tree View):
     >>> t1 = Decimal('1.52')
@@ -639,7 +637,7 @@ Approximate decimals comparison (Significant digits after the point) (Tree View)
     {}
     >>> ddiff = DeepDiff(t1, t2, significant_digits=1, view='tree')
     >>> ddiff
-    {'values_changed': {<root t1:Decimal('1.52'), t2:Decimal('1.57')>}}
+    {'values_changed': [<root t1:Decimal('1.52'), t2:Decimal('1.57')>]}
     >>> (change1,) = ddiff['values_changed']
     >>> change1
     <root t1:Decimal('1.52'), t2:Decimal('1.57')>
@@ -658,11 +656,10 @@ Approximate float comparison (Significant digits after the point) (Tree View):
     {}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> pprint(ddiff, indent=2)
-    { 'values_changed': { <root[0] t1:1.1129, t2:1.113>,
-                          <root[1] t1:1.3359, t2:1.3362>}}
+    { 'values_changed': [<root[0] t1:1.1129, t2:1.113>, <root[1] t1:1.3359, t2:1.3362>]}
     >>> ddiff = DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1, view='tree')
     >>> ddiff
-    {'values_changed': {<root t1:1.23e+20, t2:1.24e+20>}}
+    {'values_changed': [<root t1:1.23e+20, t2:1.24e+20>]}
 
 **Exclude paths**
 
@@ -676,6 +673,7 @@ use `exclude_paths` and pass a set or list of paths to exclude, if only one item
     {}
 
 You can also exclude using regular expressions by using `exclude_regex_paths` and pass a set or list of path regexes to exclude. The items in the list could be raw regex strings or compiled regex objects.
+    >>> import re
     >>> t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
     >>> t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
     >>> print(DeepDiff(t1, t2, exclude_regex_paths=r"root\[\d+\]\['b'\]"))
@@ -728,9 +726,9 @@ Serialize and then deserialize back to deepdiff
     >>> t1 = {1: 1, 2: 2, 3: 3}
     >>> t2 = {1: 1, 2: "2", 3: 3}
     >>> ddiff = DeepDiff(t1, t2)
-    >>> jsoned = ddiff.to_json_pickle
+    >>> jsoned = ddiff.to_json_pickle()
     >>> jsoned
-    '{"type_changes": {"root[2]": {"py/object": "dict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
+    '{"type_changes": {"root[2]": {"new_type": {"py/type": "builtins.str"}, "new_value": "2", "old_type": {"py/type": "builtins.int"}, "old_value": 2}}}'
     >>> ddiff_new = DeepDiff.from_json_pickle(jsoned)
     >>> ddiff == ddiff_new
     True

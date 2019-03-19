@@ -679,7 +679,7 @@ class DeepDiff(ResultDict, Base):
 
             >>> default_mapping = {A: lambda x: 'obj A', B: lambda x: 'obj B'}
             >>> ddiff.to_json(default_mapping=default_mapping)
-            >>> '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
+            '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
         return json.dumps(self.to_dict(), default=json_convertor_default(default_mapping=default_mapping))
 

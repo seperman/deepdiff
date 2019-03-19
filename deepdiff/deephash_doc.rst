@@ -111,6 +111,7 @@ ignore_numeric_type_changes: Boolean, default = True
     231678797214551245419120414857003063149
 
 You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+    >>> from deepdiff import DeepDiff
     >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
 
 
@@ -133,8 +134,8 @@ ignore_type_in_groups example with custom objects:
     >>> burritos = [burrito]
     >>> tacos = [taco]
     >>>
-    >>> d1 = DeepHash(burritos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
-    >>> d2 = DeepHash(tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+    >>> d1 = DeepHash(burritos, ignore_type_in_groups=[(Taco, Burrito)])
+    >>> d2 = DeepHash(tacos, ignore_type_in_groups=[(Taco, Burrito)])
     >>> d1[burrito] == d2[taco]
     True
 
