@@ -54,6 +54,8 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 DeepDiff gets the difference of 2 objects.
 
+Please take a look at the DeepDiff docs at <deepdiff/diff_doc.rst>
+
 ## Parameters
 
 In addition to the 2 objects being compared:
