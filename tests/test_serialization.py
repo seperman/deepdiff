@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import pytest
 from deepdiff import DeepDiff
 
@@ -73,5 +74,5 @@ class TestDeepAdditions:
         ddiff = DeepDiff(t1, t2)
         default_mapping = {A: lambda x: 'obj A', B: lambda x: 'obj B'}
         result = ddiff.to_json(default_mapping=default_mapping)
-        expected_result = r'{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
-        assert expected_result == result
+        expected_result = {"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}
+        assert expected_result == json.loads(result)
