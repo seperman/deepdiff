@@ -37,8 +37,8 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 DeepDiff gets the difference of 2 objects.
 
-Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
-The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
+> - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
 ## Examples
 
@@ -246,8 +246,8 @@ Example:
 ```
 
 
-Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
-The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
+> - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
 
 # Deep Search
@@ -279,8 +279,8 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 {'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
 ```
 
-Please take a look at the [DeepSearch docs](deepdiff/search_doc.rst)
-The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - Please take a look at the [DeepSearch docs](deepdiff/search_doc.rst)
+> - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
 # Deep Hash
 (New in v4-0-0)
@@ -288,8 +288,8 @@ The full documentation can be found on <https://deepdiff.readthedocs.io>
 DeepHash is designed to give you hash of ANY python object based on its contents even if the object is not considered hashable!
 DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
 
-Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
-The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
+> - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
 Let's say you have a dictionary object.
 
@@ -337,8 +337,8 @@ Which you can write as:
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
 
-Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
-The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
+> - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
 
 # Using DeepDiff in unit tests
