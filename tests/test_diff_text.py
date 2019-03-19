@@ -1333,6 +1333,13 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
+    def test_ignore_type_in_groups_numbers_and_strings_when_ignore_order(self):
+        t1 = [1, 2, 3, 'a']
+        t2 = [1.0, 2.0, 3.3, b'a']
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
+        result = {'iterable_item_added': {'root[2]': 3.3}, 'iterable_item_removed': {'root[2]': 3}}
+        assert result == ddiff
+
     @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):
         """
