@@ -888,7 +888,7 @@ class TestDeepDiffText:
             __slots__ = ['x']
 
         ddiff = DeepDiff(ClassA, ClassB, ignore_type_in_groups=[(ClassA, ClassB)])
-        result = {'iterable_item_removed': {'root.__slots__[1]': 'y'}, 'attribute_removed': ['root.__init__', 'root.y']}
+        result = {'iterable_item_removed': {'root.__slots__[1]': 'y'}, 'attribute_removed': {'root.__init__', 'root.y'}}
         assert result == ddiff
 
     def test_custom_objects_slot_in_parent_class_change(self):
@@ -1194,6 +1194,11 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_unicode_string_type_changes(self):
+        """
+        These tests were written when DeepDiff was in Python 2.
+        Writing b"你好" throws an exception in Python 3 so can't be used for testing.
+        These tests are currently useless till they are rewritten properly.
+        """
         unicode_string = {"hello": u"你好"}
         ascii_string = {"hello": "你好"}
         ddiff = DeepDiff(unicode_string, ascii_string)

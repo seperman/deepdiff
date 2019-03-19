@@ -18,8 +18,8 @@ py3 = py_major_version == '3'
 py4 = py_major_version == '4'
 
 if py4:
-    logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')
-    py3 = True
+    logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover
+    py3 = True  # pragma: no cover
 
 if py2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
@@ -137,6 +137,7 @@ JSON_CONVERTOR = {
     Decimal: float,
     OrderedSet: list,
     type: lambda x: x.__name__,
+    bytes: lambda x: x.decode('utf-8')
 }
 
 
