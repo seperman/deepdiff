@@ -10,6 +10,9 @@ At the core of it, DeepHash is a deterministic serialization of your object into
 can be passed to a hash function. By default it uses Murmur 3 128 bit hash function which is a
 fast, non-cryptographic hashing function. You have the option to pass any another hashing function to be used instead.
 
+**Import**
+    >>> from deepdiff import DeepHash
+
 **Parameters**
 
 obj : any object, The object to be hashed based on its content.
@@ -62,9 +65,32 @@ apply_hash: Boolean, default = True
     The only time you want the apply_hash to be False is if you want to know what
     the string representation of your object is BEFORE it gets hashed.
 
+ignore_type_in_groups
+    Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
+    The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
+
+    For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
+
+    1. Set ignore_string_type_changes=True which is the default.
+    2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
+
+    Now what if you want also typeA and typeB to be ignored when comparing agains each other?
+
+    1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
+    2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
+
 ignore_string_type_changes: Boolean, default = True
     string type conversions should not affect the hash output when this is set to True.
     For example "Hello" and b"Hello" should produce the same hash.
+
+By setting it to True, both the string and bytes of hello return the same hash.
+    >>> DeepHash(b'hello', ignore_string_type_changes=True)
+    {b'hello': 221860156526691709602818861774599422448}
+    >>> DeepHash('hello', ignore_string_type_changes=True)
+    {'hello': 221860156526691709602818861774599422448}
+
+ignore_numeric_type_changes
+Default: False
 
 ignore_numeric_type_changes: Boolean, default = True
     numeric type conversions should not affect the hash output when this is set to True.
@@ -76,6 +102,41 @@ ignore_numeric_type_changes: Boolean, default = True
     For example if significant_digits=5, 1.1, Decimal(1.1) are both converted to 1.10000
 
     That way they both produce the same hash.
+
+    >>> t1 = {1: 1, 2: 2.22}
+    >>> t2 = {1: 1.0, 2: 2.22}
+    >>> DeepHash(t1)[1]
+    231678797214551245419120414857003063149
+    >>> DeepHash(t1)[1.0]
+    231678797214551245419120414857003063149
+
+You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+    >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
+
+
+ignore_type_in_groups example with custom objects:
+    >>> class Burrito:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> class Taco:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> burrito = Burrito()
+    >>> taco = Taco()
+    >>>
+    >>> burritos = [burrito]
+    >>> tacos = [taco]
+    >>>
+    >>> d1 = DeepHash(burritos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+    >>> d2 = DeepHash(tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+    >>> d1[burrito] == d2[taco]
+    True
 
 **Returns**
     A dictionary of {item: item hash}.
@@ -122,19 +183,21 @@ If you do a deep copy of obj, it should still give you the same hash:
     >>> DeepHash(obj2)[obj2]
     34150898645750099477987229399128149852
 
-Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
+Note that by default DeepHash will include string type differences. So if your strings were bytes:
     >>> obj3 = {1: 2, b'a': b'b'}
     >>> DeepHash(obj3)[obj3]
-    34150898645750099477987229399128149852
-
-But if you want a different hash if string types are different, set ignore_string_type_changes to False:
-    >>> DeepHash(obj3, ignore_string_type_changes=False)[obj3]
     64067525765846024488103933101621212760
 
-On the other hand, ignore_numeric_type_changes is by default False.
+But if you want the same hash if string types are different, set ignore_string_type_changes to True:
+    >>> DeepHash(obj3, ignore_string_type_changes=True)[obj3]
+    34150898645750099477987229399128149852
+
+ignore_numeric_type_changes is by default False too.
     >>> obj1 = {4:10}
     >>> obj2 = {4.0: Decimal(10.0)}
     >>> DeepHash(obj1)[4] == DeepHash(obj2)[4.0]
     False
+
+But by setting it to True, we can get the same hash.
     >>> DeepHash(obj1, ignore_numeric_type_changes=True)[4] == DeepHash(obj2, ignore_numeric_type_changes=True)[4.0]
     True

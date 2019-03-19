@@ -181,92 +181,6 @@ String difference 2
      2
      End
 
-
-Type change
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff, indent = 2)
-    { 'type_changes': { "root[4]['b']": { 'new_type': <class 'str'>,
-                                          'new_value': 'world\n\n\nEnd',
-                                          'old_type': <class 'list'>,
-                                          'old_value': [1, 2, 3]}}}
-
-And if you don't care about the value of items that have changed type, please set verbose level to 0
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:"2", 3:3}
-    >>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
-    { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
-                                     'old_type': <class 'int'>}}}
-
-ignore_type_in_groups
-
-Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
-The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
-
-For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
-
-1. Set ignore_string_type_changes=True which is the default.
-2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
-
-Now what if you want also typeA and typeB to be ignored when comparing agains each other?
-
-1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
-2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
-
-ignore_string_type_changes
-Default: False
-    >>> DeepDiff(b'hello', 'hello', ignore_string_type_changes=True)
-    {}
-    >>> DeepDiff(b'hello', 'hello')
-    {'type_changes': {'root': {'old_type': <class 'bytes'>, 'new_type': <class 'str'>, 'old_value': b'hello', 'new_value': 'hello'}}}
-
-ignore_numeric_type_changes
-Default: False
-
-Ignore Type Number - Dictionary that contains float and integer:
-    >>> from deepdiff import DeepDiff
-    >>> from pprint import pprint
-    >>> t1 = {1: 1, 2: 2.22}
-    >>> t2 = {1: 1.0, 2: 2.22}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint(ddiff, indent=2)
-    { 'type_changes': { 'root[1]': { 'new_type': <class 'float'>,
-                             'new_value': 1.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 1}}}
-    >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
-    >>> pprint(ddiff, indent=2)
-    {}
-
-Ignore Type Number - List that contains float and integer:
-    >>> from deepdiff import DeepDiff
-    >>> from pprint import pprint
-    >>> t1 = [1, 2, 3]
-    >>> t2 = [1.0, 2.0, 3.0]
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint(ddiff, indent=2)
-    { 'type_changes': { 'root[0]': { 'new_type': <class 'float'>,
-                             'new_value': 1.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 1},
-                'root[1]': { 'new_type': <class 'float'>,
-                             'new_value': 2.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 2},
-                'root[2]': { 'new_type': <class 'float'>,
-                             'new_value': 3.0,
-                             'old_type': <class 'int'>,
-                             'old_value': 3}}}
-    >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
-    >>> pprint(ddiff, indent=2)
-    {}
-
-You can pass a list of tuples if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
-
-ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
-
-
 List difference
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
@@ -373,6 +287,115 @@ Approximate float comparison (Significant digits after the point):
 .. note::
     All the examples for the text view work for the tree view too.
     You just need to set view='tree' to get it in tree form.
+
+
+**Ignore Type Changes**
+
+Type change
+    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
+    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> pprint (ddiff, indent = 2)
+    { 'type_changes': { "root[4]['b']": { 'new_type': <class 'str'>,
+                                          'new_value': 'world\n\n\nEnd',
+                                          'old_type': <class 'list'>,
+                                          'old_value': [1, 2, 3]}}}
+
+And if you don't care about the value of items that have changed type, please set verbose level to 0
+    >>> t1 = {1:1, 2:2, 3:3}
+    >>> t2 = {1:1, 2:"2", 3:3}
+    >>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
+    { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
+                                     'old_type': <class 'int'>}}}
+
+ignore_type_in_groups
+
+Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
+The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
+
+For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
+
+1. Set ignore_string_type_changes=True which is the default.
+2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
+
+Now what if you want also typeA and typeB to be ignored when comparing agains each other?
+
+1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
+2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
+
+ignore_string_type_changes
+Default: False
+    >>> DeepDiff(b'hello', 'hello', ignore_string_type_changes=True)
+    {}
+    >>> DeepDiff(b'hello', 'hello')
+    {'type_changes': {'root': {'old_type': <class 'bytes'>, 'new_type': <class 'str'>, 'old_value': b'hello', 'new_value': 'hello'}}}
+
+ignore_numeric_type_changes
+Default: False
+
+Ignore Type Number - Dictionary that contains float and integer:
+    >>> from deepdiff import DeepDiff
+    >>> from pprint import pprint
+    >>> t1 = {1: 1, 2: 2.22}
+    >>> t2 = {1: 1.0, 2: 2.22}
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> pprint(ddiff, indent=2)
+    { 'type_changes': { 'root[1]': { 'new_type': <class 'float'>,
+                             'new_value': 1.0,
+                             'old_type': <class 'int'>,
+                             'old_value': 1}}}
+    >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
+    >>> pprint(ddiff, indent=2)
+    {}
+
+Ignore Type Number - List that contains float and integer:
+    >>> from deepdiff import DeepDiff
+    >>> from pprint import pprint
+    >>> t1 = [1, 2, 3]
+    >>> t2 = [1.0, 2.0, 3.0]
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> pprint(ddiff, indent=2)
+    { 'type_changes': { 'root[0]': { 'new_type': <class 'float'>,
+                             'new_value': 1.0,
+                             'old_type': <class 'int'>,
+                             'old_value': 1},
+                'root[1]': { 'new_type': <class 'float'>,
+                             'new_value': 2.0,
+                             'old_type': <class 'int'>,
+                             'old_value': 2},
+                'root[2]': { 'new_type': <class 'float'>,
+                             'new_value': 3.0,
+                             'old_type': <class 'int'>,
+                             'old_value': 3}}}
+    >>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
+    >>> pprint(ddiff, indent=2)
+    {}
+
+You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+    >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
+
+
+ignore_type_in_groups example with custom objects:
+    >>> class Burrito:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> class Taco:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> burrito = Burrito()
+    >>> taco = Taco()
+    >>>
+    >>> burritos = [burrito]
+    >>> tacos = [taco]
+    >>>
+    >>> DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+    {}
 
 
 **Tree View**

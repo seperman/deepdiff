@@ -51,6 +51,7 @@ class DeepHash(dict, Base):
 
     def __init__(self,
                  obj,
+                 *,
                  hashes=None,
                  exclude_types=None,
                  exclude_paths=None,
