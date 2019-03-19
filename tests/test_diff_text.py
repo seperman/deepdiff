@@ -841,8 +841,8 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_custom_objects_slot_change(self):
-        class ClassA(object):
-            __slots__ = ['x', 'y']
+        class ClassA:
+            __slots__ = ('x', 'y')
 
             def __init__(self, x, y):
                 self.x = x
@@ -861,8 +861,38 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_custom_class_changes_with_slot_changes(self):
+        class ClassA:
+            __slots__ = ['x', 'y']
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class ClassB:
+            __slots__ = ['x']
+
+        ddiff = DeepDiff(ClassA, ClassB)
+        result = {'type_changes': {'root': {'old_type': ClassA, 'new_type': ClassB}}}
+        assert result == ddiff
+
+    def test_custom_class_changes_with_slot_change_when_ignore_type(self):
+        class ClassA:
+            __slots__ = ['x', 'y']
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class ClassB:
+            __slots__ = ['x']
+
+        ddiff = DeepDiff(ClassA, ClassB, ignore_type_in_groups=[(ClassA, ClassB)])
+        result = {'iterable_item_removed': {'root.__slots__[1]': 'y'}, 'attribute_removed': ['root.__init__', 'root.y']}
+        assert result == ddiff
+
     def test_custom_objects_slot_in_parent_class_change(self):
-        class ClassA(object):
+        class ClassA:
             __slots__ = ['x']
 
         class ClassB(ClassA):
@@ -1339,6 +1369,14 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
         result = {'iterable_item_added': {'root[2]': 3.3}, 'iterable_item_removed': {'root[2]': 3}}
         assert result == ddiff
+
+    def test_ignore_string_type_changes_when_dict_keys_merge_is_not_deterministic(self):
+        t1 = {'a': 10, b'a': 20}
+        t2 = {'a': 11, b'a': 22}
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
+        result = {'values_changed': {"root['a']": {'new_value': 22, 'old_value': 20}}}
+        alternative_result = {'values_changed': {"root['a']": {'new_value': 11, 'old_value': 10}}}
+        assert result == ddiff or alternative_result == ddiff
 
     @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):

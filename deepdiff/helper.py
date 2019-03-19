@@ -187,3 +187,10 @@ def get_id(obj):
     Adding some characters to id so they are not just integers to reduce the risk of collision.
     """
     return "{}{}".format(ID_PREFIX, id(obj))
+
+
+def get_type(obj):
+    """
+    Get the type of object or if it is a class, return the class itself.
+    """
+    return obj if type(obj) is type else type(obj)

@@ -127,13 +127,21 @@ class TextResult(ResultDict):
     def _from_tree_type_changes(self, tree):
         if 'type_changes' in tree:
             for change in tree['type_changes']:
+                if type(change.t1) is type:
+                    include_values = False
+                    old_type = change.t1
+                    new_type = change.t2
+                else:
+                    include_values = True
+                    old_type = type(change.t1)
+                    new_type = type(change.t2)
                 remap_dict = RemapDict({
-                    'old_type': type(change.t1),
-                    'new_type': type(change.t2)
+                    'old_type': old_type,
+                    'new_type': new_type
                 })
                 self['type_changes'][change.path(
                     force=FORCE_DEFAULT)] = remap_dict
-                if Verbose.level:
+                if Verbose.level and include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):

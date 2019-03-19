@@ -22,7 +22,7 @@ from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
-                             convert_item_or_items_into_set_else_none,
+                             convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none, current_dir)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
@@ -155,16 +155,17 @@ class DeepDiff(ResultDict, Base):
         all_slots = []
 
         if isinstance(object, type):
-            mro = object.__mro__
+            mro = object.__mro__  # pragma: no cover. I have not been able to write a test for this case. But we still check for it.
         else:
             mro = object.__class__.__mro__
 
         for type_in_mro in mro:
-            slots = getattr(type_in_mro, '__slots__', ())
-            if isinstance(slots, strings):
-                all_slots.append(slots)
-            else:
-                all_slots.extend(slots)
+            slots = getattr(type_in_mro, '__slots__', None)
+            if slots:
+                if isinstance(slots, strings):
+                    all_slots.append(slots)
+                else:
+                    all_slots.extend(slots)
 
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
@@ -576,10 +577,10 @@ class DeepDiff(ResultDict, Base):
         if self.__skip_this(level):
             return
 
-        if type(level.t1) != type(level.t2):  # NOQA
+        if get_type(level.t1) != get_type(level.t2):
             report_type_change = True
             for type_group in self.ignore_type_in_groups:
-                if type(level.t1) in type_group and type(level.t2) in type_group:
+                if get_type(level.t1) in type_group and get_type(level.t2) in type_group:
                     report_type_change = False
                     break
             if report_type_change:
