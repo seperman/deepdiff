@@ -47,6 +47,7 @@ setup(name='deepdiff',
       packages=['deepdiff'],
       zip_safe=True,
       test_suite="tests",
+      include_package_data=True,
       tests_require=['mock'],  # 'numpy==1.11.2' numpy is needed but comes already installed with travis
       long_description=long_description,
       long_description_content_type='text/markdown',
