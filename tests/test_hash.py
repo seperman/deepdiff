@@ -178,7 +178,7 @@ class TestDeepHashPrep:
         obj = Point(x=11)
         result = DeepHashPrep(obj, ignore_string_type_changes=True)
         if pypy3:
-            assert result[get_id(obj)] == "ntPoint:{%s:int:11}" % x
+            assert result[obj] == "ntPoint:{%s:int:11}" % x
         else:
             expected_result = {
                 x: x_prep,
@@ -197,21 +197,9 @@ class TestDeepHashPrep:
         # the ids of strings change
         if pypy3:
             # only compare the hashes for the enum instances themselves
-            assert DeepHashPrep(MyEnum.A)[get_id(MyEnum.A)] == (
-                'objdict:{'
-                '__objclass__:EnumMeta:objdict:{_name_:B;_value_:int:2};'
-                '_name_:A;_value_:int:1}'
-            )
-            assert DeepHashPrep(MyEnum.B)[get_id(MyEnum.B)] == (
-                'objdict:{'
-                '__objclass__:EnumMeta:objdict:{_name_:A;_value_:int:1};'
-                '_name_:B;_value_:int:2}'
-            )
-            assert DeepHashPrep(MyEnum(1))[get_id(MyEnum.A)] == (
-                'objdict:{'
-                '__objclass__:EnumMeta:objdict:{_name_:B;_value_:int:2};'
-                '_name_:A;_value_:int:1}'
-            )
+            assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
+            assert DeepHashPrep(MyEnum.B)[MyEnum.B] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:A;str:_value_:int:1};str:_name_:str:B;str:_value_:int:2}'
+            assert DeepHashPrep(MyEnum(1))[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
         else:
             assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum.A)
             assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
