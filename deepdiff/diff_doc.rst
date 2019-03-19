@@ -35,8 +35,6 @@ significant_digits : int >= 0, default=None.
 
     For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
-ignore_type_in_groups : Tuple or List of Tuples, default=None ignores types when t1 and t2 are both within the same type group.
-
 verbose_level : int >= 0, default = 1.
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.
@@ -67,8 +65,7 @@ ignore_string_type_changes: Boolean, default = False
 ignore_numeric_type_changes: Boolean, default = False
     Whether to ignore numeric type changes or not. For example 10 vs. 10.0 are considered the same if ignore_numeric_type_changes is set to True.
 
-ignore_type_in_groups: List, default = []
-
+ignore_type_in_groups: Tuple or List of Tuples, default=None ignores types when t1 and t2 are both within the same type group.
 
 **Returns**
 

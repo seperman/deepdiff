@@ -1020,6 +1020,28 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_custom_object_type_change_when_ignore_order(self):
+
+        class Burrito:
+            bread = 'flour'
+
+            def __init__(self):
+                self.spicy = True
+
+        class Taco:
+            bread = 'flour'
+
+            def __init__(self):
+                self.spicy = True
+
+        burrito = Burrito()
+        taco = Taco()
+
+        burritos = [burrito]
+        tacos = [taco]
+
+        assert not DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+
     def test_loop(self):
         class LoopTest(object):
             def __init__(self, a):

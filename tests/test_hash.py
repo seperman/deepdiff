@@ -63,7 +63,7 @@ class TestDeepHash:
         assert set(result.keys()) == expected_result
 
     def test_bad_attribute(self):
-        class Bad(object):
+        class Bad:
             __slots__ = ['x', 'y']
 
             def __getattr__(self, key):
@@ -178,11 +178,11 @@ class TestDeepHashPrep:
         obj = Point(x=11)
         result = DeepHashPrep(obj, ignore_string_type_changes=True)
         if pypy3:
-            assert result[get_id(obj)] == 'ntdict:{%s:int:11}' % x
+            assert result[get_id(obj)] == "ntPoint:{%s:int:11}" % x
         else:
             expected_result = {
                 x: x_prep,
-                obj: 'ntdict:{%s:int:11}' % x,
+                obj: "ntPoint:{%s:int:11}" % x,
                 11: 'int:11',
             }
             assert expected_result == result
@@ -319,8 +319,8 @@ class TestDeepHashPrep:
         with pytest.raises(ValueError):
             DeepHashPrep(1, wrong_param=2)
 
-    def test_bad_attribute(self):
-        class Bad(object):
+    def test_bad_attribute_prep(self):
+        class Bad:
             __slots__ = ['x', 'y']
 
             def __getattr__(self, key):
@@ -334,6 +334,33 @@ class TestDeepHashPrep:
         result = DeepHashPrep(t1)
         expected_result = {t1: unprocessed, 'unprocessed': [t1]}
         assert expected_result == result
+
+    class Burrito:
+        bread = 'flour'
+
+        def __init__(self):
+            self.spicy = True
+
+    class Taco:
+        bread = 'flour'
+
+        def __init__(self):
+            self.spicy = True
+
+    burrito = Burrito()
+    taco = Taco()
+
+    @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, is_qual", [
+        (taco, burrito, [], False),
+        (taco, burrito, [(Taco, Burrito)], True),
+        ([taco], [burrito], [(Taco, Burrito)], True),
+
+    ])
+    def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, is_qual):
+
+        t1_result = DeepHashPrep(t1, ignore_type_in_groups=ignore_type_in_groups)
+        t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups)
+        assert is_qual == (t1_result[t1] == t2_result[t2])
 
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]

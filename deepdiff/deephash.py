@@ -18,6 +18,8 @@ from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
 UNPROCESSED = 'unprocessed'
+MURMUR_SEED = 1203
+
 RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
@@ -46,8 +48,6 @@ with open(os.path.join(current_dir, 'deephash_doc.rst'), 'r') as doc_file:
 
 class DeepHash(dict, Base):
     __doc__ = doc
-
-    MURMUR_SEED = 1203
 
     def __init__(self,
                  obj,
@@ -114,7 +114,7 @@ class DeepHash(dict, Base):
         """
         obj = obj.encode('utf-8')
         # This version of murmur3 returns two 64bit integers.
-        return mmh3.hash64(obj, DeepHash.MURMUR_SEED)[0]
+        return mmh3.hash64(obj, MURMUR_SEED)[0]
 
     @staticmethod
     def murmur3_128bit(obj):
@@ -124,7 +124,7 @@ class DeepHash(dict, Base):
         This hasher is the default hasher.
         """
         obj = obj.encode('utf-8')
-        return mmh3.hash128(obj, DeepHash.MURMUR_SEED)
+        return mmh3.hash128(obj, MURMUR_SEED)
 
     def __getitem__(self, obj):
         # changed_to_id = False
@@ -152,6 +152,7 @@ class DeepHash(dict, Base):
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """Difference of 2 objects"""
+        original_type = type(obj)
         try:
             if is_namedtuple:
                 obj = obj._asdict()
@@ -164,7 +165,8 @@ class DeepHash(dict, Base):
                 self[UNPROCESSED].append(obj)
                 return unprocessed
 
-        result = self._prep_dict(obj, parent, parents_ids, print_as_attribute=True)
+        result = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
+                                 print_as_attribute=True, original_type=original_type)
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
         return result
 
@@ -181,7 +183,7 @@ class DeepHash(dict, Base):
 
         return skip
 
-    def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False):
+    def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False, original_type=None):
 
         result = []
 
@@ -201,12 +203,19 @@ class DeepHash(dict, Base):
 
         result.sort()
         result = ';'.join(result)
-        result = "dict:{%s}" % result
-
-        return result
+        if print_as_attribute:
+            type_ = original_type or type(obj)
+            type_str = type_.__name__
+            for type_group in self.ignore_type_in_groups:
+                if type_ in type_group:
+                    type_str = ','.join(map(lambda x: x.__name__, type_group))
+                    break
+        else:
+            type_str = 'dict'
+        return "%s:{%s}" % (type_str, result)
 
     def _prep_set(self, obj, parent, parents_ids=EMPTY_FROZENSET):
-        return "set:{}".format(self._prep_iterable(obj, parent, parents_ids))
+        return "set:{}".format(self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids))
 
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
@@ -258,7 +267,7 @@ class DeepHash(dict, Base):
             obj._asdict
         # It must be a normal tuple
         except AttributeError:
-            result = self._prep_iterable(obj, parent, parents_ids)
+            result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
         # We assume it is a namedtuple then
         else:
             result = self._prep_obj(obj, parent, parents_ids=parents_ids, is_namedtuple=True)
@@ -289,19 +298,19 @@ class DeepHash(dict, Base):
             result = self._prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
-            result = self._prep_dict(obj, parent, parents_ids)
+            result = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, tuple):
-            result = self._prep_tuple(obj, parent, parents_ids)
+            result = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, (set, frozenset)):
-            result = self._prep_set(obj, parent, parents_ids)
+            result = self._prep_set(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
-            result = self._prep_iterable(obj, parent, parents_ids)
+            result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
 
         else:
-            result = self._prep_obj(obj, parent, parents_ids)
+            result = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 
         if result is not_hashed:  # pragma: no cover
             self[UNPROCESSED].append(obj)

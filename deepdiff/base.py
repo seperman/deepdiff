@@ -1,3 +1,4 @@
+from ordered_set import OrderedSet
 from deepdiff.helper import strings, numbers
 
 
@@ -21,16 +22,16 @@ class Base:
                                    ignore_numeric_type_changes):
         if ignore_type_in_groups:
             if isinstance(ignore_type_in_groups[0], type):
-                ignore_type_in_groups = [tuple(ignore_type_in_groups)]
+                ignore_type_in_groups = [OrderedSet(ignore_type_in_groups)]
             else:
-                ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
+                ignore_type_in_groups = list(map(OrderedSet, ignore_type_in_groups))
         else:
             ignore_type_in_groups = []
 
         if ignore_string_type_changes and self.strings not in ignore_type_in_groups:
-            ignore_type_in_groups.append(self.strings)
+            ignore_type_in_groups.append(OrderedSet(self.strings))
 
         if ignore_numeric_type_changes and self.numbers not in ignore_type_in_groups:
-            ignore_type_in_groups.append(self.numbers)
+            ignore_type_in_groups.append(OrderedSet(self.numbers))
 
         return ignore_type_in_groups

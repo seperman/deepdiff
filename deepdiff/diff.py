@@ -217,7 +217,7 @@ class DeepDiff(ResultDict, Base):
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
-            elif self.ignore_numeric_type_changes and isinstance(key, numbers):
+            elif self.ignore_numeric_type_changes and type(key) in numbers:
                 clean_key = ("{:.%sf}" % self.significant_digits).format(key)
             else:
                 clean_key = key
@@ -448,7 +448,8 @@ class DeepDiff(ResultDict, Base):
                                       ignore_repetition=not self.report_repetition,
                                       significant_digits=self.significant_digits,
                                       ignore_string_type_changes=self.ignore_string_type_changes,
-                                      ignore_numeric_type_changes=self.ignore_numeric_type_changes
+                                      ignore_numeric_type_changes=self.ignore_numeric_type_changes,
+                                      ignore_type_in_groups=self.ignore_type_in_groups,
                                       )
                 item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
@@ -578,7 +579,7 @@ class DeepDiff(ResultDict, Base):
         if type(level.t1) != type(level.t2):  # NOQA
             report_type_change = True
             for type_group in self.ignore_type_in_groups:
-                if isinstance(level.t1, type_group) and isinstance(level.t2, type_group):
+                if type(level.t1) in type_group and type(level.t2) in type_group:
                     report_type_change = False
                     break
             if report_type_change:
