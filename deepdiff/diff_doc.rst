@@ -46,8 +46,6 @@ exclude_paths: list, default = None
 exclude_regex_paths: list, default = None
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.
 
-exclude_types: list, default = None
-    List of object types to exclude from the report.
 
 hasher: default = DeepHash.murmur3_128bit
     Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
@@ -59,13 +57,17 @@ view: string, default = text
     The new view is called the tree view which allows you to traverse through
     the tree of changed items.
 
+exclude_types: list, default = None
+    List of object types to exclude from the report.
+
 ignore_string_type_changes: Boolean, default = False
     Whether to ignore string type changes or not. For example b"Hello" vs. "Hello" are considered the same if ignore_string_type_changes is set to True.
 
 ignore_numeric_type_changes: Boolean, default = False
     Whether to ignore numeric type changes or not. For example 10 vs. 10.0 are considered the same if ignore_numeric_type_changes is set to True.
 
-ignore_type_in_groups: Tuple or List of Tuples, default=None ignores types when t1 and t2 are both within the same type group.
+ignore_type_in_groups: Tuple or List of Tuples, default = None
+    ignores types when t1 and t2 are both within the same type group.
 
 **Returns**
 
@@ -308,6 +310,17 @@ And if you don't care about the value of items that have changed type, please se
     { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
                                      'old_type': <class 'int'>}}}
 
+
+Exclude types
+
+Exclude certain types from comparison:
+    >>> l1 = logging.getLogger("test")
+    >>> l2 = logging.getLogger("test2")
+    >>> t1 = {"log": l1, 2: 1337}
+    >>> t2 = {"log": l2, 2: 1337}
+    >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
+    {}
+
 ignore_type_in_groups
 
 Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
@@ -316,7 +329,7 @@ The shortcuts are ignore_string_type_changes which by default is False and ignor
 For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
 
 1. Set ignore_string_type_changes=True which is the default.
-2. Set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
+2. Or set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
 
 Now what if you want also typeA and typeB to be ignored when comparing agains each other?
 
@@ -650,17 +663,6 @@ Approximate float comparison (Significant digits after the point) (Tree View):
     >>> ddiff = DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1, view='tree')
     >>> ddiff
     {'values_changed': {<root t1:1.23e+20, t2:1.24e+20>}}
-
-
-**Exclude types**
-
-Exclude certain types from comparison:
-    >>> l1 = logging.getLogger("test")
-    >>> l2 = logging.getLogger("test2")
-    >>> t1 = {"log": l1, 2: 1337}
-    >>> t2 = {"log": l2, 2: 1337}
-    >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
-    {}
 
 **Exclude paths**
 

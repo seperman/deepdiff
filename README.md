@@ -385,19 +385,19 @@ If you do a deep copy of obj, it should still give you the same hash:
 34150898645750099477987229399128149852
 ```
 
-Note that by default DeepHash will ignore string type differences. So if your strings were bytes, you would still get the same hash:
+Note that by default DeepHash will include string type differences. So if your strings were bytes:
 
 ```py
 >>> obj3 = {1: 2, b'a': b'b'}
 >>> DeepHash(obj3)[obj3]
-34150898645750099477987229399128149852
+64067525765846024488103933101621212760
 ```
 
-But if you want a different hash if string types are different, set ignore_string_type_changes to False:
+But if you want the same hash if string types are different, set ignore_string_type_changes to True:
 
 ```py
->>> DeepHash(obj3, ignore_string_type_changes=False)[obj3]
-64067525765846024488103933101621212760
+>>> DeepHash(obj3, ignore_string_type_changes=True)[obj3]
+34150898645750099477987229399128149852
 ```
 
 # Using DeepDiff in unit tests

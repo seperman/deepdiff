@@ -35,19 +35,8 @@ Importing
     >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 
 ********
-Features
+DeepDiff
 ********
-
-Parameters
-~~~~~~~~~~
-
--  t1 (the first object)
--  t2 (the second object)
--  `ignore\_order`_
--  `report\_repetition`_
--  `exclude\_types\_or\_paths`_
--  `significant\_digits`_
--  `views`_
 
 Supported data types
 ~~~~~~~~~~~~~~~~~~~~
@@ -74,34 +63,6 @@ List difference ignoring order or duplicates
     >>> print (ddiff)
     {}
 
-Report repetitions
-~~~~~~~~~~~~~~~~~~
-
-This flag ONLY works when ignoring order is enabled.
-
-.. code:: python
-
-    t1 = [1, 3, 1, 4]
-    t2 = [4, 4, 1]
-    ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-    print(ddiff)
-
-which will print you:
-
-.. code:: python
-
-    {'iterable_item_removed': {'root[1]': 3},
-      'repetition_change': {'root[0]': {'old_repeat': 2,
-                                        'old_indexes': [0, 2],
-                                        'new_indexes': [2],
-                                        'value': 1,
-                                        'new_repeat': 1},
-                            'root[3]': {'old_repeat': 1,
-                                        'old_indexes': [3],
-                                        'new_indexes': [0, 1],
-                                        'value': 4,
-                                        'new_repeat': 2}}}
-
 Exclude types or paths
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -115,16 +76,6 @@ Exclude certain types from comparison
     >>> t1 = {"log": l1, 2: 1337}
     >>> t2 = {"log": l2, 2: 1337}
     >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
-    {}
-
-Exclude part of your object tree from comparison
-------------------------------------------------
-
-.. code:: python
-
-    >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
-    >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
-    >>> print (DeepDiff(t1, t2, exclude_paths={"root['ingredients']"}))
     {}
 
 Significant Digits
@@ -143,149 +94,23 @@ X=significant\_digits
     >>> DeepDiff(t1, t2, significant_digits=1)
     {'values_changed': {'root': {'old_value': Decimal('1.52'), 'new_value': Decimal('1.57')}}}
 
-Approximate float comparison:
------------------------------
-
-.. code:: python
-
-    >>> t1 = [ 1.1129, 1.3359 ]
-    >>> t2 = [ 1.113, 1.3362 ]
-    >>> pprint(DeepDiff(t1, t2, significant_digits=3))
-    {}
-    >>> pprint(DeepDiff(t1, t2))
-    {'values_changed': {'root[0]': {'new_value': 1.113, 'old_value': 1.1129},
-                        'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
-    >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
-    {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
-
-
-Views
-~~~~~
-
-Text View (default)
--------------------
-
-Text view is the original and currently the default view of DeepDiff.
-
-It is called text view because the results contain texts that represent the path to the data:
-
-Example of using the text view.
-    >>> from deepdiff import DeepDiff
-    >>> t1 = {1:1, 3:3, 4:4}
-    >>> t2 = {1:1, 3:3, 5:5, 6:6}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print(ddiff)
-    {'dictionary_item_added': {'root[5]', 'root[6]'}, 'dictionary_item_removed': {'root[4]'}}
-
-So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
-
-.. seealso::
-    The following examples are using the *default text view.*
-    The Tree View is introduced in DeepDiff v3 and provides traversing capabilities through your diffed data and more!
-    Read more about the Tree View at :doc:`/diff`
-
-Tree View (new)
----------------
-
-Starting the version v3 You can choose the view into the deepdiff results.
-The tree view provides you with tree objects that you can traverse through to find
-the parents of the objects that are diffed and the actual objects that are being diffed.
-This view is very useful when dealing with nested objects.
-Note that tree view always returns results in the form of Python sets.
-
-You can traverse through the tree elements!
-
-.. note::
-    The Tree view is just a different representation of the diffed data.
-    Behind the scene, DeepDiff creates the tree view first and then converts it to textual representation for the text view.
-
-.. code:: text
-
-    +---------------------------------------------------------------+
-    |                                                               |
-    |    parent(t1)              parent node            parent(t2)  |
-    |      +                          ^                     +       |
-    +------|--------------------------|---------------------|-------+
-           |                      |   | up                  |
-           | Child                |   |                     | ChildRelationship
-           | Relationship         |   |                     |
-           |                 down |   |                     |
-    +------|----------------------|-------------------------|-------+
-    |      v                      v                         v       |
-    |    child(t1)              child node               child(t2)  |
-    |                                                               |
-    +---------------------------------------------------------------+
-
-
-The tree view allows you to have more than mere textual representaion of the diffed objects.
-It gives you the actual objects (t1, t2) throughout the tree of parents and children.
-
-:Example:
-
-.. code:: python
-
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:4, 3:3}
-    >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
-    >>> ddiff_verbose0
-    {'values_changed': {<root[2]>}}
-    >>>
-    >>> ddiff_verbose1 = DeepDiff(t1, t2, verbose_level=1, view='tree')
-    >>> ddiff_verbose1
-    {'values_changed': {<root[2] t1:2, t2:4>}}
-    >>> set_of_values_changed = ddiff_verbose1['values_changed']
-    >>> # since set_of_values_changed includes only one item in a set
-    >>> # in order to get that one item we can:
-    >>> (changed,) = set_of_values_changed
-    >>> changed  # Another way to get this is to do: changed=list(set_of_values_changed)[0]
-    <root[2] t1:2, t2:4>
-    >>> changed.t1
-    2
-    >>> changed.t2
-    4
-    >>> # You can traverse through the tree, get to the parents!
-    >>> changed.up
-    <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
-
-.. seealso::
-    Read more about the Tree View at :doc:`/diff`
-
-
-Verbose Level
-~~~~~~~~~~~~~
-
-Verbose level by default is 1. The possible values are 0, 1 and 2.
-
--  verbose_level 0: won’t report values when type changed.
--  verbose_level 1: default
--  verbose_level 2: will report values when custom objects or
-   dictionaries have items added or removed.
-
-.. seealso::
-    Read more about the verbosity at :doc:`/diff`
-
 
 Serialization
 ~~~~~~~~~~~~~
 
-DeepDiff uses jsonpickle in order to serialize and deserialize its results into json. This works for both tree view and text view.
-
-:Serialize and then deserialize back to deepdiff:
+:Serialize to json:
 
 .. code:: python
 
     >>> t1 = {1: 1, 2: 2, 3: 3}
     >>> t2 = {1: 1, 2: "2", 3: 3}
     >>> ddiff = DeepDiff(t1, t2)
-    >>> jsoned = ddiff.json
+    >>> jsoned = ddiff.to_json()
     >>> jsoned
-    '{"type_changes": {"root[2]": {"py/object": "deepdiff.helper.RemapDict", "new_type": {"py/type": "__builtin__.str"}, "new_value": "2", "old_type": {"py/type": "__builtin__.int"}, "old_value": 2}}}'
-    >>> ddiff_new = DeepDiff.from_json(jsoned)
-    >>> ddiff == ddiff_new
-    True
+    '{"type_changes": {"root[2]": {"new_type": "str", "new_value": "2", "old_type": "int", "old_value": 2}}}'
 
 
-Read more in
+And many more features! Read more in
 
 :doc:`/diff`
 
@@ -373,7 +198,7 @@ But with DeepHash:
     >>> from deepdiff import DeepHash
     >>> obj = {1: 2, 'a': 'b'}
     >>> DeepHash(obj)
-    {4355639248: (2468916477072481777, 512283587789292749), 4355639280: (-3578777349255665377, -6377555218122431491), 4358636128: (-8839064797231613815, -1822486391929534118), 4358009664: (8833996863197925870, -419376694314494743), 4357467952: (3415089864575009947, 7987229399128149852)}
+    {1: 2468916477072481777512283587789292749, 2: -35787773492556653776377555218122431491, ...}
 
 So what is exactly the hash of obj in this case?
 DeepHash is calculating the hash of the obj and any other object that obj contains.
@@ -384,18 +209,11 @@ In order to get the hash of obj itself, you need to use the object (or the id of
 
     >>> hashes = DeepHash(obj)
     >>> hashes[obj]
-    (3415089864575009947, 7987229399128149852)
+    34150898645750099477987229399128149852
 
 Read more in the Deep Hash reference:
 
 :doc:`/deephash`
-
-.. _ignore\_order: #ignore-order
-.. _report\_repetition: #report-repetitions
-.. _verbose\_level: #verbose-level
-.. _exclude\_types\_or\_paths: #exclude-types-or-paths
-.. _significant\_digits: #significant-digits
-.. _views: #views
 
 
 References
