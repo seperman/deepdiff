@@ -431,18 +431,14 @@ Thank you!
 
 # Authors
 
-Seperman (Sep Dehpour)
+- Seperman (Sep Dehpour)
+    - [Github](https://github.com/seperman)
+    - [Linkedin](http://www.linkedin.com/in/sepehr)
+    - [ZepWorks](http://www.zepworks.com)
 
-- [Github](https://github.com/seperman)
-- [Linkedin](http://www.linkedin.com/in/sepehr)
-- [ZepWorks](http://www.zepworks.com)
-
-Victor Hahn Castell
-
-- [hahncastell.de](http://hahncastell.de)
-- [flexoptix.net](http://www.flexoptix.net)
-
-Also thanks to:
+- Victor Hahn Castell for major contributions
+    - [hahncastell.de](http://hahncastell.de)
+    - [flexoptix.net](http://www.flexoptix.net)
 
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.

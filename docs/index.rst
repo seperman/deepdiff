@@ -274,20 +274,17 @@ Changelog
 Authors
 =======
 
-Sep Dehpour
+- Sep Dehpour
 
-- `Github <https://github.com/seperman>`_
-- `ZepWorks <http://www.zepworks.com>`_
-- `Linkedin <http://www.linkedin.com/in/sepehr>`_
-- `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
+    - `Github <https://github.com/seperman>`_
+    - `ZepWorks <http://www.zepworks.com>`_
+    - `Linkedin <http://www.linkedin.com/in/sepehr>`_
+    - `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
 
-Victor Hahn Castell
+- Victor Hahn Castell for major contributions
 
-- `hahncastell.de <http://hahncastell.de>`_
-- `flexoptix.net <http://www.flexoptix.net>`_
-
-
-ALso thanks to:
+    - `hahncastell.de <http://hahncastell.de>`_
+    - `flexoptix.net <http://www.flexoptix.net>`_
 
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
