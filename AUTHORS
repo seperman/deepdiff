@@ -1,8 +1,6 @@
 Authors:
 - Seperman
 - Victor Hahn Castell @ Flexoptix
-
-Also thanks to:
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
 - WangFenjin for unicode support.
@@ -15,3 +13,10 @@ Also thanks to:
 - movermeyer for updating docs
 - maxrothman for search in inherited class attributes
 - maxrothman for search for types/objects
+- MartyHub for exclude regex paths
+- sreecodeslayer for DeepSearch match_string
+- Brian Maissy (brianmaissy) for weakref fix, enum tests
+- Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
+- Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
+- Juan Soler (Soleronline) for adding ignore_type_number
+- mthaddon for adding timedelta diffing support

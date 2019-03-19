@@ -1,69 +1,78 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-To run only the search tests:
-    python -m unittest tests.test_serialization
-
-Or to run all the tests:
-    python -m unittest discover
-
-Or to run all the tests with coverage:
-    coverage run --source deepdiff setup.py test
-
-Or using Nose:
-    nosetests --with-coverage --cover-package=deepdiff
-
-To run a specific test, run this from the root of repo:
-    python -m unittest tests.test_serialization.DeepDiffTextTestCase.test_same_objects
-
-or using nosetests:
-    nosetests tests/test_serialization.py:DeepDiffTestCase.test_diff_when_hash_fails
-"""
-import unittest
+import json
+import pytest
 from deepdiff import DeepDiff
 
 import logging
 logging.disable(logging.CRITICAL)
 
+t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
+t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
 
-class DeepAdditionsTestCase(unittest.TestCase):
+
+class TestDeepAdditions:
     """Tests for Additions and Subtractions."""
 
     def test_serialization_text(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
-        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        self.assertTrue("deepdiff.helper.RemapDict" in ddiff.json)
+        assert "builtins.list" in ddiff.to_json_pickle()
+        jsoned = ddiff.to_json()
+        assert "world" in jsoned
 
     def test_deserialization(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
-        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2)
-        jsoned = ddiff.json
+        jsoned = ddiff.to_json_pickle()
         ddiff2 = DeepDiff.from_json(jsoned)
-        self.assertEqual(ddiff, ddiff2)
+        assert ddiff == ddiff2
 
     def test_serialization_tree(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
-        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2, view='tree')
-        jsoned = ddiff.json
-        self.assertTrue("world" in jsoned)
+        pickle_jsoned = ddiff.to_json_pickle()
+        assert "world" in pickle_jsoned
+        jsoned = ddiff.to_json()
+        assert "world" in jsoned
 
     def test_deserialization_tree(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
-        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
         ddiff = DeepDiff(t1, t2, view='tree')
-        jsoned = ddiff.json
+        jsoned = ddiff.to_json_pickle()
         ddiff2 = DeepDiff.from_json(jsoned)
-        self.assertTrue('type_changes' in ddiff2)
+        assert 'type_changes' in ddiff2
 
-    def test_deleting_serialization_cache(self):
+    def test_deleting_serialization_cache_when_using_the_property(self):
         t1 = {1: 1}
         t2 = {1: 2}
         ddiff = DeepDiff(t1, t2)
-        self.assertFalse(hasattr(ddiff, '_json'))
+        assert hasattr(ddiff, '_json') is False
         ddiff.json
-        self.assertTrue(hasattr(ddiff, '_json'))
+        assert hasattr(ddiff, '_json')
         del ddiff.json
-        self.assertFalse(hasattr(ddiff, '_json'))
+        assert hasattr(ddiff, '_json') is False
+
+    def test_serialize_custom_objects_throws_error(self):
+        class A:
+            pass
+
+        class B:
+            pass
+
+        t1 = A()
+        t2 = B()
+        ddiff = DeepDiff(t1, t2)
+        with pytest.raises(TypeError):
+            ddiff.to_json()
+
+    def test_serialize_custom_objects_with_default_mapping(self):
+        class A:
+            pass
+
+        class B:
+            pass
+
+        t1 = A()
+        t2 = B()
+        ddiff = DeepDiff(t1, t2)
+        default_mapping = {A: lambda x: 'obj A', B: lambda x: 'obj B'}
+        result = ddiff.to_json(default_mapping=default_mapping)
+        expected_result = {"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}
+        assert expected_result == json.loads(result)

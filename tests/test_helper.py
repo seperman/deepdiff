@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import unittest
 from deepdiff.helper import short_repr
 
 
-class HelperTestCase(unittest.TestCase):
+class TestHelper:
     """Helper Tests."""
 
     def test_short_repr_when_short(self):
 
         item = {1: 2}
         output = short_repr(item)
-        self.assertEqual(output, '{1: 2}')
+        assert output == '{1: 2}'
 
     def test_short_repr_when_long(self):
 
         item = {'Eat more': 'burritos'}
         output = short_repr(item)
-        self.assertEqual(output, "{'Eat more':...}")
+        assert output == "{'Eat more':...}"

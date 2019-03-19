@@ -2,17 +2,18 @@
 # -*- coding: utf-8 -*-
 # In order to run the docstrings:
 # python3 -m deepdiff.search
-
-from __future__ import absolute_import
-from __future__ import print_function
-import sys
-from collections import Iterable
-from collections import MutableMapping
+import os
+import re
+from collections.abc import MutableMapping, Iterable
 import logging
 
-from deepdiff.helper import py3, strings, numbers, items
+from deepdiff.helper import strings, numbers, add_to_frozen_set, current_dir
 
 logger = logging.getLogger(__name__)
+
+
+with open(os.path.join(current_dir, 'search_doc.rst'), 'r') as doc_file:
+    doc = doc_file.read()
 
 
 class DeepSearch(dict):
@@ -36,6 +37,12 @@ class DeepSearch(dict):
 
     exclude_types: list, default = None.
         List of object types to exclude from the report.
+
+    case_sensitive: Boolean, default = False
+
+    match_string: Boolean, default = False
+        If True, the value of the object or its children have to exactly match the item.
+        If False, the value of the item can be a part of the value of the object or its children
 
     **Returns**
 
@@ -75,20 +82,24 @@ class DeepSearch(dict):
                  obj,
                  item,
                  exclude_paths=set(),
+                 exclude_regex_paths=set(),
                  exclude_types=set(),
                  verbose_level=1,
                  case_sensitive=False,
+                 match_string=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are obj, item, exclude_paths, exclude_types and verbose_level."
+                "The valid parameters are obj, item, exclude_paths, exclude_types,\n"
+                "case_sensitive, match_string and verbose_level."
             ) % ', '.join(kwargs.keys()))
 
         self.obj = obj
         self.case_sensitive = case_sensitive if isinstance(item, strings) else True
         item = item if self.case_sensitive else item.lower()
         self.exclude_paths = set(exclude_paths)
+        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in exclude_regex_paths]
         self.exclude_types = set(exclude_types)
         self.exclude_types_tuple = tuple(
             exclude_types)  # we need tuple for checking isinstance
@@ -98,9 +109,12 @@ class DeepSearch(dict):
             matched_values=self.__set_or_dict(),
             unprocessed=[])
 
+        # Cases where user wants to match exact string item
+        self.match_string = match_string
+
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
-        empty_keys = [k for k, v in getattr(self, items)() if not v]
+        empty_keys = [k for k, v in self.items() if not v]
 
         for k in empty_keys:
             del self[k]
@@ -113,12 +127,6 @@ class DeepSearch(dict):
             self[report_key][key] = value
         else:
             self[report_key].add(key)
-
-    @staticmethod
-    def __add_to_frozen_set(parents_ids, item_id):
-        parents_ids = set(parents_ids)
-        parents_ids.add(item_id)
-        return frozenset(parents_ids)
 
     def __search_obj(self,
                      obj,
@@ -141,7 +149,7 @@ class DeepSearch(dict):
                 # Skip magic methods. Slightly hacky, but unless people are defining
                 # new magic methods they want to search, it should work fine.
                 obj = {i: getattr(obj, i) for i in dir(obj)
-                    if not (i.startswith('__') and i.endswith('__'))}
+                       if not (i.startswith('__') and i.endswith('__'))}
         except AttributeError:
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
@@ -157,6 +165,9 @@ class DeepSearch(dict):
     def __skip_this(self, item, parent):
         skip = False
         if parent in self.exclude_paths:
+            skip = True
+        elif self.exclude_regex_paths and any(
+                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         else:
             if isinstance(item, self.exclude_types_tuple):
@@ -191,12 +202,14 @@ class DeepSearch(dict):
             if parents_ids and item_id in parents_ids:
                 continue
 
-            parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
             new_parent = parent_text % (parent, item_key_str)
             new_parent_cased = new_parent if self.case_sensitive else new_parent.lower()
 
-            if str(item) in new_parent_cased:
+            str_item = str(item)
+            if (self.match_string and str_item == new_parent_cased) or\
+               (not self.match_string and str_item in new_parent_cased):
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -232,14 +245,15 @@ class DeepSearch(dict):
                 item_id = id(thing)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = self.__add_to_frozen_set(parents_ids, item_id)
+                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                 self.__search(thing, item, "%s[%s]" %
                               (parent, i), parents_ids_added)
 
     def __search_str(self, obj, item, parent):
         """Compare strings"""
         obj_text = obj if self.case_sensitive else obj.lower()
-        if item in obj_text:
+
+        if (self.match_string and item == obj_text) or (not self.match_string and item in obj_text):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
@@ -296,35 +310,8 @@ class DeepSearch(dict):
             self.__search_obj(obj, item, parent, parents_ids)
 
 
-class grep(object):
-    """
-    **Grep!**
-
-    grep is a new interface for Deep Search. It takes exactly the same arguments.
-    And it works just like grep in shell!
-
-    **Examples**
-
-    Importing
-        >>> from deepdiff import grep
-        >>> from pprint import pprint
-
-    Search in list for string
-        >>> obj = ["long somewhere", "string", 0, "somewhere great!"]
-        >>> item = "somewhere"
-        >>> ds = obj | grep(item)
-        >>> print(ds)
-        {'matched_values': {'root[3]', 'root[0]'}
-
-    Search in nested data for string
-        >>> obj = ["something somewhere", {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}]
-        >>> item = "somewhere"
-        >>> ds = obj | grep(item, verbose_level=2)
-        >>> pprint(ds, indent=2)
-        { 'matched_paths': {"root[1]['somewhere']": 'around'},
-          'matched_values': { 'root[0]': 'something somewhere',
-                              "root[1]['long']": 'somewhere'}}
-    """
+class grep:
+    __doc__ = doc
 
     def __init__(self,
                  item,
@@ -337,7 +324,5 @@ class grep(object):
 
 
 if __name__ == "__main__":  # pragma: no cover
-    if not py3:
-        sys.exit("Please run with Python 3 to verify the doc strings.")
     import doctest
     doctest.testmod()

@@ -1,19 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-To run only the search tests:
-    python -m unittest tests.search_tests
-
-Or to run all the tests with coverage:
-    coverage run --source deepdiff setup.py test
-
-Or using Nose:
-    nosetests --with-coverage --cover-package=deepdiff
-
-To run a specific test, run this from the root of repo:
-    nosetests tests/test_search.py:DeepSearchTestCase.test_case_insensitive_of_str_in_list
-"""
-import unittest
+import pytest
 from deepdiff import DeepSearch, grep
 from datetime import datetime
 import logging
@@ -34,44 +21,44 @@ class CustomClass:
         return self.__str__()
 
 
-class DeepSearchTestCase(unittest.TestCase):
+class TestDeepSearch:
     """DeepSearch Tests."""
 
     def test_number_in_list(self):
         obj = ["a", 10, 20]
         item = 10
         result = {"matched_values": {'root[1]'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_string_in_root(self):
         obj = "long string somewhere"
         result = {"matched_values": {'root'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_string_in_root_verbose(self):
         obj = "long string somewhere"
         result = {"matched_values": {'root': "long string somewhere"}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=2), result)
+        assert DeepSearch(obj, item, verbose_level=2) == result
 
     def test_string_in_tuple(self):
         obj = ("long", "string", 0, "somewhere")
         result = {"matched_values": {'root[3]'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_string_in_list(self):
         obj = ["long", "string", 0, "somewhere"]
         result = {"matched_values": {'root[3]'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_string_in_list_verbose(self):
         obj = ["long", "string", 0, "somewhere"]
         result = {"matched_values": {'root[3]': "somewhere"}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=2), result)
+        assert DeepSearch(obj, item, verbose_level=2) == result
 
     def test_string_in_list_verbose2(self):
         obj = ["long", "string", 0, "somewhere great!"]
         result = {"matched_values": {'root[3]': "somewhere great!"}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=2), result)
+        assert DeepSearch(obj, item, verbose_level=2) == result
 
     def test_string_in_list_verbose3(self):
         obj = ["long somewhere", "string", 0, "somewhere great!"]
@@ -81,14 +68,14 @@ class DeepSearchTestCase(unittest.TestCase):
                 'root[3]': "somewhere great!"
             }
         }
-        self.assertEqual(DeepSearch(obj, item, verbose_level=2), result)
+        assert DeepSearch(obj, item, verbose_level=2) == result
 
     def test_int_in_dictionary(self):
         obj = {"long": "somewhere", "num": 2, 0: 0, "somewhere": "around"}
         item = 2
         result = {'matched_values': {"root['num']"}}
         ds = DeepSearch(obj, item, verbose_level=1)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_dictionary(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
@@ -97,7 +84,7 @@ class DeepSearchTestCase(unittest.TestCase):
             'matched_values': {"root['long']"}
         }
         ds = DeepSearch(obj, item, verbose_level=1)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_dictionary_case_insensitive(self):
         obj = {"long": "Somewhere over there!", "string": 2, 0: 0, "SOMEWHERE": "around"}
@@ -106,7 +93,7 @@ class DeepSearchTestCase(unittest.TestCase):
             'matched_values': {"root['long']"}
         }
         ds = DeepSearch(obj, item, verbose_level=1, case_sensitive=False)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_dictionary_key_case_insensitive_partial(self):
         obj = {"SOMEWHERE here": "around"}
@@ -114,7 +101,7 @@ class DeepSearchTestCase(unittest.TestCase):
             'matched_paths': {"root['SOMEWHERE here']"}
         }
         ds = DeepSearch(obj, item, verbose_level=1, case_sensitive=False)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_dictionary_verbose(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
@@ -127,7 +114,7 @@ class DeepSearchTestCase(unittest.TestCase):
             }
         }
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_dictionary_in_list_verbose(self):
         obj = [
@@ -148,25 +135,25 @@ class DeepSearchTestCase(unittest.TestCase):
             }
         }
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_custom_object(self):
         obj = CustomClass('here, something', 'somewhere')
         result = {'matched_values': {'root.b'}}
         ds = DeepSearch(obj, item, verbose_level=1)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_custom_object_verbose(self):
         obj = CustomClass('here, something', 'somewhere out there')
         result = {'matched_values': {'root.b': 'somewhere out there'}}
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_custom_object_in_dictionary_verbose(self):
         obj = {1: CustomClass('here, something', 'somewhere out there')}
         result = {'matched_values': {'root[1].b': 'somewhere out there'}}
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_named_tuples_verbose(self):
         from collections import namedtuple
@@ -181,13 +168,13 @@ class DeepSearchTestCase(unittest.TestCase):
                 'root.somewhere_good': 22
             }
         }
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_string_in_set_verbose(self):
         obj = {"long", "string", 0, "somewhere"}
         # result = {"matched_values": {'root[3]': "somewhere"}}
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(list(ds["matched_values"].values())[0], item)
+        assert list(ds["matched_values"].values())[0] == item
 
     def test_loop(self):
         class LoopTest(object):
@@ -199,7 +186,7 @@ class DeepSearchTestCase(unittest.TestCase):
 
         ds = DeepSearch(obj, item, verbose_level=1)
         result = {'matched_values': {'root.a'}}
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_loop_in_lists(self):
         obj = [1, 2, 'somewhere']
@@ -207,7 +194,7 @@ class DeepSearchTestCase(unittest.TestCase):
 
         ds = DeepSearch(obj, item, verbose_level=1)
         result = {'matched_values': {'root[2]'}}
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_skip_path1(self):
         obj = {
@@ -215,34 +202,46 @@ class DeepSearchTestCase(unittest.TestCase):
             "ingredients": ["no meat", "no eggs", "no dairy", "somewhere"]
         }
         ds = DeepSearch(obj, item, exclude_paths={"root['ingredients']"})
-        self.assertEqual(ds, {})
+        assert ds == {}
 
     def test_custom_object_skip_path(self):
         obj = CustomClass('here, something', 'somewhere')
         result = {}
         ds = DeepSearch(obj, item, verbose_level=1, exclude_paths=['root.b'])
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_skip_list_path(self):
         obj = ['a', 'somewhere']
         ds = DeepSearch(obj, item, exclude_paths=['root[1]'])
         result = {}
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_skip_dictionary_path(self):
         obj = {1: {2: "somewhere"}}
         ds = DeepSearch(obj, item, exclude_paths=['root[1][2]'])
         result = {}
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_skip_type_str(self):
         obj = "long string somewhere"
         result = {}
         ds = DeepSearch(obj, item, verbose_level=1, exclude_types=[str])
-        self.assertEqual(ds, result)
+        assert ds == result
+
+    def test_skip_regexp(self):
+        obj = [{'a': 1, 'b': "somewhere"}, {'c': 4, 'b': "somewhere"}]
+        ds = DeepSearch(obj, item, exclude_regex_paths=[r"root\[\d+\]"])
+        result = {}
+        assert ds == result
+
+    def test_skip_regexp2(self):
+        obj = {'a': [1, 2, [3, [item]]]}
+        ds = DeepSearch(obj, item, exclude_regex_paths=[r"\[\d+\]"])
+        result = {}
+        assert ds == result
 
     def test_unknown_parameters(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             DeepSearch(1, 1, wrong_param=2)
 
     def test_bad_attribute(self):
@@ -259,44 +258,44 @@ class DeepSearchTestCase(unittest.TestCase):
 
         ds = DeepSearch(obj, item, verbose_level=1)
         result = {'unprocessed': ['root']}
-        self.assertEqual(ds, result)
+        assert ds == result
         ds = DeepSearch(obj, item, verbose_level=2)
-        self.assertEqual(ds, result)
+        assert ds == result
 
     def test_case_insensitive_of_str_in_list(self):
         obj = ["a", "bb", "BBC", "aBbB"]
         item = "BB"
         result = {"matched_values": {'root[1]', 'root[2]', 'root[3]'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1, case_sensitive=False), result)
+        assert DeepSearch(obj, item, verbose_level=1, case_sensitive=False) == result
 
     def test_case_sensitive_of_str_in_list(self):
         obj = ["a", "bb", "BBC", "aBbB"]
         item = "BB"
         result = {"matched_values": {'root[2]'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1, case_sensitive=True), result)
+        assert DeepSearch(obj, item, verbose_level=1, case_sensitive=True) == result
 
     def test_case_sensitive_of_str_in_one_liner(self):
         obj = "Hello, what's up?"
         item = "WHAT"
         result = {}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1, case_sensitive=True), result)
+        assert DeepSearch(obj, item, verbose_level=1, case_sensitive=True) == result
 
     def test_case_insensitive_of_str_in_one_liner(self):
         obj = "Hello, what's up?"
         item = "WHAT"
         result = {'matched_values': {'root'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1, case_sensitive=False), result)
+        assert DeepSearch(obj, item, verbose_level=1, case_sensitive=False) == result
 
     def test_none(self):
         obj = item = None
         result = {'matched_values': {'root'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_complex_obj(self):
         obj = datetime(2017, 5, 4, 1, 1, 1)
         item = datetime(2017, 5, 4, 1, 1, 1)
         result = {'matched_values': {'root'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_keep_searching_after_obj_match(self):
 
@@ -312,6 +311,7 @@ class DeepSearchTestCase(unittest.TestCase):
         obj = AlwaysEqual()
         item = AlwaysEqual()
         result = {'matched_values': {'root', 'root.some_attr'}}
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_search_inherited_attributes(self):
         class Parent(object):
@@ -323,10 +323,10 @@ class DeepSearchTestCase(unittest.TestCase):
         obj = Child()
         item = 1
         result = {'matched_values': {'root.a'}}
-        self.assertEqual(DeepSearch(obj, item, verbose_level=1), result)
+        assert DeepSearch(obj, item, verbose_level=1) == result
 
 
-class GrepTestCase(unittest.TestCase):
+class TestGrep:
 
     def test_grep_dict(self):
         obj = {
@@ -334,4 +334,4 @@ class GrepTestCase(unittest.TestCase):
             "ingredients": ["no meat", "no eggs", "no dairy", "somewhere"]
         }
         ds = obj | grep(item)
-        self.assertEqual(ds, {'matched_values': {"root['ingredients'][3]"}})
+        assert ds == {'matched_values': {"root['ingredients'][3]"}}

@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==4.0.1
+pytest-cov==2.6.0
+numpy==1.15.4

@@ -1,20 +1,19 @@
 language: python
 
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "pypy-5.4"  # pypy on python 2.7
-  # - "pypy3"  # Removing pypy3 from travis since travis's pypy3 seems buggy
-
-sudo: false
+matrix:
+  include:
+    - python: 3.4
+    - python: 3.5
+    - python: 3.6
+    - python: pypy3
+    - python: 3.7
+      dist: xenial
+      sudo: true
 
 install:
-  - pip install coveralls
+  - pip install -r requirements-dev.txt
 
-script: coverage run --source deepdiff setup.py test
+script: pytest --cov=deepdiff tests/
 
 after_success:
   - coveralls
