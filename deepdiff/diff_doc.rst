@@ -91,7 +91,7 @@ Example of using the text view.
     >>> print(ddiff)
     {'dictionary_item_added': [root[5], root[6]], 'dictionary_item_removed': [root[4]]}
 
-So for example ddiff['dictionary_item_removed'] is a set if strings thus this is called the text view.
+So for example ddiff['dictionary_item_added'] is a set of strings thus this is called the text view.
 
 .. seealso::
     The following examples are using the *default text view.*
