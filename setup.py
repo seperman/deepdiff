@@ -52,6 +52,7 @@ setup(name='deepdiff',
       long_description=long_description,
       long_description_content_type='text/markdown',
       install_requires=reqs,
+      python_requires='>=3.4',
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
