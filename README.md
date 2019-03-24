@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.0
+# DeepDiff v 4.0.1
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -13,7 +13,7 @@
 
 Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
-**NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2**
+**NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
 
 
 - [Documentation](http://deepdiff.readthedocs.io/en/latest/)
@@ -23,7 +23,15 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 ### Install from PyPi:
 
-    pip install deepdiff
+    `pip install deepdiff`
+
+DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running:
+
+    `pip install mmh3`
+
+Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
+
+If you are running into trouble installing Murmur3, please take a look at the [Troubleshoot](#troubleshoot) section.
 
 ### Importing
 
@@ -388,8 +396,25 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 <http://deepdiff.readthedocs.io/en/latest/>
 
+# Troubleshoot
+
+## Murmur3
+
+`Failed to build mmh3 when installing DeepDiff`
+
+DeepDiff prefers to use Murmur3 for hashing. However you have to manually install murmur3 by running: `pip install mmh3`
+
+On MacOS Mojave some user experience difficulty when installing Murmur3.
+
+The problem can be solved by running:
+
+    `xcode-select --install`
+
+And then running `pip install mmh3`
+
 # ChangeLog
 
+- v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes

@@ -328,7 +328,7 @@ The shortcuts are ignore_string_type_changes which by default is False and ignor
 
 For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
 
-1. Set ignore_string_type_changes=True which is the default.
+1. Set ignore_string_type_changes=True.
 2. Or set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
 
 Now what if you want also typeA and typeB to be ignored when comparing agains each other?

@@ -10,6 +10,8 @@ At the core of it, DeepHash is a deterministic serialization of your object into
 can be passed to a hash function. By default it uses Murmur 3 128 bit hash function which is a
 fast, non-cryptographic hashing function. You have the option to pass any another hashing function to be used instead.
 
+If it can't find Murmur3 package (mmh3) installed, it uses Python's built-in SHA256 for hashing which is considerably slower than Murmur3. So it is advised that you install Murmur3 by running `pip install mmh3`
+
 **Import**
     >>> from deepdiff import DeepHash
 
@@ -89,13 +91,10 @@ By setting it to True, both the string and bytes of hello return the same hash.
     >>> DeepHash('hello', ignore_string_type_changes=True)
     {'hello': 221860156526691709602818861774599422448}
 
-ignore_numeric_type_changes
-Default: False
-
-ignore_numeric_type_changes: Boolean, default = True
+ignore_numeric_type_changes: Boolean, default = False
     numeric type conversions should not affect the hash output when this is set to True.
     For example 10, 10.0 and Decimal(10) should produce the same hash.
-    However when ignore_numeric_type_changes is set to True, all numbers are converted
+    When ignore_numeric_type_changes is set to True, all numbers are converted
     to decimals with the precision of significant_digits parameter.
     If no significant_digits is passed by the user, a default value of 55 is used.
 
