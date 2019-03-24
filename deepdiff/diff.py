@@ -57,7 +57,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_numeric_type_changes=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
-                 hasher=DeepHash.murmur3_128bit,
+                 hasher=None,
                  **kwargs):
         if kwargs:
             raise ValueError((

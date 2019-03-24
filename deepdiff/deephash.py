@@ -1,21 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import mmh3
 import logging
 from collections import Iterable
 from collections import MutableMapping
 from collections import defaultdict
 from decimal import Decimal
-from hashlib import sha1
+from hashlib import sha1, sha256
 
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, current_dir,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id)
 from deepdiff.base import Base
-
 logger = logging.getLogger(__name__)
+
+try:
+    import mmh3
+except ImportError:
+    logger.warning('Can not find Murmur3 hashing installed. Switching to SHA256 as the default hash. Refer to https://github.com/seperman/deepdiff#murmur3 for more info.')
+    mmh3 = False
 
 UNPROCESSED = 'unprocessed'
 MURMUR_SEED = 1203
@@ -77,8 +81,8 @@ class DeepHash(dict, Base):
         self.ignore_repetition = ignore_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
-
-        self.hasher = self.murmur3_128bit if hasher is None else hasher
+        default_hasher = self.murmur3_128bit if mmh3 else self.sha256hex
+        self.hasher = default_hasher if hasher is None else hasher
         hashes = hashes if hashes else {}
         self.update(hashes)
         self[UNPROCESSED] = []
@@ -100,6 +104,12 @@ class DeepHash(dict, Base):
             logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
         else:
             del self[UNPROCESSED]
+
+    @staticmethod
+    def sha256hex(obj):
+        """Use Sha256 as a cryptographic hash."""
+        obj = obj.encode('utf-8')
+        return sha256(obj).hexdigest()
 
     @staticmethod
     def sha1hex(obj):

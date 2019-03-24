@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 4.0.0 documentation!
+DeepDiff 4.0.1 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
@@ -25,6 +25,15 @@ Install from PyPi::
 
     pip install deepdiff
 
+DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running::
+
+    pip install mmh3
+
+Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
+
+If you are running into trouble installing Murmur3, please take a look at the `Troubleshoot <#troubleshoot>`__ section.
+
+
 Importing
 ~~~~~~~~~
 
@@ -37,6 +46,12 @@ Importing
 ********
 DeepDiff
 ********
+
+Read The DeepDiff details in:
+
+:doc:`/diff`
+
+Short introduction::
 
 Supported data types
 ~~~~~~~~~~~~~~~~~~~~
@@ -174,6 +189,12 @@ The core of DeepHash is a deterministic serialization of your object into a stri
 can be passed to a hash function. By default it uses Murmur 3 128 bit hash function.
 but you can pass another hash function to it if you want.
 
+Read the details at:
+
+:doc:`/deephash`
+
+Examples:
+
 Let's say you have a dictionary object.
 
 .. code:: python
@@ -216,6 +237,28 @@ Read more in the Deep Hash reference:
 :doc:`/deephash`
 
 
+************
+Troubleshoot
+************
+
+Murmur3
+~~~~~~~
+
+`Failed to build mmh3 when installing DeepDiff`
+
+DeepDiff prefers to use Murmur3 for hashing. However you have to manually install murmur3 by running: `pip install mmh3`
+
+On MacOS Mojave some user experience difficulty when installing Murmur3.
+
+The problem can be solved by running:
+
+    `xcode-select --install`
+
+And then running
+
+    `pip install mmh3`
+
+
 References
 ==========
 
@@ -238,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
 - v3-5-0: Exclude regex path
 - v3-3-0: Searching for objects and class attributes
