@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.1
+# DeepDiff v 4.0.2
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -414,6 +414,7 @@ And then running `pip install mmh3`
 
 # ChangeLog
 
+- v4-0-2: Fixing installation issue where rst files are missing.
 - v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
 - v3-5-0: Exclude regex path

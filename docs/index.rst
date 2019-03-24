@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 4.0.1 documentation!
+DeepDiff 4.0.2 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-0-2: Fixing installation issue where rst files are missing.
 - v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
 - v3-5-0: Exclude regex path
