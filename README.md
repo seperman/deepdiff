@@ -455,7 +455,7 @@ We use bump2version to bump and tag releases.
 
 ```bash
 git checkout master && git pull
-bump2version {patch|minor|major}
+bumpversion {patch|minor|major}
 git push && git push --tags
 ```
 
