@@ -1,5 +1,5 @@
 -r requirements.txt
-pytest-4.3.1
+pytest==4.3.1
 pytest-cov==2.6.1
 numpy==1.16.2
 mmh3==2.5.1
