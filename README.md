@@ -23,11 +23,11 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 ### Install from PyPi:
 
-    `pip install deepdiff`
+`pip install deepdiff`
 
 DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running:
 
-    `pip install mmh3`
+`pip install mmh3`
 
 Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
 
@@ -157,8 +157,7 @@ Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Numb
                          'new_value': 3.0,
                          'old_type': <class 'int'>,
                          'old_value': 3}}}
->>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=True)
->>> pprint(ddiff, indent=2)
+>>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(int, float)])
 {}
 ```
 
@@ -408,9 +407,11 @@ On MacOS Mojave some user experience difficulty when installing Murmur3.
 
 The problem can be solved by running:
 
-    `xcode-select --install`
+`xcode-select --install`
 
-And then running `pip install mmh3`
+And then running
+
+`pip install mmh3`
 
 # ChangeLog
 
@@ -447,6 +448,16 @@ And then running `pip install mmh3`
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
+
+# Releases
+
+We use bump2version to bump and tag releases.
+
+```bash
+git checkout master && git pull
+bump2version {patch|minor|major}
+git push && git push --tags
+```
 
 # Contribute
 

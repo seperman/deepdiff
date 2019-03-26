@@ -1375,6 +1375,13 @@ class TestDeepDiffText:
         result = {'iterable_item_added': {'root[2]': 3.3}, 'iterable_item_removed': {'root[2]': 3}}
         assert result == ddiff
 
+    def test_ignore_type_in_groups_none_and_objects(self):
+        t1 = [1, 2, 3, 'a', None]
+        t2 = [1.0, 2.0, 3.3, b'a', 'hello']
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(1, 1.0), (None, str, bytes)])
+        result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
+        assert result == ddiff
+
     def test_ignore_string_type_changes_when_dict_keys_merge_is_not_deterministic(self):
         t1 = {'a': 10, b'a': 20}
         t2 = {'a': 11, b'a': 22}

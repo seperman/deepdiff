@@ -55,6 +55,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
+                 ignore_type_subclasses=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
@@ -64,8 +65,8 @@ class DeepDiff(ResultDict, Base):
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, verbose_level, view, "
-                "and hasher.") % ', '.join(kwargs.keys()))
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
+                "verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -78,6 +79,7 @@ class DeepDiff(ResultDict, Base):
         self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
+        self.ignore_type_subclasses = ignore_type_subclasses
         self.hashes = {}
         self.hasher = hasher
 
