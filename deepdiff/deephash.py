@@ -11,7 +11,7 @@ from hashlib import sha1, sha256
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, current_dir,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             get_id)
+                             get_id, type_is_subclass_of_type_group, type_in_type_group)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,7 @@ class DeepHash(dict, Base):
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
         self.apply_hash = apply_hash
+        self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
 
         self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
 
@@ -225,7 +226,7 @@ class DeepHash(dict, Base):
             type_ = original_type or type(obj)
             type_str = type_.__name__
             for type_group in self.ignore_type_in_groups:
-                if type_ in type_group:
+                if self.type_check_func(type_, type_group):
                     type_str = ','.join(map(lambda x: x.__name__, type_group))
                     break
         else:
