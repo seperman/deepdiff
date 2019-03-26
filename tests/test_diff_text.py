@@ -209,6 +209,18 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_string_difference_ignore_case(self):
+        t1 = "Hello"
+        t2 = "hello"
+
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root': {'new_value': 'hello', 'old_value': 'Hello'}}}
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_string_case=True)
+        result = {}
+        assert result == ddiff
+
     def test_bytes(self):
         t1 = {
             1: 1,
@@ -889,6 +901,29 @@ class TestDeepDiffText:
 
         ddiff = DeepDiff(ClassA, ClassB, ignore_type_in_groups=[(ClassA, ClassB)])
         result = {'iterable_item_removed': {'root.__slots__[1]': 'y'}, 'attribute_removed': {'root.__init__', 'root.y'}}
+        assert result == ddiff
+
+    def test_custom_object_changes_when_ignore_type_in_groups(self):
+        class ClassA:
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class ClassB:
+            def __init__(self, x):
+                self.x = x
+
+        class ClassC(ClassB):
+            pass
+
+        obj_a = ClassA(1, 2)
+        obj_c = ClassC(3)
+        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
+        result = {'type_changes': {'root': {'old_type': ClassA, 'new_type': ClassC, 'old_value': obj_a, 'new_value': obj_c}}}
+        assert result == ddiff
+
+        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
+        result = {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': ['root.y']}
         assert result == ddiff
 
     def test_custom_objects_slot_in_parent_class_change(self):

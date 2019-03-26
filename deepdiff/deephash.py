@@ -34,7 +34,7 @@ KEY_TO_VAL_STR = "{}:{}"
 ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 
-def prepare_string_for_hashing(obj, ignore_string_type_changes=False):
+def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):
     """
     Clean type conversions
     """
@@ -43,6 +43,8 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False):
         obj = obj.decode('utf-8')
     if not ignore_string_type_changes:
         obj = KEY_TO_VAL_STR.format(original_type, obj)
+    if ignore_string_case:
+        obj = obj.lower()
     return obj
 
 
@@ -67,6 +69,8 @@ class DeepHash(dict, Base):
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
+                 ignore_type_subclasses=False,
+                 ignore_string_case=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -74,7 +78,7 @@ class DeepHash(dict, Base):
                  "The valid parameters are obj, hashes, exclude_types,"
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition,"
                  "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes,"
-                 "ignore_numeric_type_changes") % ', '.join(kwargs.keys()))
+                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -89,10 +93,13 @@ class DeepHash(dict, Base):
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
-            ignore_type_in_groups,
-            ignore_string_type_changes, ignore_numeric_type_changes)
+            ignore_type_in_groups=ignore_type_in_groups,
+            ignore_string_type_changes=ignore_string_type_changes,
+            ignore_numeric_type_changes=ignore_numeric_type_changes,
+            ignore_type_subclasses=ignore_type_subclasses)
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
+        self.ignore_string_case = ignore_string_case
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
@@ -303,7 +310,9 @@ class DeepHash(dict, Base):
             result = 'NONE'
 
         elif isinstance(obj, strings):
-            result = prepare_string_for_hashing(obj, ignore_string_type_changes=self.ignore_string_type_changes)
+            result = prepare_string_for_hashing(
+                obj, ignore_string_type_changes=self.ignore_string_type_changes,
+                ignore_string_case=self.ignore_string_case)
 
         elif isinstance(obj, numbers):
             result = self._prep_number(obj)
@@ -333,7 +342,9 @@ class DeepHash(dict, Base):
             if isinstance(obj, strings):
                 result_cleaned = result
             else:
-                result_cleaned = prepare_string_for_hashing(result, ignore_string_type_changes=self.ignore_string_type_changes)
+                result_cleaned = prepare_string_for_hashing(
+                    result, ignore_string_type_changes=self.ignore_string_type_changes,
+                    ignore_string_case=self.ignore_string_case)
             result = self.hasher(result_cleaned)
 
         # It is important to keep the hash of all objects.
