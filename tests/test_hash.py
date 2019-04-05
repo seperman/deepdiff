@@ -335,19 +335,38 @@ class TestDeepHashPrep:
         def __init__(self):
             self.spicy = True
 
+    class ClassA:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    class ClassB:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    class ClassC(ClassB):
+        pass
+
+    obj_a = ClassA(1, 2)
+    obj_c = ClassC(1, 2)
+
     burrito = Burrito()
     taco = Taco()
 
-    @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, is_qual", [
-        (taco, burrito, [], False),
-        (taco, burrito, [(Taco, Burrito)], True),
-        ([taco], [burrito], [(Taco, Burrito)], True),
-
+    @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
+        # (taco, burrito, [], False, False),
+        # (taco, burrito, [(Taco, Burrito)], False, True),
+        # ([taco], [burrito], [(Taco, Burrito)], False, True),
+        # ([obj_a], [obj_c], [(ClassA, ClassB)], False, False),
+        ([obj_a], [obj_c], [(ClassA, ClassB)], True, True),
     ])
-    def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, is_qual):
+    def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
 
-        t1_result = DeepHashPrep(t1, ignore_type_in_groups=ignore_type_in_groups)
-        t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups)
+        t1_result = DeepHashPrep(t1, ignore_type_in_groups=ignore_type_in_groups,
+                                 ignore_type_subclasses=ignore_type_subclasses)
+        t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups,
+                                 ignore_type_subclasses=ignore_type_subclasses)
         assert is_qual == (t1_result[t1] == t2_result[t2])
 
     def test_repetition_by_default_does_not_effect(self):
@@ -470,6 +489,15 @@ class TestDeepHashPrep:
         assert 1 not in t1_hash
         assert 2 in t1_hash
         assert t1_hash[2] == t2_hash[2]
+
+    def test_string_case(self):
+        t1 = "Hello"
+
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash == {'Hello': 'str:Hello'}
+
+        t1_hash = DeepHashPrep(t1, ignore_string_case=True)
+        assert t1_hash == {'Hello': 'str:hello'}
 
 
 class TestDeepHashSHA1:

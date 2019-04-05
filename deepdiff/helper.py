@@ -195,3 +195,11 @@ def get_type(obj):
     Get the type of object or if it is a class, return the class itself.
     """
     return obj if type(obj) is type else type(obj)
+
+
+def type_in_type_group(item, type_group):
+    return get_type(item) in type_group
+
+
+def type_is_subclass_of_type_group(item, type_group):
+    return isinstance(item, type_group) or issubclass(item, type_group) or type_in_type_group(item, type_group)

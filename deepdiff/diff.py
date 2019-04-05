@@ -23,7 +23,8 @@ from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
-                             convert_item_or_items_into_compiled_regexes_else_none, current_dir)
+                             convert_item_or_items_into_compiled_regexes_else_none, current_dir,
+                             type_is_subclass_of_type_group, type_in_type_group)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -55,6 +56,8 @@ class DeepDiff(ResultDict, Base):
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
+                 ignore_type_subclasses=False,
+                 ignore_string_case=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
@@ -64,13 +67,15 @@ class DeepDiff(ResultDict, Base):
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, verbose_level, view, "
-                "and hasher.") % ', '.join(kwargs.keys()))
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
+                "verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
-            ignore_type_in_groups,
-            ignore_string_type_changes, ignore_numeric_type_changes)
+            ignore_type_in_groups=ignore_type_in_groups,
+            ignore_string_type_changes=ignore_string_type_changes,
+            ignore_numeric_type_changes=ignore_numeric_type_changes,
+            ignore_type_subclasses=ignore_type_subclasses)
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
@@ -78,6 +83,9 @@ class DeepDiff(ResultDict, Base):
         self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
+        self.ignore_type_subclasses = ignore_type_subclasses
+        self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+        self.ignore_string_case = ignore_string_case
         self.hashes = {}
         self.hasher = hasher
 
@@ -383,6 +391,10 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_str(self, level):
         """Compare strings"""
+        if self.ignore_string_case:
+            level.t1 = level.t1.lower()
+            level.t2 = level.t2.lower()
+
         if type(level.t1) == type(level.t2) and level.t1 == level.t2:
             return
 
@@ -407,12 +419,12 @@ class DeepDiff(ResultDict, Base):
             return
 
         if do_diff:
-            if u'\n' in t1_str or u'\n' in t2_str:
+            if '\n' in t1_str or '\n' in t2_str:
                 diff = difflib.unified_diff(
                     t1_str.splitlines(), t2_str.splitlines(), lineterm='')
                 diff = list(diff)
                 if diff:
-                    level.additional['diff'] = u'\n'.join(diff)
+                    level.additional['diff'] = '\n'.join(diff)
 
         self.__report_result('values_changed', level)
 
@@ -451,6 +463,8 @@ class DeepDiff(ResultDict, Base):
                                       ignore_string_type_changes=self.ignore_string_type_changes,
                                       ignore_numeric_type_changes=self.ignore_numeric_type_changes,
                                       ignore_type_in_groups=self.ignore_type_in_groups,
+                                      ignore_type_subclasses=self.ignore_type_subclasses,
+                                      ignore_string_case=self.ignore_string_case
                                       )
                 item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
@@ -580,7 +594,7 @@ class DeepDiff(ResultDict, Base):
         if get_type(level.t1) != get_type(level.t2):
             report_type_change = True
             for type_group in self.ignore_type_in_groups:
-                if get_type(level.t1) in type_group and get_type(level.t2) in type_group:
+                if self.type_check_func(level.t1, type_group) and self.type_check_func(level.t2, type_group):
                     report_type_change = False
                     break
             if report_type_change:
