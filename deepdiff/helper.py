@@ -203,3 +203,12 @@ def type_in_type_group(item, type_group):
 
 def type_is_subclass_of_type_group(item, type_group):
     return isinstance(item, type_group) or issubclass(item, type_group) or type_in_type_group(item, type_group)
+
+
+def get_doc(doc_filename):
+    try:
+        with open(os.path.join(current_dir, doc_filename), 'r') as doc_file:
+            doc = doc_file.read()
+    except Exception:
+        doc = 'Failed to load the docstrings. Please visit: https://github.com/seperman/deepdiff'
+    return doc

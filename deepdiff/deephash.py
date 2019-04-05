@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
 import logging
 from collections import Iterable
 from collections import MutableMapping
@@ -9,7 +8,7 @@ from decimal import Decimal
 from hashlib import sha1, sha256
 
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
-                             convert_item_or_items_into_set_else_none, current_dir,
+                             convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group)
 from deepdiff.base import Base
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 try:
     import mmh3
 except ImportError:
-    logger.warning('Can not find Murmur3 hashing installed. Switching to SHA256 as the default hash. Refer to https://github.com/seperman/deepdiff#murmur3 for more info.')
     mmh3 = False
 
 UNPROCESSED = 'unprocessed'
@@ -48,8 +46,7 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_str
     return obj
 
 
-with open(os.path.join(current_dir, 'deephash_doc.rst'), 'r') as doc_file:
-    doc = doc_file.read()
+doc = get_doc('deephash_doc.rst')
 
 
 class DeepHash(dict, Base):

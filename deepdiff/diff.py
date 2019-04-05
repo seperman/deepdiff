@@ -23,8 +23,8 @@ from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
-                             convert_item_or_items_into_compiled_regexes_else_none, current_dir,
-                             type_is_subclass_of_type_group, type_in_type_group)
+                             convert_item_or_items_into_compiled_regexes_else_none,
+                             type_is_subclass_of_type_group, type_in_type_group, get_doc)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -37,8 +37,8 @@ warnings.simplefilter('once', DeprecationWarning)
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
-with open(os.path.join(current_dir, 'diff_doc.rst'), 'r') as doc_file:
-    doc = doc_file.read()
+
+doc = get_doc('diff_doc.rst')
 
 
 class DeepDiff(ResultDict, Base):
