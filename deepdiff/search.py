@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# In order to run the docstrings:
-# python3 -m deepdiff.search
-import os
 import re
 from collections.abc import MutableMapping, Iterable
 import logging
 
-from deepdiff.helper import strings, numbers, add_to_frozen_set, current_dir
+from deepdiff.helper import strings, numbers, add_to_frozen_set, get_doc
 
 logger = logging.getLogger(__name__)
 
 
-with open(os.path.join(current_dir, 'search_doc.rst'), 'r') as doc_file:
-    doc = doc_file.read()
+doc = get_doc('search_doc.rst')
 
 
 class DeepSearch(dict):

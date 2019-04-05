@@ -69,6 +69,12 @@ ignore_numeric_type_changes: Boolean, default = False
 ignore_type_in_groups: Tuple or List of Tuples, default = None
     ignores types when t1 and t2 are both within the same type group.
 
+ignore_type_subclasses: Boolean, default = False
+    ignore type (class) changes when dealing with the subclasses of classes that were marked to be ignored.
+
+ignore_string_case: Boolean, default = False
+    Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
+
 **Returns**
 
     A DeepDiff object that has already calculated the difference of the 2 items.
@@ -322,31 +328,27 @@ Exclude certain types from comparison:
     {}
 
 ignore_type_in_groups
+    Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
+    The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
 
-Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
-The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
+    For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
 
-For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
+    1. Set ignore_string_type_changes=True.
+    2. Or set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
 
-1. Set ignore_string_type_changes=True.
-2. Or set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
+    Now what if you want also typeA and typeB to be ignored when comparing agains each other?
 
-Now what if you want also typeA and typeB to be ignored when comparing agains each other?
+    1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
+    2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
 
-1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
-2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
-
-ignore_string_type_changes
-Default: False
+ignore_string_type_changes Default: False
     >>> DeepDiff(b'hello', 'hello', ignore_string_type_changes=True)
     {}
     >>> DeepDiff(b'hello', 'hello')
     {'type_changes': {'root': {'old_type': <class 'bytes'>, 'new_type': <class 'str'>, 'old_value': b'hello', 'new_value': 'hello'}}}
 
-ignore_numeric_type_changes
-Default: False
-
-Ignore Type Number - Dictionary that contains float and integer:
+ignore_numeric_type_changes Default: False
+    Ignore Type Number - Dictionary that contains float and integer
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint
     >>> t1 = {1: 1, 2: 2.22}
@@ -361,7 +363,7 @@ Ignore Type Number - Dictionary that contains float and integer:
     >>> pprint(ddiff, indent=2)
     {}
 
-Ignore Type Number - List that contains float and integer:
+Ignore Type Number - List that contains float and integer
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint
     >>> t1 = [1, 2, 3]
@@ -384,7 +386,7 @@ Ignore Type Number - List that contains float and integer:
     >>> pprint(ddiff, indent=2)
     {}
 
-You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+    You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
     >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
 
 
@@ -410,6 +412,39 @@ ignore_type_in_groups example with custom objects:
     >>> DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
     {}
 
+
+ignore_type_subclasses
+    Use ignore_type_subclasses=True so when ignoring type (class), the subclasses of that class are ignored too.
+
+    >>> from deepdiff import DeepDiff
+    >>> class ClassA:
+    ...     def __init__(self, x, y):
+    ...         self.x = x
+    ...         self.y = y
+    ...
+    >>> class ClassB:
+    ...     def __init__(self, x):
+    ...         self.x = x
+    ...
+    >>> class ClassC(ClassB):
+    ...     pass
+    ...
+    >>> obj_a = ClassA(1, 2)
+    >>> obj_c = ClassC(3)
+    >>>
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
+    {'type_changes': {'root': {'old_type': <class '__main__.ClassA'>, 'new_type': <class '__main__.ClassC'>, 'old_value': <__main__.ClassA object at 0x10076a2e8>, 'new_value': <__main__.ClassC object at 0x10082f630>}}}
+    >>>
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
+    {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
+
+ignore_string_case
+    Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
+
+    >>> DeepDiff(t1='Hello', t2='heLLO')
+    {'values_changed': {'root': {'new_value': 'heLLO', 'old_value': 'Hello'}}}
+    >>> DeepDiff(t1='Hello', t2='heLLO', ignore_string_case=True)
+    {}
 
 **Tree View**
 

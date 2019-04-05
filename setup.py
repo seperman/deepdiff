@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 from setuptools import setup
 
@@ -11,16 +10,7 @@ if sys.version[0] == '2':  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-
-VERSIONFILE = "deepdiff/__init__.py"
-with open(VERSIONFILE, "r") as the_file:
-    verstrline = the_file.read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
-if mo:
-    verstr = mo.group(1)
-else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+version = '4.0.4'
 
 
 def get_reqs(filename):
@@ -37,7 +27,7 @@ with open('README.md') as file:
 
 
 setup(name='deepdiff',
-      version=verstr,
+      version=version,
       description='Deep Difference and Search of any Python object/data.',
       url='https://github.com/seperman/deepdiff',
       download_url='https://github.com/seperman/deepdiff/tarball/master',
@@ -53,6 +43,9 @@ setup(name='deepdiff',
       long_description_content_type='text/markdown',
       install_requires=reqs,
       python_requires='>=3.4',
+      extras_require={
+          "murmur": ["mmh3"],
+      },
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",

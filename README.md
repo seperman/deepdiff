@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.2
+# DeepDiff v 4.0.4
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -23,11 +23,11 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 ### Install from PyPi:
 
-    `pip install deepdiff`
+`pip install deepdiff`
 
 DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running:
 
-    `pip install mmh3`
+`pip install 'deepdiff[murmur]'`
 
 Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
 
@@ -48,7 +48,9 @@ DeepDiff gets the difference of 2 objects.
 > - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
 > - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
-## Examples
+## A few Examples
+
+> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://deepdiff.readthedocs.io> for full documentation.
 
 ### List difference ignoring order or duplicates
 
@@ -157,8 +159,7 @@ Digits **after** the decimal point. Internally it uses "{:.Xf}".format(Your Numb
                          'new_value': 3.0,
                          'old_type': <class 'int'>,
                          'old_value': 3}}}
->>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=True)
->>> pprint(ddiff, indent=2)
+>>> ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(int, float)])
 {}
 ```
 
@@ -408,12 +409,16 @@ On MacOS Mojave some user experience difficulty when installing Murmur3.
 
 The problem can be solved by running:
 
-    `xcode-select --install`
+`xcode-select --install`
 
-And then running `pip install mmh3`
+And then running
+
+`pip install mmh3`
 
 # ChangeLog
 
+- v4-0-4: Adding ignore_string_case and ignore_type_subclasses
+- v4-0-3: Adding versionbump tool for release
 - v4-0-2: Fixing installation issue where rst files are missing.
 - v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
@@ -447,6 +452,16 @@ And then running `pip install mmh3`
 - v0-5-7: Adding ignore order support
 - v0-5-6: Adding slots support
 - v0-5-5: Adding loop detection
+
+# Releases
+
+We use bump2version to bump and tag releases.
+
+```bash
+git checkout master && git pull
+bumpversion {patch|minor|major}
+git push && git push --tags
+```
 
 # Contribute
 

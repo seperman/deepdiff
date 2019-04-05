@@ -19,19 +19,30 @@ class Base:
 
     def get_ignore_types_in_groups(self, ignore_type_in_groups,
                                    ignore_string_type_changes,
-                                   ignore_numeric_type_changes):
+                                   ignore_numeric_type_changes,
+                                   ignore_type_subclasses):
         if ignore_type_in_groups:
             if isinstance(ignore_type_in_groups[0], type):
-                ignore_type_in_groups = [OrderedSet(ignore_type_in_groups)]
-            else:
-                ignore_type_in_groups = list(map(OrderedSet, ignore_type_in_groups))
+                ignore_type_in_groups = [ignore_type_in_groups]
         else:
             ignore_type_in_groups = []
+
+        result = []
+        for item_group in ignore_type_in_groups:
+            new_item_group = OrderedSet()
+            for item in item_group:
+                item = type(item) if item is None or not isinstance(item, type) else item
+                new_item_group.add(item)
+            result.append(new_item_group)
+        ignore_type_in_groups = result
 
         if ignore_string_type_changes and self.strings not in ignore_type_in_groups:
             ignore_type_in_groups.append(OrderedSet(self.strings))
 
         if ignore_numeric_type_changes and self.numbers not in ignore_type_in_groups:
             ignore_type_in_groups.append(OrderedSet(self.numbers))
+
+        if ignore_type_subclasses:
+            ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
 
         return ignore_type_in_groups
