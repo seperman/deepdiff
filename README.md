@@ -27,7 +27,7 @@ Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
 
 DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running:
 
-`pip install mmh3`
+`pip install 'deepdiff[murmur]'`
 
 Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
 
