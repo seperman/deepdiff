@@ -349,17 +349,19 @@ class TestDeepHashPrep:
         pass
 
     obj_a = ClassA(1, 2)
+    obj_b = ClassB(1, 2)
     obj_c = ClassC(1, 2)
 
     burrito = Burrito()
     taco = Taco()
 
     @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
-        # (taco, burrito, [], False, False),
-        # (taco, burrito, [(Taco, Burrito)], False, True),
-        # ([taco], [burrito], [(Taco, Burrito)], False, True),
-        # ([obj_a], [obj_c], [(ClassA, ClassB)], False, False),
+        (taco, burrito, [], False, False),
+        (taco, burrito, [(Taco, Burrito)], False, True),
+        ([taco], [burrito], [(Taco, Burrito)], False, True),
+        ([obj_a], [obj_c], [(ClassA, ClassB)], False, False),
         ([obj_a], [obj_c], [(ClassA, ClassB)], True, True),
+        ([obj_b], [obj_c], [(ClassB, )], True, True),
     ])
     def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
 

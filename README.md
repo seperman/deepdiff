@@ -48,7 +48,9 @@ DeepDiff gets the difference of 2 objects.
 > - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
 > - The full documentation can be found on <https://deepdiff.readthedocs.io>
 
-## Examples
+## A few Examples
+
+> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://deepdiff.readthedocs.io> for full documentation.
 
 ### List difference ignoring order or duplicates
 
@@ -415,6 +417,8 @@ And then running
 
 # ChangeLog
 
+- v4-0-4: Adding ignore_string_case and ignore_type_subclasses
+- v4-0-3: Adding versionbump tool for release
 - v4-0-2: Fixing installation issue where rst files are missing.
 - v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
 - v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.

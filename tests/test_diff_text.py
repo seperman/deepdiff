@@ -914,7 +914,8 @@ class TestDeepDiffText:
                 self.x = x
 
         class ClassC(ClassB):
-            pass
+            def __repr__(self):
+                return "obj c"
 
         obj_a = ClassA(1, 2)
         obj_c = ClassC(3)
