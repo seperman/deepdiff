@@ -38,6 +38,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 ID_PREFIX = '!>*id'
 
+ZERO_DECIMAL_CHARACTERS = set("-0.")
+
 
 def short_repr(item, max_length=15):
     """Short representation of item if it is too long"""
@@ -212,3 +214,15 @@ def get_doc(doc_filename):
     except Exception:
         doc = 'Failed to load the docstrings. Please visit: https://github.com/seperman/deepdiff'
     return doc
+
+
+def number_to_string(number, significant_digits):
+    # if isinstance(number, int):
+    #     number = Decimal(str(number))
+    if isinstance(number, Decimal):
+        number = number.quantize(Decimal('0.' + '0' * significant_digits))
+    result = ("{:.%sf}" % significant_digits).format(number)
+    # Special case for 0: "-0.00" should compare equal to "0.00"
+    if set(result) <= ZERO_DECIMAL_CHARACTERS:
+        result = "0.00"
+    return result

@@ -1426,6 +1426,14 @@ class TestDeepDiffText:
         alternative_result = {'values_changed': {"root['a']": {'new_value': 11, 'old_value': 10}}}
         assert result == ddiff or alternative_result == ddiff
 
+    @pytest.mark.parametrize("t1, t2, significant_digits, result", [
+        ([0.1], [Decimal('0.10')], None, {}),
+        ([1], [Decimal('1.00000002')], 3, {}),
+    ])
+    def test_ignore_type_in_groups_numbers_when_decimal(self, t1, t2, significant_digits, result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, significant_digits=significant_digits)
+        assert result == ddiff
+
     @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):
         """

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-from collections import Iterable
-from collections import MutableMapping
+from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha1, sha256
@@ -10,7 +9,8 @@ from hashlib import sha1, sha256
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             get_id, type_is_subclass_of_type_group, type_in_type_group)
+                             get_id, type_is_subclass_of_type_group, type_in_type_group,
+                             number_to_string)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,6 @@ EMPTY_FROZENSET = frozenset({})
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
 KEY_TO_VAL_STR = "{}:{}"
-
-ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 
 def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):
@@ -68,14 +66,16 @@ class DeepHash(dict, Base):
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 number_to_string_func=None,
                  **kwargs):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
-                 "The valid parameters are obj, hashes, exclude_types,"
-                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition,"
-                 "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes,"
-                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case") % ', '.join(kwargs.keys()))
+                 "The valid parameters are obj, hashes, exclude_types, "
+                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
+                 "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
+                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
+                 "number_to_string_func") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -102,6 +102,7 @@ class DeepHash(dict, Base):
         # testing the individual hash functions for different types of objects.
         self.apply_hash = apply_hash
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+        self.number_to_string = number_to_string_func or number_to_string
 
         self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
 
@@ -266,11 +267,7 @@ class DeepHash(dict, Base):
     def _prep_number(self, obj):
         if self.significant_digits is not None and (
                 self.ignore_numeric_type_changes or isinstance(obj, (float, complex, Decimal))):
-            obj_s = ("{:.%sf}" % self.significant_digits).format(obj)
-
-            # Special case for 0: "-0.00" should compare equal to "0.00"
-            if set(obj_s) <= ZERO_DECIMAL_CHARACTERS:
-                obj_s = "0.00"
+            obj_s = self.number_to_string(obj, self.significant_digits)
             result = "number:{}".format(obj_s)
         else:
             result = KEY_TO_VAL_STR.format(type(obj).__name__, obj)
