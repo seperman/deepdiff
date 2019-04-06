@@ -4,7 +4,7 @@ import datetime
 import re
 import os
 import logging
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from collections import namedtuple
 from ordered_set import OrderedSet
 
@@ -216,12 +216,16 @@ def get_doc(doc_filename):
     return doc
 
 
-def number_to_string(number, significant_digits):
-    # if isinstance(number, int):
-    #     number = Decimal(str(number))
+def number_to_string(number, significant_digits, using="{:.%sf}"):
+    """
+    Convert numbers to string considering significant digits.
+    """
     if isinstance(number, Decimal):
-        number = number.quantize(Decimal('0.' + '0' * significant_digits))
-    result = ("{:.%sf}" % significant_digits).format(number)
+        tup = number.as_tuple()
+        with localcontext() as ctx:
+            ctx.prec = len(tup.digits) + tup.exponent + significant_digits
+            number = number.quantize(Decimal('0.' + '0' * significant_digits))
+    result = (using % significant_digits).format(number)
     # Special case for 0: "-0.00" should compare equal to "0.00"
     if set(result) <= ZERO_DECIMAL_CHARACTERS:
         result = "0.00"

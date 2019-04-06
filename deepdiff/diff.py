@@ -567,9 +567,8 @@ class DeepDiff(ResultDict, Base):
             # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
             # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-
             t1_s = self.number_to_string(level.t1, self.significant_digits)
-            t2_s = self.number_to_string(level.t1, self.significant_digits)
+            t2_s = self.number_to_string(level.t2, self.significant_digits)
 
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
