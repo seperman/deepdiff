@@ -216,10 +216,20 @@ def get_doc(doc_filename):
     return doc
 
 
-def number_to_string(number, significant_digits, using="{:.%sf}"):
+number_formatting = {
+    "f": r'{:.%sf}',
+    "e": r'{:.%se}'
+}
+
+
+def number_to_string(number, significant_digits, number_format_notation="f"):
     """
     Convert numbers to string considering significant digits.
     """
+    try:
+        using = number_formatting[number_format_notation]
+    except KeyError:
+        raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
     if isinstance(number, Decimal):
         tup = number.as_tuple()
         with localcontext() as ctx:

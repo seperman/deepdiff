@@ -54,12 +54,22 @@ ignore_repetition: Boolean, default = True
     But if you are using DeepHash directly, you can set this parameter.
 
 significant_digits : int >= 0, default=None
-    If it is a non negative integer, it compares only that many digits AFTER
-    the decimal point.
+    By default the significant_digits compares only that many digits AFTER the decimal point. However you can set override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
 
-    This only affects floats, decimal.Decimal and complex numbers.
+    Important: This will affect ANY number comparison when it is set.
 
-    Take a look at DeepDiff.diff docs for explanation of how this works.
+    Note: If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 55. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
+
+    Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
+
+    Note that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
+
+    For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
+
+    When you set the number_format_notation="e", we use "{:.Xe}".format(Your Number) where X=significant_digits.
+
+number_format_notation : string, default="f"
+    number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
 
 apply_hash: Boolean, default = True
     DeepHash at its core is doing deterministic serialization of objects into strings.

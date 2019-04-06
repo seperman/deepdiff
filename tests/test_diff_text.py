@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import math
 import datetime
 import pytest
 import logging
+from unittest import mock
 from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.helper import number_to_string
 from tests import CustomClass
-from unittest import mock
+
 logging.disable(logging.CRITICAL)
 
 
@@ -1307,13 +1310,14 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    @pytest.mark.parametrize("t1, t2, significant_digits, result", [
-        (Decimal('2.5'), Decimal('1.5'), 0, {}),
-        (Decimal('2.5'), Decimal('1.5'), 1, {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
-        (Decimal('2.5'), Decimal(2.5), 3, {}),
+    @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
+        (Decimal('2.5'), Decimal('1.5'), 0, "f", {}),
+        (Decimal('2.5'), Decimal('1.5'), 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
+        (Decimal('2.5'), Decimal(2.5), 3, "f", {}),
+        (1024, 1022, 2, "e", {}),
     ])
-    def test_significant_digits(self, t1, t2, significant_digits, result):
-        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits)
+    def test_significant_digits_and_notation(self, t1, t2, significant_digits, number_format_notation, result):
+        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits, number_format_notation=number_format_notation)
         assert result == ddiff
 
     def test_significant_digits_for_complex_imaginary_part(self):
@@ -1374,6 +1378,29 @@ class TestDeepDiffText:
     def test_negative_significant_digits(self):
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
+
+    def test_number_to_string_func(self):
+        def log_number_to_string(number, *args, **kwargs):
+            number = math.log(number)
+            return number_to_string(number, *args, **kwargs)
+
+        ddiff = DeepDiff(100000, 100021, significant_digits=4, number_format_notation="e",
+                         number_to_string_func=log_number_to_string)
+
+        assert {} == ddiff
+
+        t1 = [10, 100000]
+        t2 = [11, 100021]
+
+        ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
+                         number_to_string_func=log_number_to_string)
+        result = {'values_changed': {'root[0]': {'new_value': 11, 'old_value': 10}}}
+
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
+                         number_to_string_func=log_number_to_string, ignore_order=True)
+        assert {} == ddiff
 
     def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
