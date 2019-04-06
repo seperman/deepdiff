@@ -1307,11 +1307,14 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    def test_significant_digits_for_decimals(self):
-        t1 = Decimal('2.5')
-        t2 = Decimal('1.5')
-        ddiff = DeepDiff(t1, t2, significant_digits=0)
-        assert {} == ddiff
+    @pytest.mark.parametrize("t1, t2, significant_digits, result", [
+        (Decimal('2.5'), Decimal('1.5'), 0, {}),
+        (Decimal('2.5'), Decimal('1.5'), 1, {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
+        (Decimal('2.5'), Decimal(2.5), 3, {}),
+    ])
+    def test_significant_digits(self, t1, t2, significant_digits, result):
+        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits)
+        assert result == ddiff
 
     def test_significant_digits_for_complex_imaginary_part(self):
         t1 = 1.23 + 1.222254j
@@ -1430,6 +1433,8 @@ class TestDeepDiffText:
         ([0.1], [Decimal('0.10')], None,
             {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics, if you don't pass significant digits, they will be not the same values!
         ([0.1], [Decimal('0.10')], 5, {}),  # Same inputs as above but with significant digits that is low.
+        ([-0.1], [-Decimal('0.10')], 5, {}),
+        ([-Decimal('0.102')], [-Decimal('0.10')], 2, {}),
         ([1], [Decimal('1.00000002')], 3, {}),
     ])
     def test_ignore_type_in_groups_numbers_when_decimal(self, t1, t2, significant_digits, result):

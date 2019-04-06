@@ -60,6 +60,7 @@ class DeepHash(dict, Base):
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
+                 significant_digits_formatter="{:.%sf}",
                  apply_hash=True,
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
@@ -71,9 +72,9 @@ class DeepHash(dict, Base):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
-                 "The valid parameters are obj, hashes, exclude_types, "
+                 "The valid parameters are obj, hashes, exclude_types, significant_digits, "
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
-                 "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
+                 "significant_digits_formatter, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
                  "number_to_string_func") % ', '.join(kwargs.keys()))
         self.obj = obj
@@ -89,6 +90,7 @@ class DeepHash(dict, Base):
         self[UNPROCESSED] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.significant_digits_formatter = significant_digits_formatter
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
             ignore_type_in_groups=ignore_type_in_groups,
             ignore_string_type_changes=ignore_string_type_changes,
@@ -267,7 +269,7 @@ class DeepHash(dict, Base):
     def _prep_number(self, obj):
         if self.significant_digits is not None and (
                 self.ignore_numeric_type_changes or isinstance(obj, (float, complex, Decimal))):
-            obj_s = self.number_to_string(obj, self.significant_digits)
+            obj_s = self.number_to_string(obj, self.significant_digits, self.significant_digits_formatter)
             result = "number:{}".format(obj_s)
         else:
             result = KEY_TO_VAL_STR.format(type(obj).__name__, obj)

@@ -49,6 +49,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_order=False,
                  report_repetition=False,
                  significant_digits=None,
+                 significant_digits_formatter="{:.%sf}",
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -66,7 +67,7 @@ class DeepDiff(ResultDict, Base):
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
-                "exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                "significant_digits_formatter, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
                 "number_to_string_func, verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
 
@@ -91,6 +92,7 @@ class DeepDiff(ResultDict, Base):
         self.hasher = hasher
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.significant_digits_formatter = significant_digits_formatter
 
         self.tree = TreeResult()
 
@@ -228,7 +230,7 @@ class DeepDiff(ResultDict, Base):
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
             elif self.ignore_numeric_type_changes and isinstance(key, numbers):
-                clean_key = self.number_to_string(key, self.significant_digits)
+                clean_key = self.number_to_string(key, self.significant_digits, self.significant_digits_formatter)
             else:
                 clean_key = key
             if clean_key in result:
@@ -461,6 +463,7 @@ class DeepDiff(ResultDict, Base):
                                       hasher=self.hasher,
                                       ignore_repetition=not self.report_repetition,
                                       significant_digits=self.significant_digits,
+                                      significant_digits_formatter=self.significant_digits_formatter,
                                       ignore_string_type_changes=self.ignore_string_type_changes,
                                       ignore_numeric_type_changes=self.ignore_numeric_type_changes,
                                       ignore_type_in_groups=self.ignore_type_in_groups,
@@ -567,8 +570,8 @@ class DeepDiff(ResultDict, Base):
             # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
             # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-            t1_s = self.number_to_string(level.t1, self.significant_digits)
-            t2_s = self.number_to_string(level.t2, self.significant_digits)
+            t1_s = self.number_to_string(level.t1, self.significant_digits, self.significant_digits_formatter)
+            t2_s = self.number_to_string(level.t2, self.significant_digits, self.significant_digits_formatter)
 
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
