@@ -218,7 +218,7 @@ def get_doc(doc_filename):
 
 number_formatting = {
     "f": r'{:.%sf}',
-    "e": r'{:.%se}'
+    "e": r'{:.%se}',
 }
 
 

@@ -289,8 +289,8 @@ class TestDeepHashPrep:
         assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
 
     @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
-        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:set:number:0.00,number:1.0'),
-        (100000, 100021, 4, "e", 'set:set:number:0.00,number:1.0'),
+        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.00,float:1.0'),
+        (100000, 100021, 3, "e", 'int:1.000e+05'),
     ])
     def test_similar_significant_hash(self, t1, t2, significant_digits,
                                       number_format_notation, result):
@@ -300,32 +300,23 @@ class TestDeepHashPrep:
                                number_format_notation=number_format_notation)
 
         if result:
-            assert result == t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
+            assert result == t1_hash[t1] == t2_hash[t2]
         else:
-            assert t1_hash[get_id(t1)] != t2_hash[get_id(t2)]
+            assert t1_hash[t1] != t2_hash[t2]
 
-    # def test_number_to_string_func(self):
-    #     def log_number_to_string(number, *args, **kwargs):
-    #         number = math.log(number)
-    #         return number_to_string(number, *args, **kwargs)
+    def test_number_to_string_func(self):
+        def custom_number_to_string(number, *args, **kwargs):
+            number = 100 if number < 100 else number
+            return number_to_string(number, *args, **kwargs)
 
-    #     ddiff = DeepDiff(100000, 100021, significant_digits=4, number_format_notation="e",
-    #                      number_to_string_func=log_number_to_string)
+        t1 = [10, 12, 100000]
+        t2 = [50, 63, 100021]
+        t1_hash = DeepHashPrep(t1, significant_digits=4, number_format_notation="e",
+                               number_to_string_func=custom_number_to_string)
+        t2_hash = DeepHashPrep(t2, significant_digits=4, number_format_notation="e",
+                               number_to_string_func=custom_number_to_string)
 
-    #     assert {} == ddiff
-
-    #     t1 = [10, 100000]
-    #     t2 = [11, 100021]
-
-    #     ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
-    #                      number_to_string_func=log_number_to_string)
-    #     result = {'values_changed': {'root[0]': {'new_value': 11, 'old_value': 10}}}
-
-    #     assert result == ddiff
-
-    #     ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
-    #                      number_to_string_func=log_number_to_string, ignore_order=True)
-    #     assert {} == ddiff
+        assert t1_hash[10] == t2_hash[50] == t1_hash[12] == t2_hash[63] != t1_hash[100000]
 
     def test_same_sets_in_lists_same_hash(self):
         t1 = ["a", {1, 3, 2}]
