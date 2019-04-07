@@ -95,58 +95,15 @@ ignore_string_type_changes: Boolean, default = True
     string type conversions should not affect the hash output when this is set to True.
     For example "Hello" and b"Hello" should produce the same hash.
 
-By setting it to True, both the string and bytes of hello return the same hash.
-    >>> DeepHash(b'hello', ignore_string_type_changes=True)
-    {b'hello': 221860156526691709602818861774599422448}
-    >>> DeepHash('hello', ignore_string_type_changes=True)
-    {'hello': 221860156526691709602818861774599422448}
+    By setting it to True, both the string and bytes of hello return the same hash.
+
 
 ignore_numeric_type_changes: Boolean, default = False
     numeric type conversions should not affect the hash output when this is set to True.
     For example 10, 10.0 and Decimal(10) should produce the same hash.
     When ignore_numeric_type_changes is set to True, all numbers are converted
-    to decimals with the precision of significant_digits parameter.
-    If no significant_digits is passed by the user, a default value of 55 is used.
-
-    For example if significant_digits=5, 1.1, Decimal(1.1) are both converted to 1.10000
-
-    That way they both produce the same hash.
-
-    >>> t1 = {1: 1, 2: 2.22}
-    >>> t2 = {1: 1.0, 2: 2.22}
-    >>> DeepHash(t1)[1]
-    231678797214551245419120414857003063149
-    >>> DeepHash(t1)[1.0]
-    231678797214551245419120414857003063149
-
-You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
-    >>> from deepdiff import DeepDiff
-    >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
-
-
-ignore_type_in_groups example with custom objects:
-    >>> class Burrito:
-    ...     bread = 'flour'
-    ...     def __init__(self):
-    ...         self.spicy = True
-    ...
-    >>>
-    >>> class Taco:
-    ...     bread = 'flour'
-    ...     def __init__(self):
-    ...         self.spicy = True
-    ...
-    >>>
-    >>> burrito = Burrito()
-    >>> taco = Taco()
-    >>>
-    >>> burritos = [burrito]
-    >>> tacos = [taco]
-    >>>
-    >>> d1 = DeepHash(burritos, ignore_type_in_groups=[(Taco, Burrito)])
-    >>> d2 = DeepHash(tacos, ignore_type_in_groups=[(Taco, Burrito)])
-    >>> d1[burrito] == d2[taco]
-    True
+    to strings with the precision of significant_digits parameter and number_format_notation notation.
+    If no significant_digits is passed by the user, a default value of 12 is used.
 
 
 ignore_type_subclasses
@@ -221,6 +178,59 @@ But with DeepHash:
     >>> DeepHash(obj1, ignore_numeric_type_changes=True)[4] == DeepHash(obj2, ignore_numeric_type_changes=True)[4.0]
     True
 
+number_format_notation: String, default = "f"
+    number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
+
+
+ignore_string_type_changes: Boolean, default = True
+    By setting it to True, both the string and bytes of hello return the same hash.
+    >>> DeepHash(b'hello', ignore_string_type_changes=True)
+    {b'hello': 221860156526691709602818861774599422448}
+    >>> DeepHash('hello', ignore_string_type_changes=True)
+    {'hello': 221860156526691709602818861774599422448}
+
+
+ignore_numeric_type_changes: Boolean, default = False
+    For example if significant_digits=5, 1.1, Decimal(1.1) are both converted to 1.10000
+
+    That way they both produce the same hash.
+
+    >>> t1 = {1: 1, 2: 2.22}
+    >>> t2 = {1: 1.0, 2: 2.22}
+    >>> DeepHash(t1)[1]
+    231678797214551245419120414857003063149
+    >>> DeepHash(t1)[1.0]
+    231678797214551245419120414857003063149
+
+    You can pass a list of tuples or list of lists if you have various type groups. When t1 and t2 both fall under one of these type groups, the type change will be ignored. DeepDiff already comes with 2 groups: DeepDiff.strings and DeepDiff.numbers . If you want to pass both:
+    >>> from deepdiff import DeepDiff
+    >>> ignore_type_in_groups = [DeepDiff.strings, DeepDiff.numbers]
+
+
+ignore_type_in_groups example with custom objects:
+    >>> class Burrito:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> class Taco:
+    ...     bread = 'flour'
+    ...     def __init__(self):
+    ...         self.spicy = True
+    ...
+    >>>
+    >>> burrito = Burrito()
+    >>> taco = Taco()
+    >>>
+    >>> burritos = [burrito]
+    >>> tacos = [taco]
+    >>>
+    >>> d1 = DeepHash(burritos, ignore_type_in_groups=[(Taco, Burrito)])
+    >>> d2 = DeepHash(tacos, ignore_type_in_groups=[(Taco, Burrito)])
+    >>> d1[burrito] == d2[taco]
+    True
+
 
 ignore_type_subclasses
     Use ignore_type_subclasses=True so when ignoring type (class), the subclasses of that class are ignored too.
@@ -263,4 +273,22 @@ ignore_string_case
     >>> DeepHash('hello')['hello'] == DeepHash('heLLO')['heLLO']
     False
     >>> DeepHash('hello', ignore_string_case=True)['hello'] == DeepHash('heLLO', ignore_string_case=True)['heLLO']
+    True
+
+number_format_notation : string, default="f"
+    When numbers are converted to the string, you have the choices between "f" as fixed point and "e" as scientific notation:
+    >>> t1=10002
+    >>> t2=10004
+    >>> t1_hash = DeepHash(t1, significant_digits=3, number_format_notation="f")
+    >>> t2_hash = DeepHash(t2, significant_digits=3, number_format_notation="f")
+    >>>
+    >>> t1_hash[t1] == t2_hash[t2]
+    False
+    >>>
+    >>>
+    >>> # Now we use the scientific notation
+    ... t1_hash = DeepHash(t1, significant_digits=3, number_format_notation="e")
+    >>> t2_hash = DeepHash(t2, significant_digits=3, number_format_notation="e")
+    >>>
+    >>> t1_hash[t1] == t2_hash[t2]
     True

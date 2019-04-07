@@ -70,7 +70,7 @@ class TestDeepDiffText:
         } == ddiff
 
     @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order, result", [
-        # (10, 10.0, 5, False, {}),
+        (10, 10.0, 5, False, {}),
         ({10: 'a', 11.1: 'b'}, {10.0: 'a', Decimal('11.1000003'): 'b'}, 5, False, {}),
     ])
     def test_type_change_numeric_ignored(self, t1, t2, significant_digits, ignore_order, result):
@@ -80,10 +80,10 @@ class TestDeepDiffText:
 
     @pytest.mark.parametrize("t1, t2, expected_result",
                              [
-                                 # (10, 10.0, {}),
+                                 (10, 10.0, {}),
                                  (10, 10.2, {'values_changed': {'root': {'new_value': 10.2, 'old_value': 10}}}),
-                                 # (Decimal(10), 10.0, {}),
-                                 # ({"a": Decimal(10), "b": 12, 11.0: None}, {b"b": 12, "a": 10.0, Decimal(11): None}, {}),
+                                 (Decimal(10), 10.0, {}),
+                                 ({"a": Decimal(10), "b": 12, 11.0: None}, {b"b": 12, "a": 10.0, Decimal(11): None}, {}),
                              ])
     def test_type_change_numeric_when_ignore_order(self, t1, t2, expected_result):
         ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True)
