@@ -1392,7 +1392,7 @@ class TestDeepDiffText:
             number = 100 if number < 100 else number
             return number_to_string(number, *args, **kwargs)
 
-        ddiff = DeepDiff(100000, 100021, significant_digits=3, number_format_notation="e",
+        ddiff = DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
                          number_to_string_func=custom_number_to_string)
 
         assert {} == ddiff

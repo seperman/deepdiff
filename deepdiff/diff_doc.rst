@@ -310,26 +310,22 @@ Approximate number comparison (significant_digits after the decimal point in sci
     {}
 
 Defining your own number_to_string_func
-    Lets say you want the numbers comparison do it in logarithmic scale and in scientific notation.
-    >>> import math
+    Lets say you want the numbers comparison happen only for numbers above 100 for some reason.
+
     >>> from deepdiff import DeepDiff
     >>> from deepdiff.helper import number_to_string
-    >>>
-    >>>
-    >>> def log_number_to_string(number, *args, **kwargs):
-    ...     number = math.log(number)
+    >>> def custom_number_to_string(number, *args, **kwargs):
+    ...     number = 100 if number < 100 else number
     ...     return number_to_string(number, *args, **kwargs)
     ...
-    >>>
-    >>> DeepDiff(100000, 100021, significant_digits=4, number_format_notation="e", number_to_string_func=log_number_to_string)
+    >>> t1 = [10, 12, 100000]
+    >>> t2 = [50, 63, 100021]
+    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e")
+    {'values_changed': {'root[0]': {'new_value': 50, 'old_value': 10}, 'root[1]': {'new_value': 63, 'old_value': 12}}}
+    >>> 
+    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
+    ...          number_to_string_func=custom_number_to_string)
     {}
-    >>>
-    >>> t1 = [10, 100000]
-    >>> t2 = [11, 100021]
-    >>>
-    >>> DeepDiff(t1, t2, significant_digits=4, number_format_notation="e", number_to_string_func=log_number_to_string)
-    {'values_changed': {'root[0]': {'new_value': 11, 'old_value': 10}}}
-
 
 .. note::
     All the examples for the text view work for the tree view too.
