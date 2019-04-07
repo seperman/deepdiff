@@ -1379,27 +1379,19 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
-    def test_number_to_string_func(self):
-        def log_number_to_string(number, *args, **kwargs):
-            number = math.log(number)
+    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order", [
+        (100000, 100021, 3, False),
+        ([10, 12, 100000], [50, 63, 100021], 3, False),
+        ([10, 12, 100000], [50, 63, 100021], 3, True),
+    ])
+    def test_number_to_string_func(self, t1, t2, significant_digits, ignore_order):
+        def custom_number_to_string(number, *args, **kwargs):
+            number = 100 if number < 100 else number
             return number_to_string(number, *args, **kwargs)
 
-        ddiff = DeepDiff(100000, 100021, significant_digits=4, number_format_notation="e",
-                         number_to_string_func=log_number_to_string)
+        ddiff = DeepDiff(100000, 100021, significant_digits=3, number_format_notation="e",
+                         number_to_string_func=custom_number_to_string)
 
-        assert {} == ddiff
-
-        t1 = [10, 100000]
-        t2 = [11, 100021]
-
-        ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
-                         number_to_string_func=log_number_to_string)
-        result = {'values_changed': {'root[0]': {'new_value': 11, 'old_value': 10}}}
-
-        assert result == ddiff
-
-        ddiff = DeepDiff(t1, t2, significant_digits=4, number_format_notation="e",
-                         number_to_string_func=log_number_to_string, ignore_order=True)
         assert {} == ddiff
 
     def test_ignore_type_in_groups(self):

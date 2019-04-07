@@ -232,10 +232,6 @@ class DeepHash(dict, Base):
             type_str = 'dict'
         return "%s:{%s}" % (type_str, result)
 
-    # def _prep_set(self, obj, parent, parents_ids=EMPTY_FROZENSET):
-    #     import pytest; pytest.set_trace()
-    #     return "set:{}".format(self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids))
-
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
         result = defaultdict(int)
@@ -317,9 +313,6 @@ class DeepHash(dict, Base):
 
         elif isinstance(obj, tuple):
             result = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
-
-        # elif isinstance(obj, (set, frozenset)):
-        #     result = self._prep_set(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
             result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
