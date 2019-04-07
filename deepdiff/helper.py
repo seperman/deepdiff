@@ -40,6 +40,8 @@ ID_PREFIX = '!>*id'
 
 ZERO_DECIMAL_CHARACTERS = set("-0.")
 
+KEY_TO_VAL_STR = "{}:{}"
+
 
 def short_repr(item, max_length=15):
     """Short representation of item if it is too long"""

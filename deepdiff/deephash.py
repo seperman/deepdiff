@@ -10,7 +10,7 @@ from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_f
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string)
+                             number_to_string, KEY_TO_VAL_STR)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,6 @@ RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-KEY_TO_VAL_STR = "{}:{}"
 
 
 def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):

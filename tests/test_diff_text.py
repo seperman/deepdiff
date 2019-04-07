@@ -1394,6 +1394,31 @@ class TestDeepDiffText:
 
         assert {} == ddiff
 
+    @pytest.mark.parametrize("t1, t2, significant_digits, expected_result",
+                             [
+                                 (10, 10.0, 5, {}),
+                                 (10, 10.2, 5, {'values_changed': {'root': {'new_value': 10.2, 'old_value': 10}}}),
+                                 (10, 10.2, 0, {}),
+                                 (Decimal(10), 10, 0, {}),
+                                 (Decimal(10), 10, 10, {}),
+                                 (Decimal(10), 10.0, 0, {}),
+                                 (Decimal(10), 10.0, 10, {}),
+                                 (Decimal('10.0'), 10.0, 5, {}),
+                                 (Decimal('10.01'), 10.01, 1, {}),
+                                 (Decimal('10.01'), 10.01, 2, {}),
+                                 (Decimal('10.01'), 10.01, 5, {}),
+                                 (Decimal('10.01'), 10.01, 8, {}),
+                                 (Decimal('10.010'), 10.01, 3, {}),
+                                 (Decimal('100000.1'), 100000.1, 0, {}),
+                                 (Decimal('100000.1'), 100000.1, 1, {}),
+                                 (Decimal('100000.1'), 100000.1, 5, {}),
+                                 (Decimal('100000'), 100000.1, 0, {}),
+                                 (Decimal('100000'), 100000.1, 1, {'values_changed': {'root': {'new_value': 100000.1, 'old_value': Decimal('100000')}}}),
+                             ])
+    def test_decimal_digits(self, t1, t2, significant_digits, expected_result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, significant_digits=significant_digits)
+        assert expected_result == ddiff
+
     def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.0]
