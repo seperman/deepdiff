@@ -12,9 +12,7 @@ import logging
 import json
 import jsonpickle
 import warnings
-import os
 
-from decimal import Decimal
 from itertools import zip_longest
 from collections.abc import Mapping, Iterable
 
@@ -24,7 +22,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             type_is_subclass_of_type_group, type_in_type_group, get_doc)
+                             type_is_subclass_of_type_group, type_in_type_group, get_doc,
+                             number_to_string, KEY_TO_VAL_STR)
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
@@ -50,6 +49,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_order=False,
                  report_repetition=False,
                  significant_digits=None,
+                 number_format_notation="f",
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -58,6 +58,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 number_to_string_func=None,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
@@ -66,9 +67,9 @@ class DeepDiff(ResultDict, Base):
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
-                "exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
-                "verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
+                "number_to_string_func, verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -86,10 +87,12 @@ class DeepDiff(ResultDict, Base):
         self.ignore_type_subclasses = ignore_type_subclasses
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.ignore_string_case = ignore_string_case
+        self.number_to_string = number_to_string_func or number_to_string
         self.hashes = {}
         self.hasher = hasher
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.number_format_notation = number_format_notation
 
         self.tree = TreeResult()
 
@@ -226,8 +229,11 @@ class DeepDiff(ResultDict, Base):
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
-            elif self.ignore_numeric_type_changes and type(key) in numbers:
-                clean_key = ("{:.%sf}" % self.significant_digits).format(key)
+            elif isinstance(key, numbers):
+                type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
+                clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
+                                                  number_format_notation=self.number_format_notation)
+                clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
             if clean_key in result:
@@ -460,11 +466,13 @@ class DeepDiff(ResultDict, Base):
                                       hasher=self.hasher,
                                       ignore_repetition=not self.report_repetition,
                                       significant_digits=self.significant_digits,
+                                      number_format_notation=self.number_format_notation,
                                       ignore_string_type_changes=self.ignore_string_type_changes,
                                       ignore_numeric_type_changes=self.ignore_numeric_type_changes,
                                       ignore_type_in_groups=self.ignore_type_in_groups,
                                       ignore_type_subclasses=self.ignore_type_subclasses,
-                                      ignore_string_case=self.ignore_string_case
+                                      ignore_string_case=self.ignore_string_case,
+                                      number_to_string_func=self.number_to_string,
                                       )
                 item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
@@ -555,9 +563,13 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_numbers(self, level):
         """Diff Numbers"""
+        t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
+        t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
-        if self.significant_digits is not None and isinstance(level.t1, (
-                float, complex, Decimal)):
+        if self.significant_digits is None:
+            if level.t1 != level.t2:
+                self.__report_result('values_changed', level)
+        else:
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
             # data is read from files that were previousely written from python and
             # to be consistent with on-screen representation of numbers.
@@ -566,16 +578,16 @@ class DeepDiff(ResultDict, Base):
             # Note that abs(3.25-3.251) = 0.0009999999999998899 < 0.001
             # Note also that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
-            t1_s = ("{:.%sf}" % self.significant_digits).format(level.t1)
-            t2_s = ("{:.%sf}" % self.significant_digits).format(level.t2)
+            t1_s = self.number_to_string(level.t1,
+                                         significant_digits=self.significant_digits,
+                                         number_format_notation=self.number_format_notation)
+            t2_s = self.number_to_string(level.t2,
+                                         significant_digits=self.significant_digits,
+                                         number_format_notation=self.number_format_notation)
 
-            # Special case for 0: "-0.00" should compare equal to "0.00"
-            if set(t1_s) <= set("-0.") and set(t2_s) <= set("-0."):
-                return
-            elif t1_s != t2_s:
-                self.__report_result('values_changed', level)
-        else:
-            if level.t1 != level.t2:
+            t1_s = KEY_TO_VAL_STR.format(t1_type, t1_s)
+            t2_s = KEY_TO_VAL_STR.format(t2_type, t2_s)
+            if t1_s != t2_s:
                 self.__report_result('values_changed', level)
 
     def __diff_types(self, level):

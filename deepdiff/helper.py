@@ -4,7 +4,7 @@ import datetime
 import re
 import os
 import logging
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from collections import namedtuple
 from ordered_set import OrderedSet
 
@@ -37,6 +37,10 @@ IndexedHash = namedtuple('IndexedHash', 'indexes item')
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 ID_PREFIX = '!>*id'
+
+ZERO_DECIMAL_CHARACTERS = set("-0.")
+
+KEY_TO_VAL_STR = "{}:{}"
 
 
 def short_repr(item, max_length=15):
@@ -209,6 +213,32 @@ def get_doc(doc_filename):
     try:
         with open(os.path.join(current_dir, doc_filename), 'r') as doc_file:
             doc = doc_file.read()
-    except Exception:
-        doc = 'Failed to load the docstrings. Please visit: https://github.com/seperman/deepdiff'
+    except Exception:  # pragma: no cover
+        doc = 'Failed to load the docstrings. Please visit: https://github.com/seperman/deepdiff'  # pragma: no cover
     return doc
+
+
+number_formatting = {
+    "f": r'{:.%sf}',
+    "e": r'{:.%se}',
+}
+
+
+def number_to_string(number, significant_digits, number_format_notation="f"):
+    """
+    Convert numbers to string considering significant digits.
+    """
+    try:
+        using = number_formatting[number_format_notation]
+    except KeyError:
+        raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
+    if isinstance(number, Decimal):
+        tup = number.as_tuple()
+        with localcontext() as ctx:
+            ctx.prec = len(tup.digits) + tup.exponent + significant_digits
+            number = number.quantize(Decimal('0.' + '0' * significant_digits))
+    result = (using % significant_digits).format(number)
+    # Special case for 0: "-0.00" should compare equal to "0.00"
+    if set(result) <= ZERO_DECIMAL_CHARACTERS:
+        result = "0.00"
+    return result

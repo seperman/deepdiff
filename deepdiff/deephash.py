@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import logging
-from collections import Iterable
-from collections import MutableMapping
+from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
-from decimal import Decimal
 from hashlib import sha1, sha256
 
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
-                             get_id, type_is_subclass_of_type_group, type_in_type_group)
+                             get_id, type_is_subclass_of_type_group, type_in_type_group,
+                             number_to_string, KEY_TO_VAL_STR)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
 try:
     import mmh3
-except ImportError:
-    mmh3 = False
+except ImportError:  # pragma: no cover
+    mmh3 = False  # pragma: no cover
 
 UNPROCESSED = 'unprocessed'
 MURMUR_SEED = 1203
@@ -26,10 +25,6 @@ RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-KEY_TO_VAL_STR = "{}:{}"
-
-ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 
 def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):
@@ -62,20 +57,23 @@ class DeepHash(dict, Base):
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
+                 number_format_notation="f",
                  apply_hash=True,
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 number_to_string_func=None,
                  **kwargs):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
-                 "The valid parameters are obj, hashes, exclude_types,"
-                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition,"
-                 "significant_digits, apply_hash, ignore_type_in_groups, ignore_string_type_changes,"
-                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case") % ', '.join(kwargs.keys()))
+                 "The valid parameters are obj, hashes, exclude_types, significant_digits, "
+                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
+                 "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
+                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
+                 "number_to_string_func") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -89,6 +87,7 @@ class DeepHash(dict, Base):
         self[UNPROCESSED] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.number_format_notation = number_format_notation
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
             ignore_type_in_groups=ignore_type_in_groups,
             ignore_string_type_changes=ignore_string_type_changes,
@@ -102,6 +101,7 @@ class DeepHash(dict, Base):
         # testing the individual hash functions for different types of objects.
         self.apply_hash = apply_hash
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+        self.number_to_string = number_to_string_func or number_to_string
 
         self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
 
@@ -143,7 +143,6 @@ class DeepHash(dict, Base):
         return mmh3.hash128(obj, MURMUR_SEED)
 
     def __getitem__(self, obj):
-        # changed_to_id = False
         key = obj
         result = None
 
@@ -230,9 +229,6 @@ class DeepHash(dict, Base):
             type_str = 'dict'
         return "%s:{%s}" % (type_str, result)
 
-    def _prep_set(self, obj, parent, parents_ids=EMPTY_FROZENSET):
-        return "set:{}".format(self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids))
-
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
         result = defaultdict(int)
@@ -264,17 +260,11 @@ class DeepHash(dict, Base):
         return result
 
     def _prep_number(self, obj):
-        if self.significant_digits is not None and (
-                self.ignore_numeric_type_changes or isinstance(obj, (float, complex, Decimal))):
-            obj_s = ("{:.%sf}" % self.significant_digits).format(obj)
-
-            # Special case for 0: "-0.00" should compare equal to "0.00"
-            if set(obj_s) <= ZERO_DECIMAL_CHARACTERS:
-                obj_s = "0.00"
-            result = "number:{}".format(obj_s)
-        else:
-            result = KEY_TO_VAL_STR.format(type(obj).__name__, obj)
-        return result
+        type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
+        if self.significant_digits is not None:
+            obj = self.number_to_string(obj, significant_digits=self.significant_digits,
+                                        number_format_notation=self.number_format_notation)
+        return KEY_TO_VAL_STR.format(type_, obj)
 
     def _prep_tuple(self, obj, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
@@ -320,9 +310,6 @@ class DeepHash(dict, Base):
 
         elif isinstance(obj, tuple):
             result = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
-
-        elif isinstance(obj, (set, frozenset)):
-            result = self._prep_set(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
             result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)

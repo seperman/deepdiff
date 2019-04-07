@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import math
 import datetime
 import pytest
 import logging
+from unittest import mock
 from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.helper import number_to_string
 from tests import CustomClass
-from unittest import mock
+
 logging.disable(logging.CRITICAL)
 
 
@@ -66,11 +69,14 @@ class TestDeepDiffText:
             }
         } == ddiff
 
-    def test_type_change_numeric(self):
-        t1 = 10
-        t2 = 10.0
-        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
-        assert {} == ddiff
+    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order, result", [
+        (10, 10.0, 5, False, {}),
+        ({10: 'a', 11.1: 'b'}, {10.0: 'a', Decimal('11.1000003'): 'b'}, 5, False, {}),
+    ])
+    def test_type_change_numeric_ignored(self, t1, t2, significant_digits, ignore_order, result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True,
+                         significant_digits=significant_digits, ignore_order=ignore_order)
+        assert result == ddiff
 
     @pytest.mark.parametrize("t1, t2, expected_result",
                              [
@@ -1307,11 +1313,15 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    def test_significant_digits_for_decimals(self):
-        t1 = Decimal('2.5')
-        t2 = Decimal('1.5')
-        ddiff = DeepDiff(t1, t2, significant_digits=0)
-        assert {} == ddiff
+    @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
+        (Decimal('2.5'), Decimal('1.5'), 0, "f", {}),
+        (Decimal('2.5'), Decimal('1.5'), 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
+        (Decimal('2.5'), Decimal(2.5), 3, "f", {}),
+        (1024, 1022, 2, "e", {}),
+    ])
+    def test_significant_digits_and_notation(self, t1, t2, significant_digits, number_format_notation, result):
+        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits, number_format_notation=number_format_notation)
+        assert result == ddiff
 
     def test_significant_digits_for_complex_imaginary_part(self):
         t1 = 1.23 + 1.222254j
@@ -1372,6 +1382,46 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
+    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order", [
+        (100000, 100021, 3, False),
+        ([10, 12, 100000], [50, 63, 100021], 3, False),
+        ([10, 12, 100000], [50, 63, 100021], 3, True),
+    ])
+    def test_number_to_string_func(self, t1, t2, significant_digits, ignore_order):
+        def custom_number_to_string(number, *args, **kwargs):
+            number = 100 if number < 100 else number
+            return number_to_string(number, *args, **kwargs)
+
+        ddiff = DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
+                         number_to_string_func=custom_number_to_string)
+
+        assert {} == ddiff
+
+    @pytest.mark.parametrize("t1, t2, significant_digits, expected_result",
+                             [
+                                 (10, 10.0, 5, {}),
+                                 (10, 10.2, 5, {'values_changed': {'root': {'new_value': 10.2, 'old_value': 10}}}),
+                                 (10, 10.2, 0, {}),
+                                 (Decimal(10), 10, 0, {}),
+                                 (Decimal(10), 10, 10, {}),
+                                 (Decimal(10), 10.0, 0, {}),
+                                 (Decimal(10), 10.0, 10, {}),
+                                 (Decimal('10.0'), 10.0, 5, {}),
+                                 (Decimal('10.01'), 10.01, 1, {}),
+                                 (Decimal('10.01'), 10.01, 2, {}),
+                                 (Decimal('10.01'), 10.01, 5, {}),
+                                 (Decimal('10.01'), 10.01, 8, {}),
+                                 (Decimal('10.010'), 10.01, 3, {}),
+                                 (Decimal('100000.1'), 100000.1, 0, {}),
+                                 (Decimal('100000.1'), 100000.1, 1, {}),
+                                 (Decimal('100000.1'), 100000.1, 5, {}),
+                                 (Decimal('100000'), 100000.1, 0, {}),
+                                 (Decimal('100000'), 100000.1, 1, {'values_changed': {'root': {'new_value': 100000.1, 'old_value': Decimal('100000')}}}),
+                             ])
+    def test_decimal_digits(self, t1, t2, significant_digits, expected_result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, significant_digits=significant_digits)
+        assert expected_result == ddiff
+
     def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.0]
@@ -1425,6 +1475,18 @@ class TestDeepDiffText:
         result = {'values_changed': {"root['a']": {'new_value': 22, 'old_value': 20}}}
         alternative_result = {'values_changed': {"root['a']": {'new_value': 11, 'old_value': 10}}}
         assert result == ddiff or alternative_result == ddiff
+
+    @pytest.mark.parametrize("t1, t2, significant_digits, result", [
+        ([0.1], [Decimal('0.10')], 55,
+            {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics with high significant digits.
+        ([0.1], [Decimal('0.10')], 5, {}),  # Same inputs as above but with significant digits that is low.
+        ([-0.1], [-Decimal('0.10')], 5, {}),
+        ([-Decimal('0.102')], [-Decimal('0.10')], 2, {}),
+        ([1], [Decimal('1.00000002')], 3, {}),
+    ])
+    def test_ignore_type_in_groups_numbers_when_decimal(self, t1, t2, significant_digits, result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, significant_digits=significant_digits)
+        assert result == ddiff
 
     @pytest.mark.skip(reason="REMAPPING DISABLED UNTIL KEY NAMES CHANGE AGAIN IN FUTURE")
     def test_base_level_dictionary_remapping(self):

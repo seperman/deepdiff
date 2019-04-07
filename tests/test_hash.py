@@ -3,9 +3,10 @@
 import re
 import pytest
 import logging
+import math
 from deepdiff import DeepHash
 from deepdiff.deephash import prepare_string_for_hashing, unprocessed
-from deepdiff.helper import pypy3, get_id
+from deepdiff.helper import pypy3, get_id, number_to_string
 from collections import namedtuple
 from functools import partial
 from enum import Enum
@@ -287,13 +288,35 @@ class TestDeepHashPrep:
 
         assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
 
-    def test_similar_sets_with_significant_digits_same_hash(self):
-        t1 = {0.012, 0.98}
-        t2 = {0.013, 0.99}
-        t1_hash = DeepHashPrep(t1, significant_digits=1)
-        t2_hash = DeepHashPrep(t2, significant_digits=1)
+    @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
+        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.00,float:1.0'),
+        (100000, 100021, 3, "e", 'int:1.000e+05'),
+    ])
+    def test_similar_significant_hash(self, t1, t2, significant_digits,
+                                      number_format_notation, result):
+        t1_hash = DeepHashPrep(t1, significant_digits=significant_digits,
+                               number_format_notation=number_format_notation)
+        t2_hash = DeepHashPrep(t2, significant_digits=significant_digits,
+                               number_format_notation=number_format_notation)
 
-        assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
+        if result:
+            assert result == t1_hash[t1] == t2_hash[t2]
+        else:
+            assert t1_hash[t1] != t2_hash[t2]
+
+    def test_number_to_string_func(self):
+        def custom_number_to_string(number, *args, **kwargs):
+            number = 100 if number < 100 else number
+            return number_to_string(number, *args, **kwargs)
+
+        t1 = [10, 12, 100000]
+        t2 = [50, 63, 100021]
+        t1_hash = DeepHashPrep(t1, significant_digits=4, number_format_notation="e",
+                               number_to_string_func=custom_number_to_string)
+        t2_hash = DeepHashPrep(t2, significant_digits=4, number_format_notation="e",
+                               number_to_string_func=custom_number_to_string)
+
+        assert t1_hash[10] == t2_hash[50] == t1_hash[12] == t2_hash[63] != t1_hash[100000]
 
     def test_same_sets_in_lists_same_hash(self):
         t1 = ["a", {1, 3, 2}]
@@ -502,15 +525,23 @@ class TestDeepHashPrep:
         assert t1_hash == {'Hello': 'str:hello'}
 
 
-class TestDeepHashSHA1:
-    """DeepHash with SHA1 Tests."""
+class TestDeepHashSHA:
+    """DeepHash with SHA Tests."""
 
-    def test_prep_str_sha1(self):
+    def test_str_sha1(self):
         obj = "a"
         expected_result = {
             obj: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
+        assert expected_result == result
+
+    def test_str_sha256(self):
+        obj = "a"
+        expected_result = {
+            obj: 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb'
+        }
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha256hex)
         assert expected_result == result
 
     def test_prep_str_sha1_fail_if_mutable(self):

@@ -14,28 +14,39 @@ t1 : A dictionary, list, string or any python object that has __dict__ or __slot
 t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
     The second item is to be compared to the first one
 
-ignore_order : Boolean, defalt=False ignores orders for iterables.
+ignore_order : Boolean, defalt=False
+    ignores orders for iterables
     Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
     Normally ignore_order does not report duplicates and repetition changes.
     In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
-report_repetition : Boolean, default=False reports repetitions when set True
+report_repetition : Boolean, default=False
+    reports repetitions when set True
     ONLY when ignore_order is set True too. This works for iterables.
     This feature currently is experimental and is not production ready.
 
-significant_digits : int >= 0, default=None.
-    If it is a non negative integer, it compares only that many digits AFTER
-    the decimal point.
+significant_digits : int >= 0, default=None
+    By default the significant_digits compares only that many digits AFTER the decimal point. However you can set override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
 
-    This only affects floats, decimal.Decimal and complex.
+    Important: This will affect ANY number comparison when it is set.
 
-    Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits
+    Note: If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 55. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
+
+    Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
 
     Note that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
 
     For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
 
-verbose_level : int >= 0, default = 1.
+    When you set the number_format_notation="e", we use "{:.Xe}".format(Your Number) where X=significant_digits.
+
+number_format_notation : string, default="f"
+    number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
+
+number_to_string_func : function, default=None
+    This is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
+
+verbose_level: int >= 0, default = 1
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.
     And verbose level 2 shows the value of the items that are added or removed too.
@@ -292,6 +303,30 @@ Approximate float comparison (Significant digits after the point):
     {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
 
 
+Approximate number comparison (significant_digits after the decimal point in scientific notation)
+    >>> DeepDiff(1024, 1020, significant_digits=2, number_format_notation="f")  # default is "f"
+    {'values_changed': {'root': {'new_value': 1020, 'old_value': 1024}}}
+    >>> DeepDiff(1024, 1020, significant_digits=2, number_format_notation="e")
+    {}
+
+Defining your own number_to_string_func
+    Lets say you want the numbers comparison happen only for numbers above 100 for some reason.
+
+    >>> from deepdiff import DeepDiff
+    >>> from deepdiff.helper import number_to_string
+    >>> def custom_number_to_string(number, *args, **kwargs):
+    ...     number = 100 if number < 100 else number
+    ...     return number_to_string(number, *args, **kwargs)
+    ...
+    >>> t1 = [10, 12, 100000]
+    >>> t2 = [50, 63, 100021]
+    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e")
+    {'values_changed': {'root[0]': {'new_value': 50, 'old_value': 10}, 'root[1]': {'new_value': 63, 'old_value': 12}}}
+    >>> 
+    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
+    ...          number_to_string_func=custom_number_to_string)
+    {}
+
 .. note::
     All the examples for the text view work for the tree view too.
     You just need to set view='tree' to get it in tree form.
@@ -445,6 +480,8 @@ ignore_string_case
     {'values_changed': {'root': {'new_value': 'heLLO', 'old_value': 'Hello'}}}
     >>> DeepDiff(t1='Hello', t2='heLLO', ignore_string_case=True)
     {}
+
+
 
 **Tree View**
 
