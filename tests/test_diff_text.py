@@ -1474,8 +1474,8 @@ class TestDeepDiffText:
         assert result == ddiff or alternative_result == ddiff
 
     @pytest.mark.parametrize("t1, t2, significant_digits, result", [
-        ([0.1], [Decimal('0.10')], None,
-            {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics, if you don't pass significant digits, they will be not the same values!
+        ([0.1], [Decimal('0.10')], 55,
+            {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics with high significant digits.
         ([0.1], [Decimal('0.10')], 5, {}),  # Same inputs as above but with significant digits that is low.
         ([-0.1], [-Decimal('0.10')], 5, {}),
         ([-Decimal('0.102')], [-Decimal('0.10')], 2, {}),

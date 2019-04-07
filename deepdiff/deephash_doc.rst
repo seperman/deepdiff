@@ -58,7 +58,7 @@ significant_digits : int >= 0, default=None
 
     Important: This will affect ANY number comparison when it is set.
 
-    Note: If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 55. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
+    Note: If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 12. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
 
     Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
 

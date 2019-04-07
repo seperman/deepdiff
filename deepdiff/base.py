@@ -2,7 +2,7 @@ from ordered_set import OrderedSet
 from deepdiff.helper import strings, numbers
 
 
-DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 55
+DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 12
 
 
 class Base:
