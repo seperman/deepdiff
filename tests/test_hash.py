@@ -525,15 +525,23 @@ class TestDeepHashPrep:
         assert t1_hash == {'Hello': 'str:hello'}
 
 
-class TestDeepHashSHA1:
-    """DeepHash with SHA1 Tests."""
+class TestDeepHashSHA:
+    """DeepHash with SHA Tests."""
 
-    def test_prep_str_sha1(self):
+    def test_str_sha1(self):
         obj = "a"
         expected_result = {
             obj: '86f7e437faa5a7fce15d1ddcb9eaeaea377667b8'
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
+        assert expected_result == result
+
+    def test_str_sha256(self):
+        obj = "a"
+        expected_result = {
+            obj: 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb'
+        }
+        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha256hex)
         assert expected_result == result
 
     def test_prep_str_sha1_fail_if_mutable(self):

@@ -69,11 +69,14 @@ class TestDeepDiffText:
             }
         } == ddiff
 
-    def test_type_change_numeric(self):
-        t1 = 10
-        t2 = 10.0
-        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
-        assert {} == ddiff
+    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order, result", [
+        # (10, 10.0, 5, False, {}),
+        ({10: 'a', 11.1: 'b'}, {10.0: 'a', Decimal('11.1000003'): 'b'}, 5, False, {}),
+    ])
+    def test_type_change_numeric_ignored(self, t1, t2, significant_digits, ignore_order, result):
+        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True,
+                         significant_digits=significant_digits, ignore_order=ignore_order)
+        assert result == ddiff
 
     @pytest.mark.parametrize("t1, t2, expected_result",
                              [

@@ -3,7 +3,6 @@
 import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
-from decimal import Decimal
 from hashlib import sha1, sha256
 
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
@@ -16,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 try:
     import mmh3
-except ImportError:
-    mmh3 = False
+except ImportError:  # pragma: no cover
+    mmh3 = False  # pragma: no cover
 
 UNPROCESSED = 'unprocessed'
 MURMUR_SEED = 1203

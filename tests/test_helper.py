@@ -49,3 +49,7 @@ class TestHelper:
         else:
             assert st1 == expected_result[0]
             assert st2 == expected_result[1]
+
+    def test_number_to_string_with_invalid_notation(self):
+        with pytest.raises(ValueError):
+            number_to_string(10, significant_digits=4, number_format_notation='blah')
