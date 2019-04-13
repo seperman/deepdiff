@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.5
+# DeepDiff v 4.0.6
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -417,6 +417,8 @@ And then running
 
 # ChangeLog
 
+
+- v4-0-6: found a tiny bug in Python formatting of numbers in scientific notation. Added a workaround.
 - v4-0-5: Fixing number diffing. Adding number_format_notation and number_to_string_func.
 - v4-0-4: Adding ignore_string_case and ignore_type_subclasses
 - v4-0-3: Adding versionbump tool for release

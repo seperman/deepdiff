@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 4.0.5 documentation!
+DeepDiff 4.0.6 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-0-6: found a tiny bug in Python formatting of numbers in scientific notation. Added a workaround.
 - v4-0-5: Fixing number diffing. Adding number_format_notation and number_to_string_func.
 - v4-0-4: Adding ignore_string_case and ignore_type_subclasses
 - v4-0-3: Adding versionbump tool for release
