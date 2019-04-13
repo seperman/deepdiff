@@ -1313,14 +1313,16 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
-        (Decimal('2.5'), Decimal('1.5'), 0, "f", {}),
-        (Decimal('2.5'), Decimal('1.5'), 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
-        (Decimal('2.5'), Decimal(2.5), 3, "f", {}),
-        (1024, 1022, 2, "e", {}),
+    @pytest.mark.parametrize("t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result", [
+        (Decimal('2.5'), Decimal('1.5'), False, 0, "f", {}),
+        (Decimal('2.5'), Decimal('1.5'), False, 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
+        (Decimal('2.5'), Decimal(2.5), False, 3, "f", {}),
+        (1024, 1022, False, 2, "e", {}),
+        ({"key": [Decimal('2.0001'), Decimal('20000.0001')]}, {"key": [2.0002, 20000.0002]}, True, 4, "e", {'values_changed': {"root['key'][0]": {'new_value': 2.0002, 'old_value': Decimal('2.0001')}}})
     ])
-    def test_significant_digits_and_notation(self, t1, t2, significant_digits, number_format_notation, result):
-        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits, number_format_notation=number_format_notation)
+    def test_significant_digits_and_notation(self, t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result):
+        ddiff = DeepDiff(t1, t2, significant_digits=significant_digits, number_format_notation=number_format_notation,
+                         ignore_numeric_type_changes=ignore_numeric_type_changes)
         assert result == ddiff
 
     def test_significant_digits_for_complex_imaginary_part(self):

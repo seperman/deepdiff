@@ -241,4 +241,7 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
     # Special case for 0: "-0.00" should compare equal to "0.00"
     if set(result) <= ZERO_DECIMAL_CHARACTERS:
         result = "0.00"
+    # https://bugs.python.org/issue36622
+    if number_format_notation == 'e' and isinstance(number, float):
+        result = result.replace('+0', '+')
     return result
