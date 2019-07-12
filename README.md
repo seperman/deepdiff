@@ -503,3 +503,4 @@ Thank you!
 - Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
 - Juan Soler (Soleronline) for adding ignore_type_number
 - mthaddon for adding timedelta diffing support
+- Necrophagos for Hashing of the number 1 vs. True
