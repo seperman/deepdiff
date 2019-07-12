@@ -65,7 +65,7 @@ Ignore Order
 Sometimes you don’t care about the order of objects when comparing them.
 In those cases, you can set ``ignore_order=True``. However this flag
 won’t report the repetitions to you. You need to additionally enable
-``report_report_repetition=True`` for getting a report of repetitions.
+``report_repetition=True`` for getting a report of repetitions.
 
 List difference ignoring order or duplicates
 --------------------------------------------
