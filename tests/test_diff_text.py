@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import math
 import datetime
 import pytest
 import logging
@@ -1702,3 +1701,25 @@ class TestDeepDiffText:
         t2 = {"blah": {4}, 2: 1337}
         DeepDiff(t1, t2, ignore_order=True)
         assert mock_logger.warning.called
+
+    def test_bool_vs_number(self):
+        t1 = {
+            "A List": [
+                {
+                    "Value One": True,
+                    "Value Two": 1
+                }
+            ],
+        }
+
+        t2 = {
+            "A List": [
+                {
+                    "Value Two": 1,
+                    "Value One": True
+                }
+            ],
+        }
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert ddiff == {}

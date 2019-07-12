@@ -4,7 +4,7 @@ import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
-
+from enum import Enum
 from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
@@ -25,6 +25,11 @@ RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
+
+
+class BoolObj(Enum):
+    TRUE = 1
+    FALSE = 0
 
 
 def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):
@@ -259,6 +264,9 @@ class DeepHash(dict, Base):
 
         return result
 
+    def _prep_bool(self, obj):
+        return BoolObj.TRUE if obj else BoolObj.FALSE
+
     def _prep_number(self, obj):
         type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
         if self.significant_digits is not None:
@@ -282,14 +290,18 @@ class DeepHash(dict, Base):
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main diff method"""
 
+        if isinstance(obj, bool):
+            obj = self._prep_bool(obj)
+            result = None
+        else:
+            result = not_hashed
+
         try:
             result = self[obj]
         except (TypeError, KeyError):
             pass
         else:
             return result
-
-        result = not_hashed
 
         if self._skip_this(obj, parent):
             return
@@ -314,6 +326,8 @@ class DeepHash(dict, Base):
         elif isinstance(obj, Iterable):
             result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
 
+        elif obj in {BoolObj.TRUE, BoolObj.FALSE}:
+            result = 'bool:true' if obj is BoolObj.TRUE else 'bool:false'
         else:
             result = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 

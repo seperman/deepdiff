@@ -3,9 +3,8 @@
 import re
 import pytest
 import logging
-import math
 from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed
+from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
 from deepdiff.helper import pypy3, get_id, number_to_string
 from collections import namedtuple
 from functools import partial
@@ -96,6 +95,21 @@ class TestDeepHash:
 
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
+
+    def test_prep_bool_vs_num1(self):
+        assert {BoolObj.TRUE: 'bool:true'} == DeepHashPrep(True)
+        assert {1: 'int:1'} == DeepHashPrep(1)
+
+    def test_prep_bool_vs_num2(self):
+        item1 = {
+            "Value One": True,
+            "Value Two": 1,
+        }
+        item2 = {
+            "Value Two": 1,
+            "Value One": True,
+        }
+        assert DeepHashPrep(item1)[item1] == DeepHashPrep(item2)[item2]
 
     def test_prep_str(self):
         obj = "a"
