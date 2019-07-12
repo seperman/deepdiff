@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.6
+# DeepDiff v 4.0.7
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -417,7 +417,7 @@ And then running
 
 # ChangeLog
 
-
+- v4-0-7: Hashing of the number 1 vs. True
 - v4-0-6: found a tiny bug in Python formatting of numbers in scientific notation. Added a workaround.
 - v4-0-5: Fixing number diffing. Adding number_format_notation and number_to_string_func.
 - v4-0-4: Adding ignore_string_case and ignore_type_subclasses
@@ -503,3 +503,4 @@ Thank you!
 - Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
 - Juan Soler (Soleronline) for adding ignore_type_number
 - mthaddon for adding timedelta diffing support
+- Necrophagos for Hashing of the number 1 vs. True
