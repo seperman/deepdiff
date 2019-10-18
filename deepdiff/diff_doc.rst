@@ -86,6 +86,10 @@ ignore_type_subclasses: Boolean, default = False
 ignore_string_case: Boolean, default = False
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
 
+ignore_nan_inequality: Boolean, default = False
+    Whether to ignore float('nan') inequality in Python.
+
+
 **Returns**
 
     A DeepDiff object that has already calculated the difference of the 2 items.
@@ -473,6 +477,7 @@ ignore_type_subclasses
     >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
     {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
 
+
 ignore_string_case
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
 
@@ -482,6 +487,15 @@ ignore_string_case
     {}
 
 
+ignore_nan_inequality
+    Whether to ignore float('nan') inequality in Python.
+
+    >>> float('nan') == float('nan')
+    False
+    >>> DeepDiff(float('nan'), float('nan'))
+    {'values_changed': {'root': {'new_value': nan, 'old_value': nan}}}
+    >>> DeepDiff(float('nan'), float('nan'), ignore_nan_inequality=True)
+    {}
 
 **Tree View**
 
