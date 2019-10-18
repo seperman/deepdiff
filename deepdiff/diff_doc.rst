@@ -488,7 +488,7 @@ ignore_string_case
 
 
 ignore_nan_inequality
-    Whether to ignore float('nan') inequality in Python.
+    Whether to ignore float('nan') inequality in Python. Note that this is a cPython "feature". Some versions of Pypy3 for example have nan==nan.
 
     >>> float('nan') == float('nan')
     False
