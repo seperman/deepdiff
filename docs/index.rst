@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-0-8: Adding ignore_nan_inequality for float('nan')
 - v4-0-7: Hashing of the number 1 vs. True
 - v4-0-6: found a tiny bug in Python formatting of numbers in scientific notation. Added a workaround.
 - v4-0-5: Fixing number diffing. Adding number_format_notation and number_to_string_func.

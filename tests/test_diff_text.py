@@ -1723,3 +1723,11 @@ class TestDeepDiffText:
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert ddiff == {}
+
+    @pytest.mark.parametrize('t1, t2, params, expected_result', [
+        (float('nan'), float('nan'), {}, ['values_changed']),
+        (float('nan'), float('nan'), {'ignore_nan_inequality': True}, []),
+        ([1, float('nan')], [1, float('nan')], {'ignore_nan_inequality': True}, []),
+    ])
+    def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
+        assert expected_result == list(DeepDiff(t1, t2, **params).keys())
