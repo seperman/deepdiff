@@ -1,5 +1,7 @@
 include *.rst
 include deepdiff/*.rst
 include *.txt
+include LICENSE AUTHORS
+recursive-include tests *.py
 global-exclude __pycache__
 global-exclude *.py[co]
