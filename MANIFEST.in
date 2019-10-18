@@ -1,7 +1,11 @@
+include LICENSE
+include AUTHORS
 include *.rst
 include deepdiff/*.rst
 include *.txt
-include LICENSE AUTHORS
+include *.sh
+include pytest.ini
+include *.py
 recursive-include tests *.py
 global-exclude __pycache__
 global-exclude *.py[co]

@@ -7,6 +7,7 @@ from unittest import mock
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import number_to_string
+from deepdiff.helper import pypy3
 from tests import CustomClass
 
 logging.disable(logging.CRITICAL)
@@ -1723,3 +1724,12 @@ class TestDeepDiffText:
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert ddiff == {}
+
+    @pytest.mark.parametrize('t1, t2, params, expected_result', [
+        (float('nan'), float('nan'), {}, ['values_changed']),
+        (float('nan'), float('nan'), {'ignore_nan_inequality': True}, []),
+        ([1, float('nan')], [1, float('nan')], {'ignore_nan_inequality': True}, []),
+    ])
+    @pytest.mark.skipif(pypy3, reason="some versions of pypy3 have nan==nan")
+    def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
+        assert expected_result == list(DeepDiff(t1, t2, **params).keys())

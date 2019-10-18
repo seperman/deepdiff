@@ -59,6 +59,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
                  number_to_string_func=None,
+                 ignore_nan_inequality=False,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
@@ -69,7 +70,7 @@ class DeepDiff(ResultDict, Base):
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
-                "number_to_string_func, verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
+                "ignore_nan_inequality, number_to_string_func, verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
 
         self.ignore_order = ignore_order
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -88,6 +89,7 @@ class DeepDiff(ResultDict, Base):
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.ignore_string_case = ignore_string_case
         self.number_to_string = number_to_string_func or number_to_string
+        self.ignore_nan_inequality = ignore_nan_inequality
         self.hashes = {}
         self.hasher = hasher
 
@@ -612,6 +614,9 @@ class DeepDiff(ResultDict, Base):
             if report_type_change:
                 self.__diff_types(level)
                 return
+
+        if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
+            return
 
         if isinstance(level.t1, strings):
             self.__diff_str(level)

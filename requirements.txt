@@ -1,2 +1,2 @@
 jsonpickle==1.0
-ordered-set==3.1
+ordered-set==3.1.1
