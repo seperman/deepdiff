@@ -478,9 +478,9 @@ class DeepDiff(ResultDict, Base):
                                       )
                 item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
-                logger.warning("Can not produce a hash for %s."
-                               "Not counting this object.\n %s" %
-                               (level.path(), e))
+                logger.error("Can not produce a hash for %s."
+                             "Not counting this object.\n %s" %
+                             (level.path(), e))
             else:
                 if item_hash is unprocessed:  # pragma: no cover
                     logger.warning("Item %s was not processed while hashing "

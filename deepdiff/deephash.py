@@ -326,7 +326,7 @@ class DeepHash(dict, Base):
         elif isinstance(obj, Iterable):
             result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
 
-        elif obj in {BoolObj.TRUE, BoolObj.FALSE}:
+        elif obj == BoolObj.TRUE or obj == BoolObj.FALSE:
             result = 'bool:true' if obj is BoolObj.TRUE else 'bool:false'
         else:
             result = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
