@@ -8,7 +8,7 @@ from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import number_to_string
 from deepdiff.helper import pypy3
-from tests import CustomClass
+from tests import CustomClass, CustomClass2
 
 logging.disable(logging.CRITICAL)
 
@@ -858,6 +858,19 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_custom_objects2(self):
+        cc_a = CustomClass2(prop1=["a"], prop2=["b"])
+        cc_b = CustomClass2(prop1=["b"], prop2=["b"])
+        t1 = [cc_a, CustomClass2(prop1=["c"], prop2=["d"])]
+        t2 = [cc_b, CustomClass2(prop1=["c"], prop2=["d"])]
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+
+        result = {'iterable_item_added': {'root[0]': cc_b},
+                  'iterable_item_removed': {'root[0]': cc_a}}
+
+        assert result == ddiff
+
     def test_custom_objects_slot_change(self):
         class ClassA:
             __slots__ = ('x', 'y')
@@ -1701,7 +1714,7 @@ class TestDeepDiffText:
         t1 = {"blah": {4}, 2: 1337}
         t2 = {"blah": {4}, 2: 1337}
         DeepDiff(t1, t2, ignore_order=True)
-        assert mock_logger.warning.called
+        assert mock_logger.error.called
 
     def test_bool_vs_number(self):
         t1 = {
