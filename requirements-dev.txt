@@ -1,7 +1,8 @@
 -r requirements.txt
-pytest==4.3.1
-pytest-cov==2.6.1
-numpy==1.16.2
+bump2version==0.5.11
+jsonpickle==1.2
+ipdb==0.12.3
 mmh3==2.5.1
-ipdb==0.11
-bump2version==0.5.10
+numpy==1.18.1
+pytest==5.3.2
+pytest-cov==2.8.1

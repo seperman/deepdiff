@@ -23,7 +23,7 @@ class TestDeepAdditions:
     def test_deserialization(self):
         ddiff = DeepDiff(t1, t2)
         jsoned = ddiff.to_json_pickle()
-        ddiff2 = DeepDiff.from_json(jsoned)
+        ddiff2 = DeepDiff.from_json_pickle(jsoned)
         assert ddiff == ddiff2
 
     def test_serialization_tree(self):
@@ -36,18 +36,8 @@ class TestDeepAdditions:
     def test_deserialization_tree(self):
         ddiff = DeepDiff(t1, t2, view='tree')
         jsoned = ddiff.to_json_pickle()
-        ddiff2 = DeepDiff.from_json(jsoned)
+        ddiff2 = DeepDiff.from_json_pickle(jsoned)
         assert 'type_changes' in ddiff2
-
-    def test_deleting_serialization_cache_when_using_the_property(self):
-        t1 = {1: 1}
-        t2 = {1: 2}
-        ddiff = DeepDiff(t1, t2)
-        assert hasattr(ddiff, '_json') is False
-        ddiff.json
-        assert hasattr(ddiff, '_json')
-        del ddiff.json
-        assert hasattr(ddiff, '_json') is False
 
     def test_serialize_custom_objects_throws_error(self):
         class A:

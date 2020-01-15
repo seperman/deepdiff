@@ -417,6 +417,7 @@ And then running
 
 # ChangeLog
 
+- v4-1-0: .json property is finally removed.
 - v4-0-9: Fixing the bug for hashing custom unhashable objects
 - v4-0-8: Adding ignore_nan_inequality for float('nan')
 - v4-0-7: Hashing of the number 1 vs. True

@@ -1483,6 +1483,14 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
+    def test_ignore_type_in_groups_str_and_datetime(self):
+        now = datetime.datetime.utcnow()
+        t1 = [1, 2, 3, 'a', now]
+        t2 = [1, 2, 3, 'a', 'now']
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(str, bytes, datetime.datetime)])
+        result = {'values_changed': {'root[4]': {'new_value': 'now', 'old_value': now}}}
+        assert result == ddiff
+
     def test_ignore_string_type_changes_when_dict_keys_merge_is_not_deterministic(self):
         t1 = {'a': 10, b'a': 20}
         t2 = {'a': 11, b'a': 22}
