@@ -36,7 +36,8 @@ try:
     import jsonpickle
 except ImportError:
     jsonpickle = None
-    logger.info('jsonpickle is not installed. ')
+    logger.info('jsonpickle is not installed. The to_json_pickle and from_json_pickle functions will not work.'
+                'If you dont need those functions, there is nothing to do.')
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
