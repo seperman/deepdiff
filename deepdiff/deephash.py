@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
@@ -232,7 +231,7 @@ class DeepHash(dict, Base):
                     break
         else:
             type_str = 'dict'
-        return "%s:{%s}" % (type_str, result)
+        return "{}:{{{}}}".format(type_str, result)
 
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 

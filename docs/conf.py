@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # DeepDiff documentation build configuration file, created by
 # sphinx-quickstart on Mon Jul 20 06:06:44 2015.

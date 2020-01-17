@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # In order to run the docstrings:
 # python3 -m deepdiff.diff

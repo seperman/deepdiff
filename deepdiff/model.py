@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from deepdiff.helper import RemapDict, strings, short_repr, Verbose, notpresent
 from ast import literal_eval
 from copy import copy
@@ -156,7 +154,7 @@ class TextResult(ResultDict):
     def _from_tree_unprocessed(self, tree):
         if 'unprocessed' in tree:
             for change in tree['unprocessed']:
-                self['unprocessed'].append("%s: %s and %s" % (change.path(
+                self['unprocessed'].append("{}: {} and {}".format(change.path(
                     force=FORCE_DEFAULT), change.t1, change.t2))
 
     def _from_tree_set_item_removed(self, tree):
@@ -167,7 +165,7 @@ class TextResult(ResultDict):
                 item = change.t1
                 if isinstance(item, strings):
                     item = "'%s'" % item
-                self['set_item_removed'].add("%s[%s]" % (path, str(item)))
+                self['set_item_removed'].add("{}[{}]".format(path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
 
     def _from_tree_set_item_added(self, tree):
@@ -178,7 +176,7 @@ class TextResult(ResultDict):
                 item = change.t2
                 if isinstance(item, strings):
                     item = "'%s'" % item
-                self['set_item_added'].add("%s[%s]" % (path, str(item)))
+                self['set_item_added'].add("{}[{}]".format(path, str(item)))
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
 
     def _from_tree_repetition_change(self, tree):
@@ -190,7 +188,7 @@ class TextResult(ResultDict):
                 self['repetition_change'][path]['value'] = change.t1
 
 
-class DiffLevel(object):
+class DiffLevel:
     """
     An object of this class represents a single object-tree-level in a reported change.
     A double-linked list of these object describes a single change on all of its levels.
@@ -523,7 +521,7 @@ class DiffLevel(object):
         return result
 
 
-class ChildRelationship(object):
+class ChildRelationship:
     """
     Describes the relationship between a container object (the "parent") and the contained
     "child" object.

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import re
 from collections.abc import MutableMapping, Iterable
 import logging
@@ -225,7 +224,7 @@ class DeepSearch(dict):
         """Search iterables except dictionaries, sets and strings."""
 
         for i, thing in enumerate(obj):
-            new_parent = "%s[%s]" % (parent, i)
+            new_parent = "{}[{}]".format(parent, i)
             if self.__skip_this(thing, parent=new_parent):
                 continue
 

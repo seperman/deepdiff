@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import pytest
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, notpresent
