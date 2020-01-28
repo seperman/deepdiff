@@ -349,10 +349,10 @@ class DeepHash(dict, Base):
         # It is important to keep the hash of all objects.
         # The hashes will be later used for comparing the objects.
         try:
-            self[obj] = result
+            self[(obj, parent)] = result
         except TypeError:
             obj_id = get_id(obj)
-            self[obj_id] = result
+            self[(obj_id, parent)] = result
 
         return result
 
