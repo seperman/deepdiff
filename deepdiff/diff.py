@@ -26,7 +26,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
-from deepdiff.deephash import DeepHash
+from deepdiff.deephash import DeepHash, BoolObj
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
@@ -482,7 +482,13 @@ class DeepDiff(ResultDict, Base):
                                       ignore_string_case=self.ignore_string_case,
                                       number_to_string_func=self.number_to_string,
                                       )
-                item_hash = hashes_all[item]
+                # import pytest; pytest.set_trace()
+                key = item
+                if item is True:
+                    key = BoolObj.TRUE
+                elif item is False:
+                    key = BoolObj.FALSE
+                item_hash = hashes_all[key]
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %

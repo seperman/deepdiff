@@ -404,6 +404,18 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert {} == ddiff
 
+    @pytest.mark.parametrize('t1_0, t2_0', [
+        (1, 2),
+        (True, False),
+        ('a', 'b'),
+    ])
+    def test_list_difference_of_bool_only_ignore_order(self, t1_0, t2_0):
+        t1 = [t1_0]
+        t2 = [t2_0]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {'iterable_item_added': {'root[0]': t2_0}, 'iterable_item_removed': {'root[0]': t1_0}}
+        assert result == ddiff
+
     def test_dictionary_difference_ignore_order(self):
         t1 = {"a": [[{"b": 2, "c": 4}, {"b": 2, "c": 3}]]}
         t2 = {"a": [[{"b": 2, "c": 3}, {"b": 2, "c": 4}]]}
