@@ -529,6 +529,16 @@ class TestDeepHashPrep:
         assert 2 in t1_hash
         assert t1_hash[2] == t2_hash[2]
 
+    def test_skip_exclude_obj_callback(self):
+        def exclude_obj_callback(obj, parent):
+            return True if parent == "root['x']" or obj == 2 else False
+
+        dic1 = {"x": 1, "y": 2, "z": 3}
+        t1 = [dic1]
+        t1_hash = DeepHashPrep(t1, exclude_obj_callback=exclude_obj_callback)
+        assert t1_hash == {'y': 'str:y', 'z': 'str:z', 3: 'int:3',
+                           get_id(dic1): 'dict:{str:z:int:3}', get_id(t1): 'list:dict:{str:z:int:3}'}
+
     def test_string_case(self):
         t1 = "Hello"
 
