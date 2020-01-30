@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 4.0.9 documentation!
+DeepDiff 4.1.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
