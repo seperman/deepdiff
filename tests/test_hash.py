@@ -12,7 +12,9 @@ from enum import Enum
 logging.disable(logging.CRITICAL)
 
 
-class CustomClass:
+class ClassC:
+    class_attr = 0
+
     def __init__(self, a, b=None):
         self.a = a
         self.b = b
@@ -20,8 +22,7 @@ class CustomClass:
     def __str__(self):
         return "({}, {})".format(self.a, self.b)
 
-    def __repr__(self):
-        return self.__str__()
+    __repr__ = __str__
 
 
 # Only the prep part of DeepHash. We don't need to test the actual hash function.
@@ -536,6 +537,14 @@ class TestDeepHashPrep:
 
         t1_hash = DeepHashPrep(t1, ignore_string_case=True)
         assert t1_hash == {'Hello': 'str:hello'}
+
+    def test_hash_class(self):
+        t1 = ClassC
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash['class_attr'] == 'str:class_attr'
+        assert t1_hash[0] == 'int:0'
+        # Note: we ignore private names in calculating hashes now. So you dont see __init__ here for example.
+        assert t1_hash[t1] == r'objClassC:{str:class_attr:int:0}'
 
 
 class TestDeepHashSHA:

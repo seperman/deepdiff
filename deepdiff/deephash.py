@@ -170,7 +170,7 @@ class DeepHash(dict, Base):
         return super().__contains__(key)
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
-        """Difference of 2 objects"""
+        """prepping objects"""
         original_type = type(obj) if not isinstance(obj, type) else obj
         try:
             if is_namedtuple:
@@ -208,6 +208,9 @@ class DeepHash(dict, Base):
 
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key, item in obj.items():
+            # ignore private variables
+            if isinstance(key, str) and key.startswith('__'):
+                continue
             key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
             key_in_report = key_text % (parent, key_formatted)
 
