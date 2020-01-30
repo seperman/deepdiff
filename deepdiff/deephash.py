@@ -171,7 +171,7 @@ class DeepHash(dict, Base):
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """Difference of 2 objects"""
-        original_type = type(obj)
+        original_type = type(obj) if not isinstance(obj, type) else obj
         try:
             if is_namedtuple:
                 obj = obj._asdict()
