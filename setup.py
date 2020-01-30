@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup
 
-if sys.version[0] == '2':  # pragma: no cover
+if sys.version_info.major[0] == 2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 # if you are not using vagrant, just delete os.link directly,
@@ -10,7 +10,7 @@ if sys.version[0] == '2':  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-version = '4.0.9'
+version = '4.2.0'
 
 
 def get_reqs(filename):
@@ -42,7 +42,7 @@ setup(name='deepdiff',
       long_description=long_description,
       long_description_content_type='text/markdown',
       install_requires=reqs,
-      python_requires='>=3.4',
+      python_requires='>=3.5',
       extras_require={
           "murmur": ["mmh3"],
       },
@@ -50,10 +50,10 @@ setup(name='deepdiff',
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
           "Topic :: Software Development",
-          "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"

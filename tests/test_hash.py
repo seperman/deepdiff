@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import re
 import pytest
 import logging
@@ -13,7 +12,9 @@ from enum import Enum
 logging.disable(logging.CRITICAL)
 
 
-class CustomClass:
+class ClassC:
+    class_attr = 0
+
     def __init__(self, a, b=None):
         self.a = a
         self.b = b
@@ -21,8 +22,7 @@ class CustomClass:
     def __str__(self):
         return "({}, {})".format(self.a, self.b)
 
-    def __repr__(self):
-        return self.__str__()
+    __repr__ = __str__
 
 
 # Only the prep part of DeepHash. We don't need to test the actual hash function.
@@ -207,20 +207,11 @@ class TestDeepHashPrep:
             A = 1
             B = 2
 
-        # checking if pypy3 is running the test
-        # in that case due to a difference of string interning implementation
-        # the ids of strings change
-        if pypy3:
-            # only compare the hashes for the enum instances themselves
-            assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
-            assert DeepHashPrep(MyEnum.B)[MyEnum.B] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:A;str:_value_:int:1};str:_name_:str:B;str:_value_:int:2}'
-            assert DeepHashPrep(MyEnum(1))[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
-        else:
-            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum.A)
-            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
+        assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}'
+        assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
 
     def test_dict_hash(self):
         string1 = "a"
@@ -235,7 +226,7 @@ class TestDeepHashPrep:
             20: 'int:20',
             key1: key1_prepped,
             string1: string1_prepped,
-            get_id(obj): 'dict:{int:1:int:10;int:2:int:20;%s:%s}' % (key1, string1)
+            get_id(obj): 'dict:{{int:1:int:10;int:2:int:20;{}:{}}}'.format(key1, string1)
         }
         result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result
@@ -537,6 +528,14 @@ class TestDeepHashPrep:
 
         t1_hash = DeepHashPrep(t1, ignore_string_case=True)
         assert t1_hash == {'Hello': 'str:hello'}
+
+    def test_hash_class(self):
+        t1 = ClassC
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash['class_attr'] == 'str:class_attr'
+        assert t1_hash[0] == 'int:0'
+        # Note: we ignore private names in calculating hashes now. So you dont see __init__ here for example.
+        assert t1_hash[t1] == r'objClassC:{str:class_attr:int:0}'
 
 
 class TestDeepHashSHA:

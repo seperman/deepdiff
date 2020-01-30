@@ -1,9 +1,10 @@
-Authors:
+Many thanks to the following people for their contributions to DeepDiff:
+
 - Seperman
 - Victor Hahn Castell @ Flexoptix
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
-- WangFenjin for unicode support.
+- WangFenjin for Unicode support.
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
@@ -21,3 +22,5 @@ Authors:
 - Juan Soler (Soleronline) for adding ignore_type_number
 - mthaddon for adding timedelta diffing support
 - Necrophagos for Hashing of the number 1 vs. True
+- Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
+- Andrey Gavrilin (gaal-dev) for hashing classes.

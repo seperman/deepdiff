@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import pytest
 from deepdiff import DeepSearch, grep
 from datetime import datetime
@@ -177,7 +176,7 @@ class TestDeepSearch:
         assert list(ds["matched_values"].values())[0] == item
 
     def test_loop(self):
-        class LoopTest(object):
+        class LoopTest:
             def __init__(self, a):
                 self.loop = self
                 self.a = a
@@ -245,7 +244,7 @@ class TestDeepSearch:
             DeepSearch(1, 1, wrong_param=2)
 
     def test_bad_attribute(self):
-        class Bad(object):
+        class Bad:
             __slots__ = ['x', 'y']
 
             def __getattr__(self, key):
@@ -314,7 +313,7 @@ class TestDeepSearch:
         assert DeepSearch(obj, item, verbose_level=1) == result
 
     def test_search_inherited_attributes(self):
-        class Parent(object):
+        class Parent:
             a = 1
 
         class Child(Parent):

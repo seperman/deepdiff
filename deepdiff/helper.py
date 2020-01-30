@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import datetime
 import re
@@ -10,12 +9,11 @@ from ordered_set import OrderedSet
 
 logger = logging.getLogger(__name__)
 
-py_major_version = sys.version[0]
-py_minor_version = sys.version[2]
+py_major_version = sys.version_info.major
 
-py2 = py_major_version == '2'
-py3 = py_major_version == '3'
-py4 = py_major_version == '4'
+py2 = py_major_version == 2
+py3 = py_major_version == 3
+py4 = py_major_version == 4
 
 if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover
@@ -166,7 +164,7 @@ def add_to_frozen_set(parents_ids, item_id):
 def convert_item_or_items_into_set_else_none(items):
     if items:
         if isinstance(items, strings):
-            items = set([items])
+            items = {items}
         else:
             items = set(items)
     else:

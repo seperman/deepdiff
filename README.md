@@ -1,4 +1,4 @@
-# DeepDiff v 4.0.9
+# DeepDiff v 4.2.0
 
 <!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -11,7 +11,7 @@
 - DeepSearch: Search for objects within other objects.
 - DeepHash: Hash any object based on their content.
 
-Tested on Python 3.4, 3.5, 3.6, 3.7, Pypy3
+Tested on Python 3.5+ and PyPy3.
 
 **NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
 
@@ -417,6 +417,7 @@ And then running
 
 # ChangeLog
 
+- v4-2-0: .json property is finally removed. Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore. Fix for #166 Problem with comparing lists, with an boolean as element.
 - v4-0-9: Fixing the bug for hashing custom unhashable objects
 - v4-0-8: Adding ignore_nan_inequality for float('nan')
 - v4-0-7: Hashing of the number 1 vs. True

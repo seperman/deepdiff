@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # In order to run the docstrings:
 # python3 -m deepdiff.diff
@@ -10,7 +9,6 @@
 import difflib
 import logging
 import json
-import jsonpickle
 import warnings
 
 from itertools import zip_longest
@@ -27,11 +25,18 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
 from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
 from deepdiff.model import DictRelationship, AttributeRelationship
 from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
-from deepdiff.deephash import DeepHash
+from deepdiff.deephash import DeepHash, BoolObj
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
 warnings.simplefilter('once', DeprecationWarning)
+
+try:
+    import jsonpickle
+except ImportError:
+    jsonpickle = None
+    logger.info('jsonpickle is not installed. The to_json_pickle and from_json_pickle functions will not work.'
+                'If you dont need those functions, there is nothing to do.')
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
@@ -476,7 +481,13 @@ class DeepDiff(ResultDict, Base):
                                       ignore_string_case=self.ignore_string_case,
                                       number_to_string_func=self.number_to_string,
                                       )
-                item_hash = hashes_all[item]
+                # import pytest; pytest.set_trace()
+                key = item
+                if item is True:
+                    key = BoolObj.TRUE
+                elif item is False:
+                    key = BoolObj.FALSE
+                item_hash = hashes_all[key]
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %
@@ -642,37 +653,15 @@ class DeepDiff(ResultDict, Base):
         else:
             self.__diff_obj(level, parents_ids)
 
-    @property
-    def json(self):
-        warnings.warn(
-            "json property will be deprecated. Instead use: to_json_pickle() to get the json pickle or to_json() for bare-bone json.",
-            DeprecationWarning
-        )
-        if not hasattr(self, '_json'):
-            # copy of self removes all the extra attributes since it assumes
-            # we have only a simple dictionary.
-            copied = self.copy()
-            self._json = jsonpickle.encode(copied)
-        return self._json
-
     def to_json_pickle(self):
         """
         Get the json pickle of the diff object. Unless you need all the attributes and functionality of DeepDiff, running to_json() is the safer option that json pickle.
         """
-        copied = self.copy()
-        return jsonpickle.encode(copied)
-
-    @json.deleter
-    def json(self):
-        del self._json
-
-    @classmethod
-    def from_json(cls, value):
-        warnings.warn(
-            "from_json is renamed to from_json_pickle",
-            DeprecationWarning
-        )
-        return cls.from_json_pickle(value)
+        if jsonpickle:
+            copied = self.copy()
+            return jsonpickle.encode(copied)
+        else:
+            logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')
 
     @classmethod
     def from_json_pickle(cls, value):
@@ -680,7 +669,10 @@ class DeepDiff(ResultDict, Base):
         Load DeepDiff object with all the bells and whistles from the json pickle dump.
         Note that json pickle dump comes from to_json_pickle
         """
-        return jsonpickle.decode(value)
+        if jsonpickle:
+            return jsonpickle.decode(value)
+        else:
+            logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')
 
     def to_json(self, default_mapping=None):
         """

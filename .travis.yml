@@ -1,15 +1,13 @@
 language: python
+cache: pip
 
 matrix:
   include:
-    - python: 3.4
     - python: 3.5
     - python: 3.6
     - python: pypy3
     - python: 3.7
     - python: 3.8
-      dist: xenial
-      sudo: true
 
 install:
   - pip install -r requirements-dev.txt
