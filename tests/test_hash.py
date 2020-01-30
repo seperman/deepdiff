@@ -207,20 +207,11 @@ class TestDeepHashPrep:
             A = 1
             B = 2
 
-        # checking if pypy3 is running the test
-        # in that case due to a difference of string interning implementation
-        # the ids of strings change
-        if pypy3:
-            # only compare the hashes for the enum instances themselves
-            assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
-            assert DeepHashPrep(MyEnum.B)[MyEnum.B] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:A;str:_value_:int:1};str:_name_:str:B;str:_value_:int:2}'
-            assert DeepHashPrep(MyEnum(1))[MyEnum.A] == r'objMyEnum:{str:__objclass__:EnumMeta:objMyEnum:{str:_name_:str:B;str:_value_:int:2};str:_name_:str:A;str:_value_:int:1}'
-        else:
-            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum.A)
-            assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
-            assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
+        assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}'
+        assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
+        assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
 
     def test_dict_hash(self):
         string1 = "a"
