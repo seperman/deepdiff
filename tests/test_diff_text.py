@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import datetime
 import pytest
 import logging
@@ -271,19 +270,19 @@ class TestDeepDiffText:
             2: 2,
             3: 3,
             4: {
-                "a": u"hello",
-                "b": u"world!\nGoodbye!\n1\n2\nEnd"
+                "a": "hello",
+                "b": "world!\nGoodbye!\n1\n2\nEnd"
             }
         }
-        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": u"hello", "b": u"world\n1\n2\nEnd"}}
+        t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n1\n2\nEnd"}}
         ddiff = DeepDiff(t1, t2)
         result = {
             'values_changed': {
                 "root[4]['b']": {
                     'diff':
                     '--- \n+++ \n@@ -1,5 +1,4 @@\n-world!\n-Goodbye!\n+world\n 1\n 2\n End',
-                    'new_value': u'world\n1\n2\nEnd',
-                    'old_value': u'world!\nGoodbye!\n1\n2\nEnd'
+                    'new_value': 'world\n1\n2\nEnd',
+                    'old_value': 'world!\nGoodbye!\n1\n2\nEnd'
                 }
             }
         }
@@ -609,7 +608,7 @@ class TestDeepDiffText:
         """
         https://github.com/seperman/deepdiff/issues/64
         """
-        ddiff = DeepDiff(set(), set([None]))
+        ddiff = DeepDiff(set(), {None})
         assert {'set_item_added': {'root[None]'}} == ddiff
 
     def test_list_that_contains_dictionary(self):
@@ -983,7 +982,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_custom_objects_with_single_protected_slot(self):
-        class ClassA(object):
+        class ClassA:
             __slots__ = '__a'
 
             def __init__(self):
@@ -998,7 +997,7 @@ class TestDeepDiffText:
         assert {} == ddiff
 
     def test_custom_objects_with_weakref_in_slots(self):
-        class ClassA(object):
+        class ClassA:
             __slots__ = ['a', '__weakref__']
 
             def __init__(self, a):
@@ -1018,7 +1017,7 @@ class TestDeepDiffText:
         assert result == diff
 
     def get_custom_objects_add_and_remove(self):
-        class ClassA(object):
+        class ClassA:
             a = 1
 
             def __init__(self, b):
@@ -1066,7 +1065,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def get_custom_object_with_added_removed_methods(self):
-        class ClassA(object):
+        class ClassA:
             def method_a(self):
                 pass
 
@@ -1140,7 +1139,7 @@ class TestDeepDiffText:
         assert not DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
 
     def test_loop(self):
-        class LoopTest(object):
+        class LoopTest:
             def __init__(self, a):
                 self.loop = self
                 self.a = a
@@ -1160,12 +1159,12 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_loop2(self):
-        class LoopTestA(object):
+        class LoopTestA:
             def __init__(self, a):
                 self.loop = LoopTestB
                 self.a = a
 
-        class LoopTestB(object):
+        class LoopTestB:
             def __init__(self, a):
                 self.loop = LoopTestA
                 self.a = a
@@ -1185,7 +1184,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_loop3(self):
-        class LoopTest(object):
+        class LoopTest:
             def __init__(self, a):
                 self.loop = LoopTest
                 self.a = a
@@ -1266,15 +1265,15 @@ class TestDeepDiffText:
         Writing b"你好" throws an exception in Python 3 so can't be used for testing.
         These tests are currently useless till they are rewritten properly.
         """
-        unicode_string = {"hello": u"你好"}
+        unicode_string = {"hello": "你好"}
         ascii_string = {"hello": "你好"}
         ddiff = DeepDiff(unicode_string, ascii_string)
         result = {}
         assert result == ddiff
 
     def test_unicode_string_value_changes(self):
-        unicode_string = {"hello": u"你好"}
-        ascii_string = {"hello": u"你好hello"}
+        unicode_string = {"hello": "你好"}
+        ascii_string = {"hello": "你好hello"}
         ddiff = DeepDiff(unicode_string, ascii_string)
         result = {
             'values_changed': {
@@ -1287,7 +1286,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_unicode_string_value_and_type_changes(self):
-        unicode_string = {"hello": u"你好"}
+        unicode_string = {"hello": "你好"}
         ascii_string = {"hello": "你好hello"}
         ddiff = DeepDiff(unicode_string, ascii_string)
         # In python3, all string is unicode, so these 2 strings only diff
@@ -1322,7 +1321,7 @@ class TestDeepDiffText:
 
     def test_int_to_unicode(self):
         t1 = 1
-        unicode_string = u"你好"
+        unicode_string = "你好"
         ddiff = DeepDiff(t1, unicode_string)
         # In python3, all string is unicode, so these 2 strings only diff
         # in values

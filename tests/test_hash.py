@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import re
 import pytest
 import logging
@@ -235,7 +234,7 @@ class TestDeepHashPrep:
             20: 'int:20',
             key1: key1_prepped,
             string1: string1_prepped,
-            get_id(obj): 'dict:{int:1:int:10;int:2:int:20;%s:%s}' % (key1, string1)
+            get_id(obj): 'dict:{{int:1:int:10;int:2:int:20;{}:{}}}'.format(key1, string1)
         }
         result = DeepHashPrep(obj, ignore_string_type_changes=True)
         assert expected_result == result

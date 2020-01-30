@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import pytest
 from decimal import Decimal
 from deepdiff.helper import short_repr, number_to_string

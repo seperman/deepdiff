@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
-
-class CustomClass(object):
+class CustomClass:
     def __init__(self, a, b=None):
         self.a = a
         self.b = b
