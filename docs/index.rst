@@ -340,9 +340,11 @@ Authors
     - `hahncastell.de <http://hahncastell.de>`_
     - `flexoptix.net <http://www.flexoptix.net>`_
 
+And thanks to the following people for their great contributions!
+
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
-- WangFenjin for unicode support.
+- WangFenjin for Unicode support.
 - timoilya for comparing list of sets when ignoring order.
 - Bernhard10 for significant digits comparison.
 - b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
@@ -359,4 +361,7 @@ Authors
 - Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
 - Juan Soler (Soleronline) for adding ignore_type_number
 - mthaddon for adding timedelta diffing support
+- Necrophagos for Hashing of the number 1 vs. True
+- Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
+- Andrey Gavrilin (gaal-dev) for hashing classes.
 
