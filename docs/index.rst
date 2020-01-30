@@ -281,7 +281,7 @@ Indices and tables
 Changelog
 =========
 
-- v4-2-0: Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore.
+- v4-2-0: Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore. Fix for #166 Problem with comparing lists, with an boolean as element.
 - v4-1-0: .json property is finally removed.
 - v4-0-9: Fixing the bug for hashing custom unhashable objects
 - v4-0-8: Adding ignore_nan_inequality for float('nan')
