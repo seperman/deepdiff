@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 4.2.0 documentation!
+DeepDiff 4.3.0 documentation!
 =============================
 
 **DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.**
@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-3-0: adding exclude_obj_callback
 - v4-2-0: .json property is finally removed. Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore. Fix for #166 Problem with comparing lists, with an boolean as element.
 - v4-1-0: .json property is finally removed.
 - v4-0-9: Fixing the bug for hashing custom unhashable objects
@@ -364,4 +365,4 @@ And thanks to the following people for their great contributions!
 - Necrophagos for Hashing of the number 1 vs. True
 - Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
 - Andrey Gavrilin (gaal-dev) for hashing classes.
-
+- gaal-dev for adding exclude_obj_callback

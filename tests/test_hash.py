@@ -529,6 +529,10 @@ class TestDeepHashPrep:
         t1_hash = DeepHashPrep(t1, exclude_obj_callback=exclude_obj_callback)
         assert t1_hash == {'y': 'str:y', 'z': 'str:z', 3: 'int:3',
                            get_id(dic1): 'dict:{str:z:int:3}', get_id(t1): 'list:dict:{str:z:int:3}'}
+        dic2 = {"z": 3}
+        t2 = [dic2]
+        t2_hash = DeepHashPrep(t2, exclude_obj_callback=exclude_obj_callback)
+        assert t1_hash[t1] == t2_hash[t2]
 
     def test_string_case(self):
         t1 = "Hello"
