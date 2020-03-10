@@ -484,6 +484,7 @@ class DeepDiff(ResultDict, Base):
                                       ignore_type_subclasses=self.ignore_type_subclasses,
                                       ignore_string_case=self.ignore_string_case,
                                       number_to_string_func=self.number_to_string,
+                                      exclude_obj_callback=self.exclude_obj_callback,
                                       )
                 # import pytest; pytest.set_trace()
                 key = item

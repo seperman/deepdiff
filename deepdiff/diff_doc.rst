@@ -71,6 +71,10 @@ view: string, default = text
 exclude_types: list, default = None
     List of object types to exclude from the report.
 
+exclude_obj_callback: function, default = None
+    A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
+    This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
+
 ignore_string_type_changes: Boolean, default = False
     Whether to ignore string type changes or not. For example b"Hello" vs. "Hello" are considered the same if ignore_string_type_changes is set to True.
 
@@ -495,6 +499,20 @@ ignore_nan_inequality
     >>> DeepDiff(float('nan'), float('nan'))
     {'values_changed': {'root': {'new_value': nan, 'old_value': nan}}}
     >>> DeepDiff(float('nan'), float('nan'), ignore_nan_inequality=True)
+    {}
+
+
+exclude_obj_callback
+    function, default = None
+    A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
+    This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
+
+    >>> def exclude_obj_callback(obj, path):
+    ...     return True if "skip" in path or isinstance(obj, int) else False
+    ...
+    >>> t1 = {"x": 10, "y": "b", "z": "c", "skip_1": 0}
+    >>> t2 = {"x": 12, "y": "b", "z": "c", "skip_2": 0}
+    >>> DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback)
     {}
 
 **Tree View**

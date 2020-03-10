@@ -34,6 +34,11 @@ exclude_paths: list, default = None
 exclude_regex_paths: list, default = None
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can path it as a string instead of a list containing only one regex path.
 
+exclude_obj_callback
+    function, default = None
+    A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
+    This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
+
 hasher: function. default = DeepHash.murmur3_128bit
     hasher is the hashing function. The default is DeepHash.murmur3_128bit.
     But you can pass another hash function to it if you want.
@@ -284,6 +289,22 @@ ignore_string_case
     >>> DeepHash('hello')['hello'] == DeepHash('heLLO')['heLLO']
     False
     >>> DeepHash('hello', ignore_string_case=True)['hello'] == DeepHash('heLLO', ignore_string_case=True)['heLLO']
+    True
+
+exclude_obj_callback
+    function, default = None
+    A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
+    This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
+
+    >>> dic1 = {"x": 1, "y": 2, "z": 3}
+    >>> t1 = [dic1]
+    >>> t1_hash = DeepHash(t1, exclude_obj_callback=exclude_obj_callback)
+    >>>
+    >>> dic2 = {"z": 3}
+    >>> t2 = [dic2]
+    >>> t2_hash = DeepHash(t2, exclude_obj_callback=exclude_obj_callback)
+    >>>
+    >>> t1_hash[t1] == t2_hash[t2]
     True
 
 number_format_notation : string, default="f"
