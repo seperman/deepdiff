@@ -1,7 +1,8 @@
-Many thanks to the following people for their contributions to DeepDiff:
-
 - Seperman
 - Victor Hahn Castell @ Flexoptix
+
+And many thanks to the following people for their contributions to DeepDiff:
+
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
 - WangFenjin for Unicode support.

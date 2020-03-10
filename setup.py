@@ -2,7 +2,7 @@ import os
 import sys
 from setuptools import setup
 
-if sys.version_info.major[0] == 2:  # pragma: no cover
+if sys.version_info.major == 2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 # if you are not using vagrant, just delete os.link directly,

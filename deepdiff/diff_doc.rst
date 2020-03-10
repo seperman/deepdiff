@@ -806,7 +806,7 @@ Example:
 .. seealso::
     Take a look at to_json() documentation in this page for more details.
 
-If you want the original DeepDiff object to be serialized with all the bells and whistles, you can use the to_json_pickle() and to_json_pickle() in order to serialize and deserialize its results into json. Note that json_pickle is unsafe and json pickle dumps from untrusted sources should never be loaded.
+If you want the original DeepDiff object to be serialized with all the bells and whistles, you can use the to_json_pickle() and from_json_pickle() in order to serialize and deserialize its results into json. Note that json_pickle is unsafe and json pickle dumps from untrusted sources should never be loaded.
 
 Serialize and then deserialize back to deepdiff
     >>> t1 = {1: 1, 2: 2, 3: 3}
