@@ -1647,6 +1647,16 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_skip_exclude_obj_callback(self):
+        def exclude_obj_callback(obj, path):
+            return True if "skip" in path or isinstance(obj, int) else False
+
+        t1 = {"x": "a", "y": "b", "z": "c", "skip_1": 0}
+        t2 = {"x": "a", "y": "b", "z": "c", "skip_2": 1}
+        ddiff = DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback)
+        result = {}
+        assert result == ddiff
+
     def test_skip_str_type_in_dictionary(self):
         t1 = {1: {2: "a"}}
         t2 = {1: {}}

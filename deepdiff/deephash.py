@@ -68,6 +68,7 @@ class DeepHash(dict, Base):
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 exclude_obj_callback=None,
                  number_to_string_func=None,
                  **kwargs):
         if kwargs:
@@ -100,6 +101,7 @@ class DeepHash(dict, Base):
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
         self.ignore_string_case = ignore_string_case
+        self.exclude_obj_callback = exclude_obj_callback
         # makes the hash return constant size result if true
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
@@ -196,9 +198,10 @@ class DeepHash(dict, Base):
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
-        else:
-            if self.exclude_types_tuple and isinstance(obj, self.exclude_types_tuple):
-                skip = True
+        elif self.exclude_types_tuple and isinstance(obj, self.exclude_types_tuple):
+            skip = True
+        elif self.exclude_obj_callback and self.exclude_obj_callback(obj, parent):
+            skip = True
 
         return skip
 

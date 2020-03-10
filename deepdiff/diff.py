@@ -63,6 +63,7 @@ class DeepDiff(ResultDict, Base):
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 exclude_obj_callback=None,
                  number_to_string_func=None,
                  ignore_nan_inequality=False,
                  verbose_level=1,
@@ -93,6 +94,7 @@ class DeepDiff(ResultDict, Base):
         self.ignore_type_subclasses = ignore_type_subclasses
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.ignore_string_case = ignore_string_case
+        self.exclude_obj_callback = exclude_obj_callback
         self.number_to_string = number_to_string_func or number_to_string
         self.ignore_nan_inequality = ignore_nan_inequality
         self.hashes = {}
@@ -224,10 +226,12 @@ class DeepDiff(ResultDict, Base):
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
-        else:
-            if self.exclude_types_tuple and (isinstance(level.t1, self.exclude_types_tuple) or
-                                             isinstance(level.t2, self.exclude_types_tuple)):
-                skip = True
+        elif self.exclude_types_tuple and \
+                (isinstance(level.t1, self.exclude_types_tuple) or isinstance(level.t2, self.exclude_types_tuple)):
+            skip = True
+        elif self.exclude_obj_callback and \
+                (self.exclude_obj_callback(level.t1, level.path()) or self.exclude_obj_callback(level.t2, level.path())):
+            skip = True
 
         return skip
 
