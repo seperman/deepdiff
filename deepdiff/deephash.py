@@ -70,6 +70,7 @@ class DeepHash(dict, Base):
                  ignore_string_case=False,
                  exclude_obj_callback=None,
                  number_to_string_func=None,
+                 parent="root",
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -78,7 +79,7 @@ class DeepHash(dict, Base):
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func") % ', '.join(kwargs.keys()))
+                 "number_to_string_func, parent") % ', '.join(kwargs.keys()))
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -109,7 +110,7 @@ class DeepHash(dict, Base):
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.number_to_string = number_to_string_func or number_to_string
 
-        self._hash(obj, parent="root", parents_ids=frozenset({get_id(obj)}))
+        self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
         if self[UNPROCESSED]:
             logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
@@ -202,7 +203,6 @@ class DeepHash(dict, Base):
             skip = True
         elif self.exclude_obj_callback and self.exclude_obj_callback(obj, parent):
             skip = True
-
         return skip
 
     def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False, original_type=None):
@@ -218,6 +218,8 @@ class DeepHash(dict, Base):
             key_in_report = key_text % (parent, key_formatted)
 
             key_hash = self._hash(key, parent=key_in_report, parents_ids=parents_ids)
+            if not key_hash:
+                continue
             item_id = get_id(item)
             if (parents_ids and item_id in parents_ids) or self._skip_this(item, parent=key_in_report):
                 continue
@@ -244,7 +246,8 @@ class DeepHash(dict, Base):
         result = defaultdict(int)
 
         for i, item in enumerate(obj):
-            if self._skip_this(item, parent="{}[{}]".format(parent, i)):
+            new_parent = "{}[{}]".format(parent, i)
+            if self._skip_this(item, parent=new_parent):
                 continue
 
             item_id = get_id(item)
@@ -252,7 +255,7 @@ class DeepHash(dict, Base):
                 continue
 
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(item, parent=parent, parents_ids=parents_ids_added)
+            hashed = self._hash(item, parent=new_parent, parents_ids=parents_ids_added)
             # counting repetitions
             result[hashed] += 1
 

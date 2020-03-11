@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174
 - v4-3-0: adding exclude_obj_callback
 - v4-2-0: .json property is finally removed. Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore. Fix for #166 Problem with comparing lists, with an boolean as element.
 - v4-1-0: .json property is finally removed.

@@ -1609,6 +1609,17 @@ class TestDeepDiffText:
         assert 'dictionary_item_added' in ddiff, {}
         assert 'dictionary_item_removed' not in ddiff, {}
 
+    def test_skip_exclude_path5(self):
+        exclude_paths = ["root[0]['e']", "root[1]['e']"]
+
+        t1 = [{'a': 1, 'b': 'randomString', 'e': "1111"}]
+        t2 = [{'a': 1, 'b': 'randomString', 'e': "2222"}]
+
+        ddiff = DeepDiff(t1, t2, exclude_paths=exclude_paths,
+                         ignore_order=True, report_repetition=False)
+        result = {}
+        assert result == ddiff
+
     def test_skip_custom_object_path(self):
         t1 = CustomClass(1)
         t2 = CustomClass(2)

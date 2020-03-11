@@ -510,6 +510,23 @@ class TestDeepHashPrep:
         assert 2 in t1_hash
         assert t1_hash[2] == t2_hash[2]
 
+    def test_skip_path2(self):
+
+        obj10 = {'a': 1, 'b': 'f', 'e': "1111", 'foo': {'bar': 'baz'}}
+        obj11 = {'c': 1, 'd': 'f', 'e': 'Cool'}
+
+        obj20 = {'a': 1, 'b': 'f', 'e': 'Cool', 'foo': {'bar': 'baz2'}}
+        obj21 = {'c': 1, 'd': 'f', 'e': "2222"}
+
+        t1 = [obj10, obj11]
+        t2 = [obj20, obj21]
+
+        exclude_paths = ["root[0]['e']", "root[1]['e']", "root[0]['foo']['bar']"]
+
+        t1_hash = DeepHashPrep(t1, exclude_paths=exclude_paths)
+        t2_hash = DeepHashPrep(t2, exclude_paths=exclude_paths)
+        assert t1_hash[t1] == t2_hash[t2]
+
     def test_skip_regex_path(self):
         dic1 = {1: "a"}
         t1 = [dic1, 2]
@@ -520,9 +537,9 @@ class TestDeepHashPrep:
         assert 2 in t1_hash
         assert t1_hash[2] == t2_hash[2]
 
-    def test_skip_exclude_obj_callback(self):
+    def test_skip_hash_exclude_obj_callback(self):
         def exclude_obj_callback(obj, parent):
-            return True if parent == "root['x']" or obj == 2 else False
+            return True if parent == "root[0]['x']" or obj == 2 else False
 
         dic1 = {"x": 1, "y": 2, "z": 3}
         t1 = [dic1]

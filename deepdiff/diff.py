@@ -469,6 +469,7 @@ class DeepDiff(ResultDict, Base):
         hashes = {}
         for (i, item) in enumerate(t):
             try:
+                parent = "{}[{}]".format(level.path(), i)
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
                                       exclude_types=self.exclude_types,
@@ -485,8 +486,9 @@ class DeepDiff(ResultDict, Base):
                                       ignore_string_case=self.ignore_string_case,
                                       number_to_string_func=self.number_to_string,
                                       exclude_obj_callback=self.exclude_obj_callback,
+                                      parent=parent,
+                                      apply_hash=False,
                                       )
-                # import pytest; pytest.set_trace()
                 key = item
                 if item is True:
                     key = BoolObj.TRUE
