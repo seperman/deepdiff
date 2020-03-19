@@ -25,3 +25,4 @@ And many thanks to the following people for their contributions to DeepDiff:
 - Necrophagos for Hashing of the number 1 vs. True
 - Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
 - Andrey Gavrilin (gaal-dev) for hashing classes.
+- Ivan Piskunov (van-ess0) for deprecation warning enhancement.

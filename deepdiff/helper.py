@@ -3,6 +3,7 @@ import datetime
 import re
 import os
 import logging
+import warnings
 from decimal import Decimal, localcontext
 from collections import namedtuple
 from ordered_set import OrderedSet
@@ -243,3 +244,13 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
     if number_format_notation == 'e' and isinstance(number, float):
         result = result.replace('+0', '+')
     return result
+
+
+class DeepDiffDeprecationWarning(DeprecationWarning):
+    """
+    Use this warning instead of DeprecationWarning
+    """
+    pass
+
+
+warnings.simplefilter('once', DeepDiffDeprecationWarning)
