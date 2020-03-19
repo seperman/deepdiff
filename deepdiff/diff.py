@@ -9,7 +9,6 @@
 import difflib
 import logging
 import json
-import warnings
 
 from itertools import zip_longest
 from collections.abc import Mapping, Iterable
@@ -29,7 +28,6 @@ from deepdiff.deephash import DeepHash, BoolObj
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
-warnings.simplefilter('once', DeprecationWarning)
 
 try:
     import jsonpickle
