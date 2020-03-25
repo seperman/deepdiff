@@ -164,6 +164,21 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_diffs_times(self):
+        t1 = datetime.time(1, 1)
+        t2 = datetime.time(1, 2)
+        t3 = datetime.time(1, 1)
+        expected_result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert DeepDiff(t1, t2) == expected_result
+        assert DeepDiff(t1, t3) == {}
+
     def test_string_difference(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world"}}
         t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": "world!"}}
