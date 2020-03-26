@@ -29,7 +29,7 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
-numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal)
+numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal, datetime.time)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
