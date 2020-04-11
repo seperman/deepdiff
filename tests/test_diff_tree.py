@@ -184,3 +184,16 @@ class TestDeepAdditions:
         ddiff = DeepDiff(t1, t2, view='tree')
         addition = ddiff + t1
         assert addition == t2
+
+
+class TestDeepDiffPrettyForm:
+    """Tests for pretty_form() method of DeepDiff"""
+
+    @pytest.mark.parametrize('t1, t2, changed_item, old_type, new_type, old_val_displayed, new_val_displayed',
+                             [
+                                 [{2: 2, 4: 4}, {2: 'b', 5: 5}, '[2]', 'int', 'str', '2', '"b"'],
+                             ]
+                             )
+    def test_pretty_form_type_and_value_changes(self, t1, t2, changed_item, old_type, new_type, old_val_displayed, new_val_displayed):
+        ddiff = DeepDiff(t1, t2, view='tree')
+        assert ddiff.pretty_form() == f'Type of {changed_item} changed from {old_type} to {new_type} and value changed from {old_val_displayed} to {new_val_displayed}'

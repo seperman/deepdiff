@@ -721,6 +721,9 @@ class DeepDiff(ResultDict, Base):
             result = dict(self)
         return result
 
+    def pretty_form(self):
+        pass
+
 
 if __name__ == "__main__":  # pragma: no cover
     import doctest
