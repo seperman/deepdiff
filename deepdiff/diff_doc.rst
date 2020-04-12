@@ -109,6 +109,7 @@ Text view is the original and currently the default view of DeepDiff.
 It is called text view because the results contain texts that represent the path to the data:
 
 Example of using the text view.
+    >>> from decimal import Decimal
     >>> from deepdiff import DeepDiff
     >>> t1 = {1:1, 3:3, 4:4}
     >>> t2 = {1:1, 3:3, 5:5, 6:6}

@@ -281,6 +281,7 @@ Indices and tables
 Changelog
 =========
 
+- v4-3-3: Adds support for datetime.time
 - v4-3-2: Deprecation Warning Enhancement
 - v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174
 - v4-3-0: adding exclude_obj_callback
@@ -343,7 +344,7 @@ Authors
     - `hahncastell.de <http://hahncastell.de>`_
     - `flexoptix.net <http://www.flexoptix.net>`_
 
-And thanks to the following people for their great contributions!
+And thanks to the following people for their great contributions! This list is sorted by the contribution time.
 
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
@@ -369,3 +370,4 @@ And thanks to the following people for their great contributions!
 - Andrey Gavrilin (gaal-dev) for hashing classes.
 - gaal-dev for adding exclude_obj_callback
 - Ivan Piskunov (van-ess0) for deprecation warning enhancement.
+- Nathaniel Brown (nathanielobrown) Adds support for datetime.time

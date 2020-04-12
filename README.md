@@ -417,6 +417,7 @@ And then running
 
 # ChangeLog
 
+- v4-3-3: Adds support for datetime.time
 - v4-3-2: Deprecation Warning Enhancement
 - v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174
 - v4-3-0: adding exclude_obj_callback
