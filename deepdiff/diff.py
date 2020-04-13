@@ -16,7 +16,7 @@ from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
+                             IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
@@ -103,9 +103,9 @@ class DeepDiff(ResultDict, Base):
 
         self.tree = TreeResult()
 
-        Verbose.level = verbose_level
+        self.verbose_level = verbose_level
 
-        root = DiffLevel(t1, t2)
+        root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
         self.tree.cleanup()
@@ -121,7 +121,7 @@ class DeepDiff(ResultDict, Base):
         if view == TREE_VIEW:
             result = self.tree
         else:
-            result = TextResult(tree_results=self.tree)
+            result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.cleanup()  # clean up text-style result dictionary
         return result
 

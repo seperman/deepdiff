@@ -117,13 +117,6 @@ RemapDict = dict
 #             raise KeyError(new_key)
 
 
-class Verbose:
-    """
-    Global verbose level
-    """
-    level = 1
-
-
 class indexed_set(set):
     """
     A set class that lets you get an item by index

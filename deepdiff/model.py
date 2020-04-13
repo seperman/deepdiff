@@ -1,4 +1,4 @@
-from deepdiff.helper import RemapDict, strings, short_repr, Verbose, notpresent
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
@@ -54,7 +54,8 @@ class TreeResult(ResultDict):
 
 
 class TextResult(ResultDict):
-    def __init__(self, tree_results=None):
+    def __init__(self, tree_results=None, verbose_level=1):
+        self.verbose_level = verbose_level
 
         # TODO: centralize keys
         self.update({
@@ -76,7 +77,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if Verbose.level >= 2 else PrettyOrderedSet()
+        return {} if self.verbose_level >= 2 else PrettyOrderedSet()
 
     def _from_tree_results(self, tree):
         """
@@ -139,7 +140,7 @@ class TextResult(ResultDict):
                 })
                 self['type_changes'][change.path(
                     force=FORCE_DEFAULT)] = remap_dict
-                if Verbose.level and include_values:
+                if self.verbose_level and include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
@@ -331,8 +332,10 @@ class DiffLevel:
         # Will cache result of .path() per 'force' as key for performance
         self._path = {}
 
+        self.verbose_level = verbose_level
+
     def __repr__(self):
-        if Verbose.level:
+        if self.verbose_level:
             if self.additional:
                 additional_repr = short_repr(self.additional, max_length=35)
                 result = "<{} {}>".format(self.path(), additional_repr)

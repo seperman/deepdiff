@@ -10,8 +10,8 @@ t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
 
 
-class TestDeepAdditions:
-    """Tests for Additions and Subtractions."""
+class TestSerialization:
+    """Tests for Serializations."""
 
     def test_serialization_text(self):
         ddiff = DeepDiff(t1, t2)
@@ -65,3 +65,17 @@ class TestDeepAdditions:
         result = ddiff.to_json(default_mapping=default_mapping)
         expected_result = {"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}
         assert expected_result == json.loads(result)
+
+    @pytest.mark.parametrize('verbose_level, expected', [
+        (0, ''),
+        (1, ''),
+        (2, ''),
+    ])
+    def test_to_json_and_verbosity(self, verbose_level, expected):
+        t1 = ['a', {1: 1}]
+        t2 = ['c', {1: 2}, 'd']
+
+        ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
+
+        # result = json.loads(ddiff.to_json())
+        assert expected == ddiff

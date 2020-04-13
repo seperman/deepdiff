@@ -5,7 +5,6 @@ from tests import CustomClass, CustomClassMisleadingRepr
 from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
                             SubscriptableIterableRelationship,
                             AttributeRelationship)
-from deepdiff.helper import Verbose
 
 logging.disable(logging.CRITICAL)
 
@@ -183,17 +182,30 @@ class TestDiffLevel:
         assert path == 'root'
 
     def test_repr_short(self):
-        level = Verbose.level
-        Verbose.level = 0
-        item_repr = repr(self.lowest)
-        Verbose.level = level
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 0
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
         assert item_repr == '<root[1337].a>'
 
     def test_repr_long(self):
-        level = Verbose.level
-        Verbose.level = 1
-        item_repr = repr(self.lowest)
-        Verbose.level = level
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 1
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
+        assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
+
+    def test_repr_very_long(self):
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 2
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
         assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
 
     def test_repetition_attribute_and_repr(self):
