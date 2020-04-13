@@ -1,14 +1,18 @@
+import logging
 from copy import deepcopy
 from ordered_set import OrderedSet
 from deepdiff.helper import strings, numbers
 from ast import literal_eval
 
+# TODO: it needs python3.6+ since dictionaries are ordered.
+
+logger = logging.getLogger(__name__)
+
 GETATTR = 'GETATTR'
 GET = 'GET'
 
-VERIFICATION_MSG = ('Expected the previous value for {} to be {} but it is {}. '
-                    'If you do not want this verification to happen, '
-                    'initialize the delta object with verify_change=False.')
+VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}.'
+INDEX_NOT_FOUND_TO_ADD_MSG = 'Index of {} is not found for {} for insertion operation.'
 
 
 def _add_to_elements(elements, elem, inside):
@@ -93,12 +97,41 @@ def _get_nested_obj(obj, elements):
     return obj
 
 
-class Delta:
+class DeltaError(ValueError):
+    """
+    Delta specific errors
+    """
+    pass
 
-    def __init__(self, diff, mutate=False, verify_change=True):
+
+class Delta:
+    r"""
+    **Delta**
+
+    DeepDiff Delta is a directed delta that when applied to t1 can yield t2 where delta is the difference of t1 and t2.
+
+    NOTE: THIS FEATURE IS IN BETA
+
+    **Parameters**
+
+    diff : A DeepDiff object or the path to a delta file or a loaded delta dictionary.
+
+    **Returns**
+
+        A delta object that can be added to t1 to recreate t2.
+
+    **Examples**
+
+    Importing
+        >>> from deepdiff import DeepDiff, Delta
+        >>> from pprint import pprint
+    """
+    def __init__(self, diff, mutate=False, verify_old_value=False, raise_errors=False, log_errors=True):
         self.diff = diff
         self.mutate = mutate
-        self.verify_change = verify_change
+        self.verify_old_value = verify_old_value
+        self.raise_errors = raise_errors
+        self.log_errors = log_errors
 
     def __add__(self, other):
         if not self.mutate:
@@ -112,18 +145,28 @@ class Delta:
 
     __radd__ = __add__
 
-    def _do_verify_changes(self, path, expected_old_value, current_old_value):
-        if self.verify_change and expected_old_value != current_old_value:
-            raise ValueError(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
+    def _raise_or_log(self, msg, level='error'):
+        if self.log_errors:
+            getattr(logger, level)(msg)
+        if self.raise_errors:
+            raise DeltaError(msg) from None
 
-    def _get_index_or_key(self, obj, index, path, expected_old_value):
+    def _do_verify_changes(self, path, expected_old_value, current_old_value):
+        if self.verify_old_value and expected_old_value != current_old_value:
+            self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
+
+    def _get_index_or_key(self, obj, path, expected_old_value, index=None, attr=None):
         try:
-            current_old_value = obj[index]
-        except (KeyError, IndexError):
+            if index is not None:
+                current_old_value = obj[index]
+            elif attr is not None:
+                current_old_value = getattr(obj, attr)
+            else:
+                raise DeltaError('index or attr need to be set when calling _get_index_or_key')
+        except (KeyError, IndexError, AttributeError):
             current_old_value = not_found
-            if self.verify_change:
-                raise ValueError(VERIFICATION_MSG.format(path, expected_old_value, current_old_value)) from None
-            return not_found
+            if self.verify_old_value:
+                self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
         return current_old_value
 
     def _do_iterable_item_added(self, other):
@@ -132,21 +175,29 @@ class Delta:
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=other, elements=elements[:-1])
             index = elements[-1][0]
-            obj.insert(index, value)
+            if index <= len(obj):
+                obj.insert(index, value)
+            else:
+                self._raise_or_log(INDEX_NOT_FOUND_TO_ADD_MSG.format(index, path))
 
     def _do_values_changed(self, other):
         values_changed = self.diff.get('values_changed', {})
         for path, value in values_changed.items():
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=other, elements=elements[:-1])
-            index = elements[-1][0]
             action = elements[-1][1]
             expected_old_value = value.get('old_value', not_found)
             if action == GET:
-                current_old_value = obj[index]
+                index = elements[-1][0]
+                current_old_value = self._get_index_or_key(
+                    obj=obj, index=index, path=path, expected_old_value=expected_old_value)
+                if current_old_value is not_found:
+                    continue
                 obj[index] = value['new_value']
             elif action == GETATTR:
-                current_old_value = getattr(obj, index)
+                attr = elements[-1][0]
+                current_old_value = self._get_index_or_key(
+                    obj=obj, attr=attr, path=path, expected_old_value=expected_old_value)
                 setattr(obj, index, value['new_value'])
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
@@ -157,7 +208,8 @@ class Delta:
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=other, elements=elements[:-1])
             index = elements[-1][0] - num
-            current_old_value = self._get_index_or_key(obj, index, path, expected_old_value)
+            current_old_value = self._get_index_or_key(
+                obj=obj, index=index, path=path, expected_old_value=expected_old_value)
             if current_old_value is not_found:
                 continue
             self._do_verify_changes(path, expected_old_value, current_old_value)
