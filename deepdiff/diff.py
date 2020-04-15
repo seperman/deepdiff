@@ -125,25 +125,6 @@ class DeepDiff(ResultDict, Base):
             result.cleanup()  # clean up text-style result dictionary
         return result
 
-    # TODO: adding adding functionality
-    # def __add__(self, other):
-    #     if isinstance(other, DeepDiff):
-    #         result = deepcopy(self)
-    #         result.update(other)
-    #     else:
-    #         result = deepcopy(other)
-    #         for key in REPORT_KEYS:
-    #             if key in self:
-    #                 getattr(self, "_do_{}".format(key))(result)
-
-    #     return result
-
-    # __radd__ = __add__
-
-    # def _do_iterable_item_added(self, result):
-    #     for item in self['iterable_item_added']:
-    #         pass
-
     def __report_result(self, report_type, level):
         """
         Add a detected change to the reference-style result dictionary.
@@ -410,7 +391,7 @@ class DeepDiff(ResultDict, Base):
             level.t1 = level.t1.lower()
             level.t2 = level.t2.lower()
 
-        if type(level.t1) == type(level.t2) and level.t1 == level.t2:
+        if type(level.t1) == type(level.t2) and level.t1 == level.t2:  # NOQA
             return
 
         # do we add a diff for convenience?
@@ -716,7 +697,7 @@ class DeepDiff(ResultDict, Base):
         Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
         """
         if self.view == TREE_VIEW:
-            result = dict(self._get_view_results(view=TEXT_VIEW))
+            result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
         else:
             result = dict(self)
         return result

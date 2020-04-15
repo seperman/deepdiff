@@ -1,7 +1,6 @@
 import logging
 from copy import deepcopy
-from ordered_set import OrderedSet
-from deepdiff.helper import strings, numbers
+from deepdiff import DeepDiff
 from ast import literal_eval
 
 # TODO: it needs python3.6+ since dictionaries are ordered.
@@ -15,22 +14,20 @@ VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}.'
 INDEX_NOT_FOUND_TO_ADD_MSG = 'Index of {} is not found for {} for insertion operation.'
 
 
+class PathExtractionError(ValueError):
+    pass
+
+
 def _add_to_elements(elements, elem, inside):
     try:
         elem = literal_eval(elem)
-    except ValueError:
+    except (ValueError, SyntaxError):
         pass
     action = GETATTR if inside == '.' else GET
     elements.append((elem, action))
 
 
-ALLOWED_BEGINNING_TO_ENDS = {
-    '.': {'.', '['},
-    '[': {']'},
-}
-
-
-class NotFound:
+class _NotFound:
 
     def __eq__(self, other):
         return False
@@ -43,7 +40,7 @@ class NotFound:
     __str__ = __repr__
 
 
-not_found = NotFound()
+not_found = _NotFound()
 
 
 def _path_to_elements(path):
@@ -62,7 +59,7 @@ def _path_to_elements(path):
     for char in path:
         if prev_char == '\\':
             elem += char
-        if char == '[':
+        elif char == '[':
             if inside == '.':
                 _add_to_elements(elements, elem, inside)
             inside = '['
@@ -128,6 +125,11 @@ class Delta:
     """
     def __init__(self, diff, mutate=False, verify_old_value=False, raise_errors=False, log_errors=True):
         self.diff = diff
+
+        if isinstance(diff, DeepDiff):
+            diff = DeepDiff.to_dict()
+        elif isinstance(diff, bytes):
+            diff = pickle.loads(fix_imports=False)
         self.mutate = mutate
         self.verify_old_value = verify_old_value
         self.raise_errors = raise_errors

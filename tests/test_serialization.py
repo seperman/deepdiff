@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 import json
 import pytest
+import datetime
+from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.serialization import pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError
+from ordered_set import OrderedSet
 
 import logging
 logging.disable(logging.CRITICAL)
@@ -71,11 +75,34 @@ class TestSerialization:
         (1, ''),
         (2, ''),
     ])
-    def test_to_json_and_verbosity(self, verbose_level, expected):
-        t1 = ['a', {1: 1}]
-        t2 = ['c', {1: 2}, 'd']
+    def test_to_dict_is_always_at_verbose_level2(self, verbose_level, expected):
+        t1 = ['a', {1: 1, 3: 4}]
+        t2 = ['c', {1: 2, 5: 6}, 'd']
 
         ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
 
         # result = json.loads(ddiff.to_json())
-        assert expected == ddiff
+        assert expected == ddiff.to_dict()
+
+
+class TestPickling:
+
+    def test_serialize(self):
+        obj = [1, 2, 3, None, {10: 11E2}, frozenset(['a', 'c']), OrderedSet([2, 1]),
+               datetime.datetime.utcnow(), datetime.time(11), Decimal('11.2'), 123.11]
+        serialized = pickle_dump(obj)
+        loaded = pickle_load(serialized)
+        assert obj == loaded
+
+    def test_custom_object_deserialization_fails_without_explicit_permission(self):
+        class A:
+            def __init__(self):
+                self.item = 10
+
+        obj = A()
+        serialized = pickle_dump(obj)
+
+        expected_msg = ''  # FORBIDDEN_MODULE_MSG.format(module, name)
+        with pytest.raises(ForbiddenModule) as excinfo:
+            pickle_load(serialized)
+        assert expected_msg == excinfo.value

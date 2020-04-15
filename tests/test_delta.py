@@ -11,6 +11,8 @@ from deepdiff.delta import (
     ("root[4].b['a3']", [(4, GET), ('b', GETATTR), ('a3', GET)]),
     ("root[4.3].b['a3']", [(4.3, GET), ('b', GETATTR), ('a3', GET)]),
     ("root.a.b", [('a', GETATTR), ('b', GETATTR)]),
+    ("root.hello", [('hello', GETATTR)]),
+    ("root['a\]b']", [('a\]b', GET)]),
 ])
 def test_path_to_elements(path, expected):
     result = _path_to_elements(path)
