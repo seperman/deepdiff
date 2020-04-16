@@ -22,3 +22,14 @@ class CustomClass2:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+
+class PicklableClass:
+    def __init__(self, item):
+        self.item = item
+
+    def __reduce__(self):
+        return (self.__class__, (self.item, ))
+
+    def __eq__(self, other):
+        return self.item == other.item

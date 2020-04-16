@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 import json
+import sys
 import pytest
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.serialization import pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError
+from deepdiff.serialization import (
+    pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
+    MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG)
 from ordered_set import OrderedSet
+from tests import PicklableClass
 
 import logging
 logging.disable(logging.CRITICAL)
@@ -95,14 +99,32 @@ class TestPickling:
         assert obj == loaded
 
     def test_custom_object_deserialization_fails_without_explicit_permission(self):
-        class A:
-            def __init__(self):
-                self.item = 10
+        obj = PicklableClass(10)
+        module_dot_name = 'tests.{}'.format(PicklableClass.__name__)
 
-        obj = A()
         serialized = pickle_dump(obj)
 
-        expected_msg = ''  # FORBIDDEN_MODULE_MSG.format(module, name)
+        expected_msg = FORBIDDEN_MODULE_MSG.format(module_dot_name)
         with pytest.raises(ForbiddenModule) as excinfo:
             pickle_load(serialized)
-        assert expected_msg == excinfo.value
+        assert expected_msg == str(excinfo.value)
+
+        # Explicitly allowing the module to be loaded
+        loaded = pickle_load(serialized, safe_to_import={module_dot_name})
+        assert obj == loaded
+
+    def test_unpickling_object_that_is_not_imported(self):
+
+        def get_the_pickle():
+            import wave
+            obj = wave.Error
+            return pickle_dump(obj)
+
+        serialized = get_the_pickle()
+        del sys.modules['wave']
+        module_dot_name = 'wave.Error'
+
+        expected_msg = MODULE_NOT_FOUND_MSG.format(module_dot_name)
+        with pytest.raises(ModuleNotFoundError) as excinfo:
+            pickle_load(serialized, safe_to_import=module_dot_name)
+        assert expected_msg == str(excinfo.value)

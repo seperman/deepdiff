@@ -1,12 +1,14 @@
 import pickle
 import sys
 import io
+import re  # NOQA
 import builtins  # NOQA
 import datetime  # NOQA
 import decimal  # NOQA
 import ordered_set  # NOQA
 import collections  # NOQA
 from struct import unpack
+from deepdiff.helper import strings
 
 MAX_HEADER_LENGTH = 256
 
@@ -36,6 +38,7 @@ SAFE_TO_IMPORT = {
     'decimal.Decimal',
     'ordered_set.OrderedSet',
     'collections.namedtuple',
+    're.Pattern',
 }
 
 
@@ -58,7 +61,13 @@ class _RestrictedUnpickler(pickle.Unpickler):
     def __init__(self, *args, **kwargs):
         self.safe_to_import = kwargs.pop('safe_to_import', None)
         if self.safe_to_import:
-            self.safe_to_import = set(self.safe_to_import) | SAFE_TO_IMPORT
+            if isinstance(self.safe_to_import, strings):
+                self.safe_to_import = set([self.safe_to_import])
+            elif isinstance(self.safe_to_import, (set, frozenset)):
+                pass
+            else:
+                self.safe_to_import = set(self.safe_to_import)
+            self.safe_to_import = self.safe_to_import | SAFE_TO_IMPORT
         else:
             self.safe_to_import = SAFE_TO_IMPORT
         super().__init__(*args, **kwargs)
@@ -70,10 +79,10 @@ class _RestrictedUnpickler(pickle.Unpickler):
             try:
                 module_obj = sys.modules[module]
             except KeyError:
-                raise ModuleNotFoundError(MODULE_NOT_FOUND_MSG.format(module)) from None
+                raise ModuleNotFoundError(MODULE_NOT_FOUND_MSG.format(module_dot_class)) from None
             return getattr(module_obj, name)
         # Forbid everything else.
-        raise ForbiddenModule(FORBIDDEN_MODULE_MSG.format(module, name)) from None
+        raise ForbiddenModule(FORBIDDEN_MODULE_MSG.format(module_dot_class)) from None
 
 
 def pickle_dump(obj, header=BASIC_HEADER):
@@ -92,7 +101,37 @@ def basic_header_checker(header, content):
     assert header == BASIC_HEADER, "Delta payload header can not be verified. Aborting."
 
 
-def pickle_load(content, header_checher=basic_header_checker):
+def pickle_load(content, header_checher=basic_header_checker, safe_to_import=None):
+    """
+    **pickle_load**
+    Load the pickled content. content should be a bytes object.
+
+    **Parameters**
+
+    content : Bytes of pickled object. It needs to have Delta header in it that is
+        separated by a newline character from the rest of the pickled object.
+
+    header_checher : the header checker function. The default is basic_header_checker
+
+    safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
+        Example: {'mymodule.MyClass', 'decimal.Decimal'}
+        Note that this set will be added to the basic set of modules that are already allowed.
+        The set of what is already allowed can be found in deepdiff.serialization.SAFE_TO_IMPORT
+
+    **Returns**
+
+        A delta object that can be added to t1 to recreate t2.
+
+    **Examples**
+
+    Importing
+        >>> from deepdiff import DeepDiff, Delta
+        >>> from pprint import pprint
+
+
+    """
+    if isinstance(content, str):
+        content = content.encode('utf-8')
     max_header_to_unpack = '{}c'.format(min(MAX_HEADER_LENGTH, len(content)))
     top_of_content = unpack(max_header_to_unpack, content)
     break_index = top_of_content.index(b'\n')
@@ -100,4 +139,4 @@ def pickle_load(content, header_checher=basic_header_checker):
     content = content[break_index + 1:]
     if header_checher:
         header_checher(header, content)
-    return _RestrictedUnpickler(io.BytesIO(content)).load()
+    return _RestrictedUnpickler(io.BytesIO(content), safe_to_import=safe_to_import).load()
