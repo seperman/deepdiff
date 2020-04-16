@@ -74,12 +74,17 @@ class TestSerialization:
         expected_result = {"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}
         assert expected_result == json.loads(result)
 
+    # These lines are long but make it easier to notice the difference:
     @pytest.mark.parametrize('verbose_level, expected', [
-        (0, ''),
-        (1, ''),
-        (2, ''),
+        (0, {"dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (1, {"dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (2, {"dictionary_item_added": {"root[1][5]": 6}, "dictionary_item_removed": {"root[1][3]": 4}, "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
     ])
-    def test_to_dict_is_always_at_verbose_level2(self, verbose_level, expected):
+    def test_to_dict_at_different_verbose_level(self, verbose_level, expected):
+        """
+        Obviously the current verbose level changes do not have a huge impact and kind of suck.
+        Do not touch the current ones in order to keep backward compatibility. But add verbose -1 that does not show the "old value".
+        """
         t1 = ['a', {1: 1, 3: 4}]
         t2 = ['c', {1: 2, 5: 6}, 'd']
 
@@ -113,7 +118,7 @@ class TestPickling:
         loaded = pickle_load(serialized, safe_to_import={module_dot_name})
         assert obj == loaded
 
-    def test_unpickling_object_that_is_not_imported(self):
+    def test_unpickling_object_that_is_not_imported_raises_error(self):
 
         def get_the_pickle():
             import wave
@@ -121,6 +126,7 @@ class TestPickling:
             return pickle_dump(obj)
 
         serialized = get_the_pickle()
+        # Making sure that the module is unloaded.
         del sys.modules['wave']
         module_dot_name = 'wave.Error'
 
