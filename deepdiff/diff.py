@@ -608,6 +608,36 @@ class DeepDiff(ResultDict, Base):
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
 
+    def __diff_numpy(self, level, parents_ids=frozenset({})):
+        """Diff numpy arrays"""
+        import numpy as np
+
+        # fast checks
+        if self.significant_digits is None:
+            if np.array_equal(level.t1, level.t2):
+                return  # all good
+        else:
+            try:
+                np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
+                return  # all good
+            except AssertionError:
+                pass    # do detailed checking below
+
+        # compare array meta-data
+        meta1 = {'dtype': str(level.t1.dtype), 'shape': level.t1.shape}
+        meta2 = {'dtype': str(level.t2.dtype), 'shape': level.t2.shape}
+        if meta1 != meta2:
+            # metadata is different, diff attributes one by one
+            for attr in meta1:
+                next_level = level.branch_deeper(
+                    meta1[attr], meta2[attr],
+                    child_relationship_class=AttributeRelationship,
+                    child_relationship_param=attr)
+                self.__diff(next_level, add_to_frozen_set(parents_ids, attr))
+        else:
+            # metadata same -- the difference is in the content
+            self.__report_result('values_changed', level)
+
     def __diff_types(self, level):
         """Diff types"""
         level.report_type = 'type_changes'
@@ -648,6 +678,9 @@ class DeepDiff(ResultDict, Base):
 
         elif isinstance(level.t1, (set, frozenset, OrderedSet)):
             self.__diff_set(level)
+
+        elif level.t1.__class__.__module__ == 'numpy':
+            self.__diff_numpy(level, parents_ids)
 
         elif isinstance(level.t1, Iterable):
             if self.ignore_order:
