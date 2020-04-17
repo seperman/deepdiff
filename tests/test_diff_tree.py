@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pytest
 from deepdiff import DeepDiff
+from deepdiff.diff import pretty_print_diff
 from deepdiff.helper import pypy3, notpresent
 from deepdiff.model import DictRelationship, NonSubscriptableIterableRelationship
 
@@ -191,9 +192,20 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, changed_item, old_type, new_type, old_val_displayed, new_val_displayed',
                              [
-                                 [{2: 2, 4: 4}, {2: 'b', 5: 5}, '[2]', 'int', 'str', '2', '"b"'],
+                                 [{2: 2, 4: 4}, {2: 'b', 4: 4}, '[2]', 'int', 'str', '2', 'b'],
                              ]
                              )
-    def test_pretty_form_type_and_value_changes(self, t1, t2, changed_item, old_type, new_type, old_val_displayed, new_val_displayed):
+    def test_pretty_print_diff_type_and_value_changes(self, t1, t2, changed_item, old_type, new_type, old_val_displayed,
+                                                      new_val_displayed):
         ddiff = DeepDiff(t1, t2, view='tree')
-        assert ddiff.pretty_form() == f'Type of {changed_item} changed from {old_type} to {new_type} and value changed from {old_val_displayed} to {new_val_displayed}'
+        result = pretty_print_diff(ddiff.tree['type_changes'].items[0])
+        assert result == f'Type of {changed_item} changed from {old_type} to {new_type} and value changed from {old_val_displayed} to {new_val_displayed}'
+
+    def test_pretty_form_method(self):
+        t1 = {2: 2, 4: 4}
+        t2 = {2: 'b', 4: 5}
+        ddiff = DeepDiff(t1, t2, view='tree')
+        result = ddiff.pretty_form()
+        expected = ("Value of [4] changed from 4 to 5"
+                    "\nType of [2] changed from int to str and value changed from 2 to b")
+        assert result == expected

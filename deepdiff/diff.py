@@ -722,7 +722,22 @@ class DeepDiff(ResultDict, Base):
         return result
 
     def pretty_form(self):
-        pass
+        result = []
+        for key in self.tree.keys():
+            for item_key in self.tree[key]:
+                result += [pretty_print_diff(item_key)]
+
+        return '\n'.join(result)
+
+
+def pretty_print_diff(diff: DiffLevel):
+    if diff.report_type == "type_changes":
+        return f'Type of {diff.path(root="")} changed from {type(diff.t1).__name__} to {type(diff.t2).__name__}' \
+               f' and value changed from {str(diff.t1)} to {str(diff.t2)}'
+    elif diff.report_type == "values_changed":
+        return f'Value of {diff.path(root="")} changed from {str(diff.t1)} to {str(diff.t2)}'
+    else:
+        return ''
 
 
 if __name__ == "__main__":  # pragma: no cover
