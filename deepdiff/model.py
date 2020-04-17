@@ -1,7 +1,8 @@
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent
+from collections.abc import Mapping
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -158,6 +159,73 @@ class TextResult(ResultDict):
                 self['unprocessed'].append("{}: {} and {}".format(change.path(
                     force=FORCE_DEFAULT), change.t1, change.t2))
 
+    def _from_tree_set_item_added_or_removed(self, tree, key):
+        if key in tree:
+            set_item_added = self[key]
+            is_dict = isinstance(set_item_added, Mapping)
+            for change in tree[key]:
+                path = change.up.path(
+                )  # we want't the set's path, the added item is not directly accessible
+                item = change.t2 if key == 'set_item_added' else change.t1
+                if isinstance(item, strings):
+                    item = "'%s'" % item
+                if is_dict:
+                    set_item_added[path] = item
+                else:
+                    set_item_added.add("{}[{}]".format(path, str(item)))
+                    # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
+
+    def _from_tree_set_item_added(self, tree):
+        self._from_tree_set_item_added_or_removed(tree, key='set_item_added')
+
+    def _from_tree_set_item_removed(self, tree):
+        self._from_tree_set_item_added_or_removed(tree, key='set_item_removed')
+
+    def _from_tree_repetition_change(self, tree):
+        if 'repetition_change' in tree:
+            for change in tree['repetition_change']:
+                path = change.path(force=FORCE_DEFAULT)
+                self['repetition_change'][path] = RemapDict(change.additional[
+                    'repetition'])
+                self['repetition_change'][path]['value'] = change.t1
+
+
+class DeltaResult(TextResult):
+    def __init__(self, tree_results=None, verbose_level=1):
+        self.verbose_level = verbose_level
+
+        self.update({
+            "type_changes": {},
+            "dictionary_item_added": {},
+            "dictionary_item_removed": self.__set_or_dict(),
+            "values_changed": {},
+            "iterable_item_added": {},
+            "iterable_item_removed": self.__set_or_dict(),
+            "attribute_added": {},
+            "attribute_removed": self.__set_or_dict(),
+            "set_item_removed": {},
+            "set_item_added": {},
+            "repetition_change": {}
+        })
+
+        if tree_results:
+            self._from_tree_results(tree_results)
+
+    def __set_or_dict(self):
+        return {} if self.verbose_level >= 2 else PrettyOrderedSet()
+
+    def _from_tree_value_changed(self, tree):
+        if 'values_changed' in tree:
+            for change in tree['values_changed']:
+                the_changed = {'new_value': change.t2, 'old_value': change.t1}
+                self['values_changed'][change.path(
+                    force=FORCE_DEFAULT)] = the_changed
+                if 'diff' in change.additional:
+                    the_changed.update({'diff': change.additional['diff']})
+
+    def _from_tree_unprocessed(self, tree):
+        pass
+
     def _from_tree_set_item_removed(self, tree):
         if 'set_item_removed' in tree:
             for change in tree['set_item_removed']:
@@ -166,7 +234,7 @@ class TextResult(ResultDict):
                 item = change.t1
                 if isinstance(item, strings):
                     item = "'%s'" % item
-                self['set_item_removed'].add("{}[{}]".format(path, str(item)))
+                self['set_item_removed'][path] = item
                 # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
 
     def _from_tree_set_item_added(self, tree):
@@ -187,6 +255,7 @@ class TextResult(ResultDict):
                 self['repetition_change'][path] = RemapDict(change.additional[
                     'repetition'])
                 self['repetition_change'][path]['value'] = change.t1
+
 
 
 class DiffLevel:

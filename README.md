@@ -417,6 +417,7 @@ And then running
 
 # ChangeLog
 
+- v5-0-0: Introducing the Delta object
 - v4-3-3: Adds support for datetime.time
 - v4-3-2: Deprecation Warning Enhancement
 - v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174
@@ -476,7 +477,7 @@ git push && git push --tags
 # Contribute
 
 1. Please make your PR against the dev branch
-2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we maintain 100% test coverage on the code. There are occasiannly exceptions to that rule but that is rare.
+2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we maintain 100% test coverage on the code.
 
 Thank you!
 

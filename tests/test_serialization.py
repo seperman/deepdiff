@@ -76,21 +76,15 @@ class TestSerialization:
 
     # These lines are long but make it easier to notice the difference:
     @pytest.mark.parametrize('verbose_level, expected', [
-        (0, {"dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
-        (1, {"dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
-        (2, {"dictionary_item_added": {"root[1][5]": 6}, "dictionary_item_removed": {"root[1][3]": 4}, "values_changed": {"root[0]": {"new_value": "c", "old_value": "a"}, "root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (0, {"type_changes": {"root[0]": {"old_type": str, "new_type": int}}, "dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (1, {"type_changes": {"root[0]": {"old_type": str, "new_type": int, "old_value": "a", "new_value": 10}}, "dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (2, {"type_changes": {"root[0]": {"old_type": str, "new_type": int, "old_value": "a", "new_value": 10}}, "dictionary_item_added": {"root[1][5]": 6}, "dictionary_item_removed": {"root[1][3]": 4}, "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
     ])
     def test_to_dict_at_different_verbose_level(self, verbose_level, expected):
-        """
-        Obviously the current verbose level changes do not have a huge impact and kind of suck.
-        Do not touch the current ones in order to keep backward compatibility. But add verbose -1 that does not show the "old value".
-        """
-        t1 = ['a', {1: 1, 3: 4}]
-        t2 = ['c', {1: 2, 5: 6}, 'd']
+        t1 = ['a', {1: 1, 3: 4}, ]
+        t2 = [10, {1: 2, 5: 6}, 'd']
 
         ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
-
-        # result = json.loads(ddiff.to_json())
         assert expected == ddiff.to_dict()
 
 

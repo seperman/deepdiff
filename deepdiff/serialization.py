@@ -101,7 +101,7 @@ def basic_header_checker(header, content):
     assert header == BASIC_HEADER, "Delta payload header can not be verified. Aborting."
 
 
-def pickle_load(content, header_checher=basic_header_checker, safe_to_import=None):
+def pickle_load(content, header_checker=basic_header_checker, safe_to_import=None):
     """
     **pickle_load**
     Load the pickled content. content should be a bytes object.
@@ -111,7 +111,7 @@ def pickle_load(content, header_checher=basic_header_checker, safe_to_import=Non
     content : Bytes of pickled object. It needs to have Delta header in it that is
         separated by a newline character from the rest of the pickled object.
 
-    header_checher : the header checker function. The default is basic_header_checker
+    header_checker : the header checker function. The default is basic_header_checker
 
     safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
         Example: {'mymodule.MyClass', 'decimal.Decimal'}
@@ -137,6 +137,6 @@ def pickle_load(content, header_checher=basic_header_checker, safe_to_import=Non
     break_index = top_of_content.index(b'\n')
     header = content[: break_index]
     content = content[break_index + 1:]
-    if header_checher:
-        header_checher(header, content)
+    if header_checker:
+        header_checker(header, content)
     return _RestrictedUnpickler(io.BytesIO(content), safe_to_import=safe_to_import).load()

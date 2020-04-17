@@ -1,6 +1,6 @@
 import pytest
 from unittest import mock
-from deepdiff import Delta
+from deepdiff import Delta, DeepDiff
 from deepdiff.delta import (
     GETATTR, GET, INDEX_NOT_FOUND_TO_ADD_MSG, VERIFICATION_MSG, not_found, _path_to_elements)
 
@@ -172,3 +172,16 @@ class TestDelta:
 
         delta2 = Delta(diff, verify_old_value=False, raise_errors=True)
         assert t1 + delta2 == t2
+
+    # def test_frozenset_delta(self):
+    #     t1 = frozenset([1, 2, 'B'])
+    #     t2 = frozenset([1, 2, 3, 5])
+    #     ddiff = DeepDiff(t1, t2)
+    #     import pytest; pytest.set_trace()
+    #     aa = ddiff.to_dict()
+    #     diff = {
+    #         'set_item_added': {'root[3]', 'root[5]'},
+    #         'set_item_removed': {"root['B']"}
+    #     }
+    #     delta = Delta(diff, verify_old_value=True, raise_errors=True)
+    #     assert t1 + delta == t2

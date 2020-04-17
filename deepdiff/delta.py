@@ -1,6 +1,8 @@
 import logging
+from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
+from deepdiff.serialization import pickle_load
 from ast import literal_eval
 
 # TODO: it needs python3.6+ since dictionaries are ordered.
@@ -123,13 +125,14 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff, mutate=False, verify_old_value=False, raise_errors=False, log_errors=True):
-        self.diff = diff
+    def __init__(self, diff=None, mutate=False, verify_old_value=False, raise_errors=False, log_errors=True):
 
         if isinstance(diff, DeepDiff):
             diff = DeepDiff.to_dict()
-        elif isinstance(diff, bytes):
-            diff = pickle.loads(fix_imports=False)
+        elif isinstance(diff, Mapping):
+            pass
+
+        self.diff = diff
         self.mutate = mutate
         self.verify_old_value = verify_old_value
         self.raise_errors = raise_errors
@@ -146,6 +149,43 @@ class Delta:
         return other
 
     __radd__ = __add__
+
+    def load(self, file_path, safe_to_import=None):
+        """
+        **load**
+        Read and load the delta object from a file_path
+
+        **Parameters**
+
+        file_path : Local path to the file to load
+
+        safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
+            Example: {'mymodule.MyClass', 'decimal.Decimal'}
+            Note that this set will be added to the basic set of modules that are already allowed.
+            The set of what is already allowed can be found in deepdiff.serialization.SAFE_TO_IMPORT
+        """
+        with open(file_path, 'rb'):
+            content = file_path.read()
+
+        self.diff = pickle_load(content, safe_to_import=safe_to_import)
+
+    def loads(self, content, safe_to_import=None):
+        """
+        **loads**
+        load the delta object from a bytes object.
+        Note: It works to pass a string too but then internally it is converted to bytes.
+
+        **Parameters**
+
+        content : Content to be loaded
+
+        safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
+            Example: {'mymodule.MyClass', 'decimal.Decimal'}
+            Note that this set will be added to the basic set of modules that are already allowed.
+            The set of what is already allowed can be found in deepdiff.serialization.SAFE_TO_IMPORT
+        """
+
+        self.diff = pickle_load(content, safe_to_import=safe_to_import)
 
     def _raise_or_log(self, msg, level='error'):
         if self.log_errors:
