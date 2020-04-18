@@ -55,6 +55,9 @@ class TreeResult(ResultDict):
 
 
 class TextResult(ResultDict):
+
+    ADD_QUOTES_TO_STRINGS = True
+
     def __init__(self, tree_results=None, verbose_level=1):
         self.verbose_level = verbose_level
 
@@ -161,18 +164,20 @@ class TextResult(ResultDict):
 
     def _from_tree_set_item_added_or_removed(self, tree, key):
         if key in tree:
-            set_item_added = self[key]
-            is_dict = isinstance(set_item_added, Mapping)
+            set_item_info = self[key]
+            is_dict = isinstance(set_item_info, Mapping)
             for change in tree[key]:
                 path = change.up.path(
                 )  # we want't the set's path, the added item is not directly accessible
                 item = change.t2 if key == 'set_item_added' else change.t1
-                if isinstance(item, strings):
+                if self.ADD_QUOTES_TO_STRINGS and isinstance(item, strings):
                     item = "'%s'" % item
                 if is_dict:
-                    set_item_added[path] = item
+                    if path not in set_item_info:
+                        set_item_info[path] = set()
+                    set_item_info[path].add(item)
                 else:
-                    set_item_added.add("{}[{}]".format(path, str(item)))
+                    set_item_info.add("{}[{}]".format(path, str(item)))
                     # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
 
     def _from_tree_set_item_added(self, tree):
@@ -191,6 +196,9 @@ class TextResult(ResultDict):
 
 
 class DeltaResult(TextResult):
+
+    ADD_QUOTES_TO_STRINGS = False
+
     def __init__(self, tree_results=None, verbose_level=1):
         self.verbose_level = verbose_level
 
@@ -214,6 +222,34 @@ class DeltaResult(TextResult):
     def __set_or_dict(self):
         return {} if self.verbose_level >= 2 else PrettyOrderedSet()
 
+    def _from_tree_type_changes(self, tree):
+        if 'type_changes' in tree:
+            for change in tree['type_changes']:
+                if type(change.t1) is type:
+                    include_values = False
+                    old_type = change.t1
+                    new_type = change.t2
+                else:
+                    old_type = type(change.t1)
+                    new_type = type(change.t2)
+                    include_values = True
+                    try:
+                        new_t1 = new_type(change.t1)
+                        # If simply applying the type from one value converts it to the other value,
+                        # there is no need to include the actual values in the delta.
+                        include_values = new_t1 != change.t2
+                    except Exception:
+                        pass
+
+                remap_dict = RemapDict({
+                    'old_type': old_type,
+                    'new_type': new_type
+                })
+                self['type_changes'][change.path(
+                    force=FORCE_DEFAULT)] = remap_dict
+                if self.verbose_level and include_values:
+                    remap_dict.update(old_value=change.t1, new_value=change.t2)
+
     def _from_tree_value_changed(self, tree):
         if 'values_changed' in tree:
             for change in tree['values_changed']:
@@ -225,37 +261,6 @@ class DeltaResult(TextResult):
 
     def _from_tree_unprocessed(self, tree):
         pass
-
-    def _from_tree_set_item_removed(self, tree):
-        if 'set_item_removed' in tree:
-            for change in tree['set_item_removed']:
-                path = change.up.path(
-                )  # we want't the set's path, the removed item is not directly accessible
-                item = change.t1
-                if isinstance(item, strings):
-                    item = "'%s'" % item
-                self['set_item_removed'][path] = item
-                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
-
-    def _from_tree_set_item_added(self, tree):
-        if 'set_item_added' in tree:
-            for change in tree['set_item_added']:
-                path = change.up.path(
-                )  # we want't the set's path, the added item is not directly accessible
-                item = change.t2
-                if isinstance(item, strings):
-                    item = "'%s'" % item
-                self['set_item_added'].add("{}[{}]".format(path, str(item)))
-                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
-
-    def _from_tree_repetition_change(self, tree):
-        if 'repetition_change' in tree:
-            for change in tree['repetition_change']:
-                path = change.path(force=FORCE_DEFAULT)
-                self['repetition_change'][path] = RemapDict(change.additional[
-                    'repetition'])
-                self['repetition_change'][path]['value'] = change.t1
-
 
 
 class DiffLevel:

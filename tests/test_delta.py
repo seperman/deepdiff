@@ -2,24 +2,16 @@ import pytest
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.delta import (
-    GETATTR, GET, INDEX_NOT_FOUND_TO_ADD_MSG, VERIFICATION_MSG, not_found, _path_to_elements)
+    DISABLE_DELTA, DELTA_SKIP_MSG, INDEX_NOT_FOUND_TO_ADD_MSG,
+    VERIFICATION_MSG, not_found)
 
 
-@pytest.mark.parametrize('path, expected', [
-    ("root[4]['b'][3]", [(4, GET), ('b', GET), (3, GET)]),
-    ("root[4].b[3]", [(4, GET), ('b', GETATTR), (3, GET)]),
-    ("root[4].b['a3']", [(4, GET), ('b', GETATTR), ('a3', GET)]),
-    ("root[4.3].b['a3']", [(4.3, GET), ('b', GETATTR), ('a3', GET)]),
-    ("root.a.b", [('a', GETATTR), ('b', GETATTR)]),
-    ("root.hello", [('hello', GETATTR)]),
-    ("root['a\]b']", [('a\]b', GET)]),
-])
-def test_path_to_elements(path, expected):
-    result = _path_to_elements(path)
-    assert expected == result
+def parameterize_cases(cases):
+    return [tuple(i.values()) for i in cases]
 
 
-class TestDelta:
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
+class TestBasicsOfDelta:
 
     def test_list_difference_add_delta(self):
         t1 = [1, 2]
@@ -39,13 +31,13 @@ class TestDelta:
 
         expected_msg = INDEX_NOT_FOUND_TO_ADD_MSG.format(20, 'root[20]')
 
-        delta2 = Delta(diff, verify_old_value=True, raise_errors=True, log_errors=False)
+        delta2 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=False)
         with pytest.raises(ValueError) as excinfo:
             delta2 + t1
         assert expected_msg == str(excinfo.value)
         assert not mock_logger.called
 
-        delta3 = Delta(diff, verify_old_value=True, raise_errors=True, log_errors=True)
+        delta3 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta3 + t1
         assert expected_msg == str(excinfo.value)
@@ -95,12 +87,12 @@ class TestDelta:
 
         expected_msg = VERIFICATION_MSG.format('root[2]', 5, 6)
 
-        delta = Delta(diff, verify_old_value=True, raise_errors=True)
+        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_old_value=False)
+        delta2 = Delta(diff, verify_symmetry=False)
         assert delta2 + t1 == t2
 
     def test_list_difference_delta(self):
@@ -137,12 +129,12 @@ class TestDelta:
         }
         expected_msg = VERIFICATION_MSG.format("root[3]", 'to_be_removed2', not_found)
 
-        delta = Delta(diff, verify_old_value=True, raise_errors=True)
+        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_old_value=False, raise_errors=True)
+        delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta2 == t2
 
     def test_list_difference_delta_raises_error_if_prev_value_changed(self):
@@ -165,12 +157,12 @@ class TestDelta:
         }
         expected_msg = VERIFICATION_MSG.format("root[4]['b'][2]", 'to_be_removed', 'wrong')
 
-        delta = Delta(diff, verify_old_value=True, raise_errors=True)
+        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_old_value=False, raise_errors=True)
+        delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta2 == t2
 
     # def test_frozenset_delta(self):
@@ -183,5 +175,31 @@ class TestDelta:
     #         'set_item_added': {'root[3]', 'root[5]'},
     #         'set_item_removed': {"root['B']"}
     #     }
-    #     delta = Delta(diff, verify_old_value=True, raise_errors=True)
+    #     delta = Delta(diff, verify_symmetry=True, raise_errors=True)
     #     assert t1 + delta == t2
+
+
+DELTA_CASES = [
+    {
+        't1': frozenset([1, 2, 'B']),
+        't2': frozenset([1, 2, 3, 5]),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'set_item_removed': {'root': {'B'}}, 'set_item_added': {'root': {3, 5}}}
+    }
+]
+
+
+DELTA_CASES_PARAMS = parameterize_cases(DELTA_CASES)
+
+
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
+class TestDelta:
+
+    @pytest.mark.parametrize('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_CASES_PARAMS)
+    def test_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
+        diff = DeepDiff(t1, t2, **deepdiff_kwargs)
+        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        assert expected_delta_dict == delta_dict
+        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        assert t1 + delta == t2

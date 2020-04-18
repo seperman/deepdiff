@@ -14,7 +14,7 @@ t1 : A dictionary, list, string or any python object that has __dict__ or __slot
 t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
     The second item is to be compared to the first one
 
-ignore_order : Boolean, defalt=False
+ignore_order : Boolean, default=False
     ignores orders for iterables
     Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
     Normally ignore_order does not report duplicates and repetition changes.

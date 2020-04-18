@@ -1,32 +1,24 @@
 import logging
 from collections.abc import Mapping
 from copy import deepcopy
+from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from ast import literal_eval
+from deepdiff.helper import py_current_version
+from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
+
+MINIMUM_PY_FOR_DELTA = Decimal('3.6')
+DISABLE_DELTA = py_current_version < MINIMUM_PY_FOR_DELTA
+DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_FOR_DELTA)
+
 
 # TODO: it needs python3.6+ since dictionaries are ordered.
 
 logger = logging.getLogger(__name__)
 
-GETATTR = 'GETATTR'
-GET = 'GET'
 
 VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}.'
 INDEX_NOT_FOUND_TO_ADD_MSG = 'Index of {} is not found for {} for insertion operation.'
-
-
-class PathExtractionError(ValueError):
-    pass
-
-
-def _add_to_elements(elements, elem, inside):
-    try:
-        elem = literal_eval(elem)
-    except (ValueError, SyntaxError):
-        pass
-    action = GETATTR if inside == '.' else GET
-    elements.append((elem, action))
 
 
 class _NotFound:
@@ -43,57 +35,6 @@ class _NotFound:
 
 
 not_found = _NotFound()
-
-
-def _path_to_elements(path):
-    """
-    Given a path, it extracts the elements that form the path and their relevant most likely retrieval action.
-
-        >>> from deepdiff import _path_to_elements
-        >>> path = "root[4.3].b['a3']"
-        >>> _path_to_elements(path)
-        [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
-    """
-    elements = []
-    elem = ''
-    inside = False
-    prev_char = None
-    for char in path:
-        if prev_char == '\\':
-            elem += char
-        elif char == '[':
-            if inside == '.':
-                _add_to_elements(elements, elem, inside)
-            inside = '['
-            elem = ''
-        elif char == '.':
-            if inside == '[':
-                elem += char
-            elif inside == '.':
-                _add_to_elements(elements, elem, inside)
-                elem = ''
-            else:
-                inside = '.'
-                elem = ''
-        elif char == ']':
-            _add_to_elements(elements, elem, inside)
-            elem = ''
-            inside = False
-        else:
-            elem += char
-        prev_char = char
-    if elem:
-        _add_to_elements(elements, elem, inside)
-    return elements
-
-
-def _get_nested_obj(obj, elements):
-    for (elem, action) in elements:
-        if action == GET:
-            obj = obj[elem]
-        elif action == GETATTR:
-            obj = getattr(obj, elem)
-    return obj
 
 
 class DeltaError(ValueError):
@@ -125,16 +66,16 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff=None, mutate=False, verify_old_value=False, raise_errors=False, log_errors=True):
+    def __init__(self, diff=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True):
 
         if isinstance(diff, DeepDiff):
-            diff = DeepDiff.to_dict()
+            diff = diff.to_delta_dict()
         elif isinstance(diff, Mapping):
             pass
 
         self.diff = diff
         self.mutate = mutate
-        self.verify_old_value = verify_old_value
+        self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
 
@@ -194,7 +135,7 @@ class Delta:
             raise DeltaError(msg) from None
 
     def _do_verify_changes(self, path, expected_old_value, current_old_value):
-        if self.verify_old_value and expected_old_value != current_old_value:
+        if self.verify_symmetry and expected_old_value != current_old_value:
             self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
 
     def _get_index_or_key(self, obj, path, expected_old_value, index=None, attr=None):
@@ -207,7 +148,7 @@ class Delta:
                 raise DeltaError('index or attr need to be set when calling _get_index_or_key')
         except (KeyError, IndexError, AttributeError):
             current_old_value = not_found
-            if self.verify_old_value:
+            if self.verify_symmetry:
                 self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
         return current_old_value
 

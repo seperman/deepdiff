@@ -21,9 +21,11 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR)
-from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship
-from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
+from deepdiff.model import (
+    RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
+    DictRelationship, AttributeRelationship, DeltaResult,
+    SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
+    SetRelationship)
 from deepdiff.deephash import DeepHash, BoolObj
 from deepdiff.base import Base
 
@@ -665,7 +667,7 @@ class DeepDiff(ResultDict, Base):
         Dump json of the text view.
         **Parameters**
 
-        default_mapping : default_mapping, dictionary(optional), a dictionary of mapping of different types to json types.
+        default_mapping : dictionary(optional), a dictionary of mapping of different types to json types.
 
         by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
         If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
@@ -700,6 +702,41 @@ class DeepDiff(ResultDict, Base):
             result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
         else:
             result = dict(self)
+        return result
+
+    def to_delta_dict(self, directed=True):
+        """
+        Dump to a dictionary suitable for delta usage
+
+        **Parameters**
+
+        directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
+
+        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the delta is symmetrical.
+
+        If this option is set as True, then the dictionary will not have the "old_value" in the output.
+        Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
+
+        If delta = Delta(DeepDiff(t1, t2)) then
+
+        t1 + delta == t2
+
+
+        **Example**
+
+        Directed Delta
+            >>> class A:
+            ...     pass
+            ...
+            >>> class B:
+        """
+        result = DeltaResult(tree_results=self.tree, verbose_level=2)
+        result.cleanup()  # clean up text-style result dictionary
+        if directed:
+            for key, value in result.items():
+                if isinstance(value, Mapping) and 'old_value' in value:
+                    del value['old_value']
+
         return result
 
 
