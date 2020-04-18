@@ -766,9 +766,11 @@ class DeepDiff(ResultDict, Base):
         result = DeltaResult(tree_results=self.tree, verbose_level=2)
         result.cleanup()  # clean up text-style result dictionary
         if directed:
-            for key, value in result.items():
-                if isinstance(value, Mapping) and 'old_value' in value:
-                    del value['old_value']
+            for report_key, report_value in result.items():
+                if isinstance(report_value, Mapping):
+                    for path, value in report_value.items():
+                        if isinstance(value, Mapping) and 'old_value' in value:
+                            del value['old_value']
 
         return result
 

@@ -10,6 +10,7 @@ from deepdiff.path import _path_to_elements, GET, GETATTR
     ("root.a.b", [('a', GETATTR), ('b', GETATTR)]),
     ("root.hello", [('hello', GETATTR)]),
     (r"root['a\rb']", [('a\rb', GET)]),
+    ("root", []),
 ])
 def test_path_to_elements(path, expected):
     result = _path_to_elements(path)

@@ -13,6 +13,10 @@ class PathExtractionError(ValueError):
     pass
 
 
+class RootCanNotBeModified(ValueError):
+    pass
+
+
 def _add_to_elements(elements, elem, inside):
     try:
         elem = literal_eval(elem)
@@ -35,6 +39,7 @@ def _path_to_elements(path):
     elem = ''
     inside = False
     prev_char = None
+    path = path[4:]  # removing "root from the beinggine"
     for char in path:
         if prev_char == '\\':
             elem += char

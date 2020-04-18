@@ -54,7 +54,32 @@ class Delta:
 
     **Parameters**
 
-    diff : A DeepDiff object or the path to a delta file or a loaded delta dictionary.
+    diff : Delta dictionary, Delta dump payload or a DeepDiff object, default=None.
+        Content to be loaded.
+
+    delta_path : String, default=None.
+        local path to the delta dump file to be loaded
+
+    You need to pass either diff or delta_path but not both.
+
+    safe_to_import : Set, default=None.
+        A set of modules that needs to be explicitly white listed to be loaded
+        Example: {'mymodule.MyClass', 'decimal.Decimal'}
+        Note that this set will be added to the basic set of modules that are already white listed.
+        The set of what is already white listed can be found in deepdiff.serialization.SAFE_TO_IMPORT
+
+    mutate : Boolean, default=False.
+        Whether to mutate the original object when adding the delta to it or not.
+        Note that this parameter is not always successful in mutating. For example if your original object
+        is an immutable type such as a frozenset or a tuple, mutation will not succeed.
+        Hence it is recommended to keep this parameter as the default value of False unless you are sure
+        that you do not have immutable objects. There is a small overhead of doing deepcopy on the original
+        object when mutate=False. If performance is a concern and modifying the original object is not a big deal,
+        set the mutate=True but always reassign the output back to the original object.
+
+        Example:
+
+        delta = Delta(diff, mutate=True)
 
     **Returns**
 
@@ -66,69 +91,45 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True):
+    def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True, safe_to_import=None):
 
-        if isinstance(diff, DeepDiff):
-            diff = diff.to_delta_dict()
-        elif isinstance(diff, Mapping):
-            pass
+        if diff:
+            if isinstance(diff, DeepDiff):
+                self.diff = diff.to_delta_dict()
+            elif isinstance(diff, Mapping):
+                self.diff = diff
+            elif isinstance(diff, strings):
+                self.diff = pickle_load(diff, safe_to_import=safe_to_import)
+        elif delta_path:
+            with open(file_path, 'rb'):
+                content = file_path.read()
+            self.diff = pickle_load(content, safe_to_import=safe_to_import)
+        else:
+            raise ValueError('Either diff or delta_path need to be specified.')
 
-        self.diff = diff
         self.mutate = mutate
         self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
 
     def __add__(self, other):
-        if not self.mutate:
-            other = deepcopy(other)
-        self._do_values_changed(other)
-        self._do_set_item_added(other)
-        self._do_set_item_removed(other)
-        self._do_iterable_item_added(other)
+        if self.mutate:
+            self.other = other
+        else:
+            self.other = deepcopy(other)
+        self._do_values_changed()
+        self._do_set_item_added()
+        self._do_set_item_removed()
+        self._do_iterable_item_added()
         # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
-        self._do_iterable_item_removed(other)
+        self._do_iterable_item_removed()
 
+        other = self.other
+        # removing the reference to other
+        del self.other
         return other
 
     __radd__ = __add__
-
-    def load(self, file_path, safe_to_import=None):
-        """
-        **load**
-        Read and load the delta object from a file_path
-
-        **Parameters**
-
-        file_path : Local path to the file to load
-
-        safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
-            Example: {'mymodule.MyClass', 'decimal.Decimal'}
-            Note that this set will be added to the basic set of modules that are already allowed.
-            The set of what is already allowed can be found in deepdiff.serialization.SAFE_TO_IMPORT
-        """
-        with open(file_path, 'rb'):
-            content = file_path.read()
-
-        self.diff = pickle_load(content, safe_to_import=safe_to_import)
-
-    def loads(self, content, safe_to_import=None):
-        """
-        **loads**
-        load the delta object from a bytes object.
-        Note: It works to pass a string too but then internally it is converted to bytes.
-
-        **Parameters**
-
-        content : Content to be loaded
-
-        safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
-            Example: {'mymodule.MyClass', 'decimal.Decimal'}
-            Note that this set will be added to the basic set of modules that are already allowed.
-            The set of what is already allowed can be found in deepdiff.serialization.SAFE_TO_IMPORT
-        """
-
-        self.diff = pickle_load(content, safe_to_import=safe_to_import)
 
     def _raise_or_log(self, msg, level='error'):
         if self.log_errors:
@@ -154,22 +155,22 @@ class Delta:
                 self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
         return current_old_value
 
-    def _do_iterable_item_added(self, other):
+    def _do_iterable_item_added(self):
         iterable_item_added = self.diff.get('iterable_item_added', {})
         for path, value in iterable_item_added.items():
             elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=other, elements=elements[:-1])
+            obj = _get_nested_obj(obj=self.other, elements=elements[:-1])
             index = elements[-1][0]
             if index <= len(obj):
                 obj.insert(index, value)
             else:
                 self._raise_or_log(INDEX_NOT_FOUND_TO_ADD_MSG.format(index, path))
 
-    def _do_values_changed(self, other):
+    def _do_values_changed(self):
         values_changed = self.diff.get('values_changed', {})
         for path, value in values_changed.items():
             elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=other, elements=elements[:-1])
+            obj = _get_nested_obj(obj=self.other, elements=elements[:-1])
             action = elements[-1][1]
             expected_old_value = value.get('old_value', not_found)
             if action == GET:
@@ -186,12 +187,12 @@ class Delta:
                 setattr(obj, index, value['new_value'])
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
-    def _do_iterable_item_removed(self, other):
+    def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed', {})
         num = 0
         for path, expected_old_value in iterable_item_removed.items():
             elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=other, elements=elements[:-1])
+            obj = _get_nested_obj(obj=self.other, elements=elements[:-1])
             index = elements[-1][0] - num
             current_old_value = self._get_index_or_key(
                 obj=obj, index=index, path=path, expected_old_value=expected_old_value)
@@ -201,24 +202,27 @@ class Delta:
             del obj[index]
             num += 1
 
-    def _do_set_item_added(self, other):
+    def _do_set_item_added(self):
         items = self.diff.get('set_item_added')
         if items:
-            self._do_set_item(other, items, action='add')
+            self._do_set_item(items, action='union')
 
-    def _do_set_item_removed(self, other):
+    def _do_set_item_removed(self):
         items = self.diff.get('set_item_removed')
         if items:
-            self._do_set_item(other, items, action='remove')
+            self._do_set_item(items, action='difference')
 
-    def _do_set_item(self, other, items, action):
+    def _do_set_item(self, items, action):
         for path, value in items.items():
+            if path == 'root':
+                is_frozen = isinstance(self.other, frozenset)
+                self.other = getattr(self.other, action)(value)
+                continue
             elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=other, elements=elements)
-            is_frozen = isinstance(obj, frozenset)
-            if is_frozen:
-                obj = set(obj)
-            getattr(obj, action)(value)
+            parent = _get_nested_obj(obj=self.other, elements=elements[:-1])
+            elem, _ = elements[-1]
+            obj = parent[elem]
+            parent[elem] = getattr(obj, action)(value)
 
 
 if __name__ == "__main__":  # pragma: no cover
