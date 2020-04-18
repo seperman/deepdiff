@@ -17,8 +17,9 @@ DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_FOR
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}.'
+VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Due tp {}'
 INDEX_NOT_FOUND_TO_ADD_MSG = 'Index of {} is not found for {} for insertion operation.'
+TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 
 
 class _NotFound:
@@ -139,21 +140,33 @@ class Delta:
 
     def _do_verify_changes(self, path, expected_old_value, current_old_value):
         if self.verify_symmetry and expected_old_value != current_old_value:
-            self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
+            self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value, 'unknown reasons.'))
 
-    def _get_index_or_key(self, obj, path, expected_old_value, index=None, attr=None):
+    def _get_old_value_index_or_key(self, obj, path_for_err_reporting, expected_old_value, index=not_found, attr=not_found):
         try:
-            if index is not None:
+            if index is not not_found:
                 current_old_value = obj[index]
-            elif attr is not None:
+            elif attr is not not_found:
                 current_old_value = getattr(obj, attr)
             else:
-                raise DeltaError('index or attr need to be set when calling _get_index_or_key')
-        except (KeyError, IndexError, AttributeError):
+                raise DeltaError('index or attr need to be set when calling _get_old_value_index_or_key')
+        except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:
-                self._raise_or_log(VERIFICATION_MSG.format(path, expected_old_value, current_old_value))
+                self._raise_or_log(VERIFICATION_MSG.format(path_for_err_reporting, expected_old_value, current_old_value, e))
         return current_old_value
+
+    def _set_old_index_or_key(self, obj, path_for_err_reporting, index=not_found, attr=not_found, value=None):
+        try:
+            if index is not not_found:
+                obj[index] = value
+            elif attr is not not_found:
+                setattr(obj, attr, value)
+            else:
+                raise DeltaError('index or attr need to be set when calling _set_old_index_or_key')
+        except (KeyError, IndexError, AttributeError) as e:
+            self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
+
 
     def _do_iterable_item_added(self):
         iterable_item_added = self.diff.get('iterable_item_added', {})
@@ -167,24 +180,42 @@ class Delta:
                 self._raise_or_log(INDEX_NOT_FOUND_TO_ADD_MSG.format(index, path))
 
     def _do_values_changed(self):
-        values_changed = self.diff.get('values_changed', {})
-        for path, value in values_changed.items():
+        values_changed = self.diff.get('values_changed')
+        if values_changed:
+            self._do_values_or_type_changed(values_changed)
+
+    def _do_type_changes(self):
+        type_changes = self.diff.get('type_changes')
+        if type_changes:
+            self._do_values_or_type_changed(type_changes, is_type_change=True)
+
+    def _do_values_or_type_changed(self, changes, is_type_change=False):
+        for path, value in changes.items():
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=self.other, elements=elements[:-1])
             action = elements[-1][1]
             expected_old_value = value.get('old_value', not_found)
-            if action == GET:
-                index = elements[-1][0]
-                current_old_value = self._get_index_or_key(
-                    obj=obj, index=index, path=path, expected_old_value=expected_old_value)
-                if current_old_value is not_found:
+
+            index = elements[-1][0]
+            index_or_attr_key = 'index' if action == GET else 'attr'
+            kwargs = {'obj': obj, 'path_for_err_reporting': path, 'expected_old_value': expected_old_value, index_or_attr_key: index}
+            current_old_value = self._get_old_value_index_or_key(**kwargs)
+            if current_old_value is not_found:
+                continue
+            # With type change if we could have originally converted the type from old_value
+            # to new_value just by applying the class of the new_value, then we might not include the new_value
+            # in the delta dictionary.
+            if is_type_change and 'new_value' not in value:
+                try:
+                    new_value = value['new_type'](current_old_value)
+                except Exception as e:
+                    self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[index], value.get('new_type', 'unknown'), e))
                     continue
-                obj[index] = value['new_value']
-            elif action == GETATTR:
-                attr = elements[-1][0]
-                current_old_value = self._get_index_or_key(
-                    obj=obj, attr=attr, path=path, expected_old_value=expected_old_value)
-                setattr(obj, index, value['new_value'])
+            else:
+                new_value = value['new_value']
+
+            kwargs = {'obj': obj, 'path_for_err_reporting': path, index_or_attr_key: index, 'value': new_value}
+            self._set_old_index_or_key(**kwargs)
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_iterable_item_removed(self):
@@ -194,8 +225,8 @@ class Delta:
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=self.other, elements=elements[:-1])
             index = elements[-1][0] - num
-            current_old_value = self._get_index_or_key(
-                obj=obj, index=index, path=path, expected_old_value=expected_old_value)
+            current_old_value = self._get_old_value_index_or_key(
+                obj=obj, index=index, path_for_err_reporting=path, expected_old_value=expected_old_value)
             if current_old_value is not_found:
                 continue
             self._do_verify_changes(path, expected_old_value, current_old_value)
