@@ -83,6 +83,8 @@ class Delta:
         if not self.mutate:
             other = deepcopy(other)
         self._do_values_changed(other)
+        self._do_set_item_added(other)
+        self._do_set_item_removed(other)
         self._do_iterable_item_added(other)
         # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
         self._do_iterable_item_removed(other)
@@ -198,6 +200,25 @@ class Delta:
             self._do_verify_changes(path, expected_old_value, current_old_value)
             del obj[index]
             num += 1
+
+    def _do_set_item_added(self, other):
+        items = self.diff.get('set_item_added')
+        if items:
+            self._do_set_item(other, items, action='add')
+
+    def _do_set_item_removed(self, other):
+        items = self.diff.get('set_item_removed')
+        if items:
+            self._do_set_item(other, items, action='remove')
+
+    def _do_set_item(self, other, items, action):
+        for path, value in items.items():
+            elements = _path_to_elements(path)
+            obj = _get_nested_obj(obj=other, elements=elements)
+            is_frozen = isinstance(obj, frozenset)
+            if is_frozen:
+                obj = set(obj)
+            getattr(obj, action)(value)
 
 
 if __name__ == "__main__":  # pragma: no cover
