@@ -1,9 +1,10 @@
 import pytest
+from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, INDEX_NOT_FOUND_TO_ADD_MSG,
-    VERIFICATION_MSG, not_found)
+    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found)
 
 
 def parameterize_cases(cases):
@@ -85,7 +86,7 @@ class TestBasicsOfDelta:
             }
         }
 
-        expected_msg = VERIFICATION_MSG.format('root[2]', 5, 6)
+        expected_msg = VERIFICATION_MSG.format('root[2]', 5, 6, VERIFY_SYMMETRY_MSG)
 
         delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
@@ -127,7 +128,7 @@ class TestBasicsOfDelta:
                 "root[3]": 'to_be_removed2'
             }
         }
-        expected_msg = VERIFICATION_MSG.format("root[3]", 'to_be_removed2', not_found)
+        expected_msg = VERIFICATION_MSG.format("root[3]", 'to_be_removed2', not_found, 'list index out of range')
 
         delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
@@ -155,7 +156,7 @@ class TestBasicsOfDelta:
                 "root[4]['b'][3]": 'to_be_removed2'
             }
         }
-        expected_msg = VERIFICATION_MSG.format("root[4]['b'][2]", 'to_be_removed', 'wrong')
+        expected_msg = VERIFICATION_MSG.format("root[4]['b'][2]", 'to_be_removed', 'wrong', VERIFY_SYMMETRY_MSG)
 
         delta = Delta(diff, verify_symmetry=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
@@ -229,6 +230,34 @@ DELTA_CASES = [
                 'root': {
                     'old_type': int,
                     'new_type': str,
+                }
+            }
+        },
+    },
+    {
+        't1': 3.2,
+        't2': Decimal('3.2'),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'type_changes': {
+                'root': {
+                    'old_type': float,
+                    'new_type': Decimal,
+                    'new_value': Decimal('3.2')
+                }
+            }
+        },
+    },
+    {
+        't1': (1, 2),
+        't2': (1, 3),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root[1]': {
+                    'new_value': 3
                 }
             }
         },

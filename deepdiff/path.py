@@ -40,6 +40,8 @@ def _path_to_elements(path, first_element=DEFAULT_FIRST_ELEMENT):
         >>> _path_to_elements(path, first_element=None)
         [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
     """
+    if isinstance(path, tuple):
+        return path
     elements = []
     if first_element:
         elements.append(first_element)
@@ -73,7 +75,7 @@ def _path_to_elements(path, first_element=DEFAULT_FIRST_ELEMENT):
         prev_char = char
     if elem:
         _add_to_elements(elements, elem, inside)
-    return elements
+    return tuple(elements)
 
 
 def _get_nested_obj(obj, elements):

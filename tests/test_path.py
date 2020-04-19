@@ -11,7 +11,8 @@ from deepdiff.path import _path_to_elements, GET, GETATTR
     ("root.hello", [('hello', GETATTR)]),
     (r"root['a\rb']", [('a\rb', GET)]),
     ("root", []),
+    (((4, GET), ('b', GET)), ((4, GET), ('b', GET))),
 ])
 def test_path_to_elements(path, expected):
-    result = _path_to_elements(path)
-    assert expected == result
+    result = _path_to_elements(path, first_element=None)
+    assert tuple(expected) == result
