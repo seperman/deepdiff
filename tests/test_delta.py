@@ -180,13 +180,13 @@ class TestBasicsOfDelta:
 
 
 DELTA_CASES = [
-    # {
-    #     't1': frozenset([1, 2, 'B']),
-    #     't2': frozenset([1, 2, 3, 5]),
-    #     'deepdiff_kwargs': {},
-    #     'to_delta_kwargs': {},
-    #     'expected_delta_dict': {'set_item_removed': {'root': {'B'}}, 'set_item_added': {'root': {3, 5}}},
-    # },
+    {
+        't1': frozenset([1, 2, 'B']),
+        't2': frozenset([1, 2, 3, 5]),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'set_item_removed': {'root': {'B'}}, 'set_item_added': {'root': {3, 5}}},
+    },
     {
         't1': [1, 2, 'B'],
         't2': [1, 2, 3, 5],
@@ -202,6 +202,34 @@ DELTA_CASES = [
             },
             'iterable_item_added': {
                 'root[3]': 5
+            }
+        },
+    },
+    {
+        't1': [1, 2, '3'],
+        't2': [1, 2, 3],
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'type_changes': {
+                'root[2]': {
+                    'old_type': str,
+                    'new_type': int,
+                }
+            }
+        },
+    },
+    {
+        't1': 3,
+        't2': '3',
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'type_changes': {
+                'root': {
+                    'old_type': int,
+                    'new_type': str,
+                }
             }
         },
     },

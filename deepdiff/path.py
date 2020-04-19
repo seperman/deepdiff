@@ -18,28 +18,35 @@ class RootCanNotBeModified(ValueError):
 
 
 def _add_to_elements(elements, elem, inside):
-    try:
-        elem = literal_eval(elem)
-    except (ValueError, SyntaxError):
-        pass
-    action = GETATTR if inside == '.' else GET
-    elements.append((elem, action))
+    # Ignore private items
+    if not elem.startswith('__'):
+        try:
+            elem = literal_eval(elem)
+        except (ValueError, SyntaxError):
+            pass
+        action = GETATTR if inside == '.' else GET
+        elements.append((elem, action))
 
 
-def _path_to_elements(path):
+DEFAULT_FIRST_ELEMENT = ('root', GETATTR)
+
+
+def _path_to_elements(path, first_element=DEFAULT_FIRST_ELEMENT):
     """
     Given a path, it extracts the elements that form the path and their relevant most likely retrieval action.
 
         >>> from deepdiff import _path_to_elements
         >>> path = "root[4.3].b['a3']"
-        >>> _path_to_elements(path)
+        >>> _path_to_elements(path, first_element=None)
         [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
     """
     elements = []
+    if first_element:
+        elements.append(first_element)
     elem = ''
     inside = False
     prev_char = None
-    path = path[4:]  # removing "root from the beinggine"
+    path = path[4:]  # removing "root from the beginning"
     for char in path:
         if prev_char == '\\':
             elem += char
