@@ -166,17 +166,67 @@ class Delta:
                     expected_old_value, current_old_value, e))
         return current_old_value
 
-    def _set_elem_value(self, obj, path_for_err_reporting, elem=None, value=None, action=None):
+    def _simple_set_elem_value(self, obj, path_for_err_reporting, elem=None, value=None, action=None):
+        """
+        Set the element value directly on an object
+        """
         try:
             if action == GET:
                 obj[elem] = value
             elif action == GETATTR:
                 setattr(obj, elem, value)
             else:
-                raise DeltaError('invalid action when calling _set_elem_value')
+                raise DeltaError('invalid action when calling _simple_set_elem_value')
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
         return obj
+
+    def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,
+                       obj, elements, path, elem, action, new_value):
+        """
+        Set the element value on an object and if necessary convert the object to the proper mutable type
+        """
+        if isinstance(obj, tuple):
+            # convert this object back to a tuple later
+            self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
+            obj = list(obj)
+        obj = self._simple_set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
+                                          value=new_value, action=action)
+        if parent:
+            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                        value=obj, action=parent_to_obj_action)
+
+    def _simple_delete_elem(self, obj, path_for_err_reporting, elem=None, action=None):
+        """
+        Delete the element directly on an object
+        """
+        try:
+            if action == GET:
+                del obj[elem]
+            elif action == GETATTR:
+                del obj.elem
+            else:
+                raise DeltaError('invalid action when calling _simple_set_elem_value')
+        except (KeyError, IndexError, AttributeError) as e:
+            self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
+            return False
+        else:
+            return True
+
+    def _del_elem(self, parent, parent_to_obj_elem, parent_to_obj_action,
+                  obj, elements, path, elem, action):
+        """
+        Delete the element value on an object and if necessary convert the object to the proper mutable type
+        """
+        if isinstance(obj, tuple):
+            # convert this object back to a tuple later
+            self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
+            obj = list(obj)
+            is_deleted = self._simple_delete_elem(obj=obj, path_for_err_reporting=path, elem=elem, action=action)
+        if parent:
+            is_deleted = self._simple_delete_elem(
+                obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem, action=parent_to_obj_action)
+        return is_deleted
 
     def _do_iterable_item_added(self):
         iterable_item_added = self.diff.get('iterable_item_added', {})
@@ -217,18 +267,6 @@ class Delta:
         elem, action = elements[-1]
         return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
 
-    def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,
-                       obj, elements, path, elem, action, new_value):
-        if isinstance(obj, tuple):
-            # convert this object back to a tuple later
-            self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
-            obj = list(obj)
-        obj = self._set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
-                                   value=new_value, action=action)
-        if parent:
-            self._set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
-                                 value=obj, action=parent_to_obj_action)
-
     def _do_values_or_type_changed(self, changes, is_type_change=False):
         for path, value in changes.items():
             elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
@@ -257,19 +295,29 @@ class Delta:
 
     def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed', {})
-        num = 0
+        deleted_count = 0
         for path, expected_old_value in iterable_item_removed.items():
+
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
-            elem -= num
-            current_old_value = self._get_elem_and_compare_to_old_value(
-                obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
-            if current_old_value is not_found:
-                continue
-            self._do_verify_changes(path, expected_old_value, current_old_value)
+            elem -= deleted_count
+
+
+            # elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+            # elem -= deleted_count
+            # current_old_value = self._get_elem_and_compare_to_old_value(
+            #     obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
+            # if current_old_value is not_found:
+            #     continue
+            # self._do_verify_changes(path, expected_old_value, current_old_value)
+
             del obj[elem]
-            num += 1
+            deleted_count += 1
+
+            # is_deleted = self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
+            #                             obj, elements, path, elem, action)
+            # deleted_count += int(is_deleted)
 
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')
@@ -289,7 +337,7 @@ class Delta:
             obj = self._get_elem_and_compare_to_old_value(
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
             new_value = getattr(obj, func)(value)
-            self._set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
+            self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
 
 
 if __name__ == "__main__":  # pragma: no cover
