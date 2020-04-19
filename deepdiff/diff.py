@@ -723,7 +723,8 @@ class DeepDiff(ResultDict, Base):
 
     def pretty_form(self):
         result = []
-        for key in self.tree.keys():
+        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
+        for key in keys:
             for item_key in self.tree[key]:
                 result += [pretty_print_diff(item_key)]
 
@@ -736,6 +737,18 @@ def pretty_print_diff(diff: DiffLevel):
                f' and value changed from {str(diff.t1)} to {str(diff.t2)}'
     elif diff.report_type == "values_changed":
         return f'Value of {diff.path(root="")} changed from {str(diff.t1)} to {str(diff.t2)}'
+    elif diff.report_type == "dictionary_item_added":
+        return f'Item {diff.path(root="")} added to dictionary.'
+    elif diff.report_type == "dictionary_item_removed":
+        return f'Item {diff.path(root="")} removed from dictionary.'
+    elif diff.report_type == "iterable_item_added":
+        return f'Item {diff.path(root="")} added to iterable.'
+    elif diff.report_type == "iterable_item_removed":
+        return f'Item {diff.path(root="")} removed from iterable.'
+    elif diff.report_type == "attribute_added":
+        return f'Attribute {diff.path(root="root")} added.'
+    elif diff.report_type == "attribute_removed":
+        return f'Attribute {diff.path(root="root")} removed.'
     else:
         return ''
 
