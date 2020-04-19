@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Due to {}'
-INDEX_NOT_FOUND_TO_ADD_MSG = 'Index of {} is not found for {} for insertion operation.'
+ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for insertion operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_SYMMETRY_MSG = 'that the original objects that the delta is made from must be different than what the delta is applied to.'
 
@@ -150,14 +150,14 @@ class Delta:
             self._raise_or_log(VERIFICATION_MSG.format(
                 path, expected_old_value, current_old_value, VERIFY_SYMMETRY_MSG))
 
-    def _get_old_value_index_or_key(self, obj, path_for_err_reporting, expected_old_value, index=None, action=None):
+    def _get_elem_and_compare_to_old_value(self, obj, path_for_err_reporting, expected_old_value, elem=None, action=None):
         try:
             if action == GET:
-                current_old_value = obj[index]
+                current_old_value = obj[elem]
             elif action == GETATTR:
-                current_old_value = getattr(obj, index)
+                current_old_value = getattr(obj, elem)
             else:
-                raise DeltaError('invalid action when calling _get_old_value_index_or_key')
+                raise DeltaError('invalid action when calling _get_elem_and_compare_to_old_value')
         except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:
@@ -166,14 +166,14 @@ class Delta:
                     expected_old_value, current_old_value, e))
         return current_old_value
 
-    def _set_old_index_or_key(self, obj, path_for_err_reporting, index=None, value=None, action=None):
+    def _set_elem_value(self, obj, path_for_err_reporting, elem=None, value=None, action=None):
         try:
             if action == GET:
-                obj[index] = value
+                obj[elem] = value
             elif action == GETATTR:
-                setattr(obj, index, value)
+                setattr(obj, elem, value)
             else:
-                raise DeltaError('invalid action when calling _set_old_index_or_key')
+                raise DeltaError('invalid action when calling _set_elem_value')
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
         return obj
@@ -183,11 +183,11 @@ class Delta:
         for path, value in iterable_item_added.items():
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=self, elements=elements[:-1])
-            index = elements[-1][0]
-            if index <= len(obj):
-                obj.insert(index, value)
+            elem = elements[-1][0]
+            if elem <= len(obj):
+                obj.insert(elem, value)
             else:
-                self._raise_or_log(INDEX_NOT_FOUND_TO_ADD_MSG.format(index, path))
+                self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path))
 
     def _do_values_changed(self):
         values_changed = self.diff.get('values_changed')
@@ -203,23 +203,39 @@ class Delta:
         if self.post_process_paths_to_convert:
             self._do_values_or_type_changed(self.post_process_paths_to_convert, is_type_change=True)
 
+    def _get_elements_and_details(self, path):
+        elements = _path_to_elements(path)
+        if len(elements) > 1:
+            parent = _get_nested_obj(obj=self, elements=elements[:-2])
+            parent_to_obj_elem, parent_to_obj_action = elements[-2]
+            obj = self._get_elem_and_compare_to_old_value(
+                obj=parent, path_for_err_reporting=path, expected_old_value=None,
+                elem=parent_to_obj_elem, action=parent_to_obj_action)
+        else:
+            parent = parent_to_obj_elem = parent_to_obj_action = None
+            obj = _get_nested_obj(obj=self, elements=elements[:-1])
+        elem, action = elements[-1]
+        return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
+
+    def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,
+                       obj, elements, path, elem, action, new_value):
+        if isinstance(obj, tuple):
+            # convert this object back to a tuple later
+            self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
+            obj = list(obj)
+        obj = self._set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
+                                   value=new_value, action=action)
+        if parent:
+            self._set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                 value=obj, action=parent_to_obj_action)
+
     def _do_values_or_type_changed(self, changes, is_type_change=False):
         for path, value in changes.items():
-            elements = _path_to_elements(path)
-            if len(elements) > 1:
-                parent = _get_nested_obj(obj=self, elements=elements[:-2])
-                parent_to_obj_elem, parent_to_obj_action = elements[-2]
-                obj = self._get_old_value_index_or_key(
-                    obj=parent, path_for_err_reporting=path, expected_old_value=None,
-                    index=parent_to_obj_elem, action=parent_to_obj_action)
-            else:
-                parent = None
-                obj = _get_nested_obj(obj=self, elements=elements[:-1])
-            index, action = elements[-1]
+            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
             expected_old_value = value.get('old_value', not_found)
 
-            current_old_value = self._get_old_value_index_or_key(
-                obj=obj, path_for_err_reporting=path, expected_old_value=expected_old_value, index=index, action=action)
+            current_old_value = self._get_elem_and_compare_to_old_value(
+                obj=obj, path_for_err_reporting=path, expected_old_value=expected_old_value, elem=elem, action=action)
             if current_old_value is not_found:
                 continue
             # With type change if we could have originally converted the type from old_value
@@ -229,20 +245,14 @@ class Delta:
                 try:
                     new_value = value['new_type'](current_old_value)
                 except Exception as e:
-                    self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[index], value.get('new_type', 'unknown'), e))
+                    self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[elem], value.get('new_type', 'unknown'), e))
                     continue
             else:
                 new_value = value['new_value']
 
-            if isinstance(obj, tuple):
-                # convert this object back to a tuple later
-                self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
-                obj = list(obj)
-            obj = self._set_old_index_or_key(obj=obj, path_for_err_reporting=path, index=index,
-                                             value=new_value, action=action)
-            if parent:
-                self._set_old_index_or_key(obj=parent, path_for_err_reporting=path, index=parent_to_obj_elem,
-                                           value=obj, action=parent_to_obj_action)
+            self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
+                                obj, elements, path, elem, action, new_value)
+
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_iterable_item_removed(self):
@@ -251,14 +261,14 @@ class Delta:
         for path, expected_old_value in iterable_item_removed.items():
             elements = _path_to_elements(path)
             obj = _get_nested_obj(obj=self, elements=elements[:-1])
-            index, action = elements[-1]
-            index -= num
-            current_old_value = self._get_old_value_index_or_key(
-                obj=obj, index=index, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
+            elem, action = elements[-1]
+            elem -= num
+            current_old_value = self._get_elem_and_compare_to_old_value(
+                obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
             if current_old_value is not_found:
                 continue
             self._do_verify_changes(path, expected_old_value, current_old_value)
-            del obj[index]
+            del obj[elem]
             num += 1
 
     def _do_set_item_added(self):
@@ -276,9 +286,10 @@ class Delta:
             elements = _path_to_elements(path)
             parent = _get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
-            obj = self._get_old_value_index_or_key(parent, path_for_err_reporting=path, expected_old_value=None, index=elem, action=action)
+            obj = self._get_elem_and_compare_to_old_value(
+                parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
             new_value = getattr(obj, func)(value)
-            self._set_old_index_or_key(parent, path_for_err_reporting=path, index=elem, value=new_value, action=action)
+            self._set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
 
 
 if __name__ == "__main__":  # pragma: no cover

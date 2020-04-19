@@ -3,7 +3,7 @@ from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.delta import (
-    DISABLE_DELTA, DELTA_SKIP_MSG, INDEX_NOT_FOUND_TO_ADD_MSG,
+    DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found)
 
 
@@ -30,7 +30,7 @@ class TestBasicsOfDelta:
         delta = Delta(diff, log_errors=False)
         assert delta + t1 == t1
 
-        expected_msg = INDEX_NOT_FOUND_TO_ADD_MSG.format(20, 'root[20]')
+        expected_msg = ELEM_NOT_FOUND_TO_ADD_MSG.format(20, 'root[20]')
 
         delta2 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=False)
         with pytest.raises(ValueError) as excinfo:
@@ -166,19 +166,6 @@ class TestBasicsOfDelta:
         delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta2 == t2
 
-    # def test_frozenset_delta(self):
-    #     t1 = frozenset([1, 2, 'B'])
-    #     t2 = frozenset([1, 2, 3, 5])
-    #     ddiff = DeepDiff(t1, t2)
-    #     import pytest; pytest.set_trace()
-    #     aa = ddiff.to_dict()
-    #     diff = {
-    #         'set_item_added': {'root[3]', 'root[5]'},
-    #         'set_item_removed': {"root['B']"}
-    #     }
-    #     delta = Delta(diff, verify_symmetry=True, raise_errors=True)
-    #     assert t1 + delta == t2
-
 
 DELTA_CASES = [
     {
@@ -259,6 +246,18 @@ DELTA_CASES = [
                 'root[1]': {
                     'new_value': 3
                 }
+            }
+        },
+    },
+    {
+        't1': (1, 2, 5),
+        't2': (1, ),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_item_removed': {
+                'root[1]': 2,
+                'root[2]': 5
             }
         },
     },
