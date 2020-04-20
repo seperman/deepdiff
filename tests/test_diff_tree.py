@@ -205,7 +205,7 @@ class TestDeepDiffPrettyForm:
                                             new_val_displayed):
         ddiff = DeepDiff(t1, t2, view='tree')
         result = pretty_print_diff(ddiff.tree['type_changes'].items[0])
-        assert result == f'Type of {item_path} changed from {old_type} to {new_type} and value changed from {old_val_displayed} to {new_val_displayed}'
+        assert result == f'Type of {item_path} changed from {old_type} to {new_type} and value changed from {old_val_displayed} to {new_val_displayed}.'
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
@@ -233,7 +233,7 @@ class TestDeepDiffPrettyForm:
     def test_pretty_print_diff_values_changed(self, t1, t2, item_path, old_val_displayed, new_val_displayed):
         ddiff = DeepDiff(t1, t2, view='tree')
         result = pretty_print_diff(ddiff.tree['values_changed'].items[0])
-        assert result == f'Value of {item_path} changed from {old_val_displayed} to {new_val_displayed}'
+        assert result == f'Value of {item_path} changed from {old_val_displayed} to {new_val_displayed}.'
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
@@ -306,7 +306,7 @@ class TestDeepDiffPrettyForm:
         expected = (
             'Item root[5] added to dictionary.'
             '\nItem root[3] removed from dictionary.'
-            '\nType of root[2] changed from int to str and value changed from 2 to "b"'
-            '\nValue of root[4] changed from 4 to 5'
+            '\nType of root[2] changed from int to str and value changed from 2 to "b".'
+            '\nValue of root[4] changed from 4 to 5.'
         )
         assert result == expected

@@ -741,8 +741,8 @@ def pretty_print_diff(diff: DiffLevel):
     diff_path = diff.path(root='root')
 
     texts = {
-        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}",
-        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}",
+        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
+        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
         "dictionary_item_added": "Item {diff_path} added to dictionary.",
         "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
         "iterable_item_added": "Item {diff_path} added to iterable.",
