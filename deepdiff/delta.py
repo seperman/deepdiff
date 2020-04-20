@@ -179,20 +179,23 @@ class Delta:
                 raise DeltaError('invalid action when calling _simple_set_elem_value')
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
-        return obj
 
     def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,
                        obj, elements, path, elem, action, new_value):
         """
         Set the element value on an object and if necessary convert the object to the proper mutable type
         """
+        obj_is_new = False
         if isinstance(obj, tuple):
             # convert this object back to a tuple later
             self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
             obj = list(obj)
-        obj = self._simple_set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
-                                          value=new_value, action=action)
-        if parent:
+            obj_is_new = True
+        self._simple_set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
+                                    value=new_value, action=action)
+        if obj_is_new and parent:
+            # Making sure that the object is re-instated inside the parent especially if it was immutable
+            # and we had to turn it into a mutable one. In such cases the object has a new id.
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=obj, action=parent_to_obj_action)
 
@@ -209,24 +212,24 @@ class Delta:
                 raise DeltaError('invalid action when calling _simple_set_elem_value')
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
-            return False
-        else:
-            return True
 
     def _del_elem(self, parent, parent_to_obj_elem, parent_to_obj_action,
                   obj, elements, path, elem, action):
         """
         Delete the element value on an object and if necessary convert the object to the proper mutable type
         """
+        obj_is_new = False
         if isinstance(obj, tuple):
             # convert this object back to a tuple later
             self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
             obj = list(obj)
-            is_deleted = self._simple_delete_elem(obj=obj, path_for_err_reporting=path, elem=elem, action=action)
-        if parent:
-            is_deleted = self._simple_delete_elem(
-                obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem, action=parent_to_obj_action)
-        return is_deleted
+            obj_is_new = True
+        self._simple_delete_elem(obj=obj, path_for_err_reporting=path, elem=elem, action=action)
+        if obj_is_new and parent:
+            # Making sure that the object is re-instated inside the parent especially if it was immutable
+            # and we had to turn it into a mutable one. In such cases the object has a new id.
+            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                        value=obj, action=parent_to_obj_action)
 
     def _do_iterable_item_added(self):
         iterable_item_added = self.diff.get('iterable_item_added', {})
@@ -295,29 +298,19 @@ class Delta:
 
     def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed', {})
-        deleted_count = 0
-        for path, expected_old_value in iterable_item_removed.items():
-
-            elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=self, elements=elements[:-1])
-            elem, action = elements[-1]
-            elem -= deleted_count
-
-
-            # elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
-            # elem -= deleted_count
-            # current_old_value = self._get_elem_and_compare_to_old_value(
-            #     obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
-            # if current_old_value is not_found:
-            #     continue
-            # self._do_verify_changes(path, expected_old_value, current_old_value)
-
-            del obj[elem]
-            deleted_count += 1
-
-            # is_deleted = self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
-            #                             obj, elements, path, elem, action)
-            # deleted_count += int(is_deleted)
+        # Sorting the iterable_item_removed in reverse order based on the paths.
+        # So that we delete a bigger index before a smaller index
+        iterable_item_removed = sorted(iterable_item_removed.items(), key=lambda x: x[0], reverse=True)
+        for path, expected_old_value in iterable_item_removed:
+            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+            print(f"!!!NEW obj: {obj}, elem: {elem}")
+            current_old_value = self._get_elem_and_compare_to_old_value(
+                obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
+            if current_old_value is not_found:
+                continue
+            self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
+                           obj, elements, path, elem, action)
+            self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')

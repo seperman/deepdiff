@@ -96,7 +96,7 @@ class TestBasicsOfDelta:
         delta2 = Delta(diff, verify_symmetry=False)
         assert delta2 + t1 == t2
 
-    def test_list_difference_delta(self):
+    def test_list_difference_delta1(self):
         t1 = {
             1: 1,
             2: 2,
@@ -258,6 +258,42 @@ DELTA_CASES = [
             'iterable_item_removed': {
                 'root[1]': 2,
                 'root[2]': 5
+            }
+        },
+    },
+    {
+        't1': (1, 2, 5),
+        't2': (1, 3),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_item_removed': {
+                'root[2]': 5
+            },
+            'values_changed': {
+                'root[1]': {
+                    'new_value': 3
+                }
+            }
+        },
+    },
+    {
+        't1': {
+            1: 1,
+            2: 2
+        },
+        't2': {
+            2: 2,
+            3: 3
+        },
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'dictionary_item_added': {
+                'root[3]': 3
+            },
+            'dictionary_item_removed': {
+                'root[1]': 1
             }
         },
     },
