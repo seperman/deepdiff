@@ -771,7 +771,8 @@ class DeepDiff(ResultDict, Base):
                     for path, value in report_value.items():
                         if isinstance(value, Mapping) and 'old_value' in value:
                             del value['old_value']
-
+        if self.ignore_order:
+            result['ignore_order'] = True
         return result
 
 

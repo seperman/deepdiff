@@ -4,7 +4,7 @@ from copy import deepcopy
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from deepdiff.helper import py_current_version, strings
+from deepdiff.helper import py_current_version, strings, short_repr
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
 MINIMUM_PY_FOR_DELTA = Decimal('3.6')
@@ -114,6 +114,9 @@ class Delta:
         self.raise_errors = raise_errors
         self.log_errors = log_errors
 
+    def __repr__(self):
+        return "<Delta: {}>".format(short_repr(self.diff, max_length=100))
+
     def reset(self):
         self.post_process_paths_to_convert = {}
 
@@ -127,13 +130,14 @@ class Delta:
         self._do_set_item_added()
         self._do_set_item_removed()
         self._do_type_changes()
+        # NOTE: the remove iterable action needs to happen BEFORE
+        # all the other iterables to match the reverse of order of operations in DeepDiff
+        self._do_iterable_item_removed()
         self._do_iterable_item_added()
         self._do_dictionary_item_added()
         self._do_dictionary_item_removed()
         self._do_attribute_added()
         self._do_attribute_removed()
-        # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
-        self._do_iterable_item_removed()
         self._do_post_process()
 
         other = self.root
@@ -369,7 +373,6 @@ class Delta:
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
             new_value = getattr(obj, func)(value)
             self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
-
 
 
 if __name__ == "__main__":  # pragma: no cover

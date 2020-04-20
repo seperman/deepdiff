@@ -380,3 +380,60 @@ class TestDelta:
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta == t2
+
+
+DELTA_IGNORE_ORDER_CASES = [
+    {
+        't1': [1, 2, 'B', 3],
+        't2': [1, 2, 3, 5],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'ignore_order': True,
+            'iterable_item_added': {
+                'root[3]': 5
+            },
+            'iterable_item_removed': {
+                'root[2]': 'B'
+            }
+        },
+    },
+    {
+        't1': [1, 2, 'B', 3, 'B', 'B', 4],
+        't2': [1, 2, 3, 5],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': False
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_item_added': {
+                'root[3]': 5
+            },
+            'iterable_item_removed': {
+                'root[6]': 4,
+                'root[2]': 'B'
+            },
+            'ignore_order': True
+        },
+    },
+]
+
+
+DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(DELTA_IGNORE_ORDER_CASES)
+
+
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
+class TestIgnoreOrderDelta:
+
+    @pytest.mark.parametrize('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_IGNORE_ORDER_CASES_PARAMS)
+    def test_ignore_order_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
+        diff = DeepDiff(t1, t2, **deepdiff_kwargs)
+        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        assert expected_delta_dict == delta_dict
+        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        import pytest; pytest.set_trace()
+        assert t1 + delta == t2
