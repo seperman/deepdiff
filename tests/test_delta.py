@@ -304,6 +304,26 @@ DELTA_CASES = [
             },
         },
     },
+    {
+        't1': {
+            1: 1,
+            2: 2
+        },
+        't2': {
+            2: 2,
+            3: 3
+        },
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'dictionary_item_added': {
+                'root[3]': 3
+            },
+            'dictionary_item_removed': {
+                'root[1]': 1
+            },
+        },
+    },
 ]
 
 

@@ -129,6 +129,7 @@ class Delta:
         self._do_type_changes()
         self._do_iterable_item_added()
         self._do_dictionary_item_added()
+        self._do_dictionary_item_removed()
         # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
         self._do_iterable_item_removed()
         self._do_post_process()
@@ -309,12 +310,12 @@ class Delta:
 
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
-    def _do_iterable_item_removed(self):
-        iterable_item_removed = self.diff.get('iterable_item_removed', {})
-        # Sorting the iterable_item_removed in reverse order based on the paths.
-        # So that we delete a bigger index before a smaller index
-        iterable_item_removed = sorted(iterable_item_removed.items(), key=lambda x: x[0], reverse=True)
-        for path, expected_old_value in iterable_item_removed:
+    def _do_item_removed(self, tuples):
+        """
+        Handle removing tuples.
+        Note: tuples needs to be a list of tuples or tuple of tuples om the form of (key, value)
+        """
+        for path, expected_old_value in tuples:
             elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
             current_old_value = self._get_elem_and_compare_to_old_value(
                 obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
@@ -323,6 +324,19 @@ class Delta:
             self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
                            obj, elements, path, elem, action)
             self._do_verify_changes(path, expected_old_value, current_old_value)
+
+    def _do_iterable_item_removed(self):
+        iterable_item_removed = self.diff.get('iterable_item_removed')
+        # Sorting the iterable_item_removed in reverse order based on the paths.
+        # So that we delete a bigger index before a smaller index
+        if iterable_item_removed:
+            iterable_item_removed = sorted(iterable_item_removed.items(), key=lambda x: x[0], reverse=True)
+            self._do_item_removed(iterable_item_removed)
+
+    def _do_dictionary_item_removed(self):
+        dictionary_item_removed = self.diff.get('dictionary_item_removed')
+        if dictionary_item_removed:
+            self._do_item_removed(dictionary_item_removed.items())
 
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')
