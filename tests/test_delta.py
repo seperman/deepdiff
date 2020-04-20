@@ -352,6 +352,17 @@ DELTA_CASES = [
                 'root.item': 10
             }
         }
+    },
+    {
+        't1': picklalbe_obj_without_item,
+        't2': PicklableClass(10),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'attribute_added': {
+                'root.item': 10
+            }
+        }
     }
 ]
 

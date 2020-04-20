@@ -130,6 +130,8 @@ class Delta:
         self._do_iterable_item_added()
         self._do_dictionary_item_added()
         self._do_dictionary_item_removed()
+        self._do_attribute_added()
+        self._do_attribute_removed()
         # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
         self._do_iterable_item_removed()
         self._do_post_process()
@@ -215,7 +217,7 @@ class Delta:
             if action == GET:
                 del obj[elem]
             elif action == GETATTR:
-                del obj.elem
+                del obj.__dict__[elem]
             else:
                 raise DeltaError('invalid action when calling _simple_set_elem_value')
         except (KeyError, IndexError, AttributeError) as e:
@@ -248,6 +250,11 @@ class Delta:
         dictionary_item_added = self.diff.get('dictionary_item_added')
         if dictionary_item_added:
             self._do_item_added(dictionary_item_added)
+
+    def _do_attribute_added(self):
+        attribute_added = self.diff.get('attribute_added')
+        if attribute_added:
+            self._do_item_added(attribute_added)
 
     def _do_item_added(self, items):
         for path, new_value in items.items():
@@ -337,6 +344,11 @@ class Delta:
         dictionary_item_removed = self.diff.get('dictionary_item_removed')
         if dictionary_item_removed:
             self._do_item_removed(dictionary_item_removed.items())
+
+    def _do_attribute_removed(self):
+        attribute_removed = self.diff.get('attribute_removed')
+        if attribute_removed:
+            self._do_item_removed(attribute_removed.items())
 
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')
