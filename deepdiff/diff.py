@@ -738,7 +738,7 @@ def pretty_print_diff(diff: DiffLevel):
     val_t1 = f'"{str(diff.t1)}"' if type_t1 == "str" else str(diff.t1)
     val_t2 = f'"{str(diff.t2)}"' if type_t2 == "str" else str(diff.t2)
 
-    diff_path = diff.path(root='root') if diff.report_type in ['attribute_added', 'attribute_removed'] else diff.path(root='')
+    diff_path = diff.path(root='root')
 
     texts = {
         "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}",
@@ -749,8 +749,8 @@ def pretty_print_diff(diff: DiffLevel):
         "iterable_item_removed": "Item {diff_path} removed from iterable.",
         "attribute_added": "Attribute {diff_path} added.",
         "attribute_removed": "Attribute {diff_path} removed.",
-        "set_item_added": "Item [{val_t2}] added to set.",
-        "set_item_removed": "Item [{val_t1}] removed from set.",
+        "set_item_added": "Item root[{val_t2}] added to set.",
+        "set_item_removed": "Item root[{val_t1}] removed from set.",
         "repetition_change": "Repetition change for item {diff_path}.",
              }
 

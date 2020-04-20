@@ -121,6 +121,8 @@ class TestDeepDiffTree:
         assert change.path() is None
         assert change.path(force='yes') == 'root(unrepresentable)'
         assert change.path(force='fake') == 'root[2]'
+        print(ddiff.pretty_form())
+        a="a"
 
     def test_significant_digits(self):
         ddiff = DeepDiff(
@@ -192,8 +194,9 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path, old_type, new_type, old_val_displayed, new_val_displayed',
                              [
-                                 [{2: 2, 4: 4}, {2: 'b', 4: 4}, '[2]', 'int', 'str', '2', '"b"'],
-                                 [[1, 2, 3], [1, '2', 3], '[1]', 'int', 'str', '2', '"2"'],
+                                 [{2: 2, 4: 4}, {2: 'b', 4: 4}, 'root[2]', 'int', 'str', '2', '"b"'],
+                                 [[1, 2, 3], [1, '2', 3], 'root[1]', 'int', 'str', '2', '"2"'],
+                                 [[1, 2, 3], {1, 2, 3}, 'root', 'list', 'set', '[1, 2, 3]', '{1, 2, 3}']
                              ])
     def test_pretty_print_diff_type_changes(self, t1, t2, item_path, old_type, new_type, old_val_displayed,
                                             new_val_displayed):
@@ -203,7 +206,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{2: 2, 4: 4}, {2: 2, 4: 4, 5: 5}, '[5]'],
+                                 [{2: 2, 4: 4}, {2: 2, 4: 4, 5: 5}, 'root[5]'],
                              ])
     def test_pretty_print_diff_dictionary_item_added(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -212,7 +215,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{2: 2, 4: 4}, {2: 2}, '[4]'],
+                                 [{2: 2, 4: 4}, {2: 2}, 'root[4]'],
                              ])
     def test_pretty_print_diff_dictionary_item_removed(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -221,8 +224,8 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path, old_val_displayed, new_val_displayed',
                              [
-                                 [{2: 2, 4: 4}, {2: 3, 4: 4}, '[2]', '2', '3'],
-                                 [['a', 'b', 'c'], ['a', 'b', 'd'], '[2]', '"c"', '"d"']
+                                 [{2: 2, 4: 4}, {2: 3, 4: 4}, 'root[2]', '2', '3'],
+                                 [['a', 'b', 'c'], ['a', 'b', 'd'], 'root[2]', '"c"', '"d"']
                              ])
     def test_pretty_print_diff_values_changed(self, t1, t2, item_path, old_val_displayed, new_val_displayed):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -231,7 +234,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [[1, 2, 3], [1, 2, 3, 4], '[3]'],
+                                 [[1, 2, 3], [1, 2, 3, 4], 'root[3]'],
                              ])
     def test_pretty_print_diff_iterable_item_added(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -240,7 +243,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [[1, 2, 3], [1, 2], '[2]'],
+                                 [[1, 2, 3], [1, 2], 'root[2]'],
                              ])
     def test_pretty_print_diff_iterable_item_removed(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -277,7 +280,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{1, 2}, {1, 2, 3}, '[3]'],
+                                 [{1, 2}, {1, 2, 3}, 'root[3]'],
                              ])
     def test_pretty_print_diff_set_item_added(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -286,7 +289,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{1, 2, 3}, {1, 2}, '[3]'],
+                                 [{1, 2, 3}, {1, 2}, 'root[3]'],
                              ])
     def test_pretty_print_diff_set_item_removed(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -295,7 +298,7 @@ class TestDeepDiffPrettyForm:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [[1, 2, 3, 2], [1, 2, 3], '[1]'],
+                                 [[1, 2, 3, 2], [1, 2, 3], 'root[1]'],
                              ])
     def test_pretty_print_diff_repetition_change(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree', ignore_order=True, report_repetition=True)
@@ -307,8 +310,8 @@ class TestDeepDiffPrettyForm:
         t2 = {2: 'b', 4: 5}
         ddiff = DeepDiff(t1, t2, view='tree')
         result = ddiff.pretty_form()
-        expected = ('Type of [2] changed from int to str and value changed from 2 to "b"'
-                    "\nValue of [4] changed from 4 to 5")
+        expected = ('Type of root[2] changed from int to str and value changed from 2 to "b"'
+                    "\nValue of root[4] changed from 4 to 5")
         assert result == expected
 
     @staticmethod
