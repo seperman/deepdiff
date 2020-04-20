@@ -128,6 +128,7 @@ class Delta:
         self._do_set_item_removed()
         self._do_type_changes()
         self._do_iterable_item_added()
+        self._do_dictionary_item_added()
         # NOTE: the remove iterable action needs to happen AFTER all the other iterables.
         self._do_iterable_item_removed()
         self._do_post_process()
@@ -172,7 +173,13 @@ class Delta:
         """
         try:
             if action == GET:
-                obj[elem] = value
+                try:
+                    obj[elem] = value
+                except IndexError:
+                    if elem == len(obj):
+                        obj.append(value)
+                    else:
+                        self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path_for_err_reporting))
             elif action == GETATTR:
                 setattr(obj, elem, value)
             else:
@@ -232,15 +239,21 @@ class Delta:
                                         value=obj, action=parent_to_obj_action)
 
     def _do_iterable_item_added(self):
-        iterable_item_added = self.diff.get('iterable_item_added', {})
-        for path, value in iterable_item_added.items():
-            elements = _path_to_elements(path)
-            obj = _get_nested_obj(obj=self, elements=elements[:-1])
-            elem = elements[-1][0]
-            if elem <= len(obj):
-                obj.insert(elem, value)
-            else:
-                self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path))
+        iterable_item_added = self.diff.get('iterable_item_added')
+        if iterable_item_added:
+            self._do_item_added(iterable_item_added)
+
+    def _do_dictionary_item_added(self):
+        dictionary_item_added = self.diff.get('dictionary_item_added')
+        if dictionary_item_added:
+            self._do_item_added(dictionary_item_added)
+
+    def _do_item_added(self, items):
+        for path, new_value in items.items():
+            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+
+            self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
+                                obj, elements, path, elem, action, new_value)
 
     def _do_values_changed(self):
         values_changed = self.diff.get('values_changed')
@@ -303,7 +316,6 @@ class Delta:
         iterable_item_removed = sorted(iterable_item_removed.items(), key=lambda x: x[0], reverse=True)
         for path, expected_old_value in iterable_item_removed:
             elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
-            print(f"!!!NEW obj: {obj}, elem: {elem}")
             current_old_value = self._get_elem_and_compare_to_old_value(
                 obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
             if current_old_value is not_found:
@@ -331,6 +343,7 @@ class Delta:
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
             new_value = getattr(obj, func)(value)
             self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
+
 
 
 if __name__ == "__main__":  # pragma: no cover
