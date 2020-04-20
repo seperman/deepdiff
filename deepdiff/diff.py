@@ -749,6 +749,12 @@ def pretty_print_diff(diff: DiffLevel):
         return f'Attribute {diff.path(root="root")} added.'
     elif diff.report_type == "attribute_removed":
         return f'Attribute {diff.path(root="root")} removed.'
+    elif diff.report_type == "set_item_added":
+        return f'Item [{str(diff.t2)}] added to set.'
+    elif diff.report_type == "set_item_removed":
+        return f'Item [{str(diff.t1)}] removed from set.'
+    elif diff.report_type == "repetition_change":
+        return f'Repetition change for item {diff.path(root="")}.'
     else:
         return ''
 

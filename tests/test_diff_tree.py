@@ -266,6 +266,51 @@ class TestDeepDiffPrettyForm:
         result = pretty_print_diff(ddiff.tree['attribute_added'].items[0])
         assert result == f'Attribute {item_path} added.'
 
+    @pytest.mark.parametrize('t1, t2, item_path',
+                             [
+                                 [[1, 2, 3], [1, 2], 'root.two'],
+                             ]
+                             )
+    def test_pretty_print_diff_attribute_removed(self, t1, t2, item_path):
+        cls = self.get_testing_class()
+        t1 = cls()
+        t1.two = 2
+        t2 = cls()
+
+        ddiff = DeepDiff(t1, t2, view='tree')
+        result = pretty_print_diff(ddiff.tree['attribute_removed'].items[0])
+        assert result == f'Attribute {item_path} removed.'
+
+    @pytest.mark.parametrize('t1, t2, item_path',
+                             [
+                                 [{1, 2}, {1, 2, 3}, '[3]'],
+                             ]
+                             )
+    def test_pretty_print_diff_set_item_added(self, t1, t2, item_path):
+        ddiff = DeepDiff(t1, t2, view='tree')
+        result = pretty_print_diff(ddiff.tree['set_item_added'].items[0])
+        assert result == f'Item {item_path} added to set.'
+
+    @pytest.mark.parametrize('t1, t2, item_path',
+                             [
+                                 [{1, 2, 3}, {1, 2}, '[3]'],
+                             ]
+                             )
+    def test_pretty_print_diff_set_item_removed(self, t1, t2, item_path):
+        ddiff = DeepDiff(t1, t2, view='tree')
+        result = pretty_print_diff(ddiff.tree['set_item_removed'].items[0])
+        assert result == f'Item {item_path} removed from set.'
+
+    @pytest.mark.parametrize('t1, t2, item_path',
+                             [
+                                 [[1, 2, 3, 2], [1, 2, 3], '[1]'],
+                             ]
+                             )
+    def test_pretty_print_diff_repetition_change(self, t1, t2, item_path):
+        ddiff = DeepDiff(t1, t2, view='tree', ignore_order=True, report_repetition=True)
+        result = pretty_print_diff(ddiff.tree['repetition_change'].items[0])
+        assert result == f'Repetition change for item {item_path}.'
+
     def test_pretty_form_method(self):
         t1 = {2: 2, 4: 4}
         t2 = {2: 'b', 4: 5}
