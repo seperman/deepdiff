@@ -732,11 +732,24 @@ class DeepDiff(ResultDict, Base):
 
 
 def pretty_print_diff(diff: DiffLevel):
+    type_t1 = get_type(diff.t1).__name__
+    type_t2 = get_type(diff.t2).__name__
+
+    if type_t1 == "str":
+        val_t1 = f'"{str(diff.t1)}"'
+    else:
+        val_t1 = str(diff.t1)
+
+    if type_t2 == "str":
+        val_t2 = f'"{str(diff.t2)}"'
+    else:
+        val_t2 = str(diff.t2)
+
     if diff.report_type == "type_changes":
-        return f'Type of {diff.path(root="")} changed from {type(diff.t1).__name__} to {type(diff.t2).__name__}' \
-               f' and value changed from {str(diff.t1)} to {str(diff.t2)}'
+        return f'Type of {diff.path(root="")} changed from {type_t1} to {type_t2}' \
+               f' and value changed from {val_t1} to {val_t2}'
     elif diff.report_type == "values_changed":
-        return f'Value of {diff.path(root="")} changed from {str(diff.t1)} to {str(diff.t2)}'
+        return f'Value of {diff.path(root="")} changed from {val_t1} to {val_t2}'
     elif diff.report_type == "dictionary_item_added":
         return f'Item {diff.path(root="")} added to dictionary.'
     elif diff.report_type == "dictionary_item_removed":
@@ -750,9 +763,9 @@ def pretty_print_diff(diff: DiffLevel):
     elif diff.report_type == "attribute_removed":
         return f'Attribute {diff.path(root="root")} removed.'
     elif diff.report_type == "set_item_added":
-        return f'Item [{str(diff.t2)}] added to set.'
+        return f'Item [{val_t2}] added to set.'
     elif diff.report_type == "set_item_removed":
-        return f'Item [{str(diff.t1)}] removed from set.'
+        return f'Item [{val_t1}] removed from set.'
     elif diff.report_type == "repetition_change":
         return f'Repetition change for item {diff.path(root="")}.'
     else:
