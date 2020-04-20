@@ -735,41 +735,27 @@ def pretty_print_diff(diff: DiffLevel):
     type_t1 = get_type(diff.t1).__name__
     type_t2 = get_type(diff.t2).__name__
 
-    if type_t1 == "str":
-        val_t1 = f'"{str(diff.t1)}"'
-    else:
-        val_t1 = str(diff.t1)
+    val_t1 = f'"{str(diff.t1)}"' if type_t1 == "str" else str(diff.t1)
+    val_t2 = f'"{str(diff.t2)}"' if type_t2 == "str" else str(diff.t2)
 
-    if type_t2 == "str":
-        val_t2 = f'"{str(diff.t2)}"'
-    else:
-        val_t2 = str(diff.t2)
+    diff_path = diff.path(root='root') if diff.report_type in ['attribute_added', 'attribute_removed'] else diff.path(root='')
 
-    if diff.report_type == "type_changes":
-        return f'Type of {diff.path(root="")} changed from {type_t1} to {type_t2}' \
-               f' and value changed from {val_t1} to {val_t2}'
-    elif diff.report_type == "values_changed":
-        return f'Value of {diff.path(root="")} changed from {val_t1} to {val_t2}'
-    elif diff.report_type == "dictionary_item_added":
-        return f'Item {diff.path(root="")} added to dictionary.'
-    elif diff.report_type == "dictionary_item_removed":
-        return f'Item {diff.path(root="")} removed from dictionary.'
-    elif diff.report_type == "iterable_item_added":
-        return f'Item {diff.path(root="")} added to iterable.'
-    elif diff.report_type == "iterable_item_removed":
-        return f'Item {diff.path(root="")} removed from iterable.'
-    elif diff.report_type == "attribute_added":
-        return f'Attribute {diff.path(root="root")} added.'
-    elif diff.report_type == "attribute_removed":
-        return f'Attribute {diff.path(root="root")} removed.'
-    elif diff.report_type == "set_item_added":
-        return f'Item [{val_t2}] added to set.'
-    elif diff.report_type == "set_item_removed":
-        return f'Item [{val_t1}] removed from set.'
-    elif diff.report_type == "repetition_change":
-        return f'Repetition change for item {diff.path(root="")}.'
-    else:
-        return ''
+    texts = {
+        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}",
+        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}",
+        "dictionary_item_added": "Item {diff_path} added to dictionary.",
+        "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
+        "iterable_item_added": "Item {diff_path} added to iterable.",
+        "iterable_item_removed": "Item {diff_path} removed from iterable.",
+        "attribute_added": "Attribute {diff_path} added.",
+        "attribute_removed": "Attribute {diff_path} removed.",
+        "set_item_added": "Item [{val_t2}] added to set.",
+        "set_item_removed": "Item [{val_t1}] removed from set.",
+        "repetition_change": "Repetition change for item {diff_path}.",
+             }
+
+    return texts.get(diff.report_type, "").format(diff_path=diff_path, type_t1=type_t1, type_t2=type_t2, val_t1=val_t1,
+                                                  val_t2=val_t2)
 
 
 if __name__ == "__main__":  # pragma: no cover
