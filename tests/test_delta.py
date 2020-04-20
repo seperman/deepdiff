@@ -5,6 +5,7 @@ from deepdiff import Delta, DeepDiff
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found)
+from tests import PicklableClass
 
 
 def parameterize_cases(cases):
@@ -167,6 +168,10 @@ class TestBasicsOfDelta:
         assert t1 + delta2 == t2
 
 
+picklalbe_obj_without_item = PicklableClass(11)
+del picklalbe_obj_without_item.item
+
+
 DELTA_CASES = [
     {
         't1': frozenset([1, 2, 'B']),
@@ -324,6 +329,30 @@ DELTA_CASES = [
             },
         },
     },
+    {
+        't1': PicklableClass(10),
+        't2': PicklableClass(11),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root.item': {
+                    'new_value': 11
+                }
+            }
+        }
+    },
+    {
+        't1': PicklableClass(10),
+        't2': picklalbe_obj_without_item,
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'attribute_removed': {
+                'root.item': 10
+            }
+        }
+    }
 ]
 
 
