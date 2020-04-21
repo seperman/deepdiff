@@ -774,13 +774,13 @@ class DeepDiff(ResultDict, Base):
         if self.ignore_order:
             result['ignore_order'] = True
         return result
-      
+
     def pretty_form(self):
-      result = []
-      keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
-      for key in keys:
-          for item_key in self.tree[key]:
-              result += [pretty_print_diff(item_key)]
+        result = []
+        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
+        for key in keys:
+            for item_key in self.tree[key]:
+                result += [pretty_print_diff(item_key)]
 
         return '\n'.join(result)
 
@@ -806,10 +806,11 @@ def pretty_print_diff(diff: DiffLevel):
         "set_item_added": "Item root[{val_t2}] added to set.",
         "set_item_removed": "Item root[{val_t1}] removed from set.",
         "repetition_change": "Repetition change for item {diff_path}.",
-             }
+    }
 
     return texts.get(diff.report_type, "").format(diff_path=diff_path, type_t1=type_t1, type_t2=type_t2, val_t1=val_t1,
                                                   val_t2=val_t2)
+
 
 if __name__ == "__main__":  # pragma: no cover
     import doctest
