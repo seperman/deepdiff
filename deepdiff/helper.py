@@ -11,6 +11,9 @@ from ordered_set import OrderedSet
 logger = logging.getLogger(__name__)
 
 py_major_version = sys.version_info.major
+py_minor_version = sys.version_info.minor
+
+py_current_version = Decimal("{}.{}".format(py_major_version, py_minor_version))
 
 py2 = py_major_version == 2
 py3 = py_major_version == 3
@@ -25,7 +28,6 @@ if py2:  # pragma: no cover
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 
-# from builtins import int
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
@@ -115,13 +117,6 @@ RemapDict = dict
 #             return self.get(new_key)
 #         else:  # pragma: no cover
 #             raise KeyError(new_key)
-
-
-class Verbose:
-    """
-    Global verbose level
-    """
-    level = 1
 
 
 class indexed_set(set):

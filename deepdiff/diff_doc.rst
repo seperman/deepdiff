@@ -14,7 +14,7 @@ t1 : A dictionary, list, string or any python object that has __dict__ or __slot
 t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
     The second item is to be compared to the first one
 
-ignore_order : Boolean, defalt=False
+ignore_order : Boolean, default=False
     ignores orders for iterables
     Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
     Normally ignore_order does not report duplicates and repetition changes.
@@ -109,6 +109,7 @@ Text view is the original and currently the default view of DeepDiff.
 It is called text view because the results contain texts that represent the path to the data:
 
 Example of using the text view.
+    >>> from decimal import Decimal
     >>> from deepdiff import DeepDiff
     >>> t1 = {1:1, 3:3, 4:4}
     >>> t2 = {1:1, 3:3, 5:5, 6:6}

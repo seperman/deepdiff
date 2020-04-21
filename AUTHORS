@@ -1,7 +1,7 @@
 - Seperman
 - Victor Hahn Castell @ Flexoptix
 
-And many thanks to the following people for their contributions to DeepDiff:
+And many thanks to the following people for their contributions to DeepDiff in the order of contribution time:
 
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
@@ -26,3 +26,4 @@ And many thanks to the following people for their contributions to DeepDiff:
 - Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
 - Andrey Gavrilin (gaal-dev) for hashing classes.
 - Ivan Piskunov (van-ess0) for deprecation warning enhancement.
+- Nathaniel Brown (nathanielobrown) Adds support for datetime.time

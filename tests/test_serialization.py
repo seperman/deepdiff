@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 import json
+import sys
 import pytest
+import datetime
+from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.serialization import (
+    pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
+    MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG)
+from ordered_set import OrderedSet
+from tests import PicklableClass
 
 import logging
 logging.disable(logging.CRITICAL)
@@ -10,8 +18,8 @@ t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
 
 
-class TestDeepAdditions:
-    """Tests for Additions and Subtractions."""
+class TestSerialization:
+    """Tests for Serializations."""
 
     def test_serialization_text(self):
         ddiff = DeepDiff(t1, t2)
@@ -65,3 +73,58 @@ class TestDeepAdditions:
         result = ddiff.to_json(default_mapping=default_mapping)
         expected_result = {"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}
         assert expected_result == json.loads(result)
+
+    # These lines are long but make it easier to notice the difference:
+    @pytest.mark.parametrize('verbose_level, expected', [
+        (0, {"type_changes": {"root[0]": {"old_type": str, "new_type": int}}, "dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (1, {"type_changes": {"root[0]": {"old_type": str, "new_type": int, "old_value": "a", "new_value": 10}}, "dictionary_item_added": ["root[1][5]"], "dictionary_item_removed": ["root[1][3]"], "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+        (2, {"type_changes": {"root[0]": {"old_type": str, "new_type": int, "old_value": "a", "new_value": 10}}, "dictionary_item_added": {"root[1][5]": 6}, "dictionary_item_removed": {"root[1][3]": 4}, "values_changed": {"root[1][1]": {"new_value": 2, "old_value": 1}}, "iterable_item_added": {"root[2]": "d"}}),
+    ])
+    def test_to_dict_at_different_verbose_level(self, verbose_level, expected):
+        t1 = ['a', {1: 1, 3: 4}, ]
+        t2 = [10, {1: 2, 5: 6}, 'd']
+
+        ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
+        assert expected == ddiff.to_dict()
+
+
+class TestPickling:
+
+    def test_serialize(self):
+        obj = [1, 2, 3, None, {10: 11E2}, frozenset(['a', 'c']), OrderedSet([2, 1]),
+               datetime.datetime.utcnow(), datetime.time(11), Decimal('11.2'), 123.11]
+        serialized = pickle_dump(obj)
+        loaded = pickle_load(serialized)
+        assert obj == loaded
+
+    def test_custom_object_deserialization_fails_without_explicit_permission(self):
+        obj = PicklableClass(10)
+        module_dot_name = 'tests.{}'.format(PicklableClass.__name__)
+
+        serialized = pickle_dump(obj)
+
+        expected_msg = FORBIDDEN_MODULE_MSG.format(module_dot_name)
+        with pytest.raises(ForbiddenModule) as excinfo:
+            pickle_load(serialized)
+        assert expected_msg == str(excinfo.value)
+
+        # Explicitly allowing the module to be loaded
+        loaded = pickle_load(serialized, safe_to_import={module_dot_name})
+        assert obj == loaded
+
+    def test_unpickling_object_that_is_not_imported_raises_error(self):
+
+        def get_the_pickle():
+            import wave
+            obj = wave.Error
+            return pickle_dump(obj)
+
+        serialized = get_the_pickle()
+        # Making sure that the module is unloaded.
+        del sys.modules['wave']
+        module_dot_name = 'wave.Error'
+
+        expected_msg = MODULE_NOT_FOUND_MSG.format(module_dot_name)
+        with pytest.raises(ModuleNotFoundError) as excinfo:
+            pickle_load(serialized, safe_to_import=module_dot_name)
+        assert expected_msg == str(excinfo.value)

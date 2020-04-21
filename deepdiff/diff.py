@@ -16,14 +16,16 @@ from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, Verbose, unprocessed, json_convertor_default, add_to_frozen_set,
+                             IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR)
-from deepdiff.model import RemapDict, ResultDict, TextResult, TreeResult, DiffLevel
-from deepdiff.model import DictRelationship, AttributeRelationship
-from deepdiff.model import SubscriptableIterableRelationship, NonSubscriptableIterableRelationship, SetRelationship
+from deepdiff.model import (
+    RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
+    DictRelationship, AttributeRelationship, DeltaResult,
+    SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
+    SetRelationship)
 from deepdiff.deephash import DeepHash, BoolObj
 from deepdiff.base import Base
 
@@ -103,9 +105,9 @@ class DeepDiff(ResultDict, Base):
 
         self.tree = TreeResult()
 
-        Verbose.level = verbose_level
+        self.verbose_level = verbose_level
 
-        root = DiffLevel(t1, t2)
+        root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
         self.tree.cleanup()
@@ -121,28 +123,9 @@ class DeepDiff(ResultDict, Base):
         if view == TREE_VIEW:
             result = self.tree
         else:
-            result = TextResult(tree_results=self.tree)
+            result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.cleanup()  # clean up text-style result dictionary
         return result
-
-    # TODO: adding adding functionality
-    # def __add__(self, other):
-    #     if isinstance(other, DeepDiff):
-    #         result = deepcopy(self)
-    #         result.update(other)
-    #     else:
-    #         result = deepcopy(other)
-    #         for key in REPORT_KEYS:
-    #             if key in self:
-    #                 getattr(self, "_do_{}".format(key))(result)
-
-    #     return result
-
-    # __radd__ = __add__
-
-    # def _do_iterable_item_added(self, result):
-    #     for item in self['iterable_item_added']:
-    #         pass
 
     def __report_result(self, report_type, level):
         """
@@ -410,7 +393,7 @@ class DeepDiff(ResultDict, Base):
             level.t1 = level.t1.lower()
             level.t2 = level.t2.lower()
 
-        if type(level.t1) == type(level.t2) and level.t1 == level.t2:
+        if type(level.t1) == type(level.t2) and level.t1 == level.t2:  # NOQA
             return
 
         # do we add a diff for convenience?
@@ -608,6 +591,36 @@ class DeepDiff(ResultDict, Base):
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
 
+    def __diff_numpy(self, level, parents_ids=frozenset({})):
+        """Diff numpy arrays"""
+        import numpy as np
+
+        # fast checks
+        if self.significant_digits is None:
+            if np.array_equal(level.t1, level.t2):
+                return  # all good
+        else:
+            try:
+                np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
+                return  # all good
+            except AssertionError:
+                pass    # do detailed checking below
+
+        # compare array meta-data
+        meta1 = {'dtype': str(level.t1.dtype), 'shape': level.t1.shape}
+        meta2 = {'dtype': str(level.t2.dtype), 'shape': level.t2.shape}
+        if meta1 != meta2:
+            # metadata is different, diff attributes one by one
+            for attr in meta1:
+                next_level = level.branch_deeper(
+                    meta1[attr], meta2[attr],
+                    child_relationship_class=AttributeRelationship,
+                    child_relationship_param=attr)
+                self.__diff(next_level, add_to_frozen_set(parents_ids, attr))
+        else:
+            # metadata same -- the difference is in the content
+            self.__report_result('values_changed', level)
+
     def __diff_types(self, level):
         """Diff types"""
         level.report_type = 'type_changes'
@@ -649,6 +662,9 @@ class DeepDiff(ResultDict, Base):
         elif isinstance(level.t1, (set, frozenset, OrderedSet)):
             self.__diff_set(level)
 
+        elif level.t1.__class__.__module__ == 'numpy':
+            self.__diff_numpy(level, parents_ids)
+
         elif isinstance(level.t1, Iterable):
             if self.ignore_order:
                 self.__diff_iterable_with_deephash(level)
@@ -684,7 +700,7 @@ class DeepDiff(ResultDict, Base):
         Dump json of the text view.
         **Parameters**
 
-        default_mapping : default_mapping, dictionary(optional), a dictionary of mapping of different types to json types.
+        default_mapping : dictionary(optional), a dictionary of mapping of different types to json types.
 
         by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
         If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
@@ -716,17 +732,55 @@ class DeepDiff(ResultDict, Base):
         Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
         """
         if self.view == TREE_VIEW:
-            result = dict(self._get_view_results(view=TEXT_VIEW))
+            result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
         else:
             result = dict(self)
         return result
 
+    def to_delta_dict(self, directed=True):
+        """
+        Dump to a dictionary suitable for delta usage
+
+        **Parameters**
+
+        directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
+
+        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the delta is symmetrical.
+
+        If this option is set as True, then the dictionary will not have the "old_value" in the output.
+        Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
+
+        If delta = Delta(DeepDiff(t1, t2)) then
+
+        t1 + delta == t2
+
+
+        **Example**
+
+        Directed Delta
+            >>> class A:
+            ...     pass
+            ...
+            >>> class B:
+        """
+        result = DeltaResult(tree_results=self.tree, verbose_level=2)
+        result.cleanup()  # clean up text-style result dictionary
+        if directed:
+            for report_key, report_value in result.items():
+                if isinstance(report_value, Mapping):
+                    for path, value in report_value.items():
+                        if isinstance(value, Mapping) and 'old_value' in value:
+                            del value['old_value']
+        if self.ignore_order:
+            result['ignore_order'] = True
+        return result
+      
     def pretty_form(self):
-        result = []
-        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
-        for key in keys:
-            for item_key in self.tree[key]:
-                result += [pretty_print_diff(item_key)]
+      result = []
+      keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
+      for key in keys:
+          for item_key in self.tree[key]:
+              result += [pretty_print_diff(item_key)]
 
         return '\n'.join(result)
 
@@ -756,7 +810,6 @@ def pretty_print_diff(diff: DiffLevel):
 
     return texts.get(diff.report_type, "").format(diff_path=diff_path, type_t1=type_t1, type_t2=type_t2, val_t1=val_t1,
                                                   val_t2=val_t2)
-
 
 if __name__ == "__main__":  # pragma: no cover
     import doctest

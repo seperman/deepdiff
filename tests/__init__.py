@@ -22,3 +22,20 @@ class CustomClass2:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+
+class PicklableClass:
+    def __init__(self, item):
+        if item != 'delete':
+            self.item = item
+
+    def __reduce__(self):
+        if hasattr(self, 'item'):
+            item = self.item
+        else:
+            item = 'delete'
+        return (self.__class__, (item, ))
+
+    def __eq__(self, other):
+        both_no_items_attr = (not hasattr(self, 'item')) and (not hasattr(other, 'item'))
+        return both_no_items_attr or self.item == other.item

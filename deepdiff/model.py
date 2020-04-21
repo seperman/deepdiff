@@ -1,7 +1,8 @@
-from deepdiff.helper import RemapDict, strings, short_repr, Verbose, notpresent
+from collections.abc import Mapping
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -54,7 +55,11 @@ class TreeResult(ResultDict):
 
 
 class TextResult(ResultDict):
-    def __init__(self, tree_results=None):
+
+    ADD_QUOTES_TO_STRINGS = True
+
+    def __init__(self, tree_results=None, verbose_level=1):
+        self.verbose_level = verbose_level
 
         # TODO: centralize keys
         self.update({
@@ -76,7 +81,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if Verbose.level >= 2 else PrettyOrderedSet()
+        return {} if self.verbose_level >= 2 else PrettyOrderedSet()
 
     def _from_tree_results(self, tree):
         """
@@ -139,7 +144,7 @@ class TextResult(ResultDict):
                 })
                 self['type_changes'][change.path(
                     force=FORCE_DEFAULT)] = remap_dict
-                if Verbose.level and include_values:
+                if self.verbose_level and include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
@@ -157,27 +162,29 @@ class TextResult(ResultDict):
                 self['unprocessed'].append("{}: {} and {}".format(change.path(
                     force=FORCE_DEFAULT), change.t1, change.t2))
 
-    def _from_tree_set_item_removed(self, tree):
-        if 'set_item_removed' in tree:
-            for change in tree['set_item_removed']:
-                path = change.up.path(
-                )  # we want't the set's path, the removed item is not directly accessible
-                item = change.t1
-                if isinstance(item, strings):
-                    item = "'%s'" % item
-                self['set_item_removed'].add("{}[{}]".format(path, str(item)))
-                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible
-
-    def _from_tree_set_item_added(self, tree):
-        if 'set_item_added' in tree:
-            for change in tree['set_item_added']:
+    def _from_tree_set_item_added_or_removed(self, tree, key):
+        if key in tree:
+            set_item_info = self[key]
+            is_dict = isinstance(set_item_info, Mapping)
+            for change in tree[key]:
                 path = change.up.path(
                 )  # we want't the set's path, the added item is not directly accessible
-                item = change.t2
-                if isinstance(item, strings):
+                item = change.t2 if key == 'set_item_added' else change.t1
+                if self.ADD_QUOTES_TO_STRINGS and isinstance(item, strings):
                     item = "'%s'" % item
-                self['set_item_added'].add("{}[{}]".format(path, str(item)))
-                # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
+                if is_dict:
+                    if path not in set_item_info:
+                        set_item_info[path] = set()
+                    set_item_info[path].add(item)
+                else:
+                    set_item_info.add("{}[{}]".format(path, str(item)))
+                    # this syntax is rather peculiar, but it's DeepDiff 2.x compatible)
+
+    def _from_tree_set_item_added(self, tree):
+        self._from_tree_set_item_added_or_removed(tree, key='set_item_added')
+
+    def _from_tree_set_item_removed(self, tree):
+        self._from_tree_set_item_added_or_removed(tree, key='set_item_removed')
 
     def _from_tree_repetition_change(self, tree):
         if 'repetition_change' in tree:
@@ -186,6 +193,74 @@ class TextResult(ResultDict):
                 self['repetition_change'][path] = RemapDict(change.additional[
                     'repetition'])
                 self['repetition_change'][path]['value'] = change.t1
+
+
+class DeltaResult(TextResult):
+
+    ADD_QUOTES_TO_STRINGS = False
+
+    def __init__(self, tree_results=None, verbose_level=1):
+        self.verbose_level = verbose_level
+
+        self.update({
+            "type_changes": {},
+            "dictionary_item_added": {},
+            "dictionary_item_removed": self.__set_or_dict(),
+            "values_changed": {},
+            "iterable_item_added": {},
+            "iterable_item_removed": self.__set_or_dict(),
+            "attribute_added": {},
+            "attribute_removed": self.__set_or_dict(),
+            "set_item_removed": {},
+            "set_item_added": {},
+            "repetition_change": {}
+        })
+
+        if tree_results:
+            self._from_tree_results(tree_results)
+
+    def __set_or_dict(self):
+        return {} if self.verbose_level >= 2 else PrettyOrderedSet()
+
+    def _from_tree_type_changes(self, tree):
+        if 'type_changes' in tree:
+            for change in tree['type_changes']:
+                if type(change.t1) is type:
+                    include_values = False
+                    old_type = change.t1
+                    new_type = change.t2
+                else:
+                    old_type = type(change.t1)
+                    new_type = type(change.t2)
+                    include_values = True
+                    try:
+                        new_t1 = new_type(change.t1)
+                        # If simply applying the type from one value converts it to the other value,
+                        # there is no need to include the actual values in the delta.
+                        include_values = new_t1 != change.t2
+                    except Exception:
+                        pass
+
+                remap_dict = RemapDict({
+                    'old_type': old_type,
+                    'new_type': new_type
+                })
+                self['type_changes'][change.path(
+                    force=FORCE_DEFAULT)] = remap_dict
+                if self.verbose_level and include_values:
+                    remap_dict.update(old_value=change.t1, new_value=change.t2)
+
+    def _from_tree_value_changed(self, tree):
+        if 'values_changed' in tree:
+            for change in tree['values_changed']:
+                the_changed = {'new_value': change.t2, 'old_value': change.t1}
+                self['values_changed'][change.path(
+                    force=FORCE_DEFAULT)] = the_changed
+                if 'diff' in change.additional:
+                    the_changed.update({'diff': change.additional['diff']})
+
+    def _from_tree_unprocessed(self, tree):
+        pass
 
 
 class DiffLevel:
@@ -331,8 +406,10 @@ class DiffLevel:
         # Will cache result of .path() per 'force' as key for performance
         self._path = {}
 
+        self.verbose_level = verbose_level
+
     def __repr__(self):
-        if Verbose.level:
+        if self.verbose_level:
             if self.additional:
                 additional_repr = short_repr(self.additional, max_length=35)
                 result = "<{} {}>".format(self.path(), additional_repr)
