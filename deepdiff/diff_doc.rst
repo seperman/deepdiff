@@ -23,7 +23,6 @@ ignore_order : Boolean, default=False
 report_repetition : Boolean, default=False
     reports repetitions when set True
     ONLY when ignore_order is set True too. This works for iterables.
-    This feature currently is experimental and is not production ready.
 
 significant_digits : int >= 0, default=None
     By default the significant_digits compares only that many digits AFTER the decimal point. However you can set override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.

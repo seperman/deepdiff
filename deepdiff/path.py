@@ -40,7 +40,7 @@ def _path_to_elements(path, first_element=DEFAULT_FIRST_ELEMENT):
         >>> _path_to_elements(path, first_element=None)
         [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
     """
-    if isinstance(path, tuple):
+    if isinstance(path, (tuple, list)):
         return path
     elements = []
     if first_element:

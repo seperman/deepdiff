@@ -392,12 +392,15 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order': True,
-            'iterable_item_added': {
-                'root[3]': 5
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    3: 5
+                }
             },
-            'iterable_item_removed': {
-                'root[2]': 'B'
+            'ignore_order_remove_indexes': {
+                'root': {
+                    2: 'B'
+                }
             }
         },
     },
@@ -406,18 +409,99 @@ DELTA_IGNORE_ORDER_CASES = [
         't2': [1, 2, 3, 5],
         'deepdiff_kwargs': {
             'ignore_order': True,
-            'report_repetition': False
+            'report_repetition': True
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'iterable_item_added': {
-                'root[3]': 5
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    3: 5
+                }
             },
-            'iterable_item_removed': {
-                'root[6]': 4,
-                'root[2]': 'B'
+            'ignore_order_remove_indexes': {
+                'root': {
+                    2: 'B',
+                    4: 'B',
+                    5: 'B',
+                    6: 4
+                }
+            }
+        },
+    },
+    {
+        't1': [5, 1, 1, 1, 6],
+        't2': [7, 1, 1, 1, 8],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    0: 7,
+                    4: 8
+                }
             },
-            'ignore_order': True
+            'ignore_order_remove_indexes': {
+                'root': {
+                    4: 6,
+                    0: 5
+                }
+            }
+        },
+    },
+    {
+        't1': [5, 1, 3, 1, 4, 4, 6],
+        't2': [7, 4, 4, 1, 3, 4, 8],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    0: 7,
+                    6: 8,
+                    3: 1,
+                    1: 4,
+                    2: 4,
+                    5: 4
+                }
+            },
+            'ignore_order_remove_indexes': {
+                'root': {
+                    6: 6,
+                    0: 5
+                }
+            }
+        },
+    },
+    {
+        't1': (5, 1, 3, 1, 4, 4, 6),
+        't2': (7, 4, 4, 1, 3, 4, 8, 1),
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    0: 7,
+                    6: 8,
+                    1: 4,
+                    2: 4,
+                    5: 4
+                }
+            },
+            'ignore_order_remove_indexes': {
+                'root': {
+                    6: 6,
+                    0: 5
+                }
+            }
         },
     },
 ]
@@ -435,5 +519,4 @@ class TestIgnoreOrderDelta:
         delta_dict = diff.to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
-        import pytest; pytest.set_trace()
         assert t1 + delta == t2

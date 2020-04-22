@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from collections.abc import Mapping
 from copy import deepcopy
 from decimal import Decimal
@@ -18,9 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Due to {}'
-ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for insertion operation.'
+ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_SYMMETRY_MSG = 'that the original objects that the delta is made from must be different than what the delta is applied to.'
+FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG = 'Failed to remove index[{}] on {}. It was expected to be {} but got {}'
 
 
 class _NotFound:
@@ -134,6 +136,7 @@ class Delta:
         # all the other iterables to match the reverse of order of operations in DeepDiff
         self._do_iterable_item_removed()
         self._do_iterable_item_added()
+        self._do_ignore_order()
         self._do_dictionary_item_added()
         self._do_dictionary_item_removed()
         self._do_attribute_added()
@@ -169,6 +172,8 @@ class Delta:
         except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:
+                if isinstance(path_for_err_reporting, (list, tuple)):
+                    path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
                 self._raise_or_log(VERIFICATION_MSG.format(
                     path_for_err_reporting,
                     expected_old_value, current_old_value, e))
@@ -357,14 +362,14 @@ class Delta:
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')
         if items:
-            self._do_set_item(items, func='union')
+            self._do_set_or_frozenset_item(items, func='union')
 
     def _do_set_item_removed(self):
         items = self.diff.get('set_item_removed')
         if items:
-            self._do_set_item(items, func='difference')
+            self._do_set_or_frozenset_item(items, func='difference')
 
-    def _do_set_item(self, items, func):
+    def _do_set_or_frozenset_item(self, items, func):
         for path, value in items.items():
             elements = _path_to_elements(path)
             parent = _get_nested_obj(obj=self, elements=elements[:-1])
@@ -373,6 +378,81 @@ class Delta:
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
             new_value = getattr(obj, func)(value)
             self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
+
+    def _do_ignore_order_get_old(self, obj, remove_indexes_per_path, fixed_indexes_values, path_for_err_reporting):
+        """
+        A generator that gets the old values in an iterable when the order was supposed to be ignored.
+        """
+        old_obj_index = -1
+        max_len = len(obj) - 1
+        while old_obj_index < max_len:
+            old_obj_index += 1
+            current_old_obj = obj[old_obj_index]
+            if current_old_obj in fixed_indexes_values:
+                continue
+            if old_obj_index in remove_indexes_per_path:
+                expected_obj_to_delete = remove_indexes_per_path.pop(old_obj_index)
+                if current_old_obj == expected_obj_to_delete:
+                    continue
+                else:
+                    self._raise_or_log(FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(old_obj_index, path_for_err_reporting, expected_obj_to_delete, current_old_obj))
+            yield current_old_obj
+
+    def _do_ignore_order(self):
+        """
+
+            't1': [5, 1, 1, 1, 6],
+            't2': [7, 1, 1, 1, 8],
+
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    0: 7,
+                    4: 8
+                }
+            },
+            'ignore_order_remove_indexes': {
+                'root': {
+                    4: 6,
+                    0: 5
+                }
+            }
+
+        """
+        fixed_indexes = self.diff.get('ignore_order_fixed_indexes', {})
+        remove_indexes = self.diff.get('ignore_order_remove_indexes', {})
+
+        paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
+        for path in paths:
+            # In the case of ignore_order reports, we are pointing to the container object.
+            # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.
+            _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = self._get_elements_and_details("{}[0]".format(path))
+            fixed_indexes_per_path = fixed_indexes.get(path)
+            remove_indexes_per_path = remove_indexes.get(path)
+            fixed_indexes_values = set(fixed_indexes_per_path.values())  # TODO: this needs to be changed to use deephash
+
+            new_obj = []
+            there_are_old_items = bool(obj)
+            old_item_gen = self._do_ignore_order_get_old(
+                obj, remove_indexes_per_path, fixed_indexes_values, path_for_err_reporting=path)
+            while there_are_old_items or fixed_indexes_per_path:
+                new_obj_index = len(new_obj)
+                if new_obj_index in fixed_indexes_per_path:
+                    new_item = fixed_indexes_per_path.pop(new_obj_index)
+                    new_obj.append(new_item)
+                else:
+                    try:
+                        new_item = next(old_item_gen)
+                    except StopIteration:
+                        there_are_old_items = False
+                    else:
+                        new_obj.append(new_item)
+
+            if isinstance(obj, tuple):
+                new_obj = tuple(new_obj)
+            # Making sure that the object is re-instated inside the parent especially if it was immutable
+            # and we had to turn it into a mutable one. In such cases the object has a new id.
+            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                        value=new_obj, action=parent_to_obj_action)
 
 
 if __name__ == "__main__":  # pragma: no cover

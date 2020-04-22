@@ -347,6 +347,11 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_iterable(self, level, parents_ids=frozenset({})):
         """Difference of iterables"""
+
+        if self.ignore_order:
+            self.__diff_iterable_with_deephash(level)
+            return
+
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
@@ -666,10 +671,7 @@ class DeepDiff(ResultDict, Base):
             self.__diff_numpy(level, parents_ids)
 
         elif isinstance(level.t1, Iterable):
-            if self.ignore_order:
-                self.__diff_iterable_with_deephash(level)
-            else:
-                self.__diff_iterable(level, parents_ids)
+            self.__diff_iterable(level, parents_ids)
 
         else:
             self.__diff_obj(level, parents_ids)
@@ -754,25 +756,19 @@ class DeepDiff(ResultDict, Base):
 
         t1 + delta == t2
 
-
-        **Example**
-
-        Directed Delta
-            >>> class A:
-            ...     pass
-            ...
-            >>> class B:
         """
-        result = DeltaResult(tree_results=self.tree, verbose_level=2)
+        result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
         result.cleanup()  # clean up text-style result dictionary
+        if self.ignore_order:
+            if not self.report_repetition:
+                raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
         if directed:
             for report_key, report_value in result.items():
                 if isinstance(report_value, Mapping):
                     for path, value in report_value.items():
                         if isinstance(value, Mapping) and 'old_value' in value:
                             del value['old_value']
-        if self.ignore_order:
-            result['ignore_order'] = True
+
         return result
 
 
