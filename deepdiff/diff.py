@@ -41,6 +41,7 @@ except ImportError:
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
+DELTA_VIEW = 'delta'
 
 
 notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
@@ -111,6 +112,7 @@ class DeepDiff(ResultDict, Base):
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
+            self.view = view
             parameters = self.__dict__
 
         self.parameters = parameters
@@ -123,7 +125,6 @@ class DeepDiff(ResultDict, Base):
 
         self.tree.cleanup()
 
-        self.view = view
         view_results = self._get_view_results(view)
         self.update(view_results)
 
@@ -133,9 +134,11 @@ class DeepDiff(ResultDict, Base):
         """
         if view == TREE_VIEW:
             result = self.tree
-        else:
+        elif view == TEXT_VIEW:
             result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.cleanup()  # clean up text-style result dictionary
+        elif view == DELTA_VIEW:
+            result = self.to_delta_dict(report_repetition_needed=False)
         return result
 
     def __report_result(self, report_type, level):
@@ -533,7 +536,11 @@ class DeepDiff(ResultDict, Base):
             for removed_hash in hashes_removed:
                 added_hash_obj = t2_hashtable[added_hash]
                 removed_hash_obj = t1_hashtable[removed_hash]
-                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=deepcopy(self.parameters))
+
+                # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
+                parameters = deepcopy(self.parameters)
+                parameters['view'] = DELTA_VIEW
+                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters)
                 rough_distance = diff.get_rough_distance()
                 # Discard potential pairs that are too far.
                 if rough_distance > PAIR_MAX_DISTANCE_THRESHOLD:
@@ -580,7 +587,11 @@ class DeepDiff(ResultDict, Base):
         inverse_pairs = {v: k for k, v in pairs.items()}
         pairs.update(inverse_pairs)
 
-        def get_other(hash_value, in_t1=True):
+        def get_other_pair(hash_value, in_t1=True):
+            """
+            Gets the other paired indexed hash item to the hash_value in the pairs dictionary
+            in_t1: are we looking for the other pair in t1 or t2?
+            """
             if in_t1:
                 hashtable = t1_hashtable
                 the_other_hashes = hashes_removed
@@ -601,7 +612,7 @@ class DeepDiff(ResultDict, Base):
 
         if self.report_repetition:
             for hash_value in hashes_added:
-                other = get_other(hash_value)
+                other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
                     continue
@@ -619,7 +630,7 @@ class DeepDiff(ResultDict, Base):
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                         self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
-                other = get_other(hash_value, in_t1=False)
+                other = get_other_pair(hash_value, in_t1=False)
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
@@ -657,7 +668,7 @@ class DeepDiff(ResultDict, Base):
 
         else:
             for hash_value in hashes_added:
-                other = get_other(hash_value)
+                other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
                     continue
@@ -674,7 +685,7 @@ class DeepDiff(ResultDict, Base):
                     self.__diff(change_level, parents_ids_added)
 
             for hash_value in hashes_removed:
-                other = get_other(hash_value, in_t1=False)
+                other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
                     continue
@@ -862,7 +873,7 @@ class DeepDiff(ResultDict, Base):
             result = dict(self)
         return result
 
-    def to_delta_dict(self, directed=True):
+    def to_delta_dict(self, directed=True, report_repetition_needed=True):
         """
         Dump to a dictionary suitable for delta usage
 
@@ -883,7 +894,7 @@ class DeepDiff(ResultDict, Base):
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
         result.cleanup()  # clean up text-style result dictionary
         if self.ignore_order:
-            if not self.report_repetition:
+            if report_repetition_needed and not self.report_repetition:
                 raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
         if directed:
             for report_key, report_value in result.items():
@@ -906,6 +917,8 @@ class DeepDiff(ResultDict, Base):
 
         A distance of zero is very close and a distance of 1 is very far.
         """
+        if self.view != DELTA_VIEW:
+            raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
         try:
             t1_len = len(self.t1)
             t2_len = len(self.t2)
