@@ -88,6 +88,25 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True)
         assert expected_result == ddiff
 
+    def test_ignore_order_depth1(self):
+        t1 = [{1, 2, 3}, {4, 5}]
+        t2 = [{4, 5, 6}, {1, 2, 3}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert {'set_item_added': ["root[0][6]"]} == ddiff
+
+    def test_ignore_order_depth2(self):
+        t1 = [[1, 2, 3], [4, 5]]
+        t2 = [[4, 5, 6], [1, 2, 3]]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert {'iterable_item_added': {'root[0][2]': 6}} == ddiff
+
+    # TODO: fix this
+    def test_ignore_order_depth3(self):
+        t1 = [{1, 2, 3}, [{4, 5}]]
+        t2 = [[{4, 5, 6}], {1, 2, 3}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert {'set_item_added': ["root[0][6][6]"]} == ddiff
+
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
         t2 = {1: 1, 2: 4, 3: 3}
@@ -718,11 +737,6 @@ class TestDeepDiffText:
 
         at index 0.
 
-        Further thought needs to go into designing
-        an algorithm that can identify the modified objects when ignoring order.
-
-        The current algorithm computes the hash of the objects and since the hashes
-        are different, it assumes an object is removed and another one is added.
         """
 
         t1 = {
@@ -754,20 +768,8 @@ class TestDeepDiffText:
         }
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {
-            'iterable_item_removed': {
-                "root['key2'][1]": {
-                    'key5': 'val5',
-                    'key6': 'val6'
-                }
-            },
-            'iterable_item_added': {
-                "root['key2'][0]": {
-                    'key5': 'CHANGE',
-                    'key6': 'val6'
-                }
-            }
-        } == ddiff
+        # TODO: FIX! it is returning root['key2'][0]['key5'] instead of root['key2'][1]['key5']
+        assert {'values_changed': {"root['key2'][1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}} == ddiff
 
     def test_set_ignore_order_report_repetition(self):
         """
@@ -1801,9 +1803,3 @@ class TestDeepDiffText:
     @pytest.mark.skipif(pypy3, reason="some versions of pypy3 have nan==nan")
     def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
         assert expected_result == list(DeepDiff(t1, t2, **params).keys())
-
-    def test_multi_pass(self):
-        t1 = [{1, 2, 3}, {4, 5}]
-        t2 = [{4, 5, 6}, {1, 2, 3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff

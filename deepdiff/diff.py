@@ -113,6 +113,8 @@ class DeepDiff(ResultDict, Base):
 
         self.parameters = parameters
         self.tree = TreeResult()
+        self.t1 = t1
+        self.t2 = t2
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
@@ -502,10 +504,27 @@ class DeepDiff(ResultDict, Base):
         return local_hashes
 
     def __get_most_in_common_pairs_in_iterables(self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable):
+        """
+        Get the closest pairs between items that are removed and items that are added.
+
+        Note that due to the current reporting structure in DeepDiff, we don't compare an item that
+        was let's say added to an item that is in both t1 and t2.
+
+        For example
+
+        [{1, 2}, {4, 5, 6}]
+        [{1, 2}, {1, 2, 3}]
+
+        is only compared between {4, 5, 6} and {1, 2, 3} even though technically {1, 2, 3} is
+        just one item different than {1, 2}
+
+        Perhaps in future we can have a report key that is item duplicated and modified instead of just added.
+        """
         # distance to hashes
         used_target_hashes = set()
         most_in_common_pairs = defaultdict(lambda: defaultdict(set))
         MAX_COMMON_PAIR_DISTANCES = 5
+        PAIR_MAX_DISTANCE_THRESHOLD = 0.3
         pairs = {}
 
         for added_hash in hashes_added:
@@ -514,6 +533,9 @@ class DeepDiff(ResultDict, Base):
                 removed_hash_obj = t1_hashtable[removed_hash]
                 diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=deepcopy(self.parameters))
                 rough_distance = diff.get_rough_distance()
+                # Discard potential pairs that are too far.
+                if rough_distance > PAIR_MAX_DISTANCE_THRESHOLD:
+                    continue
                 com = most_in_common_pairs[added_hash]
                 current_len = len(com)
                 if current_len < MAX_COMMON_PAIR_DISTANCES:
@@ -553,20 +575,31 @@ class DeepDiff(ResultDict, Base):
 
         pairs = self.__get_most_in_common_pairs_in_iterables(
             hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
-        # inverse_pairs = {v: k for k, v in pairs.items()}
-        # pairs.update(inverse_pairs)
+        inverse_pairs = {v: k for k, v in pairs.items()}
+        pairs.update(inverse_pairs)
 
-        def get_other(pairs, hash_value, hashtable):
-            other = pairs.get(hash_value, notpresent)
+        def get_other(hash_value, in_t1=True):
+            if in_t1:
+                hashtable = t1_hashtable
+                the_other_hashes = hashes_removed
+            else:
+                hashtable = t2_hashtable
+                the_other_hashes = hashes_added
+            other = pairs.pop(hash_value, notpresent)
             if other is not notpresent:
+                # The pairs are symmetrical.
+                # removing the other direction of pair
+                # so it does not get used.
+                del pairs[other]
+                the_other_hashes.remove(other)
                 other = hashtable[other].item
             return other
 
-        import pytest; pytest.set_trace()
+        # import pytest; pytest.set_trace()
         if self.report_repetition:
             for hash_value in hashes_added:
+                other = get_other(hash_value)
                 for i in t2_hashtable[hash_value].indexes:
-                    other = get_other(pairs, hash_value, t1_hashtable)
                     change_level = level.branch_deeper(
                         other,
                         t2_hashtable[hash_value].item,
@@ -576,8 +609,8 @@ class DeepDiff(ResultDict, Base):
                     self.__report_result('iterable_item_added', change_level)
 
             for hash_value in hashes_removed:
+                other = get_other(hash_value, in_t1=False)
                 for i in t1_hashtable[hash_value].indexes:
-                    other = get_other(pairs, hash_value, t2_hashtable)
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
                         other,
@@ -610,36 +643,38 @@ class DeepDiff(ResultDict, Base):
 
         else:
             for hash_value in hashes_added:
-                other = get_other(pairs, hash_value, t1_hashtable)
+                other = get_other(hash_value)
+                item_id = id(other)
+                if parents_ids and item_id in parents_ids:
+                    continue
                 change_level = level.branch_deeper(
                     other,
                     t2_hashtable[hash_value].item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t2_hashtable[hash_value].indexes[
                         0])  # TODO: what is this value exactly?
+                if other is notpresent:
+                    self.__report_result('iterable_item_added', change_level)
+                else:
+                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                    self.__diff(change_level, parents_ids_added)
 
+            for hash_value in hashes_removed:
+                other = get_other(hash_value, in_t1=False)
                 item_id = id(other)
                 if parents_ids and item_id in parents_ids:
                     continue
-                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                self.__diff(change_level, parents_ids_added)
-                # self.__report_result('iterable_item_added', change_level)
-
-            for hash_value in hashes_removed:
-                other = get_other(pairs, hash_value, t2_hashtable)
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
                     other,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])
-                item_id = id(other)
-                if parents_ids and item_id in parents_ids:
-                    continue
-                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                self.__diff(change_level, parents_ids_added)
-
-                # self.__report_result('iterable_item_removed', change_level)
+                if other is notpresent:
+                    self.__report_result('iterable_item_removed', change_level)
+                else:
+                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                    self.__diff(change_level, parents_ids_added)
 
     def __diff_numbers(self, level):
         """Diff Numbers"""
@@ -854,8 +889,15 @@ class DeepDiff(ResultDict, Base):
         then the 2 iterables are far.
 
         If they get very few operations to convert from one to the other but they are big items, then they are close.
+
+        A distance of zero is very close and a distance of 1 is very far.
         """
-        return sum([len(i) for i in self.values()]) / (len(self.t1) + len(self.t2))
+        try:
+            t1_len = len(self.t1)
+            t2_len = len(self.t2)
+        except TypeError:
+            return 1
+        return sum([len(i) for i in self.values()]) / (t1_len + t2_len)
 
 
 if __name__ == "__main__":  # pragma: no cover
