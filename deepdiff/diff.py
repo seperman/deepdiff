@@ -789,8 +789,8 @@ def pretty_print_diff(diff: DiffLevel):
     type_t1 = get_type(diff.t1).__name__
     type_t2 = get_type(diff.t2).__name__
 
-    val_t1 = f'"{str(diff.t1)}"' if type_t1 == "str" else str(diff.t1)
-    val_t2 = f'"{str(diff.t2)}"' if type_t2 == "str" else str(diff.t2)
+    val_t1 = '"{}"'.format(str(diff.t1)) if type_t1 == "str" else str(diff.t1)
+    val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
 
     diff_path = diff.path(root='root')
 
