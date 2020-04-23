@@ -417,7 +417,7 @@ And then running
 
 # ChangeLog
 
-- v5-0-0: Introducing the Delta object
+- v5-0-0: Introducing the Delta object, Improving numpy support, Fixing tuples comparison when ignore_order=True, pretty print view, delta view.
 - v4-3-3: Adds support for datetime.time
 - v4-3-2: Deprecation Warning Enhancement
 - v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174

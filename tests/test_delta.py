@@ -504,6 +504,32 @@ DELTA_IGNORE_ORDER_CASES = [
             }
         },
     },
+    {
+        't1': [{1, 2, 3}, {4, 5}],
+        't2': [{4, 5, 6}, {1, 2, 3}],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'ignore_order_fixed_indexes': {
+                'root': {
+                    0: 7,
+                    6: 8,
+                    1: 4,
+                    2: 4,
+                    5: 4
+                }
+            },
+            'ignore_order_remove_indexes': {
+                'root': {
+                    6: 6,
+                    0: 5
+                }
+            }
+        },
+    },
 ]
 
 

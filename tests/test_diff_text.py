@@ -1801,3 +1801,9 @@ class TestDeepDiffText:
     @pytest.mark.skipif(pypy3, reason="some versions of pypy3 have nan==nan")
     def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
         assert expected_result == list(DeepDiff(t1, t2, **params).keys())
+
+    def test_multi_pass(self):
+        t1 = [{1, 2, 3}, {4, 5}]
+        t2 = [{4, 5, 6}, {1, 2, 3}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert {} == ddiff
