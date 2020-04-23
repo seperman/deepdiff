@@ -92,13 +92,13 @@ class TestDeepDiffText:
         t1 = [{1, 2, 3}, {4, 5}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {'set_item_added': ["root[0][6]"]} == ddiff
+        assert {'set_item_added': ["root[1][6]"]} == ddiff
 
     def test_ignore_order_depth2(self):
         t1 = [[1, 2, 3], [4, 5]]
         t2 = [[4, 5, 6], [1, 2, 3]]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {'iterable_item_added': {'root[0][2]': 6}} == ddiff
+        assert {'iterable_item_added': {'root[1][2]': 6}} == ddiff
 
     # TODO: fix this
     def test_ignore_order_depth3(self):
@@ -768,7 +768,6 @@ class TestDeepDiffText:
         }
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        # TODO: FIX! it is returning root['key2'][0]['key5'] instead of root['key2'][1]['key5']
         assert {'values_changed': {"root['key2'][1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}} == ddiff
 
     def test_set_ignore_order_report_repetition(self):

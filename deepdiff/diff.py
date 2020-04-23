@@ -43,6 +43,8 @@ TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 
 
+notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
+
 doc = get_doc('diff_doc.rst')
 
 
@@ -586,37 +588,49 @@ class DeepDiff(ResultDict, Base):
                 hashtable = t2_hashtable
                 the_other_hashes = hashes_added
             other = pairs.pop(hash_value, notpresent)
-            if other is not notpresent:
+            if other is notpresent:
+                other = notpresent_indexed
+            else:
                 # The pairs are symmetrical.
                 # removing the other direction of pair
                 # so it does not get used.
                 del pairs[other]
                 the_other_hashes.remove(other)
-                other = hashtable[other].item
+                other = hashtable[other]
             return other
 
-        # import pytest; pytest.set_trace()
         if self.report_repetition:
             for hash_value in hashes_added:
                 other = get_other(hash_value)
-                for i in t2_hashtable[hash_value].indexes:
+                item_id = id(other.item)
+                if parents_ids and item_id in parents_ids:
+                    continue
+                indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
+                for i in indexes:
                     change_level = level.branch_deeper(
-                        other,
+                        other.item,
                         t2_hashtable[hash_value].item,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i
                     )  # TODO: what is this value exactly?
-                    self.__report_result('iterable_item_added', change_level)
-
+                    if other.item is notpresent:
+                        self.__report_result('iterable_item_added', change_level)
+                    else:
+                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                        self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
                 other = get_other(hash_value, in_t1=False)
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
-                        other,
+                        other.item,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i)
-                    self.__report_result('iterable_item_removed', change_level)
+                    if other.item is notpresent:
+                        self.__report_result('iterable_item_removed', change_level)
+                    else:
+                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                        self.__diff(change_level, parents_ids_added)
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
@@ -644,16 +658,16 @@ class DeepDiff(ResultDict, Base):
         else:
             for hash_value in hashes_added:
                 other = get_other(hash_value)
-                item_id = id(other)
+                item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
                     continue
+                index = t2_hashtable[hash_value].indexes[0] if other.item is notpresent else other.indexes[0]
                 change_level = level.branch_deeper(
-                    other,
+                    other.item,
                     t2_hashtable[hash_value].item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
-                    child_relationship_param=t2_hashtable[hash_value].indexes[
-                        0])  # TODO: what is this value exactly?
-                if other is notpresent:
+                    child_relationship_param=index)
+                if other.item is notpresent:
                     self.__report_result('iterable_item_added', change_level)
                 else:
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)
@@ -661,16 +675,16 @@ class DeepDiff(ResultDict, Base):
 
             for hash_value in hashes_removed:
                 other = get_other(hash_value, in_t1=False)
-                item_id = id(other)
+                item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
                     continue
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
-                    other,
+                    other.item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])
-                if other is notpresent:
+                if other.item is notpresent:
                     self.__report_result('iterable_item_removed', change_level)
                 else:
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)
