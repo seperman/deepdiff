@@ -440,7 +440,6 @@ class TestDeepHashPrep:
 
         def hasher(obj):
             return str(next(hashes))
-
         obj = "a"
         expected_result = {obj: '0'}
         result = DeepHash(obj, hasher=hasher)

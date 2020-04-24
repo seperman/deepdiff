@@ -8,7 +8,7 @@ from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_f
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, KEY_TO_VAL_STR)
+                             number_to_string, KEY_TO_VAL_STR, short_repr)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_str
 doc = get_doc('deephash_doc.rst')
 
 
-class DeepHash(dict, Base):
+class DeepHash(Base):
     __doc__ = doc
 
     def __init__(self,
@@ -80,6 +80,15 @@ class DeepHash(dict, Base):
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
                  "number_to_string_func, parent") % ', '.join(kwargs.keys()))
+        if hashes is not None:
+            if isinstance(hashes, MutableMapping):
+                self.hashes = hashes
+            elif isinstance(hashes, DeepHash):
+                self.hashes = hashes.hashes
+            else:
+                self.hashes = {}
+        else:
+            self.hashes = {}
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -88,9 +97,7 @@ class DeepHash(dict, Base):
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         default_hasher = self.murmur3_128bit if mmh3 else self.sha256hex
         self.hasher = default_hasher if hasher is None else hasher
-        hashes = hashes if hashes else {}
-        self.update(hashes)
-        self[UNPROCESSED] = []
+        self.hashes[UNPROCESSED] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.number_format_notation = number_format_notation
@@ -112,10 +119,10 @@ class DeepHash(dict, Base):
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
-        if self[UNPROCESSED]:
-            logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
+        if self.hashes[UNPROCESSED]:
+            logger.warning("Can not hash the following items: {}.".format(self.hashes[UNPROCESSED]))
         else:
-            del self[UNPROCESSED]
+            del self.hashes[UNPROCESSED]
 
     @staticmethod
     def sha256hex(obj):
@@ -154,23 +161,46 @@ class DeepHash(dict, Base):
         result = None
 
         try:
-            result = super().__getitem__(key)
+            result = self.hashes[key]
         except (TypeError, KeyError):
             key = get_id(obj)
             try:
-                result = super().__getitem__(key)
+                result = self.hashes[key]
             except KeyError:
                 raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
         return result
 
     def __contains__(self, obj):
+        result = False
         try:
-            hash(obj)
-        except TypeError:
-            key = get_id(obj)
-        else:
-            key = obj
-        return super().__contains__(key)
+            result = obj in self.hashes
+        except (TypeError, KeyError):
+            result = False
+        if not result:
+            result = get_id(obj) in self.hashes
+        return result
+
+    def __eq__(self, other):
+        return self.hashes == other
+
+    __req__ = __eq__
+
+    def __repr__(self):
+        return short_repr(self.hashes, max_length=100)
+
+    __str__ = __repr__
+
+    def __bool__(self):
+        return bool(self.hashes)
+
+    def keys(self):
+        return self.hashes.keys()
+
+    def values(self):
+        return self.hashes.values()
+
+    def items(self):
+        return self.hashes.items()
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """prepping objects"""
@@ -184,7 +214,7 @@ class DeepHash(dict, Base):
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
-                self[UNPROCESSED].append(obj)
+                self.hashes[UNPROCESSED].append(obj)
                 return unprocessed
 
         result = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
@@ -303,9 +333,8 @@ class DeepHash(dict, Base):
             result = None
         else:
             result = not_hashed
-
         try:
-            result = self[obj]
+            result = self.hashes[obj]
         except (TypeError, KeyError):
             pass
         else:
@@ -340,7 +369,7 @@ class DeepHash(dict, Base):
             result = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 
         if result is not_hashed:  # pragma: no cover
-            self[UNPROCESSED].append(obj)
+            self.hashes[UNPROCESSED].append(obj)
 
         elif result is unprocessed:
             pass
@@ -356,11 +385,12 @@ class DeepHash(dict, Base):
 
         # It is important to keep the hash of all objects.
         # The hashes will be later used for comparing the objects.
+        # Object to hash when possible otherwise ObjectID to hash
         try:
-            self[obj] = result
+            self.hashes[obj] = result
         except TypeError:
             obj_id = get_id(obj)
-            self[obj_id] = result
+            self.hashes[obj_id] = result
 
         return result
 

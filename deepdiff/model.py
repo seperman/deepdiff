@@ -213,8 +213,8 @@ class DeltaResult(TextResult):
             "attribute_removed": {},
             "set_item_removed": {},
             "set_item_added": {},
-            "ignore_order_fixed_indexes": {},
-            "ignore_order_remove_indexes": {},
+            "iterable_items_added_at_indexes": {},
+            "iterable_items_removed_at_indexes": {},
         })
 
         if tree_results:
@@ -232,9 +232,9 @@ class DeltaResult(TextResult):
         self._from_tree_value_changed(tree)
         if self.ignore_order:
             self._from_tree_iterable_item_added(
-                tree, 'iterable_item_added', delta_report_key='ignore_order_fixed_indexes')
+                tree, 'iterable_item_added', delta_report_key='iterable_items_added_at_indexes')
             self._from_tree_iterable_item_added(
-                tree, 'iterable_item_removed', delta_report_key='ignore_order_remove_indexes')
+                tree, 'iterable_item_removed', delta_report_key='iterable_items_removed_at_indexes')
         else:
             self._from_tree_default(tree, 'iterable_item_added')
             self._from_tree_default(tree, 'iterable_item_removed')
@@ -258,10 +258,10 @@ class DeltaResult(TextResult):
                 # do the reporting
                 path, param, _ = change.path(force=FORCE_DEFAULT, get_parent_too=True)
                 try:
-                    ignore_order_fixed_indexes = self[delta_report_key][path]
+                    iterable_items_added_at_indexes = self[delta_report_key][path]
                 except KeyError:
-                    ignore_order_fixed_indexes = self[delta_report_key][path] = {}
-                ignore_order_fixed_indexes[param] = item
+                    iterable_items_added_at_indexes = self[delta_report_key][path] = {}
+                iterable_items_added_at_indexes[param] = item
 
     def _from_tree_type_changes(self, tree):
         if 'type_changes' in tree:
@@ -307,11 +307,11 @@ class DeltaResult(TextResult):
                 repetition = RemapDict(change.additional['repetition'])
                 value = change.t1
                 try:
-                    ignore_order_fixed_indexes = self['ignore_order_fixed_indexes'][path]
+                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path]
                 except KeyError:
-                    ignore_order_fixed_indexes = self['ignore_order_fixed_indexes'][path] = {}
+                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path] = {}
                 for index in repetition['new_indexes']:
-                    ignore_order_fixed_indexes[index] = value
+                    iterable_items_added_at_indexes[index] = value
                 # self['repetition_change'][path][]
                 # old_indexes = set(repetition['old_indexes'])
                 # new_indexes = set(repetition['new_indexes'])

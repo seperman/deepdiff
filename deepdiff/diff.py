@@ -106,7 +106,7 @@ class DeepDiff(ResultDict, Base):
             self.exclude_obj_callback = exclude_obj_callback
             self.number_to_string = number_to_string_func or number_to_string
             self.ignore_nan_inequality = ignore_nan_inequality
-            self.hashes = hashes
+            self.hashes = {} if hashes is None else hashes
             self.hasher = hasher
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
@@ -119,6 +119,7 @@ class DeepDiff(ResultDict, Base):
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
+        self._t1_length = self._t2_length = 0
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
@@ -765,8 +766,31 @@ class DeepDiff(ResultDict, Base):
         level.report_type = 'type_changes'
         self.__report_result('type_changes', level)
 
+    def __report_rough_length(self, obj, is_t1=True):
+        """
+        Aims to get some rough estimate for the length of t1 and t2
+        For example a string or an integer are length 1.
+        But a dictionary is the length of sum of all its keys and values.
+        """
+        try:
+            if isinstance(obj, strings):
+                obj_len = 1
+            else:
+                obj_len = len(obj)
+        except TypeError:
+            obj_len = 1
+        if is_t1:
+            self._t1_length += obj_len
+        else:
+            self._t2_length += obj_len
+        if is_t1:
+            print(f"obj: {obj}, len: {obj_len}, self._t1_length: {self._t1_length}")
+
     def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
+        self.__report_rough_length(level.t1)
+        self.__report_rough_length(level.t2, is_t1=False)
+
         if level.t1 is level.t2:
             return
 
@@ -867,15 +891,18 @@ class DeepDiff(ResultDict, Base):
         """
         Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
         """
-        if self.view == TREE_VIEW:
+        if self.view == TEXT_VIEW:
             result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
+        elif self.view == DELTA_VIEW:
+            result = self.to_delta_dict(report_repetition_needed=False)
         else:
             result = dict(self)
         return result
 
     def to_delta_dict(self, directed=True, report_repetition_needed=True):
         """
-        Dump to a dictionary suitable for delta usage
+        Dump to a dictionary suitable for delta usage.
+        Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
 
         **Parameters**
 
@@ -919,12 +946,38 @@ class DeepDiff(ResultDict, Base):
         """
         if self.view != DELTA_VIEW:
             raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
-        try:
-            t1_len = len(self.t1)
-            t2_len = len(self.t2)
-        except TypeError:
-            return 1
-        return sum([len(i) for i in self.values()]) / (t1_len + t2_len)
+        return _get_diff_length(self) / (self._t1_length + self._t2_length)
+
+
+def _get_diff_length(item):
+    """
+    Get the number of operations in the diff
+    """
+    length = 0
+    if hasattr(item, '_diff_length'):
+        length = item._diff_length
+    elif isinstance(item, Mapping):
+        for key, subitem in item.items():
+            length += _get_diff_length(subitem)
+    elif isinstance(item, numbers):
+        length = 1
+    elif isinstance(item, strings):
+        length = 1
+    elif isinstance(item, Iterable):
+        for subitem in item:
+            length += _get_diff_length(subitem)
+    elif isinstance(item, type):  # it is a class
+        length = 1
+    else:
+        if hasattr(item, '__dict__'):
+            for subitem in item.__dict__:
+                length += _get_diff_length(subitem)
+
+    try:
+        item._diff_length = length
+    except Exception:
+        pass
+    return length
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from collections.abc import Mapping
 from copy import deepcopy
 from decimal import Decimal
@@ -404,13 +403,13 @@ class Delta:
             't1': [5, 1, 1, 1, 6],
             't2': [7, 1, 1, 1, 8],
 
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     4: 8
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     4: 6,
                     0: 5
@@ -418,8 +417,8 @@ class Delta:
             }
 
         """
-        fixed_indexes = self.diff.get('ignore_order_fixed_indexes', {})
-        remove_indexes = self.diff.get('ignore_order_remove_indexes', {})
+        fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
+        remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
 
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:

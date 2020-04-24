@@ -392,12 +392,12 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     3: 5
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     2: 'B'
                 }
@@ -413,12 +413,12 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     3: 5
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     2: 'B',
                     4: 'B',
@@ -437,13 +437,13 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     4: 8
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     4: 6,
                     0: 5
@@ -460,7 +460,7 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     6: 8,
@@ -470,7 +470,7 @@ DELTA_IGNORE_ORDER_CASES = [
                     5: 4
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     6: 6,
                     0: 5
@@ -487,7 +487,7 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     6: 8,
@@ -496,7 +496,7 @@ DELTA_IGNORE_ORDER_CASES = [
                     5: 4
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     6: 6,
                     0: 5
@@ -513,7 +513,7 @@ DELTA_IGNORE_ORDER_CASES = [
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     6: 8,
@@ -522,7 +522,7 @@ DELTA_IGNORE_ORDER_CASES = [
                     5: 4
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     6: 6,
                     0: 5
