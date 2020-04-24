@@ -27,7 +27,7 @@ from deepdiff.model import (
     DictRelationship, AttributeRelationship, DeltaResult,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
     SetRelationship)
-from deepdiff.deephash import DeepHash, BoolObj
+from deepdiff.deephash import DeepHash
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)

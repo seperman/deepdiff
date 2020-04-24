@@ -80,12 +80,18 @@ class TestDeltaView:
         assert 10 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 12 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
-
-
-
-    # def test_delta_view_of_list_sets_and_strings(self):
-    #     t1 = [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4)}]
-    #     t2 = [{4, 5, 6, 'no way'}, {1, 2, 3}]
-    #     ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
-    #     assert {'set_item_added': {'root[1]': {6}}} == ddiff
-    #     assert 1 == ddiff._get_diff_length()
+    def test_delta_view_of_list_sets_and_strings(self):
+        t1 = [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4, 7)}]
+        t2 = [{4, 5, 6, (2, )}, {1, 2, 3}, {5, 'hello', 'right!'}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
+        expected = {
+            'set_item_removed': {
+                'root[2]': {(2, 4, 7)},
+                'root[1]': {4}
+            },
+            'set_item_added': {
+                'root[2]': {(2, ), 6}
+            }
+        }
+        assert expected == ddiff
+        assert 6 == _get_diff_length(ddiff)

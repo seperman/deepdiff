@@ -522,6 +522,25 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {'set_item_added': {'root[1]': {6}}},
         'expected_t1_plus_delta': [{1, 2, 3}, {4, 5, 6}],
     },
+    'delta_ignore_order_case7': {
+        't1': [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4, 7)}],
+        't2': [{4, 5, 6, (2, )}, {1, 2, 3}, {5, 'hello', 'right!'}],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'set_item_removed': {
+                'root[2]': {(2, 4, 7)},
+                'root[1]': {4}
+            },
+            'set_item_added': {
+                'root[2]': {(2, ), 6}
+            }
+        },
+        'expected_t1_plus_delta': [{1, 2, 3}, {'hello', 'right!', 5}, {(2,), 4, 5, 6}],
+    },
 }
 
 
