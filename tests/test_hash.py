@@ -72,6 +72,9 @@ class TestDeepHash:
             def __str__(self):
                 return "Bad Object"
 
+            def __repr__(self):
+                return "<Bad obj id {}>".format(id(self))
+
         t1 = Bad()
 
         result = DeepHash(t1)
