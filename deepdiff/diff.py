@@ -771,6 +771,42 @@ class DeepDiff(ResultDict, Base):
 
         return result
 
+    def pretty_form(self):
+        result = []
+        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
+        for key in keys:
+            for item_key in self.tree[key]:
+                result += [pretty_print_diff(item_key)]
+
+        return '\n'.join(result)
+
+
+def pretty_print_diff(diff: DiffLevel):
+    type_t1 = get_type(diff.t1).__name__
+    type_t2 = get_type(diff.t2).__name__
+
+    val_t1 = '"{}"'.format(str(diff.t1)) if type_t1 == "str" else str(diff.t1)
+    val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
+
+    diff_path = diff.path(root='root')
+
+    texts = {
+        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
+        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
+        "dictionary_item_added": "Item {diff_path} added to dictionary.",
+        "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
+        "iterable_item_added": "Item {diff_path} added to iterable.",
+        "iterable_item_removed": "Item {diff_path} removed from iterable.",
+        "attribute_added": "Attribute {diff_path} added.",
+        "attribute_removed": "Attribute {diff_path} removed.",
+        "set_item_added": "Item root[{val_t2}] added to set.",
+        "set_item_removed": "Item root[{val_t1}] removed from set.",
+        "repetition_change": "Repetition change for item {diff_path}.",
+    }
+
+    return texts.get(diff.report_type, "").format(diff_path=diff_path, type_t1=type_t1, type_t2=type_t2, val_t1=val_t1,
+                                                  val_t2=val_t2)
+
 
 if __name__ == "__main__":  # pragma: no cover
     import doctest
