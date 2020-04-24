@@ -20,7 +20,8 @@ except ImportError:  # pragma: no cover
 UNPROCESSED = 'unprocessed'
 MURMUR_SEED = 1203
 
-RESERVED_DICT_KEYS = {UNPROCESSED}
+# This needs to be a list so unhashable objects can do a containment check in it too.
+RESERVED_DICT_KEYS = (UNPROCESSED, )
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
@@ -153,19 +154,27 @@ class DeepHash(Base):
         obj = obj.encode('utf-8')
         return mmh3.hash128(obj, MURMUR_SEED)
 
-    def __getitem__(self, obj):
+    def __getitem__(self, obj, extract_index=0):
+        return self._getitem(self.hashes, obj, extract_index=extract_index)
+
+    @staticmethod
+    def _getitem(hashes, obj, extract_index=0):
+        """
+        extract_index is zero for hash and 1 for count and None to get them both.
+        To keep it backward compatible, we only get the hash by default so it is set to zero by default.
+        """
         key = obj
         result_n_count = (None, 0)
 
         try:
-            result_n_count = self.hashes[key]
+            result_n_count = hashes[key]
         except (TypeError, KeyError):
             key = get_id(obj)
             try:
-                result_n_count = self.hashes[key]
+                result_n_count = hashes[key]
             except KeyError:
                 raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
-        return result_n_count[0]  # To keep it backward compatible, we only get the hash and not the count
+        return result_n_count if obj in RESERVED_DICT_KEYS or extract_index is None else result_n_count[extract_index]
 
     def __contains__(self, obj):
         result = False
@@ -177,17 +186,33 @@ class DeepHash(Base):
             result = get_id(obj) in self.hashes
         return result
 
-    @property
-    def only_hashes(self):
+    def get(self, key, default=None, extract_index=0):
         """
-        A dictionary containing only the hashes and not the counts of items within each object.
+        Get method for the hashes dictionary.
+        It can extract the hash for a given key that is already calculated when extract_index=0
+        or the count of items that went to building the object whenextract_index=1.
+        """
+        return self._get(self.hashes, key, default=default, extract_index=extract_index)
+
+    @staticmethod
+    def _get(hashes, key, default=None, extract_index=0):
+        try:
+            result = DeepHash._getitem(hashes, key, extract_index=extract_index)
+        except KeyError:
+            result = default
+        return result
+
+    def _get_objects_to_hashes(self, extract_index=0):
+        """
+        A dictionary containing only the objects to hashes,
+        or a dictionary of objects to the count of items that went to build them.
         """
         result = {}
         for key, value in self.hashes.items():
-            if key not in RESERVED_DICT_KEYS:
-                result[key] = value[0]
-            else:
+            if key in RESERVED_DICT_KEYS:
                 result[key] = value
+            else:
+                result[key] = value[extract_index]
         return result
 
     def __eq__(self, other):
@@ -195,7 +220,7 @@ class DeepHash(Base):
             return self.hashes == other.hashes
         else:
             # We only care about the hashes
-            return self.only_hashes == other
+            return self._get_objects_to_hashes() == other
 
     __req__ = __eq__
 
@@ -255,10 +280,11 @@ class DeepHash(Base):
     def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False, original_type=None):
 
         result = []
-        counts = 0
+        counts = 1
 
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key, item in obj.items():
+            counts += 1
             # ignore private variables
             if isinstance(key, str) and key.startswith('__'):
                 continue
@@ -292,7 +318,7 @@ class DeepHash(Base):
 
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
-        counts = 0
+        counts = 1
         result = defaultdict(int)
 
         for i, item in enumerate(obj):

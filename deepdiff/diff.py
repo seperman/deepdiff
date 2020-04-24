@@ -85,7 +85,7 @@ class DeepDiff(ResultDict, Base):
                 "ignore_nan_inequality, number_to_string_func, verbose_level, view, hasher, hashes and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
-            self.__dict__ = parameters
+            self.__dict__ = deepcopy(parameters)
         else:
             self.ignore_order = ignore_order
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -106,20 +106,19 @@ class DeepDiff(ResultDict, Base):
             self.exclude_obj_callback = exclude_obj_callback
             self.number_to_string = number_to_string_func or number_to_string
             self.ignore_nan_inequality = ignore_nan_inequality
-            self.hashes = {} if hashes is None else hashes
             self.hasher = hasher
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
-            parameters = self.__dict__
+            parameters = deepcopy(self.__dict__)
 
+        self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
-        self._t1_length = self._t2_length = 0
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
@@ -471,6 +470,11 @@ class DeepDiff(ResultDict, Base):
         for (i, item) in enumerate(t):
             try:
                 parent = "{}[{}]".format(level.path(), i)
+                # Note: in the DeepDiff we only calculate the hash of items when we have to.
+                # So self.hashes does not include hashes of all objects in t1 and t2.
+                # It only includes the ones needed when comparing iterables.
+                # The self.hashes dictionary gets shared between different runs of DeepHash
+                # So that any object that is already calculated to have a hash is not re-calculated.
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
                                       exclude_types=self.exclude_types,
@@ -541,6 +545,7 @@ class DeepDiff(ResultDict, Base):
                 # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
                 parameters = deepcopy(self.parameters)
                 parameters['view'] = DELTA_VIEW
+                parameters['hashes'] = self.hashes
                 diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters)
                 rough_distance = diff.get_rough_distance()
                 # Discard potential pairs that are too far.
@@ -766,31 +771,8 @@ class DeepDiff(ResultDict, Base):
         level.report_type = 'type_changes'
         self.__report_result('type_changes', level)
 
-    def __report_rough_length(self, obj, is_t1=True):
-        """
-        Aims to get some rough estimate for the length of t1 and t2
-        For example a string or an integer are length 1.
-        But a dictionary is the length of sum of all its keys and values.
-        """
-        try:
-            if isinstance(obj, strings):
-                obj_len = 1
-            else:
-                obj_len = len(obj)
-        except TypeError:
-            obj_len = 1
-        if is_t1:
-            self._t1_length += obj_len
-        else:
-            self._t2_length += obj_len
-        if is_t1:
-            print(f"obj: {obj}, len: {obj_len}, self._t1_length: {self._t1_length}")
-
     def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
-        self.__report_rough_length(level.t1)
-        self.__report_rough_length(level.t2, is_t1=False)
-
         if level.t1 is level.t2:
             return
 
@@ -946,7 +928,14 @@ class DeepDiff(ResultDict, Base):
         """
         if self.view != DELTA_VIEW:
             raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
-        return _get_diff_length(self) / (self._t1_length + self._t2_length)
+        if not self.hashes:
+            raise ValueError(
+                'Currently only during the hash calculations, the objects hierarchical '
+                'counts are evaluated. Either set ignore_order=True or pre-calculate the hashes for both t1 and t2 '
+                'via DeepHash and pass them via hashes parameter.')
+        t1_len = DeepHash._get(self.hashes, key=self.t1, default=None, extract_index=1)
+        t2_len = DeepHash._get(self.hashes, key=self.t2, default=None, extract_index=1)
+        return _get_diff_length(self) / (t1_len + t2_len)
 
 
 def _get_diff_length(item):

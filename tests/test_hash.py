@@ -570,6 +570,11 @@ class TestDeepHashPrep:
         # Note: we ignore private names in calculating hashes now. So you dont see __init__ here for example.
         assert t1_hash[t1] == r'objClassC:{str:class_attr:int:0}'
 
+    def test_hash_set_in_list(self):
+        t1 = [{1, 2, 3}, {4, 5}]
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash[t1] == 'list:set:int:1,int:2,int:3,set:int:4,int:5'
+
 
 class TestDeepHashSHA:
     """DeepHash with SHA Tests."""
@@ -674,3 +679,32 @@ class TestDeepHashMurmur3:
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_128bit)
         assert expected_result == result
+
+
+class TestCounts:
+
+    @pytest.mark.parametrize('obj, expected_count', [
+        (
+            {1: 1, 2: 3},
+            5
+        ),
+        (
+            {"key": {1: 1, 2: 4}, "key2": ["a", "b"]},
+            11
+        ),
+        (
+            [{1}],
+            3
+        ),
+        (
+            [ClassC(a=10, b=11)],
+            6
+        )
+    ])
+    def test_dict_count(self, obj, expected_count):
+        """
+        How many object went to build this dict?
+        """
+
+        result = DeepHash(obj).get(obj, extract_index=1)
+        assert expected_count == result
