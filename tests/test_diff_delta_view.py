@@ -50,15 +50,25 @@ class TestDiffLength:
 
 class TestDeltaView:
 
+    def test_delta_view_of_the_same_objects(self):
+        t1 = [{1, 2, 3}, {4, 5, 6}]
+        t2 = [{4, 5, 6}, {1, 2, 3}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
+        assert {} == ddiff
+        assert 0 == _get_diff_length(ddiff)
+        assert '0' == str(ddiff.get_rough_distance())[:10]
+        assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
+        assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
+
     def test_delta_view_of_list_sets(self):
         t1 = [{1, 2, 3}, {4, 5}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         assert {'set_item_added': {'root[1]': {6}}} == ddiff
         assert 1 == _get_diff_length(ddiff)
-        assert '0.09090909' == str(ddiff.get_rough_distance())[:10]
-        assert 5 == ddiff._t1_length
-        assert 6 == ddiff._t2_length
+        assert '0.05882352' == str(ddiff.get_rough_distance())[:10]
+        assert 8 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
+        assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
     def test_delta_view_of_list_sets2(self):
         t1 = [{1, 2, 3}, {4, 5}, {1}]
@@ -66,9 +76,9 @@ class TestDeltaView:
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == ddiff
         assert 2 == _get_diff_length(ddiff)
-        assert '0.125' == str(ddiff.get_rough_distance())[:10]
-        assert 6 == ddiff._t1_length
-        assert 8 == ddiff._t2_length
+        assert '0.09090909' == str(ddiff.get_rough_distance())[:10]
+        assert 10 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
+        assert 12 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
 
 

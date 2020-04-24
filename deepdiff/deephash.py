@@ -163,7 +163,13 @@ class DeepHash(Base):
         extract_index is zero for hash and 1 for count and None to get them both.
         To keep it backward compatible, we only get the hash by default so it is set to zero by default.
         """
+
         key = obj
+        if obj is True:
+            key = BoolObj.TRUE
+        elif obj is False:
+            key = BoolObj.FALSE
+
         result_n_count = (None, 0)
 
         try:

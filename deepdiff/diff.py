@@ -116,6 +116,7 @@ class DeepDiff(ResultDict, Base):
 
         self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
+        self.deephash_parameters = self.__get_deephash_params()
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
@@ -139,6 +140,24 @@ class DeepDiff(ResultDict, Base):
             result.cleanup()  # clean up text-style result dictionary
         elif view == DELTA_VIEW:
             result = self.to_delta_dict(report_repetition_needed=False)
+        return result
+
+    def __get_deephash_params(self):
+        result = {key: self.parameters[key] for key in (
+            'exclude_types',
+            'exclude_paths',
+            'exclude_regex_paths',
+            'hasher',
+            'significant_digits',
+            'number_format_notation',
+            'ignore_string_type_changes',
+            'ignore_numeric_type_changes',
+            'ignore_type_in_groups',
+            'ignore_type_subclasses',
+            'ignore_string_case',
+            'exclude_obj_callback',)}
+        result['ignore_repetition'] = not self.report_repetition
+        result['number_to_string_func'] = self.number_to_string
         return result
 
     def __report_result(self, report_type, level):
@@ -477,29 +496,11 @@ class DeepDiff(ResultDict, Base):
                 # So that any object that is already calculated to have a hash is not re-calculated.
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
-                                      exclude_types=self.exclude_types,
-                                      exclude_paths=self.exclude_paths,
-                                      exclude_regex_paths=self.exclude_regex_paths,
-                                      hasher=self.hasher,
-                                      ignore_repetition=not self.report_repetition,
-                                      significant_digits=self.significant_digits,
-                                      number_format_notation=self.number_format_notation,
-                                      ignore_string_type_changes=self.ignore_string_type_changes,
-                                      ignore_numeric_type_changes=self.ignore_numeric_type_changes,
-                                      ignore_type_in_groups=self.ignore_type_in_groups,
-                                      ignore_type_subclasses=self.ignore_type_subclasses,
-                                      ignore_string_case=self.ignore_string_case,
-                                      number_to_string_func=self.number_to_string,
-                                      exclude_obj_callback=self.exclude_obj_callback,
                                       parent=parent,
                                       apply_hash=True,
+                                      **self.deephash_parameters,
                                       )
-                key = item
-                if item is True:
-                    key = BoolObj.TRUE
-                elif item is False:
-                    key = BoolObj.FALSE
-                item_hash = hashes_all[key]
+                item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %
@@ -545,8 +546,7 @@ class DeepDiff(ResultDict, Base):
                 # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
                 parameters = deepcopy(self.parameters)
                 parameters['view'] = DELTA_VIEW
-                parameters['hashes'] = self.hashes
-                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters)
+                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters, hashes=self.hashes)
                 rough_distance = diff.get_rough_distance()
                 # Discard potential pairs that are too far.
                 if rough_distance > PAIR_MAX_DISTANCE_THRESHOLD:
@@ -867,15 +867,25 @@ class DeepDiff(ResultDict, Base):
             >>> ddiff.to_json(default_mapping=default_mapping)
             '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
-        return json.dumps(self.to_dict(), default=json_convertor_default(default_mapping=default_mapping))
+        dic = self.to_dict(view_override=TEXT_VIEW)
+        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping))
 
-    def to_dict(self):
+    def to_dict(self, view_override=None):
         """
         Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
+
+        **Parameters**
+
+        view_override: view type, default=None,
+            override the view that was used to generate the diff when converting to the dictionary.
+            The options are the text, tree and delta views.
         """
-        if self.view == TEXT_VIEW:
-            result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
-        elif self.view == DELTA_VIEW:
+
+        view = view_override if view_override else self.view
+
+        if view == TEXT_VIEW:
+            result = self._get_view_results(view=TEXT_VIEW)
+        elif view == DELTA_VIEW:
             result = self.to_delta_dict(report_repetition_needed=False)
         else:
             result = dict(self)
@@ -890,14 +900,17 @@ class DeepDiff(ResultDict, Base):
 
         directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
 
-        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the delta is symmetrical.
+        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the
+        delta is symmetrical.
 
         If this option is set as True, then the dictionary will not have the "old_value" in the output.
         Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
 
         If delta = Delta(DeepDiff(t1, t2)) then
-
         t1 + delta == t2
+
+        Note that it the items in t1 + delta might have slightly different orders than t2 if ignore_order
+        was set to be True.
 
         """
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
@@ -914,33 +927,64 @@ class DeepDiff(ResultDict, Base):
 
         return result
 
+    def __get_item_rough_length(self, item, parent='root'):
+        """
+        Get the rough length of an item.
+        It is used as a part of calculating the rough distance between objects.
+
+        **parameters**
+
+        item: The item to calculate the rough length for
+        parent: It is only used for DeepHash reporting purposes. Not really useful here.
+        """
+        length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
+        if length is None:
+            DeepHash(
+                item,
+                hashes=self.hashes,
+                parent='root',
+                apply_hash=True,
+                **self.deephash_parameters,
+            )
+            length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
+        return length
+
     def get_rough_distance(self):
         """
         Gives a numeric value for the distance of t1 and t2 based on how many items are different between them.
-        This is mainly for the distance between iterables.
 
-        If 2 iterables are almost the same size but the need a lot of operations to get from one to the other,
-        then the 2 iterables are far.
+        A distance of close to zero is very close and a distance of 1 is very far.
 
-        If they get very few operations to convert from one to the other but they are big items, then they are close.
+        The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
+        by the number of items that make up t1 and t2.
 
-        A distance of zero is very close and a distance of 1 is very far.
+        Note: The rough distance calculations are currently only internally used when ignore_order=True
+        For efficiency reasons, the calculations are done by DeepHash while it is calculating the hash of objects.
+        However if in the future it is decided that the rough distance of objects is needed by the users even when
+        ignore_order is False, then the calculations need to be migrated out of the DeepHash to a separate module so
+        that there is no extra work of calculating the hashes when only the rough distance is needed.
         """
         if self.view != DELTA_VIEW:
             raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
         if not self.hashes:
             raise ValueError(
                 'Currently only during the hash calculations, the objects hierarchical '
-                'counts are evaluated. Either set ignore_order=True or pre-calculate the hashes for both t1 and t2 '
-                'via DeepHash and pass them via hashes parameter.')
-        t1_len = DeepHash._get(self.hashes, key=self.t1, default=None, extract_index=1)
-        t2_len = DeepHash._get(self.hashes, key=self.t2, default=None, extract_index=1)
-        return _get_diff_length(self) / (t1_len + t2_len)
+                'counts are evaluated. As a result, the rough distance is only calculated when ignore_order=True.'
+                'If you have a usage for this function when ignore_order=False, then let us know')
+        diff_length = _get_diff_length(self)
+        if diff_length == 0:
+            return 0
+
+        t1_len = self.__get_item_rough_length(self.t1)
+        t2_len = self.__get_item_rough_length(self.t2)
+
+        return diff_length / (t1_len + t2_len)
 
 
 def _get_diff_length(item):
     """
-    Get the number of operations in the diff
+    Get the number of operations in the diff.
+    It is designed for the delta view.
     """
     length = 0
     if hasattr(item, '_diff_length'):

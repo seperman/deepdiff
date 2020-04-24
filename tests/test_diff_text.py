@@ -100,12 +100,11 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert {'iterable_item_added': {'root[1][2]': 6}} == ddiff
 
-    # TODO: fix this
     def test_ignore_order_depth3(self):
         t1 = [{1, 2, 3}, [{4, 5}]]
         t2 = [[{4, 5, 6}], {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {'set_item_added': ["root[0][6][6]"]} == ddiff
+        assert {'set_item_added': ["root[1][0][6]"]} == ddiff
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
@@ -271,14 +270,15 @@ class TestDeepDiffText:
                 "c": b"\x80",
             }
         }
-        t2 = {1: 1,
-              2: 2,
-              3: 3,
-              4: {
-                  "a": b"hello",
-                  "b": b"world\n1\n2\nEnd",
-                  "c": b'\x81',
-              }
+        t2 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": b"hello",
+                "b": b"world\n1\n2\nEnd",
+                "c": b'\x81',
+            }
         }
 
         ddiff = DeepDiff(t1, t2)
