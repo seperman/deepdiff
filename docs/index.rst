@@ -13,9 +13,16 @@ DeepDiff 4.3.2 documentation!
 
 **DeepHash: Hash any object based on their content even if they are not "hashable".**
 
-DeepDiff works with Python 3.4, 3.5, 3.6, 3.7, Pypy3
+DeepDiff is tested against Python 3.5, 3.6, 3.7, 3.8 and Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
+
+*********
+Tutorials
+*********
+
+Tutorials can be found on `Zepworks blog <https://zepworks.com/tags/deepdiff/>`_
+
 
 ************
 Installation
@@ -268,6 +275,8 @@ References
    diff
    dsearch
    deephash
+   changelog
+   authors
 
 
 Indices and tables
@@ -276,99 +285,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-Changelog
-=========
-
-- v5-0-0: Introducing the Delta object
-- v4-3-3: Adds support for datetime.time
-- v4-3-2: Deprecation Warning Enhancement
-- v4-3-1: Fixing the issue with exclude_path and hash calculations when dictionaries were inside iterables. https://github.com/seperman/deepdiff/issues/174
-- v4-3-0: adding exclude_obj_callback
-- v4-2-0: .json property is finally removed. Fix for Py3.10. Dropping support for EOL Python 3.4. Ignoring private keys when calculating hashes. For example __init__ is not a part of hash calculation anymore. Fix for #166 Problem with comparing lists, with an boolean as element.
-- v4-1-0: .json property is finally removed.
-- v4-0-9: Fixing the bug for hashing custom unhashable objects
-- v4-0-8: Adding ignore_nan_inequality for float('nan')
-- v4-0-7: Hashing of the number 1 vs. True
-- v4-0-6: found a tiny bug in Python formatting of numbers in scientific notation. Added a workaround.
-- v4-0-5: Fixing number diffing. Adding number_format_notation and number_to_string_func.
-- v4-0-4: Adding ignore_string_case and ignore_type_subclasses
-- v4-0-3: Adding versionbump tool for release
-- v4-0-2: Fixing installation issue where rst files are missing.
-- v4-0-1: Fixing installation Tarball missing requirements.txt . DeepDiff v4+ should not show up as pip installable for Py2. Making Murmur3 installation optional.
-- v4-0-0: Ending Python 2 support, Adding more functionalities and documentation for DeepHash. Switching to Pytest for testing. Switching to Murmur3 128bit for hashing. Fixing classes which inherit from classes with slots didn't have all of their slots compared. Renaming ContentHash to DeepHash. Adding exclude by path and regex path to DeepHash. Adding ignore_type_in_groups. Adding match_string to DeepSearch. Adding Timedelta object diffing.
-- v3-5-0: Exclude regex path
-- v3-3-0: Searching for objects and class attributes
-- v3-2-2: Adding help(deepdiff)
-- v3-2-1: Fixing hash of None
-- v3-2-0: Adding grep for search: object | grep(item)
-- v3-1-3: Unicode vs. Bytes default fix
-- v3-1-2: NotPresent Fix when item is added or removed.
-- v3-1-1: Bug fix when item value is None (#58)
-- v3-1-0: Serialization to/from json
-- v3-0-0: Introducing Tree View
-- v2-5-3: Bug fix on logging for content hash.
-- v2-5-2: Bug fixes on content hash.
-- v2-5-0: Adding ContentHash module to fix ignore_order once and for all.
-- v2-1-0: Adding Deep Search. Now you can search for item in an object.
-- v2-0-0: Exclusion patterns better coverage. Updating docs.
-- v1-8-0: Exclusion patterns.
-- v1-7-0: Deep Set comparison.
-- v1-6-0: Unifying key names. i.e newvalue is new_value now. For backward compatibility, newvalue still works.
-- v1-5-0: Fixing ignore order containers with unordered items. Adding significant digits when comparing decimals. Changes property is deprecated.
-- v1-1-0: Changing Set, Dictionary and Object Attribute Add/Removal to be reported as Set instead of List. Adding Pypy compatibility.
-- v1-0-2: Checking for ImmutableMapping type instead of dict
-- v1-0-1: Better ignore order support
-- v1-0-0: Restructuring output to make it more useful. This is NOT backward compatible.
-- v0-6-1: Fixiing iterables with unhashable when order is ignored
-- v0-6-0: Adding unicode support
-- v0-5-9: Adding decimal support
-- v0-5-8: Adding ignore order for unhashables support
-- v0-5-7: Adding ignore order support
-- v0-5-6: Adding slots support
-- v0-5-5: Adding loop detection
-
-
-Authors
-=======
-
-- Sep Dehpour
-
-    - `Github <https://github.com/seperman>`_
-    - `ZepWorks <http://www.zepworks.com>`_
-    - `Linkedin <http://www.linkedin.com/in/sepehr>`_
-    - `Article about Deepdiff <http://zepworks.com/blog/diff-it-to-digg-it/>`_
-
-- Victor Hahn Castell for major contributions
-
-    - `hahncastell.de <http://hahncastell.de>`_
-    - `flexoptix.net <http://www.flexoptix.net>`_
-
-And thanks to the following people for their great contributions! This list is sorted by the contribution time.
-
-- nfvs for Travis-CI setup script.
-- brbsix for initial Py3 porting.
-- WangFenjin for Unicode support.
-- timoilya for comparing list of sets when ignoring order.
-- Bernhard10 for significant digits comparison.
-- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- finnhughes for fixing __slots__
-- moloney for Unicode vs. Bytes default
-- serv-inc for adding help(deepdiff)
-- movermeyer for updating docs
-- maxrothman for search in inherited class attributes
-- maxrothman for search for types/objects
-- MartyHub for exclude regex paths
-- sreecodeslayer for DeepSearch match_string
-- Brian Maissy (brianmaissy) for weakref fix, enum tests
-- Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
-- Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
-- Juan Soler (Soleronline) for adding ignore_type_number
-- mthaddon for adding timedelta diffing support
-- Necrophagos for Hashing of the number 1 vs. True
-- Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
-- Andrey Gavrilin (gaal-dev) for hashing classes.
-- gaal-dev for adding exclude_obj_callback
-- Ivan Piskunov (van-ess0) for deprecation warning enhancement.
-- Nathaniel Brown (nathanielobrown) Adds support for datetime.time

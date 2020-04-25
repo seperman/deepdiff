@@ -1,7 +1,21 @@
-Code Developers:
+:doc:`/index`
 
-- Seperman
-- Victor Hahn Castell @ Flexoptix
+Authors
+=======
+
+DeepDiff Core Developers:
+
+- Sep Dehpour
+
+    - `Github <https://github.com/seperman>`_
+    - `ZepWorks <http://www.zepworks.com>`_
+    - `Linkedin <http://www.linkedin.com/in/sepehr>`_
+    - `Articles about Deepdiff <https://zepworks.com/tags/deepdiff/>`_
+
+- Victor Hahn Castell for major contributions
+
+    - `hahncastell.de <http://hahncastell.de>`_
+    - `flexoptix.net <http://www.flexoptix.net>`_
 
 And many thanks to the following people for their contributions to DeepDiff!
 
@@ -27,7 +41,11 @@ And many thanks to the following people for their contributions to DeepDiff!
 - Necrophagos for Hashing of the number 1 vs. True
 - Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
 - Andrey Gavrilin (gaal-dev) for hashing classes.
+- gaal-dev for adding exclude_obj_callback
 - Ivan Piskunov (van-ess0) for deprecation warning enhancement.
 - Nathaniel Brown (nathanielobrown) Adds support for datetime.time
 - Michał Karaś (MKaras93) for the pretty view
 - Christian Kothe (chkothe) for the basic support for diffing numpy arrays
+
+
+Back to :doc:`/index`
