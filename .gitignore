@@ -63,5 +63,5 @@ target/
 .idea/
 .~lock*
 
-.python-version
+.python-version*
 

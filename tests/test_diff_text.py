@@ -1665,6 +1665,7 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    # TODO: fix it for python 3.5, 3.6 and pypy3
     def test_skip_regexp(self):
         t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
         t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]

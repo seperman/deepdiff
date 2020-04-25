@@ -112,7 +112,7 @@ class DeepDiff(ResultDict, Base):
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
-            parameters = deepcopy(self.__dict__)
+            parameters = self.__dict__.copy()
 
         self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
