@@ -8,7 +8,7 @@ from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_f
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, KEY_TO_VAL_STR)
+                             number_to_string, KEY_TO_VAL_STR, short_repr)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_str
 doc = get_doc('deephash_doc.rst')
 
 
-class DeepHash(dict, Base):
+class DeepHash(Base):
     __doc__ = doc
 
     def __init__(self,
@@ -80,6 +80,12 @@ class DeepHash(dict, Base):
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
                  "number_to_string_func, parent") % ', '.join(kwargs.keys()))
+        if isinstance(hashes, MutableMapping):
+            self.hashes = hashes
+        elif isinstance(hashes, DeepHash):
+            self.hashes = hashes.hashes
+        else:
+            self.hashes = {}
         self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
@@ -88,9 +94,7 @@ class DeepHash(dict, Base):
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         default_hasher = self.murmur3_128bit if mmh3 else self.sha256hex
         self.hasher = default_hasher if hasher is None else hasher
-        hashes = hashes if hashes else {}
-        self.update(hashes)
-        self[UNPROCESSED] = []
+        self.hashes[UNPROCESSED] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.number_format_notation = number_format_notation
@@ -112,10 +116,10 @@ class DeepHash(dict, Base):
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
-        if self[UNPROCESSED]:
-            logger.warning("Can not hash the following items: {}.".format(self[UNPROCESSED]))
+        if self.hashes[UNPROCESSED]:
+            logger.warning("Can not hash the following items: {}.".format(self.hashes[UNPROCESSED]))
         else:
-            del self[UNPROCESSED]
+            del self.hashes[UNPROCESSED]
 
     @staticmethod
     def sha256hex(obj):
@@ -149,28 +153,106 @@ class DeepHash(dict, Base):
         obj = obj.encode('utf-8')
         return mmh3.hash128(obj, MURMUR_SEED)
 
-    def __getitem__(self, obj):
+    def __getitem__(self, obj, extract_index=0):
+        return self._getitem(self.hashes, obj, extract_index=extract_index)
+
+    @staticmethod
+    def _getitem(hashes, obj, extract_index=0):
+        """
+        extract_index is zero for hash and 1 for count and None to get them both.
+        To keep it backward compatible, we only get the hash by default so it is set to zero by default.
+        """
+
         key = obj
-        result = None
+        if obj is True:
+            key = BoolObj.TRUE
+        elif obj is False:
+            key = BoolObj.FALSE
+
+        result_n_count = (None, 0)
 
         try:
-            result = super().__getitem__(key)
+            result_n_count = hashes[key]
         except (TypeError, KeyError):
             key = get_id(obj)
             try:
-                result = super().__getitem__(key)
+                result_n_count = hashes[key]
             except KeyError:
                 raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
-        return result
+
+        if isinstance(obj, strings) and obj in RESERVED_DICT_KEYS:
+            extract_index = None
+
+        return result_n_count if extract_index is None else result_n_count[extract_index]
 
     def __contains__(self, obj):
+        result = False
         try:
-            hash(obj)
-        except TypeError:
-            key = get_id(obj)
+            result = obj in self.hashes
+        except (TypeError, KeyError):
+            result = False
+        if not result:
+            result = get_id(obj) in self.hashes
+        return result
+
+    def get(self, key, default=None, extract_index=0):
+        """
+        Get method for the hashes dictionary.
+        It can extract the hash for a given key that is already calculated when extract_index=0
+        or the count of items that went to building the object whenextract_index=1.
+        """
+        return self._get(self.hashes, key, default=default, extract_index=extract_index)
+
+    @staticmethod
+    def _get(hashes, key, default=None, extract_index=0):
+        try:
+            result = DeepHash._getitem(hashes, key, extract_index=extract_index)
+        except KeyError:
+            result = default
+        return result
+
+    def _get_objects_to_hashes_dict(self, extract_index=0):
+        """
+        A dictionary containing only the objects to hashes,
+        or a dictionary of objects to the count of items that went to build them.
+        extract_index=0 for hashes and extract_index=1 for counts.
+        """
+        result = {}
+        for key, value in self.hashes.items():
+            if key in RESERVED_DICT_KEYS:
+                result[key] = value
+            else:
+                result[key] = value[extract_index]
+        return result
+
+    def __eq__(self, other):
+        if isinstance(other, DeepHash):
+            return self.hashes == other.hashes
         else:
-            key = obj
-        return super().__contains__(key)
+            # We only care about the hashes
+            return self._get_objects_to_hashes_dict() == other
+
+    __req__ = __eq__
+
+    def __repr__(self):
+        """
+        Hide the counts since it will be confusing to see them when they are hidden everywhere else.
+        """
+        return short_repr(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
+
+    __str__ = __repr__
+
+    def __bool__(self):
+        return bool(self.hashes)
+
+    def keys(self):
+        return self.hashes.keys()
+
+    def values(self):
+        return self.hashes.values()
+
+    def items(self):
+        return self.hashes.items()
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """prepping objects"""
@@ -184,13 +266,13 @@ class DeepHash(dict, Base):
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
-                self[UNPROCESSED].append(obj)
-                return unprocessed
+                self.hashes[UNPROCESSED].append(obj)
+                return (unprocessed, 0)
 
-        result = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
-                                 print_as_attribute=True, original_type=original_type)
+        result, counts = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
+                                         print_as_attribute=True, original_type=original_type)
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
-        return result
+        return result, counts
 
     def _skip_this(self, obj, parent):
         skip = False
@@ -208,25 +290,28 @@ class DeepHash(dict, Base):
     def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False, original_type=None):
 
         result = []
+        counts = 1
 
         key_text = "%s{}".format(INDEX_VS_ATTRIBUTE[print_as_attribute])
         for key, item in obj.items():
+            counts += 1
             # ignore private variables
             if isinstance(key, str) and key.startswith('__'):
                 continue
             key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
             key_in_report = key_text % (parent, key_formatted)
 
-            key_hash = self._hash(key, parent=key_in_report, parents_ids=parents_ids)
+            key_hash, _ = self._hash(key, parent=key_in_report, parents_ids=parents_ids)
             if not key_hash:
                 continue
             item_id = get_id(item)
             if (parents_ids and item_id in parents_ids) or self._skip_this(item, parent=key_in_report):
                 continue
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(item, parent=key_in_report, parents_ids=parents_ids_added)
+            hashed, count = self._hash(item, parent=key_in_report, parents_ids=parents_ids_added)
             hashed = KEY_TO_VAL_STR.format(key_hash, hashed)
             result.append(hashed)
+            counts += count
 
         result.sort()
         result = ';'.join(result)
@@ -239,10 +324,11 @@ class DeepHash(dict, Base):
                     break
         else:
             type_str = 'dict'
-        return "{}:{{{}}}".format(type_str, result)
+        return "{}:{{{}}}".format(type_str, result), counts
 
     def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
 
+        counts = 1
         result = defaultdict(int)
 
         for i, item in enumerate(obj):
@@ -255,9 +341,10 @@ class DeepHash(dict, Base):
                 continue
 
             parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-            hashed = self._hash(item, parent=new_parent, parents_ids=parents_ids_added)
+            hashed, count = self._hash(item, parent=new_parent, parents_ids=parents_ids_added)
             # counting repetitions
             result[hashed] += 1
+            counts += count
 
         if self.ignore_repetition:
             result = list(result.keys())
@@ -270,7 +357,7 @@ class DeepHash(dict, Base):
         result = ','.join(result)
         result = KEY_TO_VAL_STR.format(type(obj).__name__, result)
 
-        return result
+        return result, counts
 
     def _prep_bool(self, obj):
         return BoolObj.TRUE if obj else BoolObj.FALSE
@@ -289,30 +376,30 @@ class DeepHash(dict, Base):
             obj._asdict
         # It must be a normal tuple
         except AttributeError:
-            result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
+            result, counts = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
         # We assume it is a namedtuple then
         else:
-            result = self._prep_obj(obj, parent, parents_ids=parents_ids, is_namedtuple=True)
-        return result
+            result, counts = self._prep_obj(obj, parent, parents_ids=parents_ids, is_namedtuple=True)
+        return result, counts
 
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main diff method"""
+        counts = 1
 
         if isinstance(obj, bool):
             obj = self._prep_bool(obj)
             result = None
         else:
             result = not_hashed
-
         try:
-            result = self[obj]
+            result, counts = self.hashes[obj]
         except (TypeError, KeyError):
             pass
         else:
-            return result
+            return result, counts
 
         if self._skip_this(obj, parent):
-            return
+            return None, 0
 
         elif obj is None:
             result = 'NONE'
@@ -326,21 +413,21 @@ class DeepHash(dict, Base):
             result = self._prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
-            result = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)
+            result, counts = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, tuple):
-            result = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
+            result, counts = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
-            result = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
+            result, counts = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
 
         elif obj == BoolObj.TRUE or obj == BoolObj.FALSE:
             result = 'bool:true' if obj is BoolObj.TRUE else 'bool:false'
         else:
-            result = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
+            result, counts = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 
         if result is not_hashed:  # pragma: no cover
-            self[UNPROCESSED].append(obj)
+            self.hashes[UNPROCESSED].append(obj)
 
         elif result is unprocessed:
             pass
@@ -356,13 +443,14 @@ class DeepHash(dict, Base):
 
         # It is important to keep the hash of all objects.
         # The hashes will be later used for comparing the objects.
+        # Object to hash when possible otherwise ObjectID to hash
         try:
-            self[obj] = result
+            self.hashes[obj] = (result, counts)
         except TypeError:
             obj_id = get_id(obj)
-            self[obj_id] = result
+            self.hashes[obj_id] = (result, counts)
 
-        return result
+        return result, counts
 
 
 if __name__ == "__main__":  # pragma: no cover

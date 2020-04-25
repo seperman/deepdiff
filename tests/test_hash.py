@@ -2,12 +2,13 @@
 import re
 import pytest
 import logging
-from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
-from deepdiff.helper import pypy3, get_id, number_to_string
 from collections import namedtuple
 from functools import partial
 from enum import Enum
+from deepdiff import DeepHash
+from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
+from deepdiff.helper import pypy3, get_id, number_to_string
+from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
 
@@ -71,6 +72,9 @@ class TestDeepHash:
 
             def __str__(self):
                 return "Bad Object"
+
+            def __repr__(self):
+                return "<Bad obj id {}>".format(id(self))
 
         t1 = Bad()
 
@@ -399,6 +403,13 @@ class TestDeepHashPrep:
                                  ignore_type_subclasses=ignore_type_subclasses)
         assert is_qual == (t1_result[t1] == t2_result[t2])
 
+    def test_custom_object(self):
+        cc_a = CustomClass2(prop1=["a"], prop2=["b"])
+        t1 = [cc_a, CustomClass2(prop1=["c"], prop2=["d"])]
+        t1_result = DeepHashPrep(t1)
+        expected = 'list:objCustomClass2:{str:prop1:list:str:a;str:prop2:list:str:b},objCustomClass2:{str:prop1:list:str:c;str:prop2:list:str:d}'  # NOQA
+        assert expected == t1_result[t1]
+
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]
         list1_id = get_id(list1)
@@ -440,7 +451,6 @@ class TestDeepHashPrep:
 
         def hasher(obj):
             return str(next(hashes))
-
         obj = "a"
         expected_result = {obj: '0'}
         result = DeepHash(obj, hasher=hasher)
@@ -568,6 +578,11 @@ class TestDeepHashPrep:
         # Note: we ignore private names in calculating hashes now. So you dont see __init__ here for example.
         assert t1_hash[t1] == r'objClassC:{str:class_attr:int:0}'
 
+    def test_hash_set_in_list(self):
+        t1 = [{1, 2, 3}, {4, 5}]
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash[t1] == 'list:set:int:1,int:2,int:3,set:int:4,int:5'
+
 
 class TestDeepHashSHA:
     """DeepHash with SHA Tests."""
@@ -672,3 +687,32 @@ class TestDeepHashMurmur3:
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_128bit)
         assert expected_result == result
+
+
+class TestCounts:
+
+    @pytest.mark.parametrize('obj, expected_count', [
+        (
+            {1: 1, 2: 3},
+            5
+        ),
+        (
+            {"key": {1: 1, 2: 4}, "key2": ["a", "b"]},
+            11
+        ),
+        (
+            [{1}],
+            3
+        ),
+        (
+            [ClassC(a=10, b=11)],
+            6
+        )
+    ])
+    def test_dict_count(self, obj, expected_count):
+        """
+        How many object went to build this dict?
+        """
+
+        result = DeepHash(obj).get(obj, extract_index=1)
+        assert expected_count == result

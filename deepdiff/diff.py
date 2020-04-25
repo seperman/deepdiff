@@ -12,21 +12,22 @@ import json
 
 from itertools import zip_longest
 from collections.abc import Mapping, Iterable
-
+from collections import defaultdict
 from ordered_set import OrderedSet
+from copy import deepcopy
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
-                             number_to_string, KEY_TO_VAL_STR)
+                             number_to_string, KEY_TO_VAL_STR, get_diff_length)
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, DeltaResult,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship)
-from deepdiff.deephash import DeepHash, BoolObj
+    SetRelationship, pretty_print_diff)
+from deepdiff.deephash import DeepHash
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,10 @@ except ImportError:
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
+DELTA_VIEW = 'delta'
 
+
+notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 
 doc = get_doc('diff_doc.rst')
 
@@ -69,6 +73,8 @@ class DeepDiff(ResultDict, Base):
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
+                 hashes=None,
+                 parameters=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -76,43 +82,50 @@ class DeepDiff(ResultDict, Base):
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
-                "ignore_nan_inequality, number_to_string_func, verbose_level, view, and hasher.") % ', '.join(kwargs.keys()))
+                "ignore_nan_inequality, number_to_string_func, verbose_level, view, hasher, hashes and parameters.") % ', '.join(kwargs.keys()))
 
-        self.ignore_order = ignore_order
-        self.ignore_type_in_groups = self.get_ignore_types_in_groups(
-            ignore_type_in_groups=ignore_type_in_groups,
-            ignore_string_type_changes=ignore_string_type_changes,
-            ignore_numeric_type_changes=ignore_numeric_type_changes,
-            ignore_type_subclasses=ignore_type_subclasses)
-        self.report_repetition = report_repetition
-        self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
-        self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
-        self.exclude_types = set(exclude_types) if exclude_types else None
-        self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
-        self.ignore_string_type_changes = ignore_string_type_changes
-        self.ignore_numeric_type_changes = ignore_numeric_type_changes
-        self.ignore_type_subclasses = ignore_type_subclasses
-        self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
-        self.ignore_string_case = ignore_string_case
-        self.exclude_obj_callback = exclude_obj_callback
-        self.number_to_string = number_to_string_func or number_to_string
-        self.ignore_nan_inequality = ignore_nan_inequality
-        self.hashes = {}
-        self.hasher = hasher
+        if parameters:
+            self.__dict__ = deepcopy(parameters)
+        else:
+            self.ignore_order = ignore_order
+            self.ignore_type_in_groups = self.get_ignore_types_in_groups(
+                ignore_type_in_groups=ignore_type_in_groups,
+                ignore_string_type_changes=ignore_string_type_changes,
+                ignore_numeric_type_changes=ignore_numeric_type_changes,
+                ignore_type_subclasses=ignore_type_subclasses)
+            self.report_repetition = report_repetition
+            self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+            self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
+            self.exclude_types = set(exclude_types) if exclude_types else None
+            self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
+            self.ignore_string_type_changes = ignore_string_type_changes
+            self.ignore_numeric_type_changes = ignore_numeric_type_changes
+            self.ignore_type_subclasses = ignore_type_subclasses
+            self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+            self.ignore_string_case = ignore_string_case
+            self.exclude_obj_callback = exclude_obj_callback
+            self.number_to_string = number_to_string_func or number_to_string
+            self.ignore_nan_inequality = ignore_nan_inequality
+            self.hasher = hasher
 
-        self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
-        self.number_format_notation = number_format_notation
+            self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+            self.number_format_notation = number_format_notation
+            self.verbose_level = verbose_level
+            self.view = view
+            parameters = deepcopy(self.__dict__)
 
+        self.hashes = {} if hashes is None else hashes
+        self.parameters = parameters
+        self.deephash_parameters = self.__get_deephash_params()
         self.tree = TreeResult()
-
-        self.verbose_level = verbose_level
+        self.t1 = t1
+        self.t2 = t2
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
         self.tree.cleanup()
 
-        self.view = view
         view_results = self._get_view_results(view)
         self.update(view_results)
 
@@ -122,9 +135,29 @@ class DeepDiff(ResultDict, Base):
         """
         if view == TREE_VIEW:
             result = self.tree
-        else:
+        elif view == TEXT_VIEW:
             result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.cleanup()  # clean up text-style result dictionary
+        elif view == DELTA_VIEW:
+            result = self.to_delta_dict(report_repetition_needed=False)
+        return result
+
+    def __get_deephash_params(self):
+        result = {key: self.parameters[key] for key in (
+            'exclude_types',
+            'exclude_paths',
+            'exclude_regex_paths',
+            'hasher',
+            'significant_digits',
+            'number_format_notation',
+            'ignore_string_type_changes',
+            'ignore_numeric_type_changes',
+            'ignore_type_in_groups',
+            'ignore_type_subclasses',
+            'ignore_string_case',
+            'exclude_obj_callback',)}
+        result['ignore_repetition'] = not self.report_repetition
+        result['number_to_string_func'] = self.number_to_string
         return result
 
     def __report_result(self, report_type, level):
@@ -349,7 +382,7 @@ class DeepDiff(ResultDict, Base):
         """Difference of iterables"""
 
         if self.ignore_order:
-            self.__diff_iterable_with_deephash(level)
+            self.__diff_iterable_with_deephash(level, parents_ids)
             return
 
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
@@ -452,35 +485,22 @@ class DeepDiff(ResultDict, Base):
     def __create_hashtable(self, t, level):
         """Create hashtable of {item_hash: (indexes, item)}"""
 
-        hashes = {}
+        local_hashes = {}
         for (i, item) in enumerate(t):
             try:
                 parent = "{}[{}]".format(level.path(), i)
+                # Note: in the DeepDiff we only calculate the hash of items when we have to.
+                # So self.hashes does not include hashes of all objects in t1 and t2.
+                # It only includes the ones needed when comparing iterables.
+                # The self.hashes dictionary gets shared between different runs of DeepHash
+                # So that any object that is already calculated to have a hash is not re-calculated.
                 hashes_all = DeepHash(item,
                                       hashes=self.hashes,
-                                      exclude_types=self.exclude_types,
-                                      exclude_paths=self.exclude_paths,
-                                      exclude_regex_paths=self.exclude_regex_paths,
-                                      hasher=self.hasher,
-                                      ignore_repetition=not self.report_repetition,
-                                      significant_digits=self.significant_digits,
-                                      number_format_notation=self.number_format_notation,
-                                      ignore_string_type_changes=self.ignore_string_type_changes,
-                                      ignore_numeric_type_changes=self.ignore_numeric_type_changes,
-                                      ignore_type_in_groups=self.ignore_type_in_groups,
-                                      ignore_type_subclasses=self.ignore_type_subclasses,
-                                      ignore_string_case=self.ignore_string_case,
-                                      number_to_string_func=self.number_to_string,
-                                      exclude_obj_callback=self.exclude_obj_callback,
                                       parent=parent,
-                                      apply_hash=False,
+                                      apply_hash=True,
+                                      **self.deephash_parameters,
                                       )
-                key = item
-                if item is True:
-                    key = BoolObj.TRUE
-                elif item is False:
-                    key = BoolObj.FALSE
-                item_hash = hashes_all[key]
+                item_hash = hashes_all[item]
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %
@@ -491,10 +511,73 @@ class DeepDiff(ResultDict, Base):
                                    "thus not counting this object." %
                                    level.path())
                 else:
-                    self._add_hash(hashes=hashes, item_hash=item_hash, item=item, i=i)
-        return hashes
+                    self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
+        return local_hashes
 
-    def __diff_iterable_with_deephash(self, level):
+    def __get_most_in_common_pairs_in_iterables(self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable):
+        """
+        Get the closest pairs between items that are removed and items that are added.
+
+        Note that due to the current reporting structure in DeepDiff, we don't compare an item that
+        was let's say added to an item that is in both t1 and t2.
+
+        For example
+
+        [{1, 2}, {4, 5, 6}]
+        [{1, 2}, {1, 2, 3}]
+
+        is only compared between {4, 5, 6} and {1, 2, 3} even though technically {1, 2, 3} is
+        just one item different than {1, 2}
+
+        Perhaps in future we can have a report key that is item duplicated and modified instead of just added.
+        """
+        # distance to hashes
+        used_target_hashes = set()
+        most_in_common_pairs = defaultdict(lambda: defaultdict(set))
+        MAX_COMMON_PAIR_DISTANCES = 5
+        PAIR_MAX_DISTANCE_THRESHOLD = 0.3
+        pairs = {}
+
+        for added_hash in hashes_added:
+            for removed_hash in hashes_removed:
+                added_hash_obj = t2_hashtable[added_hash]
+                removed_hash_obj = t1_hashtable[removed_hash]
+
+                # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
+                parameters = deepcopy(self.parameters)
+                parameters['view'] = DELTA_VIEW
+                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters, hashes=self.hashes)
+                rough_distance = diff.get_rough_distance()
+                # Discard potential pairs that are too far.
+                if rough_distance > PAIR_MAX_DISTANCE_THRESHOLD:
+                    continue
+                com = most_in_common_pairs[added_hash]
+                current_len = len(com)
+                if current_len < MAX_COMMON_PAIR_DISTANCES:
+                    com[rough_distance].add(removed_hash)
+                    com['max'] = rough_distance
+                elif rough_distance <= com['max']:
+                    if rough_distance < com['max']:
+                        del com[com['max']]
+                        com['max'] = rough_distance
+                    com[rough_distance].add(removed_hash)
+
+        for added_hash, distances in most_in_common_pairs.items():
+            del distances['max']
+            for key in sorted(distances):
+                target_hashes = distances[key]
+                target_hashes -= used_target_hashes
+                if target_hashes:
+                    target_hash = target_hashes.pop()
+                    used_target_hashes.add(target_hash)
+                    pairs[added_hash] = target_hash
+                    break
+                else:
+                    del distances[key]
+
+        return pairs
+
+    def __diff_iterable_with_deephash(self, level, parents_ids):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         t1_hashtable = self.__create_hashtable(level.t1, level)
         t2_hashtable = self.__create_hashtable(level.t2, level)
@@ -505,25 +588,66 @@ class DeepDiff(ResultDict, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
+        pairs = self.__get_most_in_common_pairs_in_iterables(
+            hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
+        inverse_pairs = {v: k for k, v in pairs.items()}
+        pairs.update(inverse_pairs)
+
+        def get_other_pair(hash_value, in_t1=True):
+            """
+            Gets the other paired indexed hash item to the hash_value in the pairs dictionary
+            in_t1: are we looking for the other pair in t1 or t2?
+            """
+            if in_t1:
+                hashtable = t1_hashtable
+                the_other_hashes = hashes_removed
+            else:
+                hashtable = t2_hashtable
+                the_other_hashes = hashes_added
+            other = pairs.pop(hash_value, notpresent)
+            if other is notpresent:
+                other = notpresent_indexed
+            else:
+                # The pairs are symmetrical.
+                # removing the other direction of pair
+                # so it does not get used.
+                del pairs[other]
+                the_other_hashes.remove(other)
+                other = hashtable[other]
+            return other
+
         if self.report_repetition:
             for hash_value in hashes_added:
-                for i in t2_hashtable[hash_value].indexes:
+                other = get_other_pair(hash_value)
+                item_id = id(other.item)
+                if parents_ids and item_id in parents_ids:
+                    continue
+                indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
+                for i in indexes:
                     change_level = level.branch_deeper(
-                        notpresent,
+                        other.item,
                         t2_hashtable[hash_value].item,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i
                     )  # TODO: what is this value exactly?
-                    self.__report_result('iterable_item_added', change_level)
-
+                    if other.item is notpresent:
+                        self.__report_result('iterable_item_added', change_level)
+                    else:
+                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                        self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
+                other = get_other_pair(hash_value, in_t1=False)
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
-                        notpresent,
+                        other.item,
                         child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                         child_relationship_param=i)
-                    self.__report_result('iterable_item_removed', change_level)
+                    if other.item is notpresent:
+                        self.__report_result('iterable_item_removed', change_level)
+                    else:
+                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                        self.__diff(change_level, parents_ids_added)
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
@@ -550,22 +674,38 @@ class DeepDiff(ResultDict, Base):
 
         else:
             for hash_value in hashes_added:
+                other = get_other_pair(hash_value)
+                item_id = id(other.item)
+                if parents_ids and item_id in parents_ids:
+                    continue
+                index = t2_hashtable[hash_value].indexes[0] if other.item is notpresent else other.indexes[0]
                 change_level = level.branch_deeper(
-                    notpresent,
+                    other.item,
                     t2_hashtable[hash_value].item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
-                    child_relationship_param=t2_hashtable[hash_value].indexes[
-                        0])  # TODO: what is this value exactly?
-                self.__report_result('iterable_item_added', change_level)
+                    child_relationship_param=index)
+                if other.item is notpresent:
+                    self.__report_result('iterable_item_added', change_level)
+                else:
+                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                    self.__diff(change_level, parents_ids_added)
 
             for hash_value in hashes_removed:
+                other = get_other_pair(hash_value, in_t1=False)
+                item_id = id(other.item)
+                if parents_ids and item_id in parents_ids:
+                    continue
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
-                    notpresent,
+                    other.item,
                     child_relationship_class=SubscriptableIterableRelationship,  # TODO: that might be a lie!
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])
-                self.__report_result('iterable_item_removed', change_level)
+                if other.item is notpresent:
+                    self.__report_result('iterable_item_removed', change_level)
+                else:
+                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                    self.__diff(change_level, parents_ids_added)
 
     def __diff_numbers(self, level):
         """Diff Numbers"""
@@ -727,40 +867,56 @@ class DeepDiff(ResultDict, Base):
             >>> ddiff.to_json(default_mapping=default_mapping)
             '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
-        return json.dumps(self.to_dict(), default=json_convertor_default(default_mapping=default_mapping))
+        dic = self.to_dict(view_override=TEXT_VIEW)
+        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping))
 
-    def to_dict(self):
+    def to_dict(self, view_override=None):
         """
         Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
+
+        **Parameters**
+
+        view_override: view type, default=None,
+            override the view that was used to generate the diff when converting to the dictionary.
+            The options are the text, tree and delta views.
         """
-        if self.view == TREE_VIEW:
-            result = dict(self._get_view_results(view=TEXT_VIEW), verbose_level=2)
+
+        view = view_override if view_override else self.view
+
+        if view == TEXT_VIEW:
+            result = self._get_view_results(view=TEXT_VIEW)
+        elif view == DELTA_VIEW:
+            result = self.to_delta_dict(report_repetition_needed=False)
         else:
             result = dict(self)
         return result
 
-    def to_delta_dict(self, directed=True):
+    def to_delta_dict(self, directed=True, report_repetition_needed=True):
         """
-        Dump to a dictionary suitable for delta usage
+        Dump to a dictionary suitable for delta usage.
+        Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
 
         **Parameters**
 
         directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
 
-        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the delta is symmetrical.
+        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the
+        delta is symmetrical.
 
         If this option is set as True, then the dictionary will not have the "old_value" in the output.
         Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
 
         If delta = Delta(DeepDiff(t1, t2)) then
-
         t1 + delta == t2
+
+        Note that it the items in t1 + delta might have slightly different orders than t2 if ignore_order
+        was set to be True.
 
         """
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
         result.cleanup()  # clean up text-style result dictionary
         if self.ignore_order:
-            if not self.report_repetition:
+            if report_repetition_needed and not self.report_repetition:
                 raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
         if directed:
             for report_key, report_value in result.items():
@@ -773,39 +929,65 @@ class DeepDiff(ResultDict, Base):
 
     def pretty_form(self):
         result = []
-        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order in Python<3.7
+        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
         for key in keys:
             for item_key in self.tree[key]:
                 result += [pretty_print_diff(item_key)]
 
         return '\n'.join(result)
 
+    def __get_item_rough_length(self, item, parent='root'):
+        """
+        Get the rough length of an item.
+        It is used as a part of calculating the rough distance between objects.
 
-def pretty_print_diff(diff: DiffLevel):
-    type_t1 = get_type(diff.t1).__name__
-    type_t2 = get_type(diff.t2).__name__
+        **parameters**
 
-    val_t1 = '"{}"'.format(str(diff.t1)) if type_t1 == "str" else str(diff.t1)
-    val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
+        item: The item to calculate the rough length for
+        parent: It is only used for DeepHash reporting purposes. Not really useful here.
+        """
+        length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
+        if length is None:
+            DeepHash(
+                item,
+                hashes=self.hashes,
+                parent='root',
+                apply_hash=True,
+                **self.deephash_parameters,
+            )
+            length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
+        return length
 
-    diff_path = diff.path(root='root')
+    def get_rough_distance(self):
+        """
+        Gives a numeric value for the distance of t1 and t2 based on how many items are different between them.
 
-    texts = {
-        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
-        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
-        "dictionary_item_added": "Item {diff_path} added to dictionary.",
-        "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
-        "iterable_item_added": "Item {diff_path} added to iterable.",
-        "iterable_item_removed": "Item {diff_path} removed from iterable.",
-        "attribute_added": "Attribute {diff_path} added.",
-        "attribute_removed": "Attribute {diff_path} removed.",
-        "set_item_added": "Item root[{val_t2}] added to set.",
-        "set_item_removed": "Item root[{val_t1}] removed from set.",
-        "repetition_change": "Repetition change for item {diff_path}.",
-    }
+        A distance of close to zero is very close and a distance of 1 is very far.
 
-    return texts.get(diff.report_type, "").format(diff_path=diff_path, type_t1=type_t1, type_t2=type_t2, val_t1=val_t1,
-                                                  val_t2=val_t2)
+        The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
+        by the number of items that make up t1 and t2.
+
+        Note: The rough distance calculations are currently only internally used when ignore_order=True
+        For efficiency reasons, the calculations are done by DeepHash while it is calculating the hash of objects.
+        However if in the future it is decided that the rough distance of objects is needed by the users even when
+        ignore_order is False, then the calculations need to be migrated out of the DeepHash to a separate module so
+        that there is no extra work of calculating the hashes when only the rough distance is needed.
+        """
+        if self.view != DELTA_VIEW:
+            raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
+        if not self.hashes:
+            raise ValueError(
+                'Currently only during the hash calculations, the objects hierarchical '
+                'counts are evaluated. As a result, the rough distance is only calculated when ignore_order=True.'
+                'If you have a usage for this function when ignore_order=False, then let us know')
+        diff_length = get_diff_length(self)
+        if diff_length == 0:
+            return 0
+
+        t1_len = self.__get_item_rough_length(self.t1)
+        t2_len = self.__get_item_rough_length(self.t2)
+
+        return diff_length / (t1_len + t2_len)
 
 
 if __name__ == "__main__":  # pragma: no cover

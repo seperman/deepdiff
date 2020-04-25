@@ -1,16 +1,13 @@
 import logging
-from collections import defaultdict
 from collections.abc import Mapping
 from copy import deepcopy
-from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from deepdiff.helper import py_current_version, strings, short_repr
+from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
-MINIMUM_PY_FOR_DELTA = Decimal('3.6')
-DISABLE_DELTA = py_current_version < MINIMUM_PY_FOR_DELTA
-DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_FOR_DELTA)
+DISABLE_DELTA = not DICT_IS_SORTED
+DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DICT_TYPE_SORTED)
 
 
 # TODO: it needs python3.6+ since dictionaries are ordered.
@@ -404,13 +401,13 @@ class Delta:
             't1': [5, 1, 1, 1, 6],
             't2': [7, 1, 1, 1, 8],
 
-            'ignore_order_fixed_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
                     0: 7,
                     4: 8
                 }
             },
-            'ignore_order_remove_indexes': {
+            'iterable_items_removed_at_indexes': {
                 'root': {
                     4: 6,
                     0: 5
@@ -418,8 +415,8 @@ class Delta:
             }
 
         """
-        fixed_indexes = self.diff.get('ignore_order_fixed_indexes', {})
-        remove_indexes = self.diff.get('ignore_order_remove_indexes', {})
+        fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
+        remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
 
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:

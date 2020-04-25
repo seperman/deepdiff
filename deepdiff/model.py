@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -213,8 +213,8 @@ class DeltaResult(TextResult):
             "attribute_removed": {},
             "set_item_removed": {},
             "set_item_added": {},
-            "ignore_order_fixed_indexes": {},
-            "ignore_order_remove_indexes": {},
+            "iterable_items_added_at_indexes": {},
+            "iterable_items_removed_at_indexes": {},
         })
 
         if tree_results:
@@ -232,9 +232,9 @@ class DeltaResult(TextResult):
         self._from_tree_value_changed(tree)
         if self.ignore_order:
             self._from_tree_iterable_item_added(
-                tree, 'iterable_item_added', delta_report_key='ignore_order_fixed_indexes')
+                tree, 'iterable_item_added', delta_report_key='iterable_items_added_at_indexes')
             self._from_tree_iterable_item_added(
-                tree, 'iterable_item_removed', delta_report_key='ignore_order_remove_indexes')
+                tree, 'iterable_item_removed', delta_report_key='iterable_items_removed_at_indexes')
         else:
             self._from_tree_default(tree, 'iterable_item_added')
             self._from_tree_default(tree, 'iterable_item_removed')
@@ -258,10 +258,10 @@ class DeltaResult(TextResult):
                 # do the reporting
                 path, param, _ = change.path(force=FORCE_DEFAULT, get_parent_too=True)
                 try:
-                    ignore_order_fixed_indexes = self[delta_report_key][path]
+                    iterable_items_added_at_indexes = self[delta_report_key][path]
                 except KeyError:
-                    ignore_order_fixed_indexes = self[delta_report_key][path] = {}
-                ignore_order_fixed_indexes[param] = item
+                    iterable_items_added_at_indexes = self[delta_report_key][path] = {}
+                iterable_items_added_at_indexes[param] = item
 
     def _from_tree_type_changes(self, tree):
         if 'type_changes' in tree:
@@ -307,11 +307,11 @@ class DeltaResult(TextResult):
                 repetition = RemapDict(change.additional['repetition'])
                 value = change.t1
                 try:
-                    ignore_order_fixed_indexes = self['ignore_order_fixed_indexes'][path]
+                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path]
                 except KeyError:
-                    ignore_order_fixed_indexes = self['ignore_order_fixed_indexes'][path] = {}
+                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path] = {}
                 for index in repetition['new_indexes']:
-                    ignore_order_fixed_indexes[index] = value
+                    iterable_items_added_at_indexes[index] = value
                 # self['repetition_change'][path][]
                 # old_indexes = set(repetition['old_indexes'])
                 # new_indexes = set(repetition['new_indexes'])
@@ -810,3 +810,34 @@ class AttributeRelationship(ChildRelationship):
 
     def get_param_from_obj(self, obj):
         return getattr(obj, self.param)
+
+
+PRETTY_FORM_TEXTS = {
+    "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
+    "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
+    "dictionary_item_added": "Item {diff_path} added to dictionary.",
+    "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
+    "iterable_item_added": "Item {diff_path} added to iterable.",
+    "iterable_item_removed": "Item {diff_path} removed from iterable.",
+    "attribute_added": "Attribute {diff_path} added.",
+    "attribute_removed": "Attribute {diff_path} removed.",
+    "set_item_added": "Item root[{val_t2}] added to set.",
+    "set_item_removed": "Item root[{val_t1}] removed from set.",
+    "repetition_change": "Repetition change for item {diff_path}.",
+}
+
+
+def pretty_print_diff(diff: DiffLevel):
+    type_t1 = get_type(diff.t1).__name__
+    type_t2 = get_type(diff.t2).__name__
+
+    val_t1 = '"{}"'.format(str(diff.t1)) if type_t1 == "str" else str(diff.t1)
+    val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
+
+    diff_path = diff.path(root='root')
+    return PRETTY_FORM_TEXTS.get(diff.report_type, "").format(
+        diff_path=diff_path,
+        type_t1=type_t1,
+        type_t2=type_t2,
+        val_t1=val_t1,
+        val_t2=val_t2)

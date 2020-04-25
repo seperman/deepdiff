@@ -23,6 +23,12 @@ class CustomClass2:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+    def __repr__(self):
+        return "<CustomClass2 id: {}, prop1: {}, prop2: {}>".format(
+            id(self), self.prop1, self.prop2)
+
+    __str__ = __repr__
+
 
 class PicklableClass:
     def __init__(self, item):

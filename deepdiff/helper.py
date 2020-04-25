@@ -6,6 +6,7 @@ import logging
 import warnings
 from decimal import Decimal, localcontext
 from collections import namedtuple
+from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,9 @@ py_current_version = Decimal("{}.{}".format(py_major_version, py_minor_version))
 py2 = py_major_version == 2
 py3 = py_major_version == 3
 py4 = py_major_version == 4
+
+MINIMUM_PY_DICT_TYPE_SORTED = Decimal('3.6')
+DICT_IS_SORTED = py_current_version >= MINIMUM_PY_DICT_TYPE_SORTED
 
 if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover
@@ -246,6 +250,39 @@ class DeepDiffDeprecationWarning(DeprecationWarning):
     Use this warning instead of DeprecationWarning
     """
     pass
+
+
+def get_diff_length(item):
+    """
+    Get the number of operations in a diff object.
+    It is designed mainly for the delta view output
+    but can be used with other dictionary types of view outputs too.
+    """
+    length = 0
+    if hasattr(item, '_diff_length'):
+        length = item._diff_length
+    elif isinstance(item, Mapping):
+        for key, subitem in item.items():
+            length += get_diff_length(subitem)
+    elif isinstance(item, numbers):
+        length = 1
+    elif isinstance(item, strings):
+        length = 1
+    elif isinstance(item, Iterable):
+        for subitem in item:
+            length += get_diff_length(subitem)
+    elif isinstance(item, type):  # it is a class
+        length = 1
+    else:
+        if hasattr(item, '__dict__'):
+            for subitem in item.__dict__:
+                length += get_diff_length(subitem)
+
+    try:
+        item._diff_length = length
+    except Exception:
+        pass
+    return length
 
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)
