@@ -20,8 +20,7 @@ except ImportError:  # pragma: no cover
 UNPROCESSED = 'unprocessed'
 MURMUR_SEED = 1203
 
-# This needs to be a list so unhashable objects can do a containment check in it too.
-RESERVED_DICT_KEYS = (UNPROCESSED, )
+RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
@@ -180,7 +179,11 @@ class DeepHash(Base):
                 result_n_count = hashes[key]
             except KeyError:
                 raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
-        return result_n_count if obj in RESERVED_DICT_KEYS or extract_index is None else result_n_count[extract_index]
+
+        if isinstance(obj, strings) and obj in RESERVED_DICT_KEYS:
+            extract_index = None
+
+        return result_n_count if extract_index is None else result_n_count[extract_index]
 
     def __contains__(self, obj):
         result = False
@@ -208,10 +211,11 @@ class DeepHash(Base):
             result = default
         return result
 
-    def _get_objects_to_hashes(self, extract_index=0):
+    def _get_objects_to_hashes_dict(self, extract_index=0):
         """
         A dictionary containing only the objects to hashes,
         or a dictionary of objects to the count of items that went to build them.
+        extract_index=0 for hashes and extract_index=1 for counts.
         """
         result = {}
         for key, value in self.hashes.items():
@@ -226,7 +230,7 @@ class DeepHash(Base):
             return self.hashes == other.hashes
         else:
             # We only care about the hashes
-            return self._get_objects_to_hashes() == other
+            return self._get_objects_to_hashes_dict() == other
 
     __req__ = __eq__
 
@@ -234,7 +238,7 @@ class DeepHash(Base):
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
-        return short_repr(self.only_hashes, max_length=500)
+        return short_repr(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
     __str__ = __repr__
 

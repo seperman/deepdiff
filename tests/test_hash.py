@@ -2,12 +2,13 @@
 import re
 import pytest
 import logging
-from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
-from deepdiff.helper import pypy3, get_id, number_to_string
 from collections import namedtuple
 from functools import partial
 from enum import Enum
+from deepdiff import DeepHash
+from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
+from deepdiff.helper import pypy3, get_id, number_to_string
+from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
 
@@ -401,6 +402,13 @@ class TestDeepHashPrep:
         t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups,
                                  ignore_type_subclasses=ignore_type_subclasses)
         assert is_qual == (t1_result[t1] == t2_result[t2])
+
+    def test_custom_object(self):
+        cc_a = CustomClass2(prop1=["a"], prop2=["b"])
+        t1 = [cc_a, CustomClass2(prop1=["c"], prop2=["d"])]
+        t1_result = DeepHashPrep(t1)
+        expected = 'list:objCustomClass2:{str:prop1:list:str:a;str:prop2:list:str:b},objCustomClass2:{str:prop1:list:str:c;str:prop2:list:str:d}'  # NOQA
+        assert expected == t1_result[t1]
 
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]

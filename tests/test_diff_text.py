@@ -893,9 +893,7 @@ class TestDeepDiffText:
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
 
-        result = {'iterable_item_added': {'root[0]': cc_b},
-                  'iterable_item_removed': {'root[0]': cc_a}}
-
+        result = {'iterable_item_added': {'root[0].prop1[0]': 'b'}, 'iterable_item_removed': {'root[0].prop1[0]': 'a'}}
         assert result == ddiff
 
     def test_custom_objects_slot_change(self):
