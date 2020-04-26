@@ -8,13 +8,7 @@ from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found)
 
-from tests import PicklableClass
-
-
-def parameterize_cases(cases):
-    argvalues = [tuple(i.values()) for i in cases.values()]
-    ids = list(cases.keys())
-    return {'argvalues': argvalues, 'ids': ids}
+from tests import PicklableClass, parameterize_cases
 
 
 @pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)

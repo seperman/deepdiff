@@ -9,6 +9,20 @@ from collections import namedtuple
 from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 
+
+class np_type:
+    pass
+
+
+try:
+    import numpy as np
+except ImportError:
+    np_ndarray = np_bool_ = np_int32 = np_type
+else:
+    np_ndarray = np.ndarray
+    np_bool_ = np.bool_
+    np_int32 = np.int32
+
 logger = logging.getLogger(__name__)
 
 py_major_version = sys.version_info.major
@@ -35,7 +49,9 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
-numbers = (int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, Decimal, datetime.time)
+numbers = (int, float, complex, datetime.datetime, datetime.date,
+           datetime.timedelta, Decimal, datetime.time, np_int32)
+booleans = (bool, np_bool_)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
@@ -283,6 +299,47 @@ def get_diff_length(item):
     except Exception:
         pass
     return length
+
+
+def cartesian_product(a, b):
+    """
+    Get the Cartesian product of two iterables
+
+    **parameters**
+
+    a: list of lists
+    b: iterable to do the Cartesian product
+    """
+
+    for i in a:
+        for j in b:
+            yield i + (j,)
+
+
+def cartesian_product_of_shape(dimentions, result=None):
+    """
+    Cartesian product of a dimentions iterable.
+    This is mainly used to traverse Numpy ndarrays.
+
+    Each array has dimentions that are defines in ndarray.shape
+    """
+    if result is None:
+        result = ((),)  # a tuple with an empty tuple
+    for dimension in dimentions:
+        result = cartesian_product(result, range(dimension))
+    return result
+
+
+def get_numpy_ndarray_rows(obj):
+    """
+    Convert a multi dimensional numpy array to list of rows
+    """
+    dimentions = obj.shape[:-1]
+    for path in cartesian_product_of_shape(dimentions):
+        result = obj
+        for index in path:
+            result = result[index]
+        yield path, result
 
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)

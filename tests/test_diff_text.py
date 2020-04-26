@@ -431,6 +431,12 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
+    def test_list_of_booleans(self):
+        t1 = [False, False, True, True]
+        t2 = [False, False, False, True]
+        ddiff = DeepDiff(t1, t2)
+        assert {'values_changed': {'root[2]': {'new_value': False, 'old_value': True}}} == ddiff
+
     def test_list_difference_ignore_order(self):
         t1 = {1: 1, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 4: {"a": "hello", "b": [1, 3, 2, 3]}}

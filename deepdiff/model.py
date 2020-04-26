@@ -746,9 +746,12 @@ class ChildRelationship:
                       If 'yes':
                         Will return '(unrepresentable)' instead of None if there is no string representation
         """
+        # import pytest; pytest.set_trace()
         param = self.param
         if isinstance(param, strings):
             result = param if self.quote_str is None else self.quote_str.format(param)
+        elif isinstance(param, tuple):  # Currently only for numpy ndarrays
+            result = ']['.join(map(str, param))
         else:
             candidate = str(param)
             try:
@@ -772,6 +775,16 @@ class DictRelationship(ChildRelationship):
 
     def get_param_from_obj(self, obj):
         return obj.get(self.param)
+
+
+class NumpyArrayRelationship(ChildRelationship):
+    param_repr_format = "[{}]"
+    quote_str = None
+
+    def get_param_from_obj(self, obj):
+        for key in self.param:
+            obj = obj[key]
+        return obj
 
 
 class SubscriptableIterableRelationship(DictRelationship):

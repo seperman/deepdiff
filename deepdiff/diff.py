@@ -21,12 +21,13 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
-                             number_to_string, KEY_TO_VAL_STR, get_diff_length)
+                             number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
+                             np_ndarray, get_numpy_ndarray_rows)
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, DeltaResult,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, pretty_print_diff)
+    SetRelationship, pretty_print_diff, NumpyArrayRelationship)
 from deepdiff.deephash import DeepHash
 from deepdiff.base import Base
 
@@ -38,6 +39,11 @@ except ImportError:
     jsonpickle = None
     logger.info('jsonpickle is not installed. The to_json_pickle and from_json_pickle functions will not work.'
                 'If you dont need those functions, there is nothing to do.')
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
@@ -380,7 +386,6 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_iterable(self, level, parents_ids=frozenset({})):
         """Difference of iterables"""
-
         if self.ignore_order:
             self.__diff_iterable_with_deephash(level, parents_ids)
             return
@@ -707,6 +712,10 @@ class DeepDiff(ResultDict, Base):
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                     self.__diff(change_level, parents_ids_added)
 
+    def __diff_booleans(self, level):
+        if level.t1 != level.t2:
+            self.__report_result('values_changed', level)
+
     def __diff_numbers(self, level):
         """Diff Numbers"""
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
@@ -736,9 +745,10 @@ class DeepDiff(ResultDict, Base):
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
 
-    def __diff_numpy(self, level, parents_ids=frozenset({})):
+    def __diff_numpy_array(self, level, parents_ids=frozenset({})):
         """Diff numpy arrays"""
-        import numpy as np
+        if np is None:
+            raise ImportError('Unable to import numpy. Please make sure it is installed.')
 
         # fast checks
         if self.significant_digits is None:
@@ -764,7 +774,21 @@ class DeepDiff(ResultDict, Base):
                 self.__diff(next_level, add_to_frozen_set(parents_ids, attr))
         else:
             # metadata same -- the difference is in the content
-            self.__report_result('values_changed', level)
+            dimensions = len(level.t1.shape)
+            if dimensions == 1:
+                self.__diff_iterable(level, parents_ids)
+            else:
+                for (t1_path, t1_row), (t2_path, t2_row) in zip(
+                        get_numpy_ndarray_rows(level.t1),
+                        get_numpy_ndarray_rows(level.t2)):
+
+                    new_level = level.branch_deeper(
+                        t1_row,
+                        t2_row,
+                        child_relationship_class=NumpyArrayRelationship,
+                        child_relationship_param=t1_path)
+
+                    self.__diff_iterable(new_level, parents_ids)
 
     def __diff_types(self, level):
         """Diff types"""
@@ -792,6 +816,9 @@ class DeepDiff(ResultDict, Base):
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
             return
 
+        if isinstance(level.t1, booleans):
+            self.__diff_booleans(level)
+
         if isinstance(level.t1, strings):
             self.__diff_str(level)
 
@@ -807,8 +834,8 @@ class DeepDiff(ResultDict, Base):
         elif isinstance(level.t1, (set, frozenset, OrderedSet)):
             self.__diff_set(level)
 
-        elif level.t1.__class__.__module__ == 'numpy':
-            self.__diff_numpy(level, parents_ids)
+        elif isinstance(level.t1, np_ndarray):
+            self.__diff_numpy_array(level, parents_ids)
 
         elif isinstance(level.t1, Iterable):
             self.__diff_iterable(level, parents_ids)

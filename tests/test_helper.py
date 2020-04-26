@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import pytest
+import numpy as np
 from decimal import Decimal
-from deepdiff.helper import short_repr, number_to_string
+from deepdiff.helper import (
+    short_repr, number_to_string, get_numpy_ndarray_rows, cartesian_product_of_shape)
 
 
 class TestHelper:
@@ -52,3 +54,17 @@ class TestHelper:
     def test_number_to_string_with_invalid_notation(self):
         with pytest.raises(ValueError):
             number_to_string(10, significant_digits=4, number_format_notation='blah')
+
+    def test_cartesian_product_of_shape(self):
+        result = list(cartesian_product_of_shape([2, 1, 3]))
+        assert [(0, 0, 0), (0, 0, 1), (0, 0, 2), (1, 0, 0), (1, 0, 1), (1, 0, 2)] == result
+
+    def test_get_numpy_ndarray_rows(self):
+        obj = np.array([[[1, 2, 3], [4, 5, 6]]], np.int32)
+        path0 = (0, 0)
+        row0 = np.array([1, 2, 3], dtype=np.int32)
+        (path0, row0) = next(get_numpy_ndarray_rows(obj))
+
+        path1 = (0, 1)
+        row1 = np.array([4, 5, 6], dtype=np.int32)
+        (path1, row1) = next(get_numpy_ndarray_rows(obj))

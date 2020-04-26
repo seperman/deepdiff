@@ -1,3 +1,12 @@
+def parameterize_cases(cases):
+    """
+    This is used for parametrizing pytest test cases.
+    """
+    argvalues = [tuple(i.values()) for i in cases.values()]
+    ids = list(cases.keys())
+    return {'argvalues': argvalues, 'ids': ids}
+
+
 class CustomClass:
     def __init__(self, a, b=None):
         self.a = a
