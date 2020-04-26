@@ -1,10 +1,14 @@
-def parameterize_cases(cases):
+def parameterize_cases(argnames, cases):
     """
     This is used for parametrizing pytest test cases.
+
+    argnames: a comma separated string of arguments that the test expects.
+    cases: a dictionary of test cases.
     """
-    argvalues = [tuple(i.values()) for i in cases.values()]
+    argnames_list = [i.strip() for i in argnames.split(',')]
+    argvalues = [tuple(i[k] for k in argnames_list) for i in cases.values()]
     ids = list(cases.keys())
-    return {'argvalues': argvalues, 'ids': ids}
+    return {'argnames': argnames, 'argvalues': argvalues, 'ids': ids}
 
 
 class CustomClass:

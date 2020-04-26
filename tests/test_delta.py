@@ -366,13 +366,13 @@ DELTA_CASES = {
 }
 
 
-DELTA_CASES_PARAMS = parameterize_cases(DELTA_CASES)
+DELTA_CASES_PARAMS = parameterize_cases('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_CASES)
 
 
 @pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestDelta:
 
-    @pytest.mark.parametrize('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', **DELTA_CASES_PARAMS)
+    @pytest.mark.parametrize(**DELTA_CASES_PARAMS)
     def test_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff.to_delta_dict(**to_delta_kwargs)
@@ -541,15 +541,14 @@ DELTA_IGNORE_ORDER_CASES = {
 }
 
 
-DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(DELTA_IGNORE_ORDER_CASES)
+DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(
+    't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta', DELTA_IGNORE_ORDER_CASES)
 
 
 @pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestIgnoreOrderDelta:
 
-    @pytest.mark.parametrize(
-        't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta',
-        **DELTA_IGNORE_ORDER_CASES_PARAMS)
+    @pytest.mark.parametrize(**DELTA_IGNORE_ORDER_CASES_PARAMS)
     def test_ignore_order_delta_cases(
             self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
