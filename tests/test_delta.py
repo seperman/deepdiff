@@ -645,6 +645,36 @@ DELTA_NUMPY_TEST_CASES = {
         },
         'expected_result': 't2'
     },
+    'delta_numpy6_multi_dimensional_ignore_order': {
+        't1': np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8),
+        't2': np.array([[4, 1, 1, 1], [1, 3, 2, 4]], np.int8),
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_items_added_at_indexes': {
+                'root[1]': {
+                    1: 3,
+                    2: 2
+                },
+                'root[0]': {
+                    1: 1,
+                    2: 1,
+                    3: 1
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root[0]': {
+                    1: 2,
+                    2: 3
+                }
+            },
+            'numpy_used': True
+        },
+        'expected_result': 't2'
+    },
 }
 
 DELTA_NUMPY_TEST_PARAMS = parameterize_cases(

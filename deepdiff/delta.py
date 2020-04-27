@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers
+from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
 DISABLE_DELTA = not DICT_IS_SORTED
@@ -299,16 +299,12 @@ class Delta:
 
     def _get_elements_and_details(self, path):
         elements = _path_to_elements(path)
-        print(f'self.root: {self.root}')
         if len(elements) > 1:
             parent = _get_nested_obj(obj=self, elements=elements[:-2])
-            print(f'parent: {parent}')
             parent_to_obj_elem, parent_to_obj_action = elements[-2]
-            print(f'parent_to_obj_elem: {parent_to_obj_elem}')
             obj = self._get_elem_and_compare_to_old_value(
                 obj=parent, path_for_err_reporting=path, expected_old_value=None,
                 elem=parent_to_obj_elem, action=parent_to_obj_action)
-            print(f'obj: {obj}')
         else:
             parent = parent_to_obj_elem = parent_to_obj_action = None
             obj = _get_nested_obj(obj=self, elements=elements[:-1])
@@ -318,9 +314,6 @@ class Delta:
     def _do_values_or_type_changed(self, changes, is_type_change=False):
         for path, value in changes.items():
             elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
-            from pprint import pprint
-            pprint(locals())
-            print('----\n')
             expected_old_value = value.get('old_value', not_found)
 
             current_old_value = self._get_elem_and_compare_to_old_value(
@@ -449,7 +442,10 @@ class Delta:
             fixed_indexes_values = set(fixed_indexes_per_path.values())  # TODO: this needs to be changed to use deephash
 
             new_obj = []
-            there_are_old_items = bool(obj)
+            if isinstance(obj, np_ndarray):
+                there_are_old_items = obj.size > 0
+            else:
+                there_are_old_items = bool(obj)
             old_item_gen = self._do_ignore_order_get_old(
                 obj, remove_indexes_per_path, fixed_indexes_values, path_for_err_reporting=path)
             while there_are_old_items or fixed_indexes_per_path:
