@@ -4,12 +4,18 @@ from deepdiff import DeepDiff
 from tests import parameterize_cases
 
 NUMPY_CASES = {
-    'case1': {
+    'numpy_bools': {
         't1': np.array([True, False, True, False], dtype=bool),
         't2': np.array([False, True, True, False], dtype=bool),
         'deepdiff_kwargs': {},
         'expected_result': {'values_changed': {'root[0]': {'new_value': False, 'old_value': True},
                             'root[1]': {'new_value': True, 'old_value': False}}},
+    },
+    'numpy_bools_ignore_order': {
+        't1': np.array([True, False, True, False], dtype=bool),
+        't2': np.array([False, True, True, False], dtype=bool),
+        'deepdiff_kwargs': {'ignore_order': True},
+        'expected_result': {},
     },
     'numpy_multi_dimensional1': {
         't1': np.array([[[1, 2, 3], [4, 5, 6]]], np.int32),
