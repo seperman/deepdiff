@@ -3,6 +3,11 @@ import numpy as np
 from deepdiff import DeepDiff
 from tests import parameterize_cases
 
+"""
+These are numpy specific test cases.
+There are more numpy tests for delta additions in the test_delta.py
+"""
+
 NUMPY_CASES = {
     'numpy_bools': {
         't1': np.array([True, False, True, False], dtype=bool),

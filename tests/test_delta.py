@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
@@ -6,7 +7,7 @@ from deepdiff.diff import DELTA_VIEW
 from deepdiff.helper import get_diff_length
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
-    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found)
+    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -362,7 +363,14 @@ DELTA_CASES = {
                 'root.item': 10
             }
         }
-    }
+    },
+    'delta_case15_diffing_simple_numbers': {
+        't1': 1,
+        't2': 2,
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {'root': {'new_value': 2}}}
+    },
 }
 
 
@@ -557,6 +565,111 @@ class TestIgnoreOrderDelta:
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
         assert t1 + delta == expected_t1_plus_delta
+
+
+DELTA_NUMPY_TEST_CASES = {
+    'delta_case15_similar_to_delta_numpy': {
+        't1': [1, 2, 3],
+        't2': [1, 2, 5],
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}},
+        'expected_result': 't2'
+    },
+    'delta_numpy1_operator_override': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int8),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, 'numpy_used': True},
+        'expected_result': DeltaNumpyOperatorOverrideError
+    },
+    'delta_numpy2': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int8),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, 'numpy_used': True},
+        'expected_result': 't2'
+    },
+    'delta_numpy3_type_change_but_no_value_change': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 3], np.int16),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'type_changes': {'root': {'old_type': np.int8, 'new_type': np.int16}}},
+        'expected_result': 't2'
+    },
+    'delta_numpy4_type_change_plus_value_change': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int16),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': None,  # Not easy to compare since it throws:
+        # ValueError: The truth value of an array with more than one element is ambiguous.
+        # And we don't want to use DeepDiff for testing the equality inside deepdiff tests themselves!
+        'expected_result': 't2'
+    },
+    'delta_numpy4_type_change_ignore_numeric_type_changes': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int16),
+        'deepdiff_kwargs': {
+            'ignore_numeric_type_changes': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root[2]': {
+                    'new_value': 5
+                }
+            },
+            'numpy_used': True
+        },
+        'expected_result': 't2'
+    },
+    'delta_numpy5_multi_dimensional': {
+        't1': np.array([[1, 2, 3], [4, 2, 2]], np.int8),
+        't2': np.array([[1, 2, 5], [4, 1, 2]], np.int8),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root[0][2]': {
+                    'new_value': 5
+                },
+                'root[1][1]': {
+                    'new_value': 1
+                }
+            },
+            'numpy_used': True
+        },
+        'expected_result': 't2'
+    },
+}
+
+DELTA_NUMPY_TEST_PARAMS = parameterize_cases(
+    't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result', DELTA_NUMPY_TEST_CASES)
+
+
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
+class TestNumpyDelta:
+
+    @pytest.mark.parametrize(**DELTA_NUMPY_TEST_PARAMS)
+    def test_numpy_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result):
+        diff = DeepDiff(t1, t2, **deepdiff_kwargs)
+        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        if expected_delta_dict:
+            assert expected_delta_dict == delta_dict
+        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        if expected_result == 't2':
+            result = delta + t1
+            assert np.array_equal(result, t2)
+        elif expected_result is DeltaNumpyOperatorOverrideError:
+            with pytest.raises(DeltaNumpyOperatorOverrideError):
+                assert t1 + delta
+        else:
+            result = delta + t1
+            assert np.array_equal(result, expected_result)
 
 
 class TestDiffLength:

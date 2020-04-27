@@ -55,6 +55,12 @@ else:
     np_complex128 = np.complex128
     np_complex_ = np.complex_
 
+numpy_numbers = (
+    np_int8, np_int16, np_int32, np_int64, np_uint8,
+    np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
+    np_float32, np_float64, np_float_, np_complex64,
+    np_complex128, np_complex_, )
+
 logger = logging.getLogger(__name__)
 
 py_major_version = sys.version_info.major
@@ -82,11 +88,7 @@ strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
 numbers = (int, float, complex, datetime.datetime, datetime.date,
-           datetime.timedelta, Decimal, datetime.time,
-           np_int8, np_int16, np_int32, np_int64, np_uint8,
-           np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
-           np_float32, np_float64, np_float_, np_complex64,
-           np_complex128, np_complex_, )
+           datetime.timedelta, Decimal, datetime.time, ) + numpy_numbers
 booleans = (bool, np_bool_)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')

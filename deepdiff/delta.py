@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr
+from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
 DISABLE_DELTA = not DICT_IS_SORTED
@@ -20,6 +20,10 @@ ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting 
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_SYMMETRY_MSG = 'that the original objects that the delta is made from must be different than what the delta is applied to.'
 FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG = 'Failed to remove index[{}] on {}. It was expected to be {} but got {}'
+DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
+    'A numpy ndarray is most likely being added to a delta. '
+    'Due to Numpy override the + operator, you can only do: delta + ndarray '
+    'and NOT ndarray + delta')
 
 
 class _NotFound:
@@ -41,6 +45,13 @@ not_found = _NotFound()
 class DeltaError(ValueError):
     """
     Delta specific errors
+    """
+    pass
+
+
+class DeltaNumpyOperatorOverrideError(ValueError):
+    """
+    Delta Numpy Operator Override Error
     """
     pass
 
@@ -112,6 +123,7 @@ class Delta:
         self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
+        self.numpy_used = self.diff.pop('numpy_used', False)
 
     def __repr__(self):
         return "<Delta: {}>".format(short_repr(self.diff, max_length=100))
@@ -121,6 +133,8 @@ class Delta:
 
     def __add__(self, other):
         self.reset()
+        if isinstance(other, numbers) and self.numpy_used:
+            raise DeltaNumpyOperatorOverrideError(DELTA_NUMPY_OPERATOR_OVERRIDE_MSG)
         if self.mutate:
             self.root = other
         else:
@@ -285,12 +299,16 @@ class Delta:
 
     def _get_elements_and_details(self, path):
         elements = _path_to_elements(path)
+        print(f'self.root: {self.root}')
         if len(elements) > 1:
             parent = _get_nested_obj(obj=self, elements=elements[:-2])
+            print(f'parent: {parent}')
             parent_to_obj_elem, parent_to_obj_action = elements[-2]
+            print(f'parent_to_obj_elem: {parent_to_obj_elem}')
             obj = self._get_elem_and_compare_to_old_value(
                 obj=parent, path_for_err_reporting=path, expected_old_value=None,
                 elem=parent_to_obj_elem, action=parent_to_obj_action)
+            print(f'obj: {obj}')
         else:
             parent = parent_to_obj_elem = parent_to_obj_action = None
             obj = _get_nested_obj(obj=self, elements=elements[:-1])
@@ -300,6 +318,9 @@ class Delta:
     def _do_values_or_type_changed(self, changes, is_type_change=False):
         for path, value in changes.items():
             elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+            from pprint import pprint
+            pprint(locals())
+            print('----\n')
             expected_old_value = value.get('old_value', not_found)
 
             current_old_value = self._get_elem_and_compare_to_old_value(

@@ -126,6 +126,7 @@ class DeepDiff(ResultDict, Base):
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
+        self.numpy_used = False
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
@@ -747,6 +748,7 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_numpy_array(self, level, parents_ids=frozenset({})):
         """Diff numpy arrays"""
+        self.numpy_used = True
         if np is None:
             raise ImportError('Unable to import numpy. Please make sure it is installed.')
 
@@ -947,6 +949,8 @@ class DeepDiff(ResultDict, Base):
                     for path, value in report_value.items():
                         if isinstance(value, Mapping) and 'old_value' in value:
                             del value['old_value']
+        if self.numpy_used:
+            result['numpy_used'] = True
 
         return result
 
