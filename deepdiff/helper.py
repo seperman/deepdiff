@@ -17,11 +17,43 @@ class np_type:
 try:
     import numpy as np
 except ImportError:
-    np_ndarray = np_bool_ = np_int32 = np_type
+    np_ndarray = np_type
+    np_bool_ = np_type
+    np_int8 = np_type
+    np_int16 = np_type
+    np_int32 = np_type
+    np_int64 = np_type
+    np_uint8 = np_type
+    np_uint16 = np_type
+    np_uint32 = np_type
+    np_uint64 = np_type
+    np_intp = np_type
+    np_uintp = np_type
+    np_float32 = np_type
+    np_float64 = np_type
+    np_float_ = np_type
+    np_complex64 = np_type
+    np_complex128 = np_type
+    np_complex_ = np_type
 else:
     np_ndarray = np.ndarray
     np_bool_ = np.bool_
+    np_int8 = np.int8
+    np_int16 = np.int16
     np_int32 = np.int32
+    np_int64 = np.int64
+    np_uint8 = np.uint8
+    np_uint16 = np.uint16
+    np_uint32 = np.uint32
+    np_uint64 = np.uint64
+    np_intp = np.intp
+    np_uintp = np.uintp
+    np_float32 = np.float32
+    np_float64 = np.float64
+    np_float_ = np.float_
+    np_complex64 = np.complex64
+    np_complex128 = np.complex128
+    np_complex_ = np.complex_
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +82,11 @@ strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
 numbers = (int, float, complex, datetime.datetime, datetime.date,
-           datetime.timedelta, Decimal, datetime.time, np_int32)
+           datetime.timedelta, Decimal, datetime.time,
+           np_int8, np_int16, np_int32, np_int64, np_uint8,
+           np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
+           np_float32, np_float64, np_float_, np_complex64,
+           np_complex128, np_complex_, )
 booleans = (bool, np_bool_)
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
@@ -212,6 +248,8 @@ def get_type(obj):
     """
     Get the type of object or if it is a class, return the class itself.
     """
+    if isinstance(obj, np_ndarray):
+        return obj.dtype.type
     return obj if type(obj) is type else type(obj)
 
 

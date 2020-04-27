@@ -136,8 +136,8 @@ class TextResult(ResultDict):
                     new_type = change.t2
                 else:
                     include_values = True
-                    old_type = type(change.t1)
-                    new_type = type(change.t2)
+                    old_type = get_type(change.t1)
+                    new_type = get_type(change.t2)
                 remap_dict = RemapDict({
                     'old_type': old_type,
                     'new_type': new_type

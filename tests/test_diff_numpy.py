@@ -19,7 +19,38 @@ NUMPY_CASES = {
                             {'root[0][0][2]': {'new_value': 5, 'old_value': 3},
                              'root[0][1][0]': {'new_value': 3, 'old_value': 4}}},
     },
-
+    'numpy_array2_type_change': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int32),
+        'deepdiff_kwargs': {'verbose_level': 0},
+        'expected_result': {'type_changes': {'root': {'old_type': np.int8, 'new_type': np.int32}}},
+    },
+    'numpy_array3_ignore_number_type_changes': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([1, 2, 5], np.int32),
+        'deepdiff_kwargs': {'ignore_numeric_type_changes': True},
+        'expected_result': {'values_changed': {'root[2]': {'new_value': 5, 'old_value': 3}}},
+    },
+    'numpy_array4_ignore_number_type_changes_and_ignore_order': {
+        't1': np.array([1, 2, 3], np.int8),
+        't2': np.array([3, 1, 2], np.int32),
+        'deepdiff_kwargs': {'ignore_numeric_type_changes': True, 'ignore_order': True},
+        'expected_result': {},
+    },
+    'numpy_array5_ignore_number_type_changes_and_ignore_order': {
+        't1': np.array([1, 2, 4, 3], np.int8),
+        't2': np.array([3, 1, 2, 5], np.int32),
+        'deepdiff_kwargs': {'ignore_numeric_type_changes': True, 'ignore_order': True},
+        'expected_result': {'iterable_item_added': {'root[3]': 5}, 'iterable_item_removed': {'root[2]': 4}},
+    },
+    'numpy_array6_ignore_order_and_report_repetition': {
+        't1': np.array([1, 2, 3, 3], np.int8),
+        't2': np.array([3, 1, 2, 5], np.int8),
+        'deepdiff_kwargs': {'report_repetition': True, 'ignore_order': True},
+        'expected_result': {'iterable_item_added': {'root[3]': 5},
+                            'repetition_change': {'root[2]': {'old_repeat': 2, 'new_repeat': 1,
+                                                              'old_indexes': [2, 3], 'new_indexes': [0], 'value': 3}}},
+    },
 }
 
 

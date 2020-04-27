@@ -762,16 +762,12 @@ class DeepDiff(ResultDict, Base):
                 pass    # do detailed checking below
 
         # compare array meta-data
-        meta1 = {'dtype': str(level.t1.dtype), 'shape': level.t1.shape}
-        meta2 = {'dtype': str(level.t2.dtype), 'shape': level.t2.shape}
-        if meta1 != meta2:
-            # metadata is different, diff attributes one by one
-            for attr in meta1:
-                next_level = level.branch_deeper(
-                    meta1[attr], meta2[attr],
-                    child_relationship_class=AttributeRelationship,
-                    child_relationship_param=attr)
-                self.__diff(next_level, add_to_frozen_set(parents_ids, attr))
+        if level.t1.shape != level.t2.shape:
+            next_level = level.branch_deeper(
+                level.t1.shape, level.t2.shape,
+                child_relationship_class=AttributeRelationship,
+                child_relationship_param='shape')
+            self.__diff(next_level, parents_ids)
         else:
             # metadata same -- the difference is in the content
             dimensions = len(level.t1.shape)
