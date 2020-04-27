@@ -17,6 +17,7 @@ class np_type:
 try:
     import numpy as np
 except ImportError:
+    np = None
     np_ndarray = np_type
     np_bool_ = np_type
     np_int8 = np_type

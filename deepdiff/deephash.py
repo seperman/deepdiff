@@ -8,7 +8,7 @@ from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_f
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, KEY_TO_VAL_STR, short_repr)
+                             number_to_string, KEY_TO_VAL_STR, short_repr, np)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from functools import partial
 from enum import Enum
 from deepdiff import DeepHash
 from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
-from deepdiff.helper import pypy3, get_id, number_to_string
+from deepdiff.helper import pypy3, get_id, number_to_string, np
 from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
@@ -582,6 +582,26 @@ class TestDeepHashPrep:
         t1 = [{1, 2, 3}, {4, 5}]
         t1_hash = DeepHashPrep(t1)
         assert t1_hash[t1] == 'list:set:int:1,int:2,int:3,set:int:4,int:5'
+
+    def test_hash_numpy_array1(self):
+        t1 = np.array([[1, 2]], np.int8)
+        t2 = np.array([[2, 1]], np.int8)
+        t1_hash = DeepHashPrep(t1)
+        t2_hash = DeepHashPrep(t2)
+        assert t1_hash[t1] == 'ndarray:ndarray:int8:1,int8:2'
+        assert t2_hash[t2] == t1_hash[t1]
+
+    def test_hash_numpy_array_ignore_numeric_type_changes(self):
+        t1 = np.array([[1, 2]], np.int8)
+        t1_hash = DeepHashPrep(t1, ignore_numeric_type_changes=True)
+        assert t1_hash[t1] == 'ndarray:ndarray:number:1.000000000000,number:2.000000000000'
+
+    def test_hash_numpy_array2_multi_dimensional(self):
+        t1 = np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8)
+        t2 = np.array([[4, 1, 1, 1], [1, 3, 2, 4]], np.int8)
+        t1_hash = DeepHashPrep(t1)
+        t2_hash = DeepHashPrep(t2)
+        assert t1_hash[t1[0]] == t2_hash[t2[1]]
 
 
 class TestDeepHashSHA:

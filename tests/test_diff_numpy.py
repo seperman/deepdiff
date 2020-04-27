@@ -1,6 +1,6 @@
 import pytest
-import numpy as np
 from deepdiff import DeepDiff
+from deepdiff.helper import np
 from tests import parameterize_cases
 
 """

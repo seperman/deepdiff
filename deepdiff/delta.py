@@ -3,7 +3,8 @@ from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
-from deepdiff.helper import DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray
+from deepdiff.helper import (
+    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
 DISABLE_DELTA = not DICT_IS_SORTED

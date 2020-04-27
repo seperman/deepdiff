@@ -1,10 +1,9 @@
 import pytest
-import numpy as np
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.helper import get_diff_length
+from deepdiff.helper import get_diff_length, np
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError)
