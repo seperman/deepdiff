@@ -4,7 +4,7 @@ from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load
 from deepdiff.helper import (
-    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray)
+    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray, not_found)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 
 DISABLE_DELTA = not DICT_IS_SORTED
@@ -25,22 +25,6 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'A numpy ndarray is most likely being added to a delta. '
     'Due to Numpy override the + operator, you can only do: delta + ndarray '
     'and NOT ndarray + delta')
-
-
-class _NotFound:
-
-    def __eq__(self, other):
-        return False
-
-    __req__ = __eq__
-
-    def __repr__(self):
-        return 'not found'
-
-    __str__ = __repr__
-
-
-not_found = _NotFound()
 
 
 class DeltaError(ValueError):

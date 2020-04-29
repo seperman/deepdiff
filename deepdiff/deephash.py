@@ -8,7 +8,7 @@ from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_f
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, KEY_TO_VAL_STR, short_repr, np)
+                             number_to_string, KEY_TO_VAL_STR, short_repr)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,9 @@ RESERVED_DICT_KEYS = {UNPROCESSED}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
+
+
+HASH_LOOKUP_ERR_MSG = '{} is not one of the hashed items.'
 
 
 class BoolObj(Enum):
@@ -86,7 +89,6 @@ class DeepHash(Base):
             self.hashes = hashes.hashes
         else:
             self.hashes = {}
-        self.obj = obj
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
@@ -178,7 +180,7 @@ class DeepHash(Base):
             try:
                 result_n_count = hashes[key]
             except KeyError:
-                raise KeyError('{} is not one of the hashed items.'.format(obj)) from None
+                raise KeyError(HASH_LOOKUP_ERR_MSG.format(obj)) from None
 
         if isinstance(obj, strings) and obj in RESERVED_DICT_KEYS:
             extract_index = None

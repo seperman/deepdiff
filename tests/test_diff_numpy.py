@@ -62,6 +62,49 @@ NUMPY_CASES = {
                             'repetition_change': {'root[2]': {'old_repeat': 2, 'new_repeat': 1,
                                                               'old_indexes': [2, 3], 'new_indexes': [0], 'value': 3}}},
     },
+    'numpy_array7_ignore_order_multi_dimensional_array': {
+        't1': np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8),
+        't2': np.array([[4, 1, 1, 1], [1, 3, 2, 4]], np.int8),
+        'deepdiff_kwargs': {'report_repetition': True, 'ignore_order': True},
+        'expected_result': {
+            'iterable_item_removed': {
+                'root[1][1]': 2,
+                'root[1][2]': 2
+            },
+            'repetition_change': {
+                'root[1][3]': {
+                    'old_repeat': 1,
+                    'new_repeat': 3,
+                    'old_indexes': [3],
+                    'new_indexes': [1, 2, 3],
+                    'value': 1
+                }
+            }
+        },
+    },
+    'numpy_array8_ignore_order_multi_dimensional_array_converted_to_list': {
+        't1': np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8).tolist(),
+        't2': np.array([[4, 1, 1, 1], [1, 3, 2, 4]], np.int8).tolist(),
+        'deepdiff_kwargs': {
+            'report_repetition': True,
+            'ignore_order': True
+        },
+        'expected_result': {
+            'iterable_item_removed': {
+                'root[1][1]': 2,
+                'root[1][2]': 2
+            },
+            'repetition_change': {
+                'root[1][3]': {
+                    'old_repeat': 1,
+                    'new_repeat': 3,
+                    'old_indexes': [3],
+                    'new_indexes': [1, 2, 3],
+                    'value': 1
+                }
+            }
+        },
+    },
 }
 
 

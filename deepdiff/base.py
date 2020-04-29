@@ -3,6 +3,7 @@ from deepdiff.helper import strings, numbers
 
 
 DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 12
+TYPE_STABILIZATION_MSG = 'Unable to stabilize the Numpy array {} due to {}. Please set ignore_order=False.'
 
 
 class Base:

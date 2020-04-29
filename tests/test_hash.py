@@ -6,7 +6,7 @@ from collections import namedtuple
 from functools import partial
 from enum import Enum
 from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
+from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj, HASH_LOOKUP_ERR_MSG
 from deepdiff.helper import pypy3, get_id, number_to_string, np
 from tests import CustomClass2
 
@@ -596,12 +596,13 @@ class TestDeepHashPrep:
         t1_hash = DeepHashPrep(t1, ignore_numeric_type_changes=True)
         assert t1_hash[t1] == 'ndarray:ndarray:number:1.000000000000,number:2.000000000000'
 
-    def test_hash_numpy_array2_multi_dimensional(self):
+    # TODO: Trying to fix the issue in DeepDiff, If it gets fixed there, remove this test.
+    def test_hash_numpy_array2_multi_dimensional_can_not_retrieve_individual_array_item_hashes(self):
         t1 = np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8)
-        t2 = np.array([[4, 1, 1, 1], [1, 3, 2, 4]], np.int8)
         t1_hash = DeepHashPrep(t1)
-        t2_hash = DeepHashPrep(t2)
-        assert t1_hash[t1[0]] == t2_hash[t2[1]]
+        with pytest.raises(KeyError) as excinfo:
+            t1_hash[t1[0]]
+            assert str(excinfo.value) == HASH_LOOKUP_ERR_MSG.format(t1[0])
 
 
 class TestDeepHashSHA:

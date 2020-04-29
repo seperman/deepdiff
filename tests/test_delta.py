@@ -545,6 +545,31 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'expected_t1_plus_delta': [{1, 2, 3}, {'hello', 'right!', 5}, {(2,), 4, 5, 6}],
     },
+    'delta_ignore_order_case8_multi_dimensional_list': {
+        't1': [[1, 2, 3, 4], [4, 2, 2, 1]],
+        't2': [[4, 1, 1, 1], [1, 3, 2, 4]],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_items_added_at_indexes': {
+                'root[1]': {
+                    1: 1,
+                    2: 1,
+                    3: 1
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root[1]': {
+                    1: 2,
+                    2: 2
+                }
+            }
+        },
+        'expected_t1_plus_delta': [[1, 2, 3, 4], [4, 1, 1, 1]],
+    },
 }
 
 
@@ -655,24 +680,20 @@ DELTA_NUMPY_TEST_CASES = {
         'expected_delta_dict': {
             'iterable_items_added_at_indexes': {
                 'root[1]': {
-                    1: 3,
-                    2: 2
-                },
-                'root[0]': {
                     1: 1,
                     2: 1,
                     3: 1
                 }
             },
             'iterable_items_removed_at_indexes': {
-                'root[0]': {
+                'root[1]': {
                     1: 2,
-                    2: 3
+                    2: 2
                 }
             },
             'numpy_used': True
         },
-        'expected_result': 't2'
+        'expected_result': 't2_via_deepdiff'
     },
 }
 
@@ -693,6 +714,10 @@ class TestNumpyDelta:
         if expected_result == 't2':
             result = delta + t1
             assert np.array_equal(result, t2)
+        elif expected_result == 't2_via_deepdiff':
+            result = delta + t1
+            diff = DeepDiff(result, t2, ignore_order=True, report_repetition=True)
+            assert not diff
         elif expected_result is DeltaNumpyOperatorOverrideError:
             with pytest.raises(DeltaNumpyOperatorOverrideError):
                 assert t1 + delta

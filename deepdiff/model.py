@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, not_found
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}

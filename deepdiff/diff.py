@@ -126,6 +126,7 @@ class DeepDiff(ResultDict, Base):
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
+
         self.numpy_used = False
 
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
@@ -353,8 +354,8 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_set(self, level):
         """Difference of sets"""
-        t1_hashtable = self.__create_hashtable(level.t1, level)
-        t2_hashtable = self.__create_hashtable(level.t2, level)
+        t1_hashtable = self.__create_hashtable(level, 't1')
+        t2_hashtable = self.__create_hashtable(level, 't2')
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -389,8 +390,10 @@ class DeepDiff(ResultDict, Base):
         """Difference of iterables"""
         if self.ignore_order:
             self.__diff_iterable_with_deephash(level, parents_ids)
-            return
+        else:
+            self.__diff_iterable_in_order(level, parents_ids)
 
+    def __diff_iterable_in_order(self, level, parents_ids=frozenset({})):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
@@ -488,11 +491,12 @@ class DeepDiff(ResultDict, Base):
         else:
             hashes[item_hash] = IndexedHash(indexes=[i], item=item)
 
-    def __create_hashtable(self, t, level):
+    def __create_hashtable(self, level, t):
         """Create hashtable of {item_hash: (indexes, item)}"""
+        obj = getattr(level, t)
 
         local_hashes = {}
-        for (i, item) in enumerate(t):
+        for (i, item) in enumerate(obj):
             try:
                 parent = "{}[{}]".format(level.path(), i)
                 # Note: in the DeepDiff we only calculate the hash of items when we have to.
@@ -552,6 +556,13 @@ class DeepDiff(ResultDict, Base):
                 # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
                 parameters = deepcopy(self.parameters)
                 parameters['view'] = DELTA_VIEW
+                # Having report_repetition as True can increase
+                # the number of operations to convert one object to the other dramatically
+                # and can easily cause the objects that could have been otherwise close in distance
+                # to be discarded as pairs.
+                # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
+                # in the future so that it can still be counted.
+                parameters['report_repetition'] = False
                 diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters, hashes=self.hashes)
                 rough_distance = diff.get_rough_distance()
                 # Discard potential pairs that are too far.
@@ -585,8 +596,9 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_iterable_with_deephash(self, level, parents_ids):
         """Diff of unhashable iterables. Only used when ignoring the order."""
-        t1_hashtable = self.__create_hashtable(level.t1, level)
-        t2_hashtable = self.__create_hashtable(level.t2, level)
+        print(f'__diff_iterable_with_deephash for {level}')
+        t1_hashtable = self.__create_hashtable(level, 't1')
+        t2_hashtable = self.__create_hashtable(level, 't2')
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -596,6 +608,7 @@ class DeepDiff(ResultDict, Base):
 
         pairs = self.__get_most_in_common_pairs_in_iterables(
             hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
+        print(f'found pairs: {pairs}')
         inverse_pairs = {v: k for k, v in pairs.items()}
         pairs.update(inverse_pairs)
 
@@ -752,16 +765,17 @@ class DeepDiff(ResultDict, Base):
         if np is None:
             raise ImportError('Unable to import numpy. Please make sure it is installed.')
 
-        # fast checks
-        if self.significant_digits is None:
-            if np.array_equal(level.t1, level.t2):
-                return  # all good
-        else:
-            try:
-                np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
-                return  # all good
-            except AssertionError:
-                pass    # do detailed checking below
+        if not self.ignore_order:
+            # fast checks
+            if self.significant_digits is None:
+                if np.array_equal(level.t1, level.t2):
+                    return  # all good
+            else:
+                try:
+                    np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
+                    return  # all good
+                except AssertionError:
+                    pass    # do detailed checking below
 
         # compare array meta-data
         if level.t1.shape != level.t2.shape:
@@ -772,13 +786,19 @@ class DeepDiff(ResultDict, Base):
             self.__diff(next_level, parents_ids)
         else:
             # metadata same -- the difference is in the content
-            dimensions = len(level.t1.shape)
+            shape = level.t1.shape
+            dimensions = len(shape)
             if dimensions == 1:
+                self.__diff_iterable(level, parents_ids)
+            elif self.ignore_order:
+                # convert to list
+                level.t1 = level.t1.tolist()
+                level.t2 = level.t2.tolist()
                 self.__diff_iterable(level, parents_ids)
             else:
                 for (t1_path, t1_row), (t2_path, t2_row) in zip(
-                        get_numpy_ndarray_rows(level.t1),
-                        get_numpy_ndarray_rows(level.t2)):
+                        get_numpy_ndarray_rows(level.t1, shape),
+                        get_numpy_ndarray_rows(level.t2, shape)):
 
                     new_level = level.branch_deeper(
                         t1_row,
@@ -954,7 +974,10 @@ class DeepDiff(ResultDict, Base):
 
         return result
 
-    def pretty_form(self):
+    def pretty(self):
+        """
+        The pretty human readable string output for the diff object.
+        """
         result = []
         keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
         for key in keys:

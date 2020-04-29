@@ -371,16 +371,35 @@ def cartesian_product_of_shape(dimentions, result=None):
     return result
 
 
-def get_numpy_ndarray_rows(obj):
+def get_numpy_ndarray_rows(obj, shape=None):
     """
     Convert a multi dimensional numpy array to list of rows
     """
-    dimentions = obj.shape[:-1]
-    for path in cartesian_product_of_shape(dimentions):
+    if shape is None:
+        shape = obj.shape
+
+    dimentions = shape[:-1]
+    for path_tuple in cartesian_product_of_shape(dimentions):
         result = obj
-        for index in path:
+        for index in path_tuple:
             result = result[index]
-        yield path, result
+        yield path_tuple, result
+
+
+class _NotFound:
+
+    def __eq__(self, other):
+        return False
+
+    __req__ = __eq__
+
+    def __repr__(self):
+        return 'not found'
+
+    __str__ = __repr__
+
+
+not_found = _NotFound()
 
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)

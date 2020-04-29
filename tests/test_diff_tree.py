@@ -188,7 +188,7 @@ class TestDeepAdditions:
 
 
 class TestDeepDiffPrettyForm:
-    """Tests for pretty_form() method of DeepDiff"""
+    """Tests for pretty() method of DeepDiff"""
 
     class TestingClass:
         one = 1
@@ -302,7 +302,7 @@ class TestDeepDiffPrettyForm:
         t1 = {2: 2, 3: 3, 4: 4}
         t2 = {2: 'b', 4: 5, 5: 5}
         ddiff = DeepDiff(t1, t2, view='tree')
-        result = ddiff.pretty_form()
+        result = ddiff.pretty()
         expected = (
             'Item root[5] added to dictionary.'
             '\nItem root[3] removed from dictionary.'
