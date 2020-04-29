@@ -602,7 +602,7 @@ class TestDeepHashPrep:
         t1_hash = DeepHashPrep(t1)
         with pytest.raises(KeyError) as excinfo:
             t1_hash[t1[0]]
-            assert str(excinfo.value) == HASH_LOOKUP_ERR_MSG.format(t1[0])
+        assert str(excinfo.value).strip("'") == HASH_LOOKUP_ERR_MSG.format(t1[0])
 
 
 class TestDeepHashSHA:
