@@ -596,7 +596,6 @@ class DeepDiff(ResultDict, Base):
 
     def __diff_iterable_with_deephash(self, level, parents_ids):
         """Diff of unhashable iterables. Only used when ignoring the order."""
-        print(f'__diff_iterable_with_deephash for {level}')
         t1_hashtable = self.__create_hashtable(level, 't1')
         t2_hashtable = self.__create_hashtable(level, 't2')
 
@@ -608,7 +607,6 @@ class DeepDiff(ResultDict, Base):
 
         pairs = self.__get_most_in_common_pairs_in_iterables(
             hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
-        print(f'found pairs: {pairs}')
         inverse_pairs = {v: k for k, v in pairs.items()}
         pairs.update(inverse_pairs)
 

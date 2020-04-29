@@ -5,9 +5,10 @@ import logging
 from collections import namedtuple
 from functools import partial
 from enum import Enum
+from decimal import Decimal
 from deepdiff import DeepHash
 from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj, HASH_LOOKUP_ERR_MSG
-from deepdiff.helper import pypy3, get_id, number_to_string, np
+from deepdiff.helper import pypy3, get_id, number_to_string, np, py_current_version
 from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
@@ -596,7 +597,7 @@ class TestDeepHashPrep:
         t1_hash = DeepHashPrep(t1, ignore_numeric_type_changes=True)
         assert t1_hash[t1] == 'ndarray:ndarray:number:1.000000000000,number:2.000000000000'
 
-    # TODO: Trying to fix the issue in DeepDiff, If it gets fixed there, remove this test.
+    @pytest.mark.skipif(py_current_version < Decimal('3.8'), reason='Somehow pytest is not catching the exception in Python 3.7 and older')
     def test_hash_numpy_array2_multi_dimensional_can_not_retrieve_individual_array_item_hashes(self):
         t1 = np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8)
         t1_hash = DeepHashPrep(t1)
