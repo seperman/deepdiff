@@ -23,6 +23,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
                              np_ndarray, get_numpy_ndarray_rows)
+from deepdiff.serialization import pickle_dump
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, DeltaResult,
@@ -970,7 +971,13 @@ class DeepDiff(ResultDict, Base):
         if self.numpy_used:
             result['numpy_used'] = True
 
-        return result
+        return dict(result)
+
+    def to_detla_dump(self):
+        """
+        Dump the delta dictionary into a special format that includes header + delta pickle
+        """
+        return pickle_dump(self.to_delta_dict())
 
     def pretty(self):
         """
