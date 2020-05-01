@@ -3,7 +3,7 @@
 Authors
 =======
 
-DeepDiff Core Developers:
+DeepDiff Core Developer:
 
 - Sep Dehpour
 
@@ -12,13 +12,11 @@ DeepDiff Core Developers:
     - `Linkedin <http://www.linkedin.com/in/sepehr>`_
     - `Articles about Deepdiff <https://zepworks.com/tags/deepdiff/>`_
 
-- Victor Hahn Castell for major contributions
-
-    - `hahncastell.de <http://hahncastell.de>`_
-    - `flexoptix.net <http://www.flexoptix.net>`_
-
 And many thanks to the following people for their contributions to DeepDiff!
 
+- Victor Hahn Castell for major contributions
+    - `hahncastell.de <http://hahncastell.de>`_
+    - `flexoptix.net <http://www.flexoptix.net>`_
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
 - WangFenjin for Unicode support.

@@ -73,6 +73,7 @@ class DeepHash(Base):
                  ignore_string_case=False,
                  exclude_obj_callback=None,
                  number_to_string_func=None,
+                 ignore_private_variables=True,
                  parent="root",
                  **kwargs):
         if kwargs:
@@ -82,7 +83,7 @@ class DeepHash(Base):
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func, parent") % ', '.join(kwargs.keys()))
+                 "number_to_string_func, ignore_private_variables, parent") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
             self.hashes = hashes
         elif isinstance(hashes, DeepHash):
@@ -115,6 +116,7 @@ class DeepHash(Base):
         self.apply_hash = apply_hash
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.number_to_string = number_to_string_func or number_to_string
+        self.ignore_private_variables = ignore_private_variables
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
@@ -298,7 +300,7 @@ class DeepHash(Base):
         for key, item in obj.items():
             counts += 1
             # ignore private variables
-            if isinstance(key, str) and key.startswith('__'):
+            if self.ignore_private_variables and isinstance(key, str) and key.startswith('__'):
                 continue
             key_formatted = "'%s'" % key if not print_as_attribute and isinstance(key, strings) else key
             key_in_report = key_text % (parent, key_formatted)

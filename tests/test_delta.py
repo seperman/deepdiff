@@ -27,7 +27,7 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
-        dump = diff.to_detla_dump()
+        dump = diff.to_delta_dump()
         delta = Delta(dump)
 
         assert delta + t1 == t2
@@ -788,7 +788,7 @@ class TestDeltaView:
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         assert {} == ddiff
         assert 0 == get_diff_length(ddiff)
-        assert '0' == str(ddiff.get_rough_distance())[:10]
+        assert '0' == str(ddiff.get_deep_distance())[:10]
         assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
@@ -798,7 +798,7 @@ class TestDeltaView:
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         assert {'set_item_added': {'root[1]': {6}}} == ddiff
         assert 1 == get_diff_length(ddiff)
-        assert '0.05882352' == str(ddiff.get_rough_distance())[:10]
+        assert '0.05882352' == str(ddiff.get_deep_distance())[:10]
         assert 8 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
@@ -808,7 +808,7 @@ class TestDeltaView:
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == ddiff
         assert 2 == get_diff_length(ddiff)
-        assert '0.09090909' == str(ddiff.get_rough_distance())[:10]
+        assert '0.09090909' == str(ddiff.get_deep_distance())[:10]
         assert 10 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 12 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 

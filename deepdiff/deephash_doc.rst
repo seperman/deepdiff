@@ -119,6 +119,10 @@ ignore_string_case
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
 
 
+ignore_private_variables: Boolean, default = True
+    Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
+
+
 **Returns**
     A dictionary of {item: item hash}.
     If your object is nested, it will build hashes of all the objects it contains too.

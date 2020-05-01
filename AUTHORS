@@ -1,10 +1,10 @@
-Code Developers:
+Developer:
 
 - Seperman
-- Victor Hahn Castell @ Flexoptix
 
 And many thanks to the following people for their contributions to DeepDiff!
 
+- Victor Hahn Castell @ Flexoptix for tree view and major contributions.
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
 - WangFenjin for Unicode support.

@@ -244,6 +244,17 @@ Read more in the Deep Hash reference:
 :doc:`/deephash`
 
 
+*****
+Pycon
+*****
+
+**Pycon 2016 Talk**
+A talk was given about the basics of how DeepDiff does what it does at Pycon 2016.
+`Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
+
+You can find more information about the contents of that Pycon talk here: http://zepworks.com/blog/diff-it-to-digg-it/
+
+
 ************
 Troubleshoot
 ************

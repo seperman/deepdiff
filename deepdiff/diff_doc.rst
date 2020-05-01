@@ -49,6 +49,7 @@ verbose_level: int >= 0, default = 1
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.
     And verbose level 2 shows the value of the items that are added or removed too.
+    Note that the verbose_level is ignore for the delta view.
 
 exclude_paths: list, default = None
     List of paths to exclude from the report. If only one item, you can path it as a string.
@@ -62,10 +63,11 @@ hasher: default = DeepHash.murmur3_128bit
     by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
 
 view: string, default = text
-    Starting the version 3 you can choosethe view into the deepdiff results.
-    The default is the text view which has been the only view up until now.
-    The new view is called the tree view which allows you to traverse through
-    the tree of changed items.
+    Views are different "formats" of results. Each view comes with its own features.
+    The choices are text (the default), tree and delta views.
+    The text view is the original format of the results. 
+    The tree view allows you to traverse through the tree of results. So you can traverse through the tree and see what items were compared to what.
+    The delta view is the format of the results that the Delta object uses internally. It is more machine readable that the other formats.
 
 exclude_types: list, default = None
     List of object types to exclude from the report.
@@ -92,14 +94,17 @@ ignore_string_case: Boolean, default = False
 ignore_nan_inequality: Boolean, default = False
     Whether to ignore float('nan') inequality in Python.
 
+ignore_private_variables: Boolean, default = True
+    Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
+
 
 **Returns**
 
-    A DeepDiff object that has already calculated the difference of the 2 items.
+    A DeepDiff object that has already calculated the difference of the 2 items. The format of the object is chosen by the view parameter.
 
 **Supported data types**
 
-int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple and custom objects!
+int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy and custom objects!
 
 **Text View**
 
@@ -765,6 +770,57 @@ Approximate float comparison (Significant digits after the point) (Tree View):
     >>> ddiff
     {'values_changed': [<root t1:1.23e+20, t2:1.24e+20>]}
 
+**Delta View**
+
+Starting DeepDiff 5 the Delta view is introduced.
+The delta view is the format that Delta object uses internally and it is exposed to the user through a few different ways.
+    >>> from deepdiff import DeepDiff
+    >>> t1={1,2,4}
+    >>> t2={2,3}
+    >>> DeepDiff(t1, t2, view='delta')
+    {'set_item_removed': {'root': {1, 4}}, 'set_item_added': {'root': {3}}}
+
+Note that views are just different format of results. You have all the other parameters that can be used for any view. However since the delta view is meant to be for the Delta object, it does not follow the verbose_level parameter.
+
+
+**Text view vs. Tree view vs. Delta view vs. pretty() method**
+
+Views are just different format of results. Each comes with its own set of features. At the end of the day the user can choose the right format based on the use case.
+
+- The text view is the default format of the results. It is the format that is the most suitable if you don't need to know the traversal history of the objects being compared.
+- The tree view allows you to traverse back and forth through the tree and see what objects were compared to what other objects.
+- The delta view is what the Delta object uses internally. It is exposed to the user as a view too.
+- The pretty() method is not a view. All the views are dictionaries. The pretty() method spits out a string output of what has changed and is designed to be human readable.
+
+For example
+    >>> from deepdiff import DeepDiff
+    >>> t1={1,2,4}
+    >>> t2={2,3}
+
+Text view (default)
+    >>> DeepDiff(t1, t2)  # same as view='text'
+    {'set_item_removed': [root[4], root[1]], 'set_item_added': [root[3]]}
+
+Delta view
+    >>> DeepDiff(t1, t2, view='delta')
+    {'set_item_removed': {'root': {1, 4}}, 'set_item_added': {'root': {3}}}
+
+Tree view
+    >>> tree = DeepDiff(t1, t2, view='tree')
+    >>> tree
+    {'set_item_removed': [<root: t1:4, t2:not present>, <root: t1:1, t2:not present>], 'set_item_added': [<root: t1:not present, t2:3>]}
+    >>> tree['set_item_added'][0]
+    <root: t1:not present, t2:3>
+    >>> tree['set_item_added'][0].t2
+    3
+
+Pretty method. Regardless of what view was used, you can use the "pretty()" method to get a human readable output.
+    >>> print(DeepDiff(t1, t2).pretty())
+    Item root[3] added to set.
+    Item root[4] removed from set.
+    Item root[1] removed from set.
+
+
 **Exclude paths**
 
 Exclude part of your object tree from comparison
@@ -802,13 +858,13 @@ Tip: DeepDiff is using re.search on the path. So if you want to force it to matc
 **Serialization**
 
 In order to convert the DeepDiff object into a normal Python dictionary, use the to_dict() method.
-Note that to_dict will use the text view even if you did the diff in tree view.
+Note that you can override the view that was originally used to generate the diff here.
 
 Example:
     >>> t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
     >>> t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> ddiff.to_dict()
+    >>> ddiff.to_dict(view_override='text')
     {'type_changes': {"root[4]['b']": {'old_type': <class 'list'>, 'new_type': <class 'str'>, 'old_value': [1, 2, 3], 'new_value': 'world\n\n\nEnd'}}}
 
 
@@ -836,11 +892,3 @@ Serialize and then deserialize back to deepdiff
     >>> ddiff_new = DeepDiff.from_json_pickle(jsoned)
     >>> ddiff == ddiff_new
     True
-
-**Pycon 2016 Talk**
-I gave a talk about how DeepDiff does what it does at Pycon 2016.
-`Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
-
-And here is more info: http://zepworks.com/blog/diff-it-to-digg-it/
-
-

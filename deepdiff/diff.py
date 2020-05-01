@@ -51,6 +51,10 @@ TEXT_VIEW = 'text'
 DELTA_VIEW = 'delta'
 
 
+MAX_PASSES_REACHED_MSG = (
+    'DeepDiff has reached the max number of passes of {}. '
+    'You can get more accurate results by passing the max_passes parameter with a higher value.')
+
 notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 
 doc = get_doc('diff_doc.rst')
@@ -58,6 +62,13 @@ doc = get_doc('diff_doc.rst')
 
 class DeepDiff(ResultDict, Base):
     __doc__ = doc
+
+    # Maximum number of calculated distances between pairs to be tracked.
+    # For huge lists, this number may need to be modified at the cost of more memory usage.
+    # Only used when ignore_order = True.
+    MAX_COMMON_PAIR_DISTANCES = 10000
+    # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
+    PAIR_MAX_DISTANCE_THRESHOLD = 0.3
 
     def __init__(self,
                  t1,
@@ -77,19 +88,24 @@ class DeepDiff(ResultDict, Base):
                  exclude_obj_callback=None,
                  number_to_string_func=None,
                  ignore_nan_inequality=False,
+                 ignore_private_variables=True,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
                  hashes=None,
                  parameters=None,
+                 max_passes=100000,
+                 current_pass=1,
+                 max_pass_logged=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
-                "ignore_nan_inequality, number_to_string_func, verbose_level, view, hasher, hashes and parameters.") % ', '.join(kwargs.keys()))
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
+                "ignore_nan_inequality, number_to_string_func, verbose_level, "
+                "view, hasher, hashes, max_passes, current_pass, max_pass_logged and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -112,6 +128,7 @@ class DeepDiff(ResultDict, Base):
             self.ignore_string_case = ignore_string_case
             self.exclude_obj_callback = exclude_obj_callback
             self.number_to_string = number_to_string_func or number_to_string
+            self.ignore_private_variables = ignore_private_variables
             self.ignore_nan_inequality = ignore_nan_inequality
             self.hasher = hasher
 
@@ -119,6 +136,13 @@ class DeepDiff(ResultDict, Base):
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
+            self.max_passes = max_passes
+            self.current_pass = current_pass
+            self.max_pass_logged = max_pass_logged
+            # Parameters are the clean parameters to initialize DeepDiff with so we avoid all the above
+            # cleaning functionalities when running DeepDiff recursively.
+            # However DeepHash has its own set of parameters that are slightly different than DeepDIff.
+            # DeepDiff parameters are transformed to DeepHash parameters via __get_deephash_params method.
             parameters = self.__dict__.copy()
 
         self.hashes = {} if hashes is None else hashes
@@ -164,7 +188,8 @@ class DeepDiff(ResultDict, Base):
             'ignore_type_in_groups',
             'ignore_type_subclasses',
             'ignore_string_case',
-            'exclude_obj_callback',)}
+            'exclude_obj_callback',
+            'ignore_private_variables',)}
         result['ignore_repetition'] = not self.report_repetition
         result['number_to_string_func'] = self.number_to_string
         return result
@@ -304,8 +329,12 @@ class DeepDiff(ResultDict, Base):
             item_removed_key = "dictionary_item_removed"
             rel_class = DictRelationship
 
-        t1_keys = set(t1.keys())
-        t2_keys = set(t2.keys())
+        if self.ignore_private_variables:
+            t1_keys = {key for key in t1 if not(isinstance(key, str) and key.startswith('__'))}
+            t2_keys = {key for key in t2 if not(isinstance(key, str) and key.startswith('__'))}
+        else:
+            t1_keys = set(t1.keys())
+            t2_keys = set(t2.keys())
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
             t1_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t2_keys, level=level)
@@ -545,8 +574,6 @@ class DeepDiff(ResultDict, Base):
         # distance to hashes
         used_target_hashes = set()
         most_in_common_pairs = defaultdict(lambda: defaultdict(set))
-        MAX_COMMON_PAIR_DISTANCES = 5
-        PAIR_MAX_DISTANCE_THRESHOLD = 0.3
         pairs = {}
 
         for added_hash in hashes_added:
@@ -564,14 +591,16 @@ class DeepDiff(ResultDict, Base):
                 # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
                 # in the future so that it can still be counted.
                 parameters['report_repetition'] = False
-                diff = DeepDiff(removed_hash_obj.item, added_hash_obj.item, parameters=parameters, hashes=self.hashes)
-                rough_distance = diff.get_rough_distance()
+                diff = DeepDiff(
+                    removed_hash_obj.item, added_hash_obj.item,
+                    parameters=parameters, hashes=self.hashes)
+                rough_distance = diff.get_deep_distance()
                 # Discard potential pairs that are too far.
-                if rough_distance > PAIR_MAX_DISTANCE_THRESHOLD:
+                if rough_distance > self.PAIR_MAX_DISTANCE_THRESHOLD:
                     continue
                 com = most_in_common_pairs[added_hash]
                 current_len = len(com)
-                if current_len < MAX_COMMON_PAIR_DISTANCES:
+                if current_len < self.MAX_COMMON_PAIR_DISTANCES:
                     com[rough_distance].add(removed_hash)
                     com['max'] = rough_distance
                 elif rough_distance <= com['max']:
@@ -606,10 +635,17 @@ class DeepDiff(ResultDict, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        pairs = self.__get_most_in_common_pairs_in_iterables(
-            hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
-        inverse_pairs = {v: k for k, v in pairs.items()}
-        pairs.update(inverse_pairs)
+        if self.current_pass < self.max_passes:
+            self.current_pass += 1
+            pairs = self.__get_most_in_common_pairs_in_iterables(
+                hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
+            inverse_pairs = {v: k for k, v in pairs.items()}
+            pairs.update(inverse_pairs)
+        else:
+            if not self.max_pass_logged:
+                self.max_pass_logged = True
+                logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
+            pairs = {}
 
         def get_other_pair(hash_value, in_t1=True):
             """
@@ -973,7 +1009,7 @@ class DeepDiff(ResultDict, Base):
 
         return dict(result)
 
-    def to_detla_dump(self):
+    def to_delta_dump(self):
         """
         Dump the delta dictionary into a special format that includes header + delta pickle
         """
@@ -982,6 +1018,16 @@ class DeepDiff(ResultDict, Base):
     def pretty(self):
         """
         The pretty human readable string output for the diff object.
+
+        This is regardless of what view was used to generate the diff.
+
+        Example:
+            >>> t1={1,2,4}
+            >>> t2={2,3}
+            >>> print(DeepDiff(t1, t2).pretty())
+            Item root[3] added to set.
+            Item root[4] removed from set.
+            Item root[1] removed from set.
         """
         result = []
         keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
@@ -1013,20 +1059,22 @@ class DeepDiff(ResultDict, Base):
             length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
         return length
 
-    def get_rough_distance(self):
+    def get_deep_distance(self):
         """
-        Gives a numeric value for the distance of t1 and t2 based on how many items are different between them.
+        Gives a numeric value for the distance of t1 and t2 based on how many operations are needed to convert
+        one to the other.
 
-        A distance of close to zero is very close and a distance of 1 is very far.
+        This is a similar concept to the Levenshtein Edit Distance but for the structured data and is it is designed
+        to be between 0 and 1.
 
-        The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
+        A distance of zero means the objects are equal and a distance of 1 is very far.
+
+        Note: The rough distance calculations are currently only internally used when ignore_order=True so no
+        it is implemented as a part of the algorithm that run ONLY when ignore_order=True. If you have a use case
+        for the rough distance to be calculated when ignore_order=False, then please open a ticket.
+
+        Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
-
-        Note: The rough distance calculations are currently only internally used when ignore_order=True
-        For efficiency reasons, the calculations are done by DeepHash while it is calculating the hash of objects.
-        However if in the future it is decided that the rough distance of objects is needed by the users even when
-        ignore_order is False, then the calculations need to be migrated out of the DeepHash to a separate module so
-        that there is no extra work of calculating the hashes when only the rough distance is needed.
         """
         if self.view != DELTA_VIEW:
             raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')

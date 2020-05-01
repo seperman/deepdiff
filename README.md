@@ -433,7 +433,7 @@ git push && git push --tags
 # Contribute
 
 1. Please make your PR against the dev branch
-2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we maintain 100% test coverage on the code.
+2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we strive to maintain around 100% test coverage on the code.
 
 Please run `pytest --cov=deepdiff tests/` to see the coverage report.
 
@@ -441,15 +441,18 @@ Thank you!
 
 # Authors
 
+Developer:
+
 - Seperman (Sep Dehpour)
     - [Github](https://github.com/seperman)
     - [Linkedin](http://www.linkedin.com/in/sepehr)
     - [ZepWorks](http://www.zepworks.com)
 
-- Victor Hahn Castell for major contributions
+And many thanks to the following people for their contributions to DeepDiff!
+
+- Victor Hahn Castell for the tree view and major contributions:
     - [hahncastell.de](http://hahncastell.de)
     - [flexoptix.net](http://www.flexoptix.net)
-
 - nfvs for Travis-CI setup script.
 - brbsix for initial Py3 porting.
 - WangFenjin for unicode support.
