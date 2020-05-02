@@ -53,7 +53,7 @@ DELTA_VIEW = 'delta'
 
 MAX_PASSES_REACHED_MSG = (
     'DeepDiff has reached the max number of passes of {}. '
-    'You can get more accurate results by passing the max_passes parameter with a higher value.')
+    'You can possibly get more accurate results by increasing the max_passes parameter. id: {}')
 
 notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 
@@ -95,8 +95,7 @@ class DeepDiff(ResultDict, Base):
                  hashes=None,
                  parameters=None,
                  max_passes=100000,
-                 current_pass=1,
-                 max_pass_logged=False,
+                 _pass=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -105,7 +104,7 @@ class DeepDiff(ResultDict, Base):
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, current_pass, max_pass_logged and parameters.") % ', '.join(kwargs.keys()))
+                "view, hasher, hashes, max_passes, _pass and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -136,15 +135,16 @@ class DeepDiff(ResultDict, Base):
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
-            self.max_passes = max_passes
-            self.current_pass = current_pass
-            self.max_pass_logged = max_pass_logged
+            self.max_passes = int(max_passes)
+            # The actual number of buckets will be 10 to the power of the _rough_distance_buckets_power
+            self._rough_distance_buckets_power = len(str(self.max_passes)) + 1  # Adding some padding to it.
             # Parameters are the clean parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
             # However DeepHash has its own set of parameters that are slightly different than DeepDIff.
             # DeepDiff parameters are transformed to DeepHash parameters via __get_deephash_params method.
             parameters = self.__dict__.copy()
 
+        self._pass = _pass if _pass else {'count': 0, 'logged': False}
         self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
         self.deephash_parameters = self.__get_deephash_params()
@@ -593,11 +593,15 @@ class DeepDiff(ResultDict, Base):
                 parameters['report_repetition'] = False
                 diff = DeepDiff(
                     removed_hash_obj.item, added_hash_obj.item,
-                    parameters=parameters, hashes=self.hashes)
+                    parameters=parameters, hashes=self.hashes, _pass=self._pass)
                 rough_distance = diff.get_deep_distance()
                 # Discard potential pairs that are too far.
                 if rough_distance > self.PAIR_MAX_DISTANCE_THRESHOLD:
                     continue
+                else:
+                    rough_distance = self.number_to_string(rough_distance,
+                                                           significant_digits=self._rough_distance_buckets_power,
+                                                           number_format_notation=self.number_format_notation)
                 com = most_in_common_pairs[added_hash]
                 current_len = len(com)
                 if current_len < self.MAX_COMMON_PAIR_DISTANCES:
@@ -635,16 +639,20 @@ class DeepDiff(ResultDict, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        if self.current_pass < self.max_passes:
-            self.current_pass += 1
+        self._pass['count'] += 1
+        if self._pass['count'] < self.max_passes:
             pairs = self.__get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
             inverse_pairs = {v: k for k, v in pairs.items()}
             pairs.update(inverse_pairs)
         else:
-            if not self.max_pass_logged:
-                self.max_pass_logged = True
-                logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
+            if not self._pass['logged']:
+                self._pass['logged'] = True
+                # TODO: this can spit out many warnings when diffs are already
+                # in the stack with a _max_pass_logged already set. Also it means that the current max_passes
+                # calculations are wrong and we need a central place to keep track of the max_passes.
+                # Perhaps that central place gets reset everytime DeepDiff is run
+                logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes, id(self.max_passes)))
             pairs = {}
 
         def get_other_pair(hash_value, in_t1=True):
