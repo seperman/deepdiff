@@ -48,7 +48,6 @@ except ImportError:
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
-DELTA_VIEW = 'delta'
 
 
 MAX_PASSES_REACHED_MSG = (
@@ -157,23 +156,9 @@ class DeepDiff(ResultDict, Base):
         root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
         self.__diff(root, parents_ids=frozenset({id(t1)}))
 
-        self.tree.cleanup()
-
-        view_results = self._get_view_results(view)
+        self.tree.remove_empty_keys()
+        view_results = self.__get_view_results(view)
         self.update(view_results)
-
-    def _get_view_results(self, view):
-        """
-        Get the results based on the view
-        """
-        if view == TREE_VIEW:
-            result = self.tree
-        elif view == TEXT_VIEW:
-            result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
-            result.cleanup()  # clean up text-style result dictionary
-        elif view == DELTA_VIEW:
-            result = self.to_delta_dict(report_repetition_needed=False)
-        return result
 
     def __get_deephash_params(self):
         result = {key: self.parameters[key] for key in (
@@ -583,7 +568,6 @@ class DeepDiff(ResultDict, Base):
 
                 # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
                 parameters = deepcopy(self.parameters)
-                parameters['view'] = DELTA_VIEW
                 # Having report_repetition as True can increase
                 # the number of operations to convert one object to the other dramatically
                 # and can easily cause the objects that could have been otherwise close in distance
@@ -958,28 +942,37 @@ class DeepDiff(ResultDict, Base):
         dic = self.to_dict(view_override=TEXT_VIEW)
         return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping))
 
+    def __get_view_results(self, view):
+        """
+        Get the results based on the view
+        """
+        result = self.tree
+        if not self.report_repetition:
+            result.mutual_add_removes_to_become_value_changes()
+        if view == TREE_VIEW:
+            pass
+        elif view == TEXT_VIEW:
+            result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
+            result.remove_empty_keys()
+        else:
+            raise ValueError('The only valid values for the view parameter are text and tree.')
+        return result
+
     def to_dict(self, view_override=None):
         """
-        Dump dictionary of the text view. It does not matter which view you are currently in. It will give you the dictionary of the text view.
+        convert the result to a python dictionary. You can override the view type by passing view_override.
 
         **Parameters**
 
         view_override: view type, default=None,
             override the view that was used to generate the diff when converting to the dictionary.
-            The options are the text, tree and delta views.
+            The options are the text or tree.
         """
 
         view = view_override if view_override else self.view
+        return self.__get_view_results(view)
 
-        if view == TEXT_VIEW:
-            result = self._get_view_results(view=TEXT_VIEW)
-        elif view == DELTA_VIEW:
-            result = self.to_delta_dict(report_repetition_needed=False)
-        else:
-            result = dict(self)
-        return result
-
-    def to_delta_dict(self, directed=True, report_repetition_needed=True):
+    def to_delta_dict(self, directed=True, report_repetition_required=True):
         """
         Dump to a dictionary suitable for delta usage.
         Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
@@ -1002,10 +995,11 @@ class DeepDiff(ResultDict, Base):
 
         """
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
-        result.cleanup()  # clean up text-style result dictionary
-        if self.ignore_order:
-            if report_repetition_needed and not self.report_repetition:
-                raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
+        # if not self.report_repetition:
+        #     result.mutual_add_removes_to_become_value_changes()
+        result.remove_empty_keys()
+        if report_repetition_required and self.ignore_order and not self.report_repetition:
+            raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
         if directed:
             for report_key, report_value in result.items():
                 if isinstance(report_value, Mapping):
@@ -1084,14 +1078,13 @@ class DeepDiff(ResultDict, Base):
         Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
         """
-        if self.view != DELTA_VIEW:
-            raise ValueError('Delta view is required to calculate the rough distance. Pass view=delta')
         if not self.hashes:
             raise ValueError(
                 'Currently only during the hash calculations, the objects hierarchical '
                 'counts are evaluated. As a result, the rough distance is only calculated when ignore_order=True.'
                 'If you have a usage for this function when ignore_order=False, then let us know')
-        diff_length = get_diff_length(self)
+        delta = self.to_delta_dict(report_repetition_required=False)
+        diff_length = get_diff_length(delta)
         if diff_length == 0:
             return 0
 

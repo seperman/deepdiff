@@ -1,9 +1,8 @@
-import numpy as np
 from collections.abc import Mapping
 from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, not_found
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -29,7 +28,11 @@ class DoesNotExist(Exception):
 
 
 class ResultDict(RemapDict):
-    def cleanup(self):
+    # def cleanup(self):
+    #     self.mutual_add_removes_to_become_value_changes()
+    #     self.remove_empty_keys()
+
+    def remove_empty_keys(self):
         """
         Remove empty keys from this object. Should always be called after the result is final.
         :return:
@@ -53,6 +56,36 @@ class TreeResult(ResultDict):
     def __init__(self):
         for key in REPORT_KEYS:
             self[key] = PrettyOrderedSet()
+
+    def mutual_add_removes_to_become_value_changes(self):
+        """
+        There might be the same paths reported in the results as removed and added.
+        In such cases they should be reported as value_changes.
+
+        Note that this function mutates the tree in ways that causes issues when report_repetition=True
+        and should be avoided in that case.
+
+        This function should only be run on the Tree Result.
+        """
+        return
+        if self.get('iterable_item_added') and self.get('iterable_item_removed'):
+            added_paths = {i.path(): i for i in self['iterable_item_added']}
+            removed_paths = {i.path(): i for i in self['iterable_item_removed']}
+            mutual_paths = set(added_paths) & set(removed_paths)
+
+            if mutual_paths and 'values_changed' not in self:
+                self['values_changed'] = PrettyOrderedSet()
+            for path in mutual_paths:
+                level_before = removed_paths[path]
+                self['iterable_item_removed'].remove(level_before)
+                level_after = added_paths[path]
+                self['iterable_item_added'].remove(level_after)
+                level_before.t2 = level_after.t2
+                self['values_changed'].add(level_before)
+        if 'iterable_item_removed' in self and not self['iterable_item_removed']:
+            del self['iterable_item_removed']
+        if 'iterable_item_added' in self and not self['iterable_item_added']:
+            del self['iterable_item_added']
 
 
 class TextResult(ResultDict):
