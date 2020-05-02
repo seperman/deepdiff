@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.diff import DELTA_VIEW
 from deepdiff.helper import get_diff_length
 
 
@@ -83,7 +84,7 @@ class TestDeepDistance:
     def test_distance_of_list_sets_and_strings(self):
         t1 = [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4, 7)}]
         t2 = [{4, 5, 6, (2, )}, {1, 2, 3}, {5, 'hello', 'right!'}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
         delta = ddiff.to_delta_dict(report_repetition_required=False)
         expected = {
             'set_item_removed': {
@@ -94,5 +95,7 @@ class TestDeepDistance:
                 'root[2]': {(2, ), 6}
             }
         }
-        assert expected == delta
+        assert expected == ddiff
+        # If the diff was in delta view, spitting out another delta dict should produce identical results.
+        assert delta == ddiff
         assert 6 == get_diff_length(ddiff)

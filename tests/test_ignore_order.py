@@ -74,7 +74,6 @@ class TestIgnoreOrder:
 
         assert expected == ddiff
 
-
     def test_list_difference_ignore_order(self):
         t1 = {1: 1, 4: {"a": "hello", "b": [1, 2, 3]}}
         t2 = {1: 1, 4: {"a": "hello", "b": [1, 3, 2, 3]}}
@@ -90,7 +89,7 @@ class TestIgnoreOrder:
         t1 = [t1_0]
         t2 = [t2_0]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[0]': t2_0}, 'iterable_item_removed': {'root[0]': t1_0}}
+        result = {'values_changed': {'root[0]': {'new_value': t2_0, 'old_value': t1_0}}}
         assert result == ddiff
 
     def test_dictionary_difference_ignore_order(self):
@@ -193,17 +192,19 @@ class TestIgnoreOrder:
         t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         result = {
-            'iterable_item_added': {
+            'values_changed': {
                 'root[1]': {
-                    1: 1
+                    'new_value': {
+                        1: 1
+                    },
+                    'old_value': {
+                        'a': 2
+                    }
                 }
             },
             'iterable_item_removed': {
-                'root[4]': 'B',
                 'root[0]': 1,
-                'root[1]': {
-                    'a': 2
-                }
+                'root[4]': 'B'
             }
         }
         assert result == ddiff
@@ -396,7 +397,7 @@ class TestIgnoreOrder:
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
 
-        result = {'iterable_item_added': {'root[0].prop1[0]': 'b'}, 'iterable_item_removed': {'root[0].prop1[0]': 'a'}}
+        result = {'values_changed': {'root[0].prop1[0]': {'new_value': 'b', 'old_value': 'a'}}}
         assert result == ddiff
 
     def test_custom_object_type_change_when_ignore_order(self):
@@ -447,7 +448,7 @@ class TestIgnoreOrder:
         t1 = [1, 2, 3, 'a']
         t2 = [1.0, 2.0, 3.3, b'a']
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
-        result = {'iterable_item_added': {'root[2]': 3.3}, 'iterable_item_removed': {'root[2]': 3}}
+        result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
     def test_ignore_string_type_changes_when_dict_keys_merge_is_not_deterministic(self):
@@ -509,34 +510,36 @@ class TestIgnoreOrder:
 
     @pytest.mark.parametrize('max_passes, expected', [
         (1, {
-            'iterable_item_added': {
-                'root[1]': {
-                    'key3': [[[[[1, 3, 5, 4]]]]],
-                    'key4': [7, 8]
-                },
+            'values_changed': {
                 'root[0]': {
-                    'key5': 'CHANGE',
-                    'key6': 'val6'
-                }
-            },
-            'iterable_item_removed': {
-                'root[0]': {
-                    'key3': [[[[[1, 2, 4, 5]]]]],
-                    'key4': [7, 8]
+                    'new_value': {
+                        'key5': 'CHANGE',
+                        'key6': 'val6'
+                    },
+                    'old_value': {
+                        'key3': [[[[[1, 2, 4, 5]]]]],
+                        'key4': [7, 8]
+                    }
                 },
                 'root[1]': {
-                    'key5': 'val5',
-                    'key6': 'val6'
+                    'new_value': {
+                        'key3': [[[[[1, 3, 5, 4]]]]],
+                        'key4': [7, 8]
+                    },
+                    'old_value': {
+                        'key5': 'val5',
+                        'key6': 'val6'
+                    }
                 }
             }
         }),
         (2, {
             'dictionary_item_added': [
-                "root[1]['key3']", "root[1]['key4']", "root[0]['key5']",
-                "root[0]['key6']"
+                "root[1]['key3']", "root[1]['key4']", "root[0]['key6']",
+                "root[0]['key5']"
             ],
             'dictionary_item_removed': [
-                "root[1]['key5']", "root[1]['key6']", "root[0]['key3']",
+                "root[1]['key6']", "root[1]['key5']", "root[0]['key3']",
                 "root[0]['key4']"
             ]
         }),
@@ -545,13 +548,11 @@ class TestIgnoreOrder:
                 "root[1]['key5']": {
                     'new_value': 'CHANGE',
                     'old_value': 'val5'
+                },
+                "root[0]['key3'][0]": {
+                    'new_value': [[[[1, 3, 5, 4]]]],
+                    'old_value': [[[[1, 2, 4, 5]]]]
                 }
-            },
-            'iterable_item_added': {
-                "root[0]['key3'][0]": [[[[1, 3, 5, 4]]]]
-            },
-            'iterable_item_removed': {
-                "root[0]['key3'][0]": [[[[1, 2, 4, 5]]]]
             }
         }),
         (63, {
@@ -559,13 +560,11 @@ class TestIgnoreOrder:
                 "root[1]['key5']": {
                     'new_value': 'CHANGE',
                     'old_value': 'val5'
+                },
+                "root[0]['key3'][0][0][0][0][1]": {
+                    'new_value': 3,
+                    'old_value': 2
                 }
-            },
-            'iterable_item_added': {
-                "root[0]['key3'][0][0][0][0][1]": 3
-            },
-            'iterable_item_removed': {
-                "root[0]['key3'][0][0][0][0][1]": 2
             }
         })
     ])
@@ -591,7 +590,6 @@ class TestIgnoreOrder:
                 'key4': [7, 8],
             },
         ]
-        DeepDiff(t1, t2, ignore_order=True, max_passes=1)
 
         ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes)
         assert expected == ddiff

@@ -48,6 +48,7 @@ except ImportError:
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
+DELTA_VIEW = 'delta'
 
 
 MAX_PASSES_REACHED_MSG = (
@@ -575,6 +576,7 @@ class DeepDiff(ResultDict, Base):
                 # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
                 # in the future so that it can still be counted.
                 parameters['report_repetition'] = False
+                parameters['view'] = DELTA_VIEW
                 diff = DeepDiff(
                     removed_hash_obj.item, added_hash_obj.item,
                     parameters=parameters, hashes=self.hashes, _pass=self._pass)
@@ -954,6 +956,8 @@ class DeepDiff(ResultDict, Base):
         elif view == TEXT_VIEW:
             result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.remove_empty_keys()
+        elif view == 'delta':
+            result = self.to_delta_dict(report_repetition_required=False)
         else:
             raise ValueError('The only valid values for the view parameter are text and tree.')
         return result
@@ -1083,8 +1087,12 @@ class DeepDiff(ResultDict, Base):
                 'Currently only during the hash calculations, the objects hierarchical '
                 'counts are evaluated. As a result, the rough distance is only calculated when ignore_order=True.'
                 'If you have a usage for this function when ignore_order=False, then let us know')
-        delta = self.to_delta_dict(report_repetition_required=False)
-        diff_length = get_diff_length(delta)
+        diff_length = get_diff_length(self)
+
+        # delta = self.to_delta_dict(report_repetition_required=False)
+        # aa = AA()
+        # aa.update(delta)
+        # diff_length = get_diff_length(aa)
         if diff_length == 0:
             return 0
 
@@ -1097,3 +1105,7 @@ class DeepDiff(ResultDict, Base):
 if __name__ == "__main__":  # pragma: no cover
     import doctest
     doctest.testmod()
+
+
+class AA(dict):
+    pass

@@ -28,9 +28,6 @@ class DoesNotExist(Exception):
 
 
 class ResultDict(RemapDict):
-    # def cleanup(self):
-    #     self.mutual_add_removes_to_become_value_changes()
-    #     self.remove_empty_keys()
 
     def remove_empty_keys(self):
         """
@@ -67,7 +64,6 @@ class TreeResult(ResultDict):
 
         This function should only be run on the Tree Result.
         """
-        return
         if self.get('iterable_item_added') and self.get('iterable_item_removed'):
             added_paths = {i.path(): i for i in self['iterable_item_added']}
             removed_paths = {i.path(): i for i in self['iterable_item_removed']}
