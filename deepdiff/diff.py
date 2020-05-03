@@ -9,12 +9,12 @@
 import difflib
 import logging
 import json
-
-from itertools import zip_longest
+from copy import deepcopy
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
+from decimal import Decimal
+from itertools import zip_longest
 from ordered_set import OrderedSet
-from copy import deepcopy
 
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
@@ -22,7 +22,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
-                             np_ndarray, get_numpy_ndarray_rows)
+                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus)
 from deepdiff.serialization import pickle_dump
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
@@ -68,7 +68,7 @@ class DeepDiff(ResultDict, Base):
     # Only used when ignore_order = True.
     MAX_COMMON_PAIR_DISTANCES = 10000
     # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
-    PAIR_MAX_DISTANCE_THRESHOLD = 0.3
+    PAIR_MAX_DISTANCE_THRESHOLD = Decimal('0.3')
 
     def __init__(self,
                  t1,
@@ -137,7 +137,7 @@ class DeepDiff(ResultDict, Base):
             self.view = view
             self.max_passes = int(max_passes)
             # The actual number of buckets will be 10 to the power of the _rough_distance_buckets_power
-            self._rough_distance_buckets_power = len(str(self.max_passes)) + 1  # Adding some padding to it.
+            self._rough_distance_buckets_power = len(str(self.max_passes)) + 3  # Adding some padding to it.
             # Parameters are the clean parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
             # However DeepHash has its own set of parameters that are slightly different than DeepDIff.
@@ -559,7 +559,13 @@ class DeepDiff(ResultDict, Base):
         """
         # distance to hashes
         used_target_hashes = set()
-        most_in_common_pairs = defaultdict(lambda: defaultdict(set))
+
+        # A dictionary of hashes to distances and each distance to an ordered set of hashes.
+        # It tells us about the distance of each object from other objects.
+        # And the objects with the same distances are grouped together in an ordered set.
+        # It also includes a "max" key that is just the value of the biggest current distance in the
+        # most_in_common_pairs dictionary.
+        most_in_common_pairs = defaultdict(lambda: defaultdict(OrderedSetPlus))
         pairs = {}
 
         for added_hash in hashes_added:
@@ -585,19 +591,21 @@ class DeepDiff(ResultDict, Base):
                 if rough_distance > self.PAIR_MAX_DISTANCE_THRESHOLD:
                     continue
                 else:
-                    rough_distance = self.number_to_string(rough_distance,
-                                                           significant_digits=self._rough_distance_buckets_power,
-                                                           number_format_notation=self.number_format_notation)
-                com = most_in_common_pairs[added_hash]
-                current_len = len(com)
-                if current_len < self.MAX_COMMON_PAIR_DISTANCES:
-                    com[rough_distance].add(removed_hash)
-                    com['max'] = rough_distance
-                elif rough_distance <= com['max']:
-                    if rough_distance < com['max']:
-                        del com[com['max']]
-                        com['max'] = rough_distance
-                    com[rough_distance].add(removed_hash)
+                    rough_distance = Decimal(self.number_to_string(
+                        rough_distance,
+                        significant_digits=self._rough_distance_buckets_power,
+                        number_format_notation=self.number_format_notation))
+                pairs_of_item = most_in_common_pairs[added_hash]
+                pairs_of_item[rough_distance].add(removed_hash)
+                count_of_distances = len(pairs_of_item)
+                # There is a maximum number of distances we want to keep track of.
+                current_max_distance_from_item = pairs_of_item.get('max', 0)
+                if count_of_distances < self.MAX_COMMON_PAIR_DISTANCES:
+                    pairs_of_item['max'] = max(rough_distance, current_max_distance_from_item)
+                elif rough_distance <= current_max_distance_from_item:
+                    if rough_distance < current_max_distance_from_item:
+                        del pairs_of_item[current_max_distance_from_item]
+                        pairs_of_item['max'] = rough_distance
 
         for added_hash, distances in most_in_common_pairs.items():
             del distances['max']
@@ -605,7 +613,7 @@ class DeepDiff(ResultDict, Base):
                 target_hashes = distances[key]
                 target_hashes -= used_target_hashes
                 if target_hashes:
-                    target_hash = target_hashes.pop()
+                    target_hash = target_hashes.lpop()
                     used_target_hashes.add(target_hash)
                     pairs[added_hash] = target_hash
                     break

@@ -403,3 +403,23 @@ not_found = _NotFound()
 
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)
+
+
+class OrderedSetPlus(OrderedSet):
+
+    def lpop(self):
+        """
+        Remove and return the first element from the set.
+        Raises KeyError if the set is empty.
+        Example:
+            >>> oset = OrderedSet([1, 2, 3])
+            >>> oset.lpop()
+            1
+        """
+        if not self.items:
+            raise KeyError("Set is empty")
+
+        elem = self.items[0]
+        del self.items[0]
+        del self.map[elem]
+        return elem

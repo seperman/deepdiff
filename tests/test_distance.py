@@ -70,10 +70,11 @@ class TestDeepDistance:
         assert 8 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
-    def test_distance_of_list_sets2(self):
+    @pytest.mark.parametrize('verbose_level', [0, 1, 1])
+    def test_distance_of_list_sets2(self, verbose_level):
         t1 = [{1, 2, 3}, {4, 5}, {1}]
         t2 = [{4, 5, 6}, {1, 2, 3}, {1, 4}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level)
         delta = ddiff.to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == delta
         assert 2 == get_diff_length(ddiff)
@@ -81,10 +82,11 @@ class TestDeepDistance:
         assert 10 == ddiff._DeepDiff__get_item_rough_length(ddiff.t1)
         assert 12 == ddiff._DeepDiff__get_item_rough_length(ddiff.t2)
 
-    def test_distance_of_list_sets_and_strings(self):
+    @pytest.mark.parametrize('verbose_level', [0, 1, 1])
+    def test_distance_of_list_sets_and_strings(self, verbose_level):
         t1 = [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4, 7)}]
         t2 = [{4, 5, 6, (2, )}, {1, 2, 3}, {5, 'hello', 'right!'}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW, verbose_level=verbose_level)
         delta = ddiff.to_delta_dict(report_repetition_required=False)
         expected = {
             'set_item_removed': {
