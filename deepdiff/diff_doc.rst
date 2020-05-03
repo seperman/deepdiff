@@ -64,10 +64,9 @@ hasher: default = DeepHash.murmur3_128bit
 
 view: string, default = text
     Views are different "formats" of results. Each view comes with its own features.
-    The choices are text (the default), tree and delta views.
-    The text view is the original format of the results. 
+    The choices are text (the default) and tree.
+    The text view is the original format of the results.
     The tree view allows you to traverse through the tree of results. So you can traverse through the tree and see what items were compared to what.
-    The delta view is the format of the results that the Delta object uses internally. It is more machine readable that the other formats.
 
 exclude_types: list, default = None
     List of object types to exclude from the report.

@@ -9,6 +9,7 @@
 import difflib
 import logging
 import json
+import datetime
 from copy import deepcopy
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
@@ -22,7 +23,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
-                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus)
+                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer)
 from deepdiff.serialization import pickle_dump
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
@@ -48,7 +49,7 @@ except ImportError:
 
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
-DELTA_VIEW = 'delta'
+DELTA_VIEW = '_delta'
 
 
 MAX_PASSES_REACHED_MSG = (
@@ -58,6 +59,11 @@ MAX_PASSES_REACHED_MSG = (
 notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 
 doc = get_doc('diff_doc.rst')
+
+
+def _report_progress(_pass, progress_logger):
+    msg = "DeepDiff in progress. Pass #{}".format(_pass['count'])
+    progress_logger(msg)
 
 
 class DeepDiff(ResultDict, Base):
@@ -94,7 +100,9 @@ class DeepDiff(ResultDict, Base):
                  hasher=None,
                  hashes=None,
                  parameters=None,
-                 max_passes=100000,
+                 max_passes=10000000,
+                 log_frequency_in_sec=20,
+                 progress_logger=logger.warning,
                  _pass=None,
                  **kwargs):
         if kwargs:
@@ -104,7 +112,7 @@ class DeepDiff(ResultDict, Base):
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, _pass and parameters.") % ', '.join(kwargs.keys()))
+                "view, hasher, hashes, max_passes, log_frequency_in_sec, _pass and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -144,7 +152,18 @@ class DeepDiff(ResultDict, Base):
             # DeepDiff parameters are transformed to DeepHash parameters via __get_deephash_params method.
             parameters = self.__dict__.copy()
 
-        self._pass = _pass if _pass else {'count': 0, 'logged': False}
+        if _pass:
+            # We are in some pass other than root
+            self._pass = _pass
+            repeated_timer = None
+        else:
+            # we are at the root
+            self._pass = {
+                'count': 0,
+                'max_pass_too_small_logged': False}
+            if log_frequency_in_sec:
+                # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
+                repeated_timer = RepeatedTimer(log_frequency_in_sec, _report_progress, self._pass, progress_logger)
         self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
         self.deephash_parameters = self.__get_deephash_params()
@@ -154,12 +173,16 @@ class DeepDiff(ResultDict, Base):
 
         self.numpy_used = False
 
-        root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
-        self.__diff(root, parents_ids=frozenset({id(t1)}))
+        try:
+            root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
+            self.__diff(root, parents_ids=frozenset({id(t1)}))
 
-        self.tree.remove_empty_keys()
-        view_results = self.__get_view_results(view)
-        self.update(view_results)
+            self.tree.remove_empty_keys()
+            view_results = self.__get_view_results(view)
+            self.update(view_results)
+        finally:
+            if repeated_timer:
+                repeated_timer.stop()
 
     def __get_deephash_params(self):
         result = {key: self.parameters[key] for key in (
@@ -640,8 +663,8 @@ class DeepDiff(ResultDict, Base):
             inverse_pairs = {v: k for k, v in pairs.items()}
             pairs.update(inverse_pairs)
         else:
-            if not self._pass['logged']:
-                self._pass['logged'] = True
+            if not self._pass['max_pass_too_small_logged']:
+                self._pass['max_pass_too_small_logged'] = True
                 # TODO: this can spit out many warnings when diffs are already
                 # in the stack with a _max_pass_logged already set. Also it means that the current max_passes
                 # calculations are wrong and we need a central place to keep track of the max_passes.
@@ -964,7 +987,7 @@ class DeepDiff(ResultDict, Base):
         elif view == TEXT_VIEW:
             result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.remove_empty_keys()
-        elif view == 'delta':
+        elif view == DELTA_VIEW:
             result = self.to_delta_dict(report_repetition_required=False)
         else:
             raise ValueError('The only valid values for the view parameter are text and tree.')

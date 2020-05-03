@@ -8,6 +8,7 @@ from decimal import Decimal, localcontext
 from collections import namedtuple
 from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
+from threading import Timer
 
 
 class np_type:
@@ -423,3 +424,34 @@ class OrderedSetPlus(OrderedSet):
         del self.items[0]
         del self.map[elem]
         return elem
+
+
+class RepeatedTimer:
+    """
+    Threaded Repeated Timer by MestreLion
+    https://stackoverflow.com/a/38317060/1497443
+    """
+
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer = None
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
