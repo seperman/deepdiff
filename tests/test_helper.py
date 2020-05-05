@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from decimal import Decimal
 from deepdiff.helper import (
-    short_repr, number_to_string, get_numpy_ndarray_rows, cartesian_product_of_shape)
+    short_repr, number_to_string, get_numpy_ndarray_rows, cartesian_product_of_shape, literal_eval_extended)
 
 
 class TestHelper:
@@ -68,3 +68,11 @@ class TestHelper:
         path1 = (0, 1)
         row1 = np.array([4, 5, 6], dtype=np.int32)
         (path1, row1) = next(get_numpy_ndarray_rows(obj))
+
+    @pytest.mark.parametrize('item, expected', [
+        ('10', 10),
+        ("Decimal('10.1')", Decimal('10.1')),
+    ])
+    def test_literal_eval_extended(self, item, expected):
+        result = literal_eval_extended(item)
+        assert expected == result

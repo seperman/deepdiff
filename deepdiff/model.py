@@ -1,8 +1,7 @@
 from collections.abc import Mapping
-from ast import literal_eval
 from copy import copy
 from ordered_set import OrderedSet
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np
+from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -780,17 +779,22 @@ class ChildRelationship:
                         equal to the objects in question.
                       If 'yes':
                         Will return '(unrepresentable)' instead of None if there is no string representation
+
+        TODO: stringify_param has issues with params that when converted to string via repr,
+        it is not straight forward to turn them back into the original object.
+        Although repr is meant to be able to reconstruct the original object but for complex objects, repr
+        often does not recreate the original object.
+        Perhaps we should log that the repr reconstruction failed so the user is aware.
         """
-        # import pytest; pytest.set_trace()
         param = self.param
         if isinstance(param, strings):
             result = param if self.quote_str is None else self.quote_str.format(param)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
-            result = ']['.join(map(str, param))
+            result = ']['.join(map(repr, param))
         else:
-            candidate = str(param)
+            candidate = repr(param)
             try:
-                resurrected = literal_eval(candidate)
+                resurrected = literal_eval_extended(candidate)
                 # Note: This will miss string-representable custom objects.
                 # However, the only alternative I can currently think of is using eval() which is inherently dangerous.
             except (SyntaxError, ValueError):

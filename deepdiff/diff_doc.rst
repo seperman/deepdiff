@@ -3,9 +3,6 @@
 Deep Difference of dictionaries, iterables, strings and almost any other object.
 It will recursively look for all the changes.
 
-DeepDiff 3.0 added the concept of views.
-There is a default "text" view and a "tree" view.
-
 **Parameters**
 
 t1 : A dictionary, list, string or any python object that has __dict__ or __slots__
@@ -15,35 +12,22 @@ t2 : dictionary, list, string or almost any python object that has __dict__ or _
     The second item is to be compared to the first one
 
 ignore_order : Boolean, default=False
-    ignores orders for iterables
-    Note that if you have iterables contatining any unhashable, ignoring order can be expensive.
+    :ref:`ignore_order_label` ignores order of elements when comparing iterables (lists)
     Normally ignore_order does not report duplicates and repetition changes.
     In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
 report_repetition : Boolean, default=False
-    reports repetitions when set True
-    ONLY when ignore_order is set True too. This works for iterables.
+    :ref:`report_repetition_label` reports repetitions when set True
+    It only works when ignore_order is set to True too.
 
 significant_digits : int >= 0, default=None
-    By default the significant_digits compares only that many digits AFTER the decimal point. However you can set override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
-
-    Important: This will affect ANY number comparison when it is set.
-
-    Note: If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 55. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
-
-    Internally it uses "{:.Xf}".format(Your Number) to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
-
-    Note that "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
-
-    For Decimals, Python's format rounds 2.5 to 2 and 3.5 to 4 (to the closest even number)
-
-    When you set the number_format_notation="e", we use "{:.Xe}".format(Your Number) where X=significant_digits.
+    :ref:`significant_digits_label` defines the number of digits AFTER the decimal point to be used in the comparison. However you can override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
 
 number_format_notation : string, default="f"
-    number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
+    :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
 
 number_to_string_func : function, default=None
-    This is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
+    :ref:`number_to_string_func_label` is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
 
 verbose_level: int >= 0, default = 1
     Higher verbose level shows you more details.
@@ -91,10 +75,25 @@ ignore_string_case: Boolean, default = False
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
 
 ignore_nan_inequality: Boolean, default = False
+    :ref:`ignore_nan_inequality_label`
     Whether to ignore float('nan') inequality in Python.
 
 ignore_private_variables: Boolean, default = True
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
+
+max_passes: Integer, default = 10000000
+    :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True
+
+log_frequency_in_sec: Integer, default = 0
+    How often to log the progress. The default of 0 means logging progress is disabled.
+    If you set it to 20, it will log every 20 seconds. This is useful only when running DeepDiff
+    on massive objects that will take a while to run. If you are only dealing with small objects, keep it at 0 to disable progress logging.
+
+progress_logger: log function, default = logger.warning
+    What logging function to use specifically for progress reporting. This function is only used when progress logging is enabled
+    by setting log_frequency_in_sec to anything above zero. The function that is passed needs to be thread safe.
+    The reason that the default is logger.warning and not logger.info is that the logging is done via a separate thread and
+    somehow the info logs get muted by default.
 
 
 **Returns**
@@ -103,30 +102,9 @@ ignore_private_variables: Boolean, default = True
 
 **Supported data types**
 
-int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy and custom objects!
+int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy, custom objects and more!
 
-**Text View**
 
-Text view is the original and currently the default view of DeepDiff.
-
-It is called text view because the results contain texts that represent the path to the data:
-
-Example of using the text view.
-    >>> from decimal import Decimal
-    >>> from deepdiff import DeepDiff
-    >>> t1 = {1:1, 3:3, 4:4}
-    >>> t2 = {1:1, 3:3, 5:5, 6:6}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> print(ddiff)
-    {'dictionary_item_added': [root[5], root[6]], 'dictionary_item_removed': [root[4]]}
-
-So for example ddiff['dictionary_item_added'] is a set of strings thus this is called the text view.
-
-.. seealso::
-    The following examples are using the *default text view.*
-    The Tree View is introduced in DeepDiff v3 and provides
-    traversing capabilitie through your diffed data and more!
-    Read more about the Tree View at the bottom of this page.
 
 Importing
     >>> from deepdiff import DeepDiff
@@ -219,41 +197,6 @@ List difference
     >>> pprint (ddiff, indent = 2)
     {'iterable_item_removed': {"root[4]['b'][2]": 3, "root[4]['b'][3]": 4}}
 
-List difference 2:
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff, indent = 2)
-    { 'iterable_item_added': {"root[4]['b'][3]": 3},
-      'values_changed': { "root[4]['b'][1]": {'new_value': 3, 'old_value': 2},
-                          "root[4]['b'][2]": {'new_value': 2, 'old_value': 3}}}
-
-List difference ignoring order or duplicates: (with the same dictionaries as above)
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True)
-    >>> print (ddiff)
-    {}
-
-List difference ignoring order but reporting repetitions:
-    >>> from deepdiff import DeepDiff
-    >>> from pprint import pprint
-    >>> t1 = [1, 3, 1, 4]
-    >>> t2 = [4, 4, 1]
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-    >>> pprint(ddiff, indent=2)
-    { 'iterable_item_removed': {'root[1]': 3},
-      'repetition_change': { 'root[0]': { 'new_indexes': [2],
-                                          'new_repeat': 1,
-                                          'old_indexes': [0, 2],
-                                          'old_repeat': 2,
-                                          'value': 1},
-                             'root[3]': { 'new_indexes': [0, 1],
-                                          'new_repeat': 2,
-                                          'old_indexes': [3],
-                                          'old_repeat': 1,
-                                          'value': 4}}}
-
 List that contains dictionary:
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
@@ -295,49 +238,6 @@ Object attribute added:
     {'attribute_added': [root.c],
      'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
-Approximate decimals comparison (Significant digits after the point):
-    >>> t1 = Decimal('1.52')
-    >>> t2 = Decimal('1.57')
-    >>> DeepDiff(t1, t2, significant_digits=0)
-    {}
-    >>> DeepDiff(t1, t2, significant_digits=1)
-    {'values_changed': {'root': {'new_value': Decimal('1.57'), 'old_value': Decimal('1.52')}}}
-
-Approximate float comparison (Significant digits after the point):
-    >>> t1 = [ 1.1129, 1.3359 ]
-    >>> t2 = [ 1.113, 1.3362 ]
-    >>> pprint(DeepDiff(t1, t2, significant_digits=3))
-    {}
-    >>> pprint(DeepDiff(t1, t2))
-    {'values_changed': {'root[0]': {'new_value': 1.113, 'old_value': 1.1129},
-                        'root[1]': {'new_value': 1.3362, 'old_value': 1.3359}}}
-    >>> pprint(DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1))
-    {'values_changed': {'root': {'new_value': 1.24e+20, 'old_value': 1.23e+20}}}
-
-
-Approximate number comparison (significant_digits after the decimal point in scientific notation)
-    >>> DeepDiff(1024, 1020, significant_digits=2, number_format_notation="f")  # default is "f"
-    {'values_changed': {'root': {'new_value': 1020, 'old_value': 1024}}}
-    >>> DeepDiff(1024, 1020, significant_digits=2, number_format_notation="e")
-    {}
-
-Defining your own number_to_string_func
-    Lets say you want the numbers comparison happen only for numbers above 100 for some reason.
-
-    >>> from deepdiff import DeepDiff
-    >>> from deepdiff.helper import number_to_string
-    >>> def custom_number_to_string(number, *args, **kwargs):
-    ...     number = 100 if number < 100 else number
-    ...     return number_to_string(number, *args, **kwargs)
-    ...
-    >>> t1 = [10, 12, 100000]
-    >>> t2 = [50, 63, 100021]
-    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e")
-    {'values_changed': {'root[0]': {'new_value': 50, 'old_value': 10}, 'root[1]': {'new_value': 63, 'old_value': 12}}}
-    >>> 
-    >>> DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
-    ...          number_to_string_func=custom_number_to_string)
-    {}
 
 .. note::
     All the examples for the text view work for the tree view too.
@@ -495,17 +395,6 @@ ignore_string_case
     {}
 
 
-ignore_nan_inequality
-    Whether to ignore float('nan') inequality in Python. Note that this is a cPython "feature". Some versions of Pypy3 for example have nan==nan.
-
-    >>> float('nan') == float('nan')
-    False
-    >>> DeepDiff(float('nan'), float('nan'))
-    {'values_changed': {'root': {'new_value': nan, 'old_value': nan}}}
-    >>> DeepDiff(float('nan'), float('nan'), ignore_nan_inequality=True)
-    {}
-
-
 exclude_obj_callback
     function, default = None
     A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
@@ -519,305 +408,7 @@ exclude_obj_callback
     >>> DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback)
     {}
 
-**Tree View**
 
-Starting the version 3 You can chooe the view into the deepdiff results.
-The tree view provides you with tree objects that you can traverse through to find
-the parents of the objects that are diffed and the actual objects that are being diffed.
-This view is very useful when dealing with nested objects.
-Note that tree view always returns results in the form of Python sets.
-
-You can traverse through the tree elements!
-
-.. note::
-    The Tree view is just a different representation of the diffed data.
-    Behind the scene, DeepDiff creates the tree view first and then converts it to textual
-    representation for the text view.
-
-.. code:: text
-
-    +---------------------------------------------------------------+
-    |                                                               |
-    |    parent(t1)              parent node            parent(t2)  |
-    |      +                          ^                     +       |
-    +------|--------------------------|---------------------|-------+
-           |                      |   | up                  |
-           | Child                |   |                     | ChildRelationship
-           | Relationship         |   |                     |
-           |                 down |   |                     |
-    +------|----------------------|-------------------------|-------+
-    |      v                      v                         v       |
-    |    child(t1)              child node               child(t2)  |
-    |                                                               |
-    +---------------------------------------------------------------+
-
-
-:up: Move up to the parent node
-:down: Move down to the child node
-:path(): Get the path to the current node
-:t1: The first item in the current node that is being diffed
-:t2: The second item in the current node that is being diffed
-:additional: Additional information about the node i.e. repetition
-:repetition: Shortcut to get the repetition report
-
-
-The tree view allows you to have more than mere textual representaion of the diffed objects.
-It gives you the actual objects (t1, t2) throughout the tree of parents and children.
-
-**Examples Tree View**
-
-.. note::
-    The Tree View is introduced in DeepDiff 3.
-    Set view='tree' in order to use this view.
-
-Value of an item has changed (Tree View)
-    >>> from deepdiff import DeepDiff
-    >>> from pprint import pprint
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:4, 3:3}
-    >>> ddiff_verbose0 = DeepDiff(t1, t2, verbose_level=0, view='tree')
-    >>> ddiff_verbose0
-    {'values_changed': [<root[2]>]}
-    >>>
-    >>> ddiff_verbose1 = DeepDiff(t1, t2, verbose_level=1, view='tree')
-    >>> ddiff_verbose1
-    {'values_changed': [<root[2] t1:2, t2:4>]}
-    >>> set_of_values_changed = ddiff_verbose1['values_changed']
-    >>> # since set_of_values_changed includes only one item in a set
-    >>> # in order to get that one item we can:
-    >>> (changed,) = set_of_values_changed
-    >>> changed  # Another way to get this is to do: changed=list(set_of_values_changed)[0]
-    <root[2] t1:2, t2:4>
-    >>> changed.t1
-    2
-    >>> changed.t2
-    4
-    >>> # You can traverse through the tree, get to the parents!
-    >>> changed.up
-    <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
-
-List difference (Tree View)
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> ddiff
-    {'iterable_item_removed': [<root[4]['b'][2] t1:3, t2:not present>, <root[4]['b'][3] t1:4, t2:not present>]}
-    >>> # Note that the iterable_item_removed is a set. In this case it has 2 items in it.
-    >>> # One way to get one item from the set is to convert it to a list
-    >>> # And then get the first item of the list:
-    >>> removed = list(ddiff['iterable_item_removed'])[0]
-    >>> removed
-    <root[4]['b'][2] t1:3, t2:not present>
-    >>>
-    >>> parent = removed.up
-    >>> parent
-    <root[4]['b'] t1:[1, 2, 3, 4], t2:[1, 2]>
-    >>> parent.path()
-    "root[4]['b']"
-    >>> parent.t1
-    [1, 2, 3, 4]
-    >>> parent.t2
-    [1, 2]
-    >>> parent.up
-    <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
-    >>> parent.up.up
-    <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 2,...}>
-    >>> parent.up.up.t1
-    {1: 1, 2: 2, 3: 3, 4: {'a': 'hello', 'b': [1, 2, 3, 4]}}
-    >>> parent.up.up.t1 == t1  # It is holding the original t1 that we passed to DeepDiff
-    True
-
-List difference 2  (Tree View)
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 3, 2, 3]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> pprint(ddiff, indent = 2)
-    { 'iterable_item_added': [<root[4]['b'][3] t1:not present, t2:3>],
-      'values_changed': [<root[4]['b'][1] t1:2, t2:3>, <root[4]['b'][2] t1:3, t2:2>]}
-    >>>
-    >>> # Note that iterable_item_added is a set with one item.
-    >>> # So in order to get that one item from it, we can do:
-    >>>
-    >>> (added,) = ddiff['iterable_item_added']
-    >>> added
-    <root[4]['b'][3] t1:not present, t2:3>
-    >>> added.up.up
-    <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
-    >>> added.up.up.path()
-    'root[4]'
-    >>> added.up.up.down
-    <root[4]['b'] t1:[1, 2, 3], t2:[1, 3, 2, 3]>
-    >>>
-    >>> # going up twice and then down twice gives you the same node in the tree:
-    >>> added.up.up.down.down == added
-    True
-
-List difference ignoring order but reporting repetitions (Tree View)
-    >>> t1 = [1, 3, 1, 4]
-    >>> t2 = [4, 4, 1]
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree')
-    >>> pprint(ddiff, indent=2)
-    { 'iterable_item_removed': [<root[1] t1:3, t2:not present>],
-      'repetition_change': [<root[3] {'repetition': {'old_repeat': 1,...}>, <root[0] {'repetition': {'old_repeat': 2,...}>]}
-    >>>
-    >>> # repetition_change is a set with 2 items.
-    >>> # in order to get those 2 items, we can do the following.
-    >>> # or we can convert the set to list and get the list items.
-    >>> # or we can iterate through the set items
-    >>>
-    >>> (repeat1, repeat2) = ddiff['repetition_change']
-    >>> repeat1  # the default verbosity is set to 1.
-    <root[3] {'repetition': {'old_repeat': 1,...}>
-    >>> # The actual data regarding the repetitions can be found in the repetition attribute:
-    >>> repeat1.repetition
-    {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
-    >>>
-    >>> # If you change the verbosity, you will see less:
-    >>> ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, view='tree', verbose_level=0)
-    >>> ddiff
-    {'repetition_change': [<root[3]>, <root[0]>], 'iterable_item_removed': [<root[1]>]}
-    >>> (repeat1, repeat2) = ddiff['repetition_change']
-    >>> repeat1
-    <root[0]>
-    >>>
-    >>> # But the verbosity level does not change the actual report object.
-    >>> # It only changes the textual representaion of the object. We get the actual object here:
-    >>> repeat1.repetition
-    {'old_repeat': 1, 'new_repeat': 2, 'old_indexes': [3], 'new_indexes': [0, 1]}
-    >>> repeat1.t1
-    4
-    >>> repeat1.t2
-    4
-    >>> repeat1.up
-    <root>
-
-List that contains dictionary (Tree View)
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> pprint (ddiff, indent = 2)
-    { 'dictionary_item_removed': [<root[4]['b'][2][2] t1:2, t2:not present>],
-      'values_changed': [<root[4]['b'][2][1] t1:1, t2:3>]}
-
-Sets (Tree View):
-    >>> t1 = {1, 2, 8}
-    >>> t2 = {1, 2, 3, 5}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> print(ddiff)
-    {'set_item_removed': [<root: t1:8, t2:not present>], 'set_item_added': [<root: t1:not present, t2:3>, <root: t1:not present, t2:5>]}
-    >>> # grabbing one item from set_item_removed set which has one item only
-    >>> (item,) = ddiff['set_item_removed']
-    >>> item.up
-    <root t1:{8, 1, 2}, t2:{1, 2, 3, 5}>
-    >>> item.up.t1 == t1
-    True
-
-Named Tuples (Tree View):
-    >>> from collections import namedtuple
-    >>> Point = namedtuple('Point', ['x', 'y'])
-    >>> t1 = Point(x=11, y=22)
-    >>> t2 = Point(x=11, y=23)
-    >>> print(DeepDiff(t1, t2, view='tree'))
-    {'values_changed': [<root.y t1:22, t2:23>]}
-
-Custom objects (Tree View):
-    >>> class ClassA(object):
-    ...     a = 1
-    ...     def __init__(self, b):
-    ...         self.b = b
-    ...
-    >>> t1 = ClassA(1)
-    >>> t2 = ClassA(2)
-    >>>
-    >>> print(DeepDiff(t1, t2, view='tree'))
-    {'values_changed': [<root.b t1:1, t2:2>]}
-
-Object attribute added (Tree View):
-    >>> t2.c = "new attribute"
-    >>> pprint(DeepDiff(t1, t2, view='tree'))
-    {'attribute_added': [<root.c t1:not present, t2:'new attribute'>],
-     'values_changed': [<root.b t1:1, t2:2>]}
-
-Approximate decimals comparison (Significant digits after the point) (Tree View):
-    >>> t1 = Decimal('1.52')
-    >>> t2 = Decimal('1.57')
-    >>> DeepDiff(t1, t2, significant_digits=0, view='tree')
-    {}
-    >>> ddiff = DeepDiff(t1, t2, significant_digits=1, view='tree')
-    >>> ddiff
-    {'values_changed': [<root t1:Decimal('1.52'), t2:Decimal('1.57')>]}
-    >>> (change1,) = ddiff['values_changed']
-    >>> change1
-    <root t1:Decimal('1.52'), t2:Decimal('1.57')>
-    >>> change1.t1
-    Decimal('1.52')
-    >>> change1.t2
-    Decimal('1.57')
-    >>> change1.path()
-    'root'
-
-Approximate float comparison (Significant digits after the point) (Tree View):
-    >>> t1 = [ 1.1129, 1.3359 ]
-    >>> t2 = [ 1.113, 1.3362 ]
-    >>> ddiff = DeepDiff(t1, t2, significant_digits=3, view='tree')
-    >>> ddiff
-    {}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> pprint(ddiff, indent=2)
-    { 'values_changed': [<root[0] t1:1.1129, t2:1.113>, <root[1] t1:1.3359, t2:1.3362>]}
-    >>> ddiff = DeepDiff(1.23*10**20, 1.24*10**20, significant_digits=1, view='tree')
-    >>> ddiff
-    {'values_changed': [<root t1:1.23e+20, t2:1.24e+20>]}
-
-**Delta View**
-
-Starting DeepDiff 5 the Delta view is introduced.
-The delta view is the format that Delta object uses internally and it is exposed to the user through a few different ways.
-    >>> from deepdiff import DeepDiff
-    >>> t1={1,2,4}
-    >>> t2={2,3}
-    >>> DeepDiff(t1, t2, view='delta')
-    {'set_item_removed': {'root': {1, 4}}, 'set_item_added': {'root': {3}}}
-
-Note that views are just different format of results. You have all the other parameters that can be used for any view. However since the delta view is meant to be for the Delta object, it does not follow the verbose_level parameter.
-
-
-**Text view vs. Tree view vs. Delta view vs. pretty() method**
-
-Views are just different format of results. Each comes with its own set of features. At the end of the day the user can choose the right format based on the use case.
-
-- The text view is the default format of the results. It is the format that is the most suitable if you don't need to know the traversal history of the objects being compared.
-- The tree view allows you to traverse back and forth through the tree and see what objects were compared to what other objects.
-- The delta view is what the Delta object uses internally. It is exposed to the user as a view too.
-- The pretty() method is not a view. All the views are dictionaries. The pretty() method spits out a string output of what has changed and is designed to be human readable.
-
-For example
-    >>> from deepdiff import DeepDiff
-    >>> t1={1,2,4}
-    >>> t2={2,3}
-
-Text view (default)
-    >>> DeepDiff(t1, t2)  # same as view='text'
-    {'set_item_removed': [root[4], root[1]], 'set_item_added': [root[3]]}
-
-Delta view
-    >>> DeepDiff(t1, t2, view='delta')
-    {'set_item_removed': {'root': {1, 4}}, 'set_item_added': {'root': {3}}}
-
-Tree view
-    >>> tree = DeepDiff(t1, t2, view='tree')
-    >>> tree
-    {'set_item_removed': [<root: t1:4, t2:not present>, <root: t1:1, t2:not present>], 'set_item_added': [<root: t1:not present, t2:3>]}
-    >>> tree['set_item_added'][0]
-    <root: t1:not present, t2:3>
-    >>> tree['set_item_added'][0].t2
-    3
-
-Pretty method. Regardless of what view was used, you can use the "pretty()" method to get a human readable output.
-    >>> print(DeepDiff(t1, t2).pretty())
-    Item root[3] added to set.
-    Item root[4] removed from set.
-    Item root[1] removed from set.
 
 
 **Exclude paths**

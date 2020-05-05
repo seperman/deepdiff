@@ -4,6 +4,7 @@ import re
 import os
 import logging
 import warnings
+from ast import literal_eval
 from decimal import Decimal, localcontext
 from collections import namedtuple
 from collections.abc import Mapping, Iterable
@@ -455,3 +456,23 @@ class RepeatedTimer:
     def stop(self):
         self._timer.cancel()
         self.is_running = False
+
+
+LITERAL_EVAL_PRE_PROCESS = [
+    ('Decimal(', ')', Decimal),
+]
+
+
+def literal_eval_extended(item):
+    """
+    An extend version of literal_eval
+    """
+    try:
+        return literal_eval(item)
+    except (SyntaxError, ValueError):
+        for begin, end, func in LITERAL_EVAL_PRE_PROCESS:
+            if item.startswith(begin) and item.endswith(end):
+                # Extracting and removing extra quotes so for example "Decimal('10.1')" becomes "'10.1'" and then '10.1'
+                item2 = item[len(begin): -len(end)].strip('\'\"')
+                return func(item2)
+        raise

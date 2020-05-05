@@ -9,7 +9,6 @@
 import difflib
 import logging
 import json
-import datetime
 from copy import deepcopy
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
@@ -54,7 +53,7 @@ DELTA_VIEW = '_delta'
 
 MAX_PASSES_REACHED_MSG = (
     'DeepDiff has reached the max number of passes of {}. '
-    'You can possibly get more accurate results by increasing the max_passes parameter. id: {}')
+    'You can possibly get more accurate results by increasing the max_passes parameter.')
 
 notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 
@@ -101,7 +100,7 @@ class DeepDiff(ResultDict, Base):
                  hashes=None,
                  parameters=None,
                  max_passes=10000000,
-                 log_frequency_in_sec=20,
+                 log_frequency_in_sec=0,
                  progress_logger=logger.warning,
                  _pass=None,
                  **kwargs):
@@ -164,6 +163,8 @@ class DeepDiff(ResultDict, Base):
             if log_frequency_in_sec:
                 # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
                 repeated_timer = RepeatedTimer(log_frequency_in_sec, _report_progress, self._pass, progress_logger)
+            else:
+                repeated_timer = None
         self.hashes = {} if hashes is None else hashes
         self.parameters = parameters
         self.deephash_parameters = self.__get_deephash_params()
@@ -293,6 +294,9 @@ class DeepDiff(ResultDict, Base):
         return skip
 
     def __get_clean_to_keys_mapping(self, keys, level):
+        """
+        Get a dictionary of cleaned value of keys to the keys themselves.
+        """
         result = {}
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
@@ -669,7 +673,7 @@ class DeepDiff(ResultDict, Base):
                 # in the stack with a _max_pass_logged already set. Also it means that the current max_passes
                 # calculations are wrong and we need a central place to keep track of the max_passes.
                 # Perhaps that central place gets reset everytime DeepDiff is run
-                logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes, id(self.max_passes)))
+                logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
             pairs = {}
 
         def get_other_pair(hash_value, in_t1=True):

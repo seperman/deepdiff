@@ -753,6 +753,20 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_dictionary_with_string_keys(self):
+        t1 = {"veggie": "carrots"}
+        t2 = {"meat": "carrots"}
+
+        diff = DeepDiff(t1, t2)
+        assert {'dictionary_item_added': ["root['meat']"],
+                'dictionary_item_removed': ["root['veggie']"]} == diff
+
+    def test_dictionary_with_numeric_keys(self):
+        t1 = {Decimal('10.01'): "carrots"}
+        t2 = {10.01: "carrots"}
+        diff = DeepDiff(t1, t2)
+        assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff
+
     def test_loop(self):
         class LoopTest:
             def __init__(self, a):
@@ -1053,6 +1067,19 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
+
+    def test_ignore_type_in_groups3(self):
+        t1 = {Decimal('10.01'): "carrots"}
+        t2 = {10.01: "carrots"}
+
+        diff1 = DeepDiff(t1, t2)
+
+        diff2 = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
+
+        diff3 = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
+
+        assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff1
+        assert {} == diff2 == diff3
 
     def test_ignore_type_in_groups_just_numbers(self):
         t1 = [1, 2, 3, 'a']
