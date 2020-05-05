@@ -1,5 +1,7 @@
 :doc:`/index`
 
+.. _view_label:
+
 View
 ====
 

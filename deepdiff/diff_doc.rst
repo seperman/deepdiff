@@ -47,31 +47,39 @@ hasher: default = DeepHash.murmur3_128bit
     by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
 
 view: string, default = text
+    :ref:`view_label`
     Views are different "formats" of results. Each view comes with its own features.
     The choices are text (the default) and tree.
     The text view is the original format of the results.
     The tree view allows you to traverse through the tree of results. So you can traverse through the tree and see what items were compared to what.
 
 exclude_types: list, default = None
+    :ref:`exclude_types_label`
     List of object types to exclude from the report.
 
 exclude_obj_callback: function, default = None
+    :ref:`exclude_obj_callback_label`
     A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
     This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
 
 ignore_string_type_changes: Boolean, default = False
+    :ref:`ignore_string_type_changes_label`
     Whether to ignore string type changes or not. For example b"Hello" vs. "Hello" are considered the same if ignore_string_type_changes is set to True.
 
 ignore_numeric_type_changes: Boolean, default = False
+    :ref:`ignore_numeric_type_changes_label`
     Whether to ignore numeric type changes or not. For example 10 vs. 10.0 are considered the same if ignore_numeric_type_changes is set to True.
 
 ignore_type_in_groups: Tuple or List of Tuples, default = None
+    :ref:`ignore_type_in_groups_label`
     ignores types when t1 and t2 are both within the same type group.
 
 ignore_type_subclasses: Boolean, default = False
+    :ref:`ignore_type_subclasses_label`
     ignore type (class) changes when dealing with the subclasses of classes that were marked to be ignored.
 
 ignore_string_case: Boolean, default = False
+    :ref:`ignore_string_case_label`
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
 
 ignore_nan_inequality: Boolean, default = False
@@ -79,6 +87,7 @@ ignore_nan_inequality: Boolean, default = False
     Whether to ignore float('nan') inequality in Python.
 
 ignore_private_variables: Boolean, default = True
+    :ref:`ignore_private_variables_label`
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
 
 max_passes: Integer, default = 10000000
@@ -246,53 +255,10 @@ Object attribute added:
 
 **Ignore Type Changes**
 
-Type change
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world\n\n\nEnd"}}
-    >>> ddiff = DeepDiff(t1, t2)
-    >>> pprint (ddiff, indent = 2)
-    { 'type_changes': { "root[4]['b']": { 'new_type': <class 'str'>,
-                                          'new_value': 'world\n\n\nEnd',
-                                          'old_type': <class 'list'>,
-                                          'old_value': [1, 2, 3]}}}
-
-And if you don't care about the value of items that have changed type, please set verbose level to 0
-    >>> t1 = {1:1, 2:2, 3:3}
-    >>> t2 = {1:1, 2:"2", 3:3}
-    >>> pprint(DeepDiff(t1, t2, verbose_level=0), indent=2)
-    { 'type_changes': { 'root[2]': { 'new_type': <class 'str'>,
-                                     'old_type': <class 'int'>}}}
 
 
-Exclude types
 
-Exclude certain types from comparison:
-    >>> l1 = logging.getLogger("test")
-    >>> l2 = logging.getLogger("test2")
-    >>> t1 = {"log": l1, 2: 1337}
-    >>> t2 = {"log": l2, 2: 1337}
-    >>> print(DeepDiff(t1, t2, exclude_types={logging.Logger}))
-    {}
 
-ignore_type_in_groups
-    Ignore type changes between members of groups of types. For example if you want to ignore type changes between float and decimals etc. Note that this is a more granular feature. Most of the times the shortcuts provided to you are enough.
-    The shortcuts are ignore_string_type_changes which by default is False and ignore_numeric_type_changes which is by default False. You can read more about those shortcuts in this page. ignore_type_in_groups gives you more control compared to the shortcuts.
-
-    For example lets say you have specifically str and byte datatypes to be ignored for type changes. Then you have a couple of options:
-
-    1. Set ignore_string_type_changes=True.
-    2. Or set ignore_type_in_groups=[(str, bytes)]. Here you are saying if we detect one type to be str and the other one bytes, do not report them as type change. It is exactly as passing ignore_type_in_groups=[DeepDiff.strings] or ignore_type_in_groups=DeepDiff.strings .
-
-    Now what if you want also typeA and typeB to be ignored when comparing against each other?
-
-    1. ignore_type_in_groups=[DeepDiff.strings, (typeA, typeB)]
-    2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
-
-ignore_string_type_changes Default: False
-    >>> DeepDiff(b'hello', 'hello', ignore_string_type_changes=True)
-    {}
-    >>> DeepDiff(b'hello', 'hello')
-    {'type_changes': {'root': {'old_type': <class 'bytes'>, 'new_type': <class 'str'>, 'old_value': b'hello', 'new_value': 'hello'}}}
 
 ignore_numeric_type_changes Default: False
     Ignore Type Number - Dictionary that contains float and integer
@@ -359,54 +325,6 @@ ignore_type_in_groups example with custom objects:
     >>> DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
     {}
 
-
-ignore_type_subclasses
-    Use ignore_type_subclasses=True so when ignoring type (class), the subclasses of that class are ignored too.
-
-    >>> from deepdiff import DeepDiff
-    >>> class ClassA:
-    ...     def __init__(self, x, y):
-    ...         self.x = x
-    ...         self.y = y
-    ...
-    >>> class ClassB:
-    ...     def __init__(self, x):
-    ...         self.x = x
-    ...
-    >>> class ClassC(ClassB):
-    ...     pass
-    ...
-    >>> obj_a = ClassA(1, 2)
-    >>> obj_c = ClassC(3)
-    >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
-    {'type_changes': {'root': {'old_type': <class '__main__.ClassA'>, 'new_type': <class '__main__.ClassC'>, 'old_value': <__main__.ClassA object at 0x10076a2e8>, 'new_value': <__main__.ClassC object at 0x10082f630>}}}
-    >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
-    {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
-
-
-ignore_string_case
-    Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
-
-    >>> DeepDiff(t1='Hello', t2='heLLO')
-    {'values_changed': {'root': {'new_value': 'heLLO', 'old_value': 'Hello'}}}
-    >>> DeepDiff(t1='Hello', t2='heLLO', ignore_string_case=True)
-    {}
-
-
-exclude_obj_callback
-    function, default = None
-    A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
-    This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
-
-    >>> def exclude_obj_callback(obj, path):
-    ...     return True if "skip" in path or isinstance(obj, int) else False
-    ...
-    >>> t1 = {"x": 10, "y": "b", "z": "c", "skip_1": 0}
-    >>> t2 = {"x": 12, "y": "b", "z": "c", "skip_2": 0}
-    >>> DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback)
-    {}
 
 
 

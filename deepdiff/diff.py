@@ -117,6 +117,13 @@ class DeepDiff(ResultDict, Base):
             self.__dict__ = deepcopy(parameters)
         else:
             self.ignore_order = ignore_order
+            ignore_type_in_groups = ignore_type_in_groups or []
+            if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
+                ignore_numeric_type_changes = True
+            self.ignore_numeric_type_changes = ignore_numeric_type_changes
+            if strings == ignore_type_in_groups or strings in ignore_type_in_groups:
+                ignore_string_type_changes = True
+            self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
                 ignore_type_in_groups=ignore_type_in_groups,
                 ignore_string_type_changes=ignore_string_type_changes,
@@ -127,8 +134,6 @@ class DeepDiff(ResultDict, Base):
             self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
             self.exclude_types = set(exclude_types) if exclude_types else None
             self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
-            self.ignore_string_type_changes = ignore_string_type_changes
-            self.ignore_numeric_type_changes = ignore_numeric_type_changes
             self.ignore_type_subclasses = ignore_type_subclasses
             self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
             self.ignore_string_case = ignore_string_case
@@ -296,6 +301,9 @@ class DeepDiff(ResultDict, Base):
     def __get_clean_to_keys_mapping(self, keys, level):
         """
         Get a dictionary of cleaned value of keys to the keys themselves.
+        This is mainly used to transform the keys when the type changes of keys should be ignored.
+
+        TODO: needs also some key conversion for groups of types other than the build-in strings and numbers.
         """
         result = {}
         for key in keys:

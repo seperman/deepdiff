@@ -1077,7 +1077,6 @@ class TestDeepDiffText:
         diff2 = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
 
         diff3 = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
-
         assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff1
         assert {} == diff2 == diff3
 

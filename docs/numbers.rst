@@ -75,7 +75,9 @@ Number To String Function
 -------------------------
 
 number_to_string_func : function, default=None
-    This is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own custom function instead.
+    In certain cases DeepDiff converts numbers to strings in order to compare them. This is for example done when significant digits parameter is defined.
+    Or when the ignore_numeric_type_changes=True and several other cases.
+    This number_to_string_func parameter gives the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own custom function instead of the default one in the helper module.
 
 Defining your own number_to_string_func
     Lets say you want the numbers comparison happen only for numbers above 100 for some reason.
@@ -100,7 +102,7 @@ Ignore Numeric Type Changes
 ---------------------------
 
 ignore_numeric_type_changes: Boolean, default = False
-read more at
+read more at :ref:`ignore_numeric_type_changes_label`
 
 .. _ignore_nan_inequality_label:
 
