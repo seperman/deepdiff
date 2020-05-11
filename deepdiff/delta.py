@@ -90,7 +90,7 @@ class Delta:
     """
     def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True, safe_to_import=None):
 
-        if diff:
+        if diff is not None:
             if isinstance(diff, DeepDiff):
                 self.diff = diff.to_delta_dict()
             elif isinstance(diff, Mapping):
