@@ -192,6 +192,13 @@ del picklalbe_obj_without_item.item
 
 
 DELTA_CASES = {
+    'delta_case0': {
+        't1': frozenset([1, 2, 'B']),
+        't2': frozenset([1, 2, 'B']),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {},
+    },
     'delta_case1': {
         't1': frozenset([1, 2, 'B']),
         't2': frozenset([1, 2, 3, 5]),
@@ -440,17 +447,16 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'iterable_items_added_at_indexes': {
-                'root': {
-                    3: 5
+            'values_changed': {
+                'root[6]': {
+                    'new_value': 5
                 }
             },
             'iterable_items_removed_at_indexes': {
                 'root': {
                     2: 'B',
                     4: 'B',
-                    5: 'B',
-                    6: 4
+                    5: 'B'
                 }
             }
         },
@@ -465,20 +471,16 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'iterable_items_added_at_indexes': {
-                'root': {
-                    0: 7,
-                    4: 8
-                }
-            },
-            'iterable_items_removed_at_indexes': {
-                'root': {
-                    4: 6,
-                    0: 5
+            'values_changed': {
+                'root[4]': {
+                    'new_value': 7
+                },
+                'root[0]': {
+                    'new_value': 8
                 }
             }
         },
-        'expected_t1_plus_delta': 't2',
+        'expected_t1_plus_delta': [8, 1, 1, 1, 7],
     },
     'delta_ignore_order_case4': {
         't1': [5, 1, 3, 1, 4, 4, 6],
@@ -489,20 +491,20 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'to_delta_kwargs': {},
         'expected_delta_dict': {
-            'iterable_items_added_at_indexes': {
-                'root': {
-                    0: 7,
-                    6: 8,
-                    3: 1,
-                    1: 4,
-                    2: 4,
-                    5: 4
+            'values_changed': {
+                'root[6]': {
+                    'new_value': 7
+                },
+                'root[0]': {
+                    'new_value': 8
                 }
             },
-            'iterable_items_removed_at_indexes': {
+            'iterable_items_added_at_indexes': {
                 'root': {
-                    6: 6,
-                    0: 5
+                    1: 4,
+                    2: 4,
+                    5: 4,
+                    3: 1,
                 }
             }
         },

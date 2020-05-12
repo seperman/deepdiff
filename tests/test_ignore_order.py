@@ -260,6 +260,40 @@ class TestIgnoreOrder:
         }
         assert result == ddiff
 
+    def test_list_ignore_order_report_repetition(self):
+        t1 = [5, 1, 3, 1, 4, 4, 6]
+        t2 = [7, 4, 4, 1, 3, 4, 8]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        result = {
+            'values_changed': {
+                'root[6]': {
+                    'new_value': 7,
+                    'old_value': 6
+                },
+                'root[0]': {
+                    'new_value': 8,
+                    'old_value': 5
+                }
+            },
+            'repetition_change': {
+                'root[4]': {
+                    'old_repeat': 2,
+                    'new_repeat': 3,
+                    'old_indexes': [4, 5],
+                    'new_indexes': [1, 2, 5],
+                    'value': 4
+                },
+                'root[1]': {
+                    'old_repeat': 2,
+                    'new_repeat': 1,
+                    'old_indexes': [1, 3],
+                    'new_indexes': [3],
+                    'value': 1
+                }
+            }
+        }
+        assert result == ddiff
+
     def test_list_of_sets_difference_ignore_order(self):
         t1 = [{1}, {2}, {3}]
         t2 = [{4}, {1}, {2}, {3}]
@@ -512,6 +546,7 @@ class TestIgnoreOrder:
         (1, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
         (2, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
         (62, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0]": {'new_value': [1, 3, 5, 4], 'old_value': [1, 2, 4, 5]}}}),
+        # only distance caching done by 22 passes!
         (64, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
     ])
     def test_ignore_order_passes(self, max_passes, expected):

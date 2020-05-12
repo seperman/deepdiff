@@ -5,7 +5,6 @@
 # You might need to run it many times since dictionaries come in different orders
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
-
 import difflib
 import logging
 import json
@@ -15,21 +14,23 @@ from collections import defaultdict
 from decimal import Decimal
 from itertools import zip_longest
 from ordered_set import OrderedSet
-
+from pprint import pprint
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
-                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer)
+                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
+                             skipped, get_numeric_types_distance, only_numbers, datetimes,
+                             not_found)
 from deepdiff.serialization import pickle_dump
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, DeltaResult,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
     SetRelationship, pretty_print_diff, NumpyArrayRelationship)
-from deepdiff.deephash import DeepHash
+from deepdiff.deephash import DeepHash, combine_hashes_lists, default_hasher
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,7 @@ class DeepDiff(ResultDict, Base):
                  log_frequency_in_sec=0,
                  progress_logger=logger.warning,
                  _pass=None,
+                 _cache=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -111,7 +113,7 @@ class DeepDiff(ResultDict, Base):
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, log_frequency_in_sec, _pass and parameters.") % ', '.join(kwargs.keys()))
+                "view, hasher, hashes, max_passes, log_frequency_in_sec, _pass, and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -147,9 +149,11 @@ class DeepDiff(ResultDict, Base):
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
+            # Setting up the cache for dynamic programming. One dictionary per instance of root of DeepDiff running.
             self.max_passes = int(max_passes)
-            # The actual number of buckets will be 10 to the power of the _rough_distance_buckets_power
-            self._rough_distance_buckets_power = len(str(self.max_passes)) + 3  # Adding some padding to it.
+            # _deep_distance_buckets_exponent is only used for the number of buckets of distances when doing ignore_order=True calculations
+            # The actual number of buckets will be 10 to the power of the _deep_distance_buckets_exponent
+            self._deep_distance_buckets_exponent = len(str(self.max_passes)) + 3  # Adding some padding to it.
             # Parameters are the clean parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
             # However DeepHash has its own set of parameters that are slightly different than DeepDIff.
@@ -158,12 +162,18 @@ class DeepDiff(ResultDict, Base):
 
         if _pass:
             # We are in some pass other than root
+            self.is_root = False
             self._pass = _pass
+            self._cache = _cache
             repeated_timer = None
         else:
             # we are at the root
+            self.is_root = True
+            # Caching the DeepDiff results for dynamic programming
+            self._cache = defaultdict(lambda: defaultdict(OrderedSet))
             self._pass = {
                 'count': 0,
+                'diff_call_count': 0,
                 'max_pass_too_small_logged': False}
             if log_frequency_in_sec:
                 # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
@@ -181,12 +191,24 @@ class DeepDiff(ResultDict, Base):
 
         try:
             root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
+            print(f"\n{self._pass['count']* ' '}DeepDiff id:{id(self)} {root}")
             self.__diff(root, parents_ids=frozenset({id(t1)}))
 
             self.tree.remove_empty_keys()
             view_results = self.__get_view_results(view)
             self.update(view_results)
         finally:
+            if self.is_root:
+                for key, value in self._cache.items():
+                    try:
+                        self._cache[key] = dict(value)
+                    except Exception:
+                        pass
+                # print('\n self._cache:')
+                # pprint(self._cache)
+                print(f"ran {self._pass['count']} passes")
+                print(f"ran {self._pass['diff_call_count']} diffs")
+                del self._cache
             if repeated_timer:
                 repeated_timer.stop()
 
@@ -221,9 +243,25 @@ class DeepDiff(ResultDict, Base):
 
         :rtype: None
         """
-        if not self.__skip_this(level):
+        # if level.t1 == [1, 2, 4, 5, 5, 5]:
+        #     print(f"{self._pass['count']* ' '}!! SETTING [1, 2, 4, 5, 5, 5] at {level.path()}")
+        #     import ipdb; ipdb.set_trace()
+
+        cache_key = level.get_cache_key()
+        if self.__skip_this(level):
+            # pass
+            self._cache[cache_key][report_type] = skipped
+        else:
+            print(f"{self._pass['count']* ' '}-> setting results for {level}, cache_key: {cache_key}")
             level.report_type = report_type
             self.tree[report_type].add(level)
+            self._cache[cache_key][report_type].add(level)
+
+            parent_level = level.up
+            if parent_level:
+                print(f"{self._pass['count']* ' '}-> also setting cache for parent {parent_level}: {cache_key}")
+                cache_key = parent_level.get_cache_key()
+                self._cache[cache_key][report_type].add(level)
 
     @staticmethod
     def __dict_from_slots(object):
@@ -575,12 +613,45 @@ class DeepDiff(ResultDict, Base):
                     self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
         return local_hashes
 
+    def __get_and_cache_rough_distance(self, added_hash, removed_hash, added_hash_obj, removed_hash_obj):
+        # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
+        parameters = deepcopy(self.parameters)
+        # Having report_repetition as True can increase
+        # the number of operations to convert one object to the other dramatically
+        # and can easily cause the objects that could have been otherwise close in distance
+        # to be discarded as pairs.
+        # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
+        # in the future so that it can still be counted.
+        parameters['report_repetition'] = False
+        parameters['view'] = DELTA_VIEW
+        cache_key = default_hasher(b'distance_cache' + hex(added_hash).encode('utf-8') + b'--' + hex(removed_hash).encode('utf-8'))
+        if cache_key in self._cache:
+            print(f"{self._pass['count']* ' '}Cache hit. Got the rough distance")
+            _distance = self._cache[cache_key]
+        else:
+            _distance = get_numeric_types_distance(
+                removed_hash_obj.item, added_hash_obj.item, max_=self.PAIR_MAX_DISTANCE_THRESHOLD)
+            if _distance is not_found:
+                # We can only cache the rough distance and not the actual diff result for reuse.
+                # The reason is that we have modified the parameters explicitly so they are different and can't
+                # be used for diff reporting
+                diff = DeepDiff(
+                    removed_hash_obj.item, added_hash_obj.item,
+                    parameters=parameters, hashes=self.hashes, _pass=self._pass, _cache=self._cache)
+                _distance = diff.get_deep_distance()
+            _distance = Decimal(self.number_to_string(
+                _distance,
+                significant_digits=self._deep_distance_buckets_exponent,
+                number_format_notation=self.number_format_notation))
+            self._cache[cache_key] = _distance
+        return _distance
+
     def __get_most_in_common_pairs_in_iterables(self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable):
         """
         Get the closest pairs between items that are removed and items that are added.
 
         Note that due to the current reporting structure in DeepDiff, we don't compare an item that
-        was let's say added to an item that is in both t1 and t2.
+        was added to an item that is in both t1 and t2.
 
         For example
 
@@ -592,6 +663,10 @@ class DeepDiff(ResultDict, Base):
 
         Perhaps in future we can have a report key that is item duplicated and modified instead of just added.
         """
+        cache_key = combine_hashes_lists(items=[hashes_added, hashes_removed], prefix='pairs_cache')
+        if cache_key in self._cache:
+            print('Pairs already exist for these hashes. Using the cached version.')
+            return self._cache[cache_key].copy()
         # distance to hashes
         used_target_hashes = set()
 
@@ -608,39 +683,23 @@ class DeepDiff(ResultDict, Base):
                 added_hash_obj = t2_hashtable[added_hash]
                 removed_hash_obj = t1_hashtable[removed_hash]
 
-                # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
-                parameters = deepcopy(self.parameters)
-                # Having report_repetition as True can increase
-                # the number of operations to convert one object to the other dramatically
-                # and can easily cause the objects that could have been otherwise close in distance
-                # to be discarded as pairs.
-                # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
-                # in the future so that it can still be counted.
-                parameters['report_repetition'] = False
-                parameters['view'] = DELTA_VIEW
-                diff = DeepDiff(
-                    removed_hash_obj.item, added_hash_obj.item,
-                    parameters=parameters, hashes=self.hashes, _pass=self._pass)
-                rough_distance = diff.get_deep_distance()
+                _distance = self.__get_and_cache_rough_distance(
+                    added_hash, removed_hash, added_hash_obj, removed_hash_obj)
+
                 # Discard potential pairs that are too far.
-                if rough_distance > self.PAIR_MAX_DISTANCE_THRESHOLD:
+                if _distance >= self.PAIR_MAX_DISTANCE_THRESHOLD:
                     continue
-                else:
-                    rough_distance = Decimal(self.number_to_string(
-                        rough_distance,
-                        significant_digits=self._rough_distance_buckets_power,
-                        number_format_notation=self.number_format_notation))
                 pairs_of_item = most_in_common_pairs[added_hash]
-                pairs_of_item[rough_distance].add(removed_hash)
+                pairs_of_item[_distance].add(removed_hash)
                 count_of_distances = len(pairs_of_item)
                 # There is a maximum number of distances we want to keep track of.
                 current_max_distance_from_item = pairs_of_item.get('max', 0)
                 if count_of_distances < self.MAX_COMMON_PAIR_DISTANCES:
-                    pairs_of_item['max'] = max(rough_distance, current_max_distance_from_item)
-                elif rough_distance <= current_max_distance_from_item:
-                    if rough_distance < current_max_distance_from_item:
+                    pairs_of_item['max'] = max(_distance, current_max_distance_from_item)
+                elif _distance <= current_max_distance_from_item:
+                    if _distance < current_max_distance_from_item:
                         del pairs_of_item[current_max_distance_from_item]
-                        pairs_of_item['max'] = rough_distance
+                        pairs_of_item['max'] = _distance
 
         for added_hash, distances in most_in_common_pairs.items():
             del distances['max']
@@ -655,25 +714,39 @@ class DeepDiff(ResultDict, Base):
                 else:
                     del distances[key]
 
-        return pairs
+        inverse_pairs = {v: k for k, v in pairs.items()}
+        pairs.update(inverse_pairs)
+        self._cache[cache_key] = pairs
+        return pairs.copy()
 
     def __diff_iterable_with_deephash(self, level, parents_ids):
         """Diff of unhashable iterables. Only used when ignoring the order."""
+        print(f"{self._pass['count']* ' '}__diff_iterable_with_deephash: {level}")
+        # if level.t1 == [1, 2, 4, 5, 5, 5]:
+        #     import ipdb; ipdb.set_trace()
+        #     print(f"{self._pass['count']* ' '}!! again [1, 2, 4, 5, 5, 5] at {level.path()}")
         t1_hashtable = self.__create_hashtable(level, 't1')
         t2_hashtable = self.__create_hashtable(level, 't2')
 
-        t1_hashes = set(t1_hashtable.keys())
-        t2_hashes = set(t2_hashtable.keys())
+        t1_hashes = OrderedSet(t1_hashtable.keys())
+        t2_hashes = OrderedSet(t2_hashtable.keys())
 
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
+
+        # cache_key = hash(''.join(map(str, hashes_added)) + ''.join(map(str, hashes_removed)))
+        # level_cache_key = level.get_cache_key()
+
+        # if cache_key in self._cache:
+        #     does_level_cache_exist = level_cache_key in self._cache
+        #     print(f'bahhaa cache hit between hashes removed and added: {level.t1}, {level.t2}, Root ID: {id(self)}, Level cache exists: {does_level_cache_exist}')
+        # else:
+        #     self._cache[cache_key] = True
 
         self._pass['count'] += 1
         if self._pass['count'] < self.max_passes:
             pairs = self.__get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
-            inverse_pairs = {v: k for k, v in pairs.items()}
-            pairs.update(inverse_pairs)
         else:
             if not self._pass['max_pass_too_small_logged']:
                 self._pass['max_pass_too_small_logged'] = True
@@ -683,6 +756,7 @@ class DeepDiff(ResultDict, Base):
                 # Perhaps that central place gets reset everytime DeepDiff is run
                 logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
             pairs = {}
+        print(f"{self._pass['count']* ' '}pairs: {pairs}")
 
         def get_other_pair(hash_value, in_t1=True):
             """
@@ -728,6 +802,7 @@ class DeepDiff(ResultDict, Base):
                         self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
                 other = get_other_pair(hash_value, in_t1=False)
+                # import ipdb; ipdb.set_trace()
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
@@ -885,8 +960,32 @@ class DeepDiff(ResultDict, Base):
         level.report_type = 'type_changes'
         self.__report_result('type_changes', level)
 
+    def __get_from_cache(self, level):
+        cache_key = level.get_cache_key()
+        cache_hit = False
+        if cache_key in self._cache:
+            cache_hit = True
+            # import ipdb; ipdb.set_trace()
+            for report_key, report_values in self._cache[cache_key].items():
+                for report_level in report_values:
+                    new_report = report_level.stitch_to_parent(level)
+                    if new_report is not skipped:
+                        self.tree[report_key].add(new_report)
+            print(f"{self._pass['count']* ' '}Got diff from cache for {cache_key} of {self._cache[cache_key]} at current path of {level.path()}")
+        return cache_hit
+
     def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
+        self._pass['diff_call_count'] += 1
+        print(f"{self._pass['count']* ' '}__diff in id: {id(self)}\n{self._pass['count']* ' '}parent: {level.up}\n{self._pass['count']* ' '}level: {level}")
+        # if level.t1 == [1, 2, 4, 5, 5, 5]:
+        #     print(f"{self._pass['count']* ' '}!! again [1, 2, 4, 5, 5, 5] at {level.path()}")
+        #     import ipdb; ipdb.set_trace()
+
+        cache_hit = self.__get_from_cache(level)
+        if cache_hit:
+            return
+
         if level.t1 is level.t2:
             return
 
@@ -935,6 +1034,7 @@ class DeepDiff(ResultDict, Base):
 
     def to_json_pickle(self):
         """
+        :ref:`to_json_pickle_label`
         Get the json pickle of the diff object. Unless you need all the attributes and functionality of DeepDiff, running to_json() is the safer option that json pickle.
         """
         if jsonpickle:
@@ -946,6 +1046,7 @@ class DeepDiff(ResultDict, Base):
     @classmethod
     def from_json_pickle(cls, value):
         """
+        :ref:`from_json_pickle_label`
         Load DeepDiff object with all the bells and whistles from the json pickle dump.
         Note that json pickle dump comes from to_json_pickle
         """
@@ -1028,8 +1129,9 @@ class DeepDiff(ResultDict, Base):
 
         directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
 
-        Note that in the current implementation the symmetrical delta is ONLY used for verifying that the
-        delta is symmetrical.
+        Note that in the current implementation the symmetrical delta (non-directional) is ONLY used for verifying that
+        the delta is being applied to the exact same values as what was used to generate the delta and has
+        no other usages.
 
         If this option is set as True, then the dictionary will not have the "old_value" in the output.
         Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
@@ -1037,13 +1139,11 @@ class DeepDiff(ResultDict, Base):
         If delta = Delta(DeepDiff(t1, t2)) then
         t1 + delta == t2
 
-        Note that it the items in t1 + delta might have slightly different orders than t2 if ignore_order
-        was set to be True.
+        Note that it the items in t1 + delta might have slightly different order of items than t2 if ignore_order
+        was set to be True in the diff object.
 
         """
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
-        # if not self.report_repetition:
-        #     result.mutual_add_removes_to_become_value_changes()
         result.remove_empty_keys()
         if report_repetition_required and self.ignore_order and not self.report_repetition:
             raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
@@ -1118,24 +1218,25 @@ class DeepDiff(ResultDict, Base):
 
         A distance of zero means the objects are equal and a distance of 1 is very far.
 
-        Note: The rough distance calculations are currently only internally used when ignore_order=True so no
-        it is implemented as a part of the algorithm that run ONLY when ignore_order=True. If you have a use case
-        for the rough distance to be calculated when ignore_order=False, then please open a ticket.
+        Note: The deep distance calculations are currently only internally used when ignore_order=True so
+        it is implemented as a part of an algorithm that ONLY runs when ignore_order=True.
+        It DOES NOT work properly when ignore_order=False (default).
+        If you have a use case for the deep distance to be calculated when ignore_order=False, then please open a ticket.
 
         Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
         """
         if not self.hashes:
             raise ValueError(
-                'Currently only during the hash calculations, the objects hierarchical '
-                'counts are evaluated. As a result, the rough distance is only calculated when ignore_order=True.'
+                'Only during the hash calculations, the objects hierarchical '
+                'counts are evaluated. As a result, the deep distance is only calculated when ignore_order=True.'
                 'If you have a usage for this function when ignore_order=False, then let us know')
+        if not self.ignore_order or self.report_repetition:
+            raise ValueError(
+                'The deep distance is only calculated when ignore_order=True and report_repetition=False in the current implementation.'
+            )
         diff_length = get_diff_length(self)
 
-        # delta = self.to_delta_dict(report_repetition_required=False)
-        # aa = AA()
-        # aa.update(delta)
-        # diff_length = get_diff_length(aa)
         if diff_length == 0:
             return 0
 

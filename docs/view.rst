@@ -10,6 +10,8 @@ The main difference is that the tree view has the capabilities to traverse the o
 
 While the view options decide the format of the output that is mostly machine readable, regardless of the view you choose, you can get a more human readable output by using the pretty() method.
 
+.. _text_view_label:
+
 Text View
 ---------
 
@@ -26,6 +28,8 @@ Example of using the text view.
 
 So for example ddiff['dictionary_item_added'] is a set of string results. That's why this view is called the text view.
 You can get this view by default or by passing `view='text'`.
+
+.. _tree_view_label:
 
 Tree View
 ---------

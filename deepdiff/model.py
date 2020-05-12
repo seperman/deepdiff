@@ -260,9 +260,9 @@ class DeltaResult(TextResult):
         self._from_tree_default(tree, 'dictionary_item_removed')
         self._from_tree_value_changed(tree)
         if self.ignore_order:
-            self._from_tree_iterable_item_added(
+            self._from_tree_iterable_item_added_or_removed(
                 tree, 'iterable_item_added', delta_report_key='iterable_items_added_at_indexes')
-            self._from_tree_iterable_item_added(
+            self._from_tree_iterable_item_added_or_removed(
                 tree, 'iterable_item_removed', delta_report_key='iterable_items_removed_at_indexes')
         else:
             self._from_tree_default(tree, 'iterable_item_added')
@@ -273,7 +273,7 @@ class DeltaResult(TextResult):
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
 
-    def _from_tree_iterable_item_added(self, tree, report_type, delta_report_key):
+    def _from_tree_iterable_item_added_or_removed(self, tree, report_type, delta_report_key):
         if report_type in tree:
             for change in tree[report_type]:  # report each change
                 # determine change direction (added or removed)
@@ -527,6 +527,12 @@ class DiffLevel:
     def repetition(self):
         return self.additional['repetition']
 
+    def get_cache_key(self):
+        """
+        Get the cache key to store the results for dynamic programming.
+        """
+        return '{}-{}'.format(id(self.t1), id(self.t2))
+
     def auto_generate_child_rel(self, klass, param):
         """
         Auto-populate self.child_rel1 and self.child_rel2.
@@ -669,6 +675,21 @@ class DiffLevel:
         branch = self.copy()
         return branch.create_deeper(new_t1, new_t2, child_relationship_class,
                                     child_relationship_param, report_type)
+
+    def stitch_to_parent(self, parent):
+        """
+        Stitch the current level to a new parent level and create a whole new branch of tree.
+        This is used to re-use the cache of diff of 2 objects, even if the path has changed.
+        """
+
+        new_self = self.copy()
+        new_parent = parent.copy()
+        new_parent.down, new_self.up = new_self, new_parent
+        new_parent.t2_child_rel = self.up.t2_child_rel
+        new_parent.t1_child_rel = self.up.t1_child_rel
+        # flush the path cache if any
+        new_self._path.clear()
+        return new_self
 
     def copy(self):
         """

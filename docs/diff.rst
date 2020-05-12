@@ -11,8 +11,13 @@ DeepDiff Reference
 .. toctree::
    :maxdepth: 3
 
+   basics
    view
    ignore_order
+   ignore_types_or_values
+   exclude_paths
    numbers
+   serialization
+   optimizations
 
 Back to :doc:`/index`

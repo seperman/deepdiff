@@ -29,6 +29,59 @@ INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 HASH_LOOKUP_ERR_MSG = '{} is not one of the hashed items.'
 
 
+def sha256hex(obj):
+    """Use Sha256 as a cryptographic hash."""
+    obj = obj.encode('utf-8')
+    return sha256(obj).hexdigest()
+
+
+def sha1hex(obj):
+    """Use Sha1 as a cryptographic hash."""
+    obj = obj.encode('utf-8')
+    return sha1(obj).hexdigest()
+
+
+def murmur3_64bit(obj):
+    """
+    Use murmur3_64bit for 64 bit hash by passing this method:
+    hasher=DeepHash.murmur3_64bit
+    """
+    if isinstance(obj, str):
+        obj = obj.encode('utf-8')
+    # This version of murmur3 returns two 64bit integers.
+    return mmh3.hash64(obj, MURMUR_SEED)[0]
+
+
+def murmur3_128bit(obj):
+    """
+    Use murmur3_128bit for bit hash by passing this method:
+    hasher=DeepHash.murmur3_128bit
+    This hasher is the default hasher.
+    """
+    if isinstance(obj, str):
+        obj = obj.encode('utf-8')
+    return mmh3.hash128(obj, MURMUR_SEED)
+
+
+default_hasher = murmur3_128bit if mmh3 else sha256hex
+
+
+def combine_hashes_lists(items, prefix):
+    """
+    Combines lists of hashes into one hash
+    This can be optimized in future.
+    It needs to work with both murmur3 hashes (int) and sha256 (str)
+    """
+    if isinstance(prefix, bytes):
+        prefix = prefix.decode('utf-8')
+    hashes_bytes = b''
+    for item in items:
+        # In order to make sure the order of hashes in each item does not affect the hash
+        # we resort them.
+        hashes_bytes += (''.join(map(str, sorted(item))) + '--').encode('utf-8')
+    return prefix + str(default_hasher(hashes_bytes))
+
+
 class BoolObj(Enum):
     TRUE = 1
     FALSE = 0
@@ -95,7 +148,6 @@ class DeepHash(Base):
         self.ignore_repetition = ignore_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
-        default_hasher = self.murmur3_128bit if mmh3 else self.sha256hex
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED] = []
 
@@ -125,37 +177,10 @@ class DeepHash(Base):
         else:
             del self.hashes[UNPROCESSED]
 
-    @staticmethod
-    def sha256hex(obj):
-        """Use Sha256 as a cryptographic hash."""
-        obj = obj.encode('utf-8')
-        return sha256(obj).hexdigest()
-
-    @staticmethod
-    def sha1hex(obj):
-        """Use Sha1 as a cryptographic hash."""
-        obj = obj.encode('utf-8')
-        return sha1(obj).hexdigest()
-
-    @staticmethod
-    def murmur3_64bit(obj):
-        """
-        Use murmur3_64bit for 64 bit hash by passing this method:
-        hasher=DeepHash.murmur3_64bit
-        """
-        obj = obj.encode('utf-8')
-        # This version of murmur3 returns two 64bit integers.
-        return mmh3.hash64(obj, MURMUR_SEED)[0]
-
-    @staticmethod
-    def murmur3_128bit(obj):
-        """
-        Use murmur3_128bit for bit hash by passing this method:
-        hasher=DeepHash.murmur3_128bit
-        This hasher is the default hasher.
-        """
-        obj = obj.encode('utf-8')
-        return mmh3.hash128(obj, MURMUR_SEED)
+    sha256hex = sha256hex
+    sha1hex = sha1hex
+    murmur3_64bit = murmur3_64bit
+    murmur3_128bit = murmur3_128bit
 
     def __getitem__(self, obj, extract_index=0):
         return self._getitem(self.hashes, obj, extract_index=extract_index)

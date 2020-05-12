@@ -90,7 +90,7 @@ class Delta:
     """
     def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True, safe_to_import=None):
 
-        if diff:
+        if diff is not None:
             if isinstance(diff, DeepDiff):
                 self.diff = diff.to_delta_dict()
             elif isinstance(diff, Mapping):
@@ -416,15 +416,16 @@ class Delta:
         """
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
-
+        import pytest; pytest.set_trace()
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
             # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.
             _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = self._get_elements_and_details("{}[0]".format(path))
-            fixed_indexes_per_path = fixed_indexes.get(path)
-            remove_indexes_per_path = remove_indexes.get(path)
-            fixed_indexes_values = set(fixed_indexes_per_path.values())  # TODO: this needs to be changed to use deephash
+            fixed_indexes_per_path = fixed_indexes.get(path, {})
+            remove_indexes_per_path = remove_indexes.get(path, {})
+            # TODO: this needs to be changed to use deephash so any item can be in this set even if not hashable.
+            fixed_indexes_values = set(fixed_indexes_per_path.values())
 
             new_obj = []
             if isinstance(obj, np_ndarray):

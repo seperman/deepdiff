@@ -3,7 +3,7 @@
 Numbers
 =======
 
-When dealing with numbers, you have the following parameters: significant_digits, number_format_notation
+When dealing with numbers, DeepDiff provides the following functionalities:
 
 .. _significant_digits_label:
 
@@ -20,7 +20,7 @@ significant_digits defines the number of digits AFTER the decimal point to be us
 If ignore_numeric_type_changes is set to True and you have left significant_digits to the default of None, it gets automatically set to 55. The reason is that normally when numbers from 2 different types are compared, instead of comparing the values, we only report the type change. However when ignore_numeric_type_changes=True, in order compare numbers from different types to each other, we need to convert them all into strings. The significant_digits will be used to make sure we accurately convert all the numbers into strings in order to report the changes between them.
 
 .. note::
-    significant_digits bu default uses "{:.Xf}".format(Your Number) behind the scene to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
+    significant_digits by default uses "{:.Xf}".format(Your Number) behind the scene to compare numbers where X=significant_digits when the number_format_notation is left as the default of "f" meaning fixed point.
 
     As a side note, please pay attention that adding digits to your floating point can result in small differences in the results. For example:
     "{:.3f}".format(1.1135) = 1.113, but "{:.3f}".format(1.11351) = 1.114
@@ -75,9 +75,9 @@ Number To String Function
 -------------------------
 
 number_to_string_func : function, default=None
-    In certain cases DeepDiff converts numbers to strings in order to compare them. This is for example done when significant digits parameter is defined.
-    Or when the ignore_numeric_type_changes=True and several other cases.
-    This number_to_string_func parameter gives the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own custom function instead of the default one in the helper module.
+    In many cases DeepDiff converts numbers to strings in order to compare them. For example when ignore_order=True, when significant digits parameter is defined or when the ignore_numeric_type_changes=True.
+    In its simplest form, the number_to_string_func is "{:.Xf}".format(Your Number) where X is the significant digits and the number_format_notation is left as the default of "f" meaning fixed point.
+    The number_to_string_func parameter gives the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own custom function instead of the default one in the helper module.
 
 Defining your own number_to_string_func
     Lets say you want the numbers comparison happen only for numbers above 100 for some reason.

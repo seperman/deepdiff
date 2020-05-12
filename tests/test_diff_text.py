@@ -1122,7 +1122,7 @@ class TestDeepDiffText:
         ([-Decimal('0.102')], [-Decimal('0.10')], 2, {}),
         ([1], [Decimal('1.00000002')], 3, {}),
     ])
-    def test_ignore_type_in_groups_numbers_when_decimal(self, t1, t2, significant_digits, result):
+    def test_ignore_numeric_type_changes_numbers_when_decimal(self, t1, t2, significant_digits, result):
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, significant_digits=significant_digits)
         assert result == ddiff
 
