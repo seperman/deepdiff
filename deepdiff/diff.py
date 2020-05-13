@@ -63,7 +63,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     # Only used when ignore_order = True.
     MAX_COMMON_PAIR_DISTANCES = 10000
     # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
-    PAIR_MAX_DISTANCE_THRESHOLD = Decimal('0.3')
+    PAIR_MAX_DISTANCE_THRESHOLD = Decimal('0.4')
 
     def __init__(self,
                  t1,
@@ -602,6 +602,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                                    level.path())
                 else:
                     self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
+
+        # Also we hash the iterables themselves too so that we can later create cache keys from those hashes.
+        # import pytest; pytest.set_trace()
+        try:
+            DeepHash(
+                obj,
+                hashes=self.hashes,
+                parent=level.path(),
+                apply_hash=True,
+                **self.deephash_parameters,
+            )
+        except Exception as e:  # pragma: no cover
+            logger.error("Can not produce a hash for iterable %s. %s" %
+                         (level.path(), e))
         return local_hashes
 
     def __get_and_cache_rough_distance(self, added_hash, removed_hash, added_hash_obj, removed_hash_obj):
@@ -672,6 +686,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
                 _distance = self.__get_and_cache_rough_distance(
                     added_hash, removed_hash, added_hash_obj, removed_hash_obj)
+                print(f'distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}')
 
                 # Discard potential pairs that are too far.
                 if _distance >= self.PAIR_MAX_DISTANCE_THRESHOLD:

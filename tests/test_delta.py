@@ -35,7 +35,6 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         t3 = [{1}, 3, 5]
-        import pytest; pytest.set_trace()
         dump1 = DeepDiff(t1, t2).to_delta_dump()
         dump2 = DeepDiff(t2, t3).to_delta_dump()
 

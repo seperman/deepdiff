@@ -531,9 +531,15 @@ class DiffLevel:
     def get_cache_key(self, hashes):
         """
         Get the cache key to store the results for dynamic programming.
+        Ideally the cache key is based on the hash of the object.
+        But if the hash of the object is not available, we will use the id instead.
         """
-        t1_hash = DeepHash.get_key(hashes, key=self.t1, default='not present')
-        t2_hash = DeepHash.get_key(hashes, key=self.t2, default='not present')
+        if hashes:
+            t1_hash = DeepHash.get_key(hashes, key=self.t1, default=id(self.t1))
+            t2_hash = DeepHash.get_key(hashes, key=self.t2, default=id(self.t2))
+        else:
+            t1_hash = id(self.t1)
+            t2_hash = id(self.t2)
         return '{}-{}'.format(t1_hash, t2_hash)
 
     def auto_generate_child_rel(self, klass, param):

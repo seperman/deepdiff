@@ -101,3 +101,11 @@ class TestDeepDistance:
         # If the diff was in delta view, spitting out another delta dict should produce identical results.
         assert delta == ddiff
         assert 6 == _get_diff_length(ddiff)
+
+    def test_distance_of_tuple_in_list(self):
+        t1 = {(2,), 4, 5, 6}
+        t2 = {'right!', 'hello', 4, 5}
+        diff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
+        assert {'set_item_removed': {'root': {(2,), 6}}, 'set_item_added': {'root': {'hello', 'right!'}}} == diff
+        dist = diff.get_deep_distance()
+        assert 0.36363636363636365 == dist
