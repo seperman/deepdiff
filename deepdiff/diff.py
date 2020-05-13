@@ -7,49 +7,38 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
-import json
 from copy import deepcopy
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
 from decimal import Decimal
 from itertools import zip_longest
 from ordered_set import OrderedSet
-from pprint import pprint
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, unprocessed, json_convertor_default, add_to_frozen_set,
+                             IndexedHash, unprocessed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
-                             number_to_string, KEY_TO_VAL_STR, get_diff_length, booleans,
+                             number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             skipped, get_numeric_types_distance, only_numbers, datetimes,
+                             skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
                              not_found)
-from deepdiff.serialization import pickle_dump
+from deepdiff.serialization import SerializationMixin
+from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
-    DictRelationship, AttributeRelationship, DeltaResult,
+    DictRelationship, AttributeRelationship,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, pretty_print_diff, NumpyArrayRelationship)
+    SetRelationship, NumpyArrayRelationship)
 from deepdiff.deephash import DeepHash, combine_hashes_lists, default_hasher
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
 
-try:
-    import jsonpickle
-except ImportError:
-    jsonpickle = None
-    logger.info('jsonpickle is not installed. The to_json_pickle and from_json_pickle functions will not work.'
-                'If you dont need those functions, there is nothing to do.')
 
 try:
     import numpy as np
 except ImportError:
     np = None
-
-TREE_VIEW = 'tree'
-TEXT_VIEW = 'text'
-DELTA_VIEW = '_delta'
 
 
 MAX_PASSES_REACHED_MSG = (
@@ -66,7 +55,7 @@ def _report_progress(_pass, progress_logger):
     progress_logger(msg)
 
 
-class DeepDiff(ResultDict, Base):
+class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     __doc__ = doc
 
     # Maximum number of calculated distances between pairs to be tracked.
@@ -160,6 +149,7 @@ class DeepDiff(ResultDict, Base):
             # DeepDiff parameters are transformed to DeepHash parameters via __get_deephash_params method.
             parameters = self.__dict__.copy()
 
+        _purge_cache = True
         if _pass:
             # We are in some pass other than root
             self.is_root = False
@@ -169,6 +159,9 @@ class DeepDiff(ResultDict, Base):
         else:
             # we are at the root
             self.is_root = True
+            # keep the cache. Only used for debugging what was in the cache.
+            if _cache == 'keep':
+                _purge_cache = False
             # Caching the DeepDiff results for dynamic programming
             self._cache = defaultdict(lambda: defaultdict(OrderedSet))
             self._pass = {
@@ -195,20 +188,21 @@ class DeepDiff(ResultDict, Base):
             self.__diff(root, parents_ids=frozenset({id(t1)}))
 
             self.tree.remove_empty_keys()
-            view_results = self.__get_view_results(view)
+            view_results = self._get_view_results(self.view)
             self.update(view_results)
         finally:
             if self.is_root:
-                for key, value in self._cache.items():
-                    try:
-                        self._cache[key] = dict(value)
-                    except Exception:
-                        pass
+                # for key, value in self._cache.items():
+                #     try:
+                #         self._cache[key] = dict(value)
+                #     except Exception:
+                #         pass
                 # print('\n self._cache:')
                 # pprint(self._cache)
                 print(f"ran {self._pass['count']} passes")
                 print(f"ran {self._pass['diff_call_count']} diffs")
-                del self._cache
+                if _purge_cache:
+                    del self._cache
             if repeated_timer:
                 repeated_timer.stop()
 
@@ -246,21 +240,18 @@ class DeepDiff(ResultDict, Base):
         # if level.t1 == [1, 2, 4, 5, 5, 5]:
         #     print(f"{self._pass['count']* ' '}!! SETTING [1, 2, 4, 5, 5, 5] at {level.path()}")
         #     import ipdb; ipdb.set_trace()
+        print(f"report_type: {report_type}")
 
-        cache_key = level.get_cache_key()
-        if self.__skip_this(level):
-            # pass
-            self._cache[cache_key][report_type] = skipped
-        else:
-            print(f"{self._pass['count']* ' '}-> setting results for {level}, cache_key: {cache_key}")
+        if not self.__skip_this(level):
+            # print(f"{self._pass['count']* ' '}-> setting results for {level}, cache_key: {cache_key}")
             level.report_type = report_type
             self.tree[report_type].add(level)
-            self._cache[cache_key][report_type].add(level)
+            # self._cache[cache_key][report_type].add(level)
 
             parent_level = level.up
             if parent_level:
+                cache_key = parent_level.get_cache_key(self.hashes)
                 print(f"{self._pass['count']* ' '}-> also setting cache for parent {parent_level}: {cache_key}")
-                cache_key = parent_level.get_cache_key()
                 self._cache[cache_key][report_type].add(level)
 
     @staticmethod
@@ -615,20 +606,16 @@ class DeepDiff(ResultDict, Base):
 
     def __get_and_cache_rough_distance(self, added_hash, removed_hash, added_hash_obj, removed_hash_obj):
         # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
-        parameters = deepcopy(self.parameters)
-        # Having report_repetition as True can increase
-        # the number of operations to convert one object to the other dramatically
-        # and can easily cause the objects that could have been otherwise close in distance
-        # to be discarded as pairs.
-        # TODO: The rough distance calculator perhaps can use the repetitions report with a low weight
-        # in the future so that it can still be counted.
-        parameters['report_repetition'] = False
-        parameters['view'] = DELTA_VIEW
+        # TODO: can this be replaced with a simple copy?
+        # parameters = deepcopy(self.parameters)
+        # parameters['view'] = DELTA_VIEW
         cache_key = default_hasher(b'distance_cache' + hex(added_hash).encode('utf-8') + b'--' + hex(removed_hash).encode('utf-8'))
         if cache_key in self._cache:
             print(f"{self._pass['count']* ' '}Cache hit. Got the rough distance")
             _distance = self._cache[cache_key]
         else:
+            # if self.is_root:
+            #     import pytest; pytest.set_trace()
             _distance = get_numeric_types_distance(
                 removed_hash_obj.item, added_hash_obj.item, max_=self.PAIR_MAX_DISTANCE_THRESHOLD)
             if _distance is not_found:
@@ -637,7 +624,7 @@ class DeepDiff(ResultDict, Base):
                 # be used for diff reporting
                 diff = DeepDiff(
                     removed_hash_obj.item, added_hash_obj.item,
-                    parameters=parameters, hashes=self.hashes, _pass=self._pass, _cache=self._cache)
+                    parameters=self.parameters, hashes=self.hashes, _pass=self._pass, _cache=self._cache, view=DELTA_VIEW)
                 _distance = diff.get_deep_distance()
             _distance = Decimal(self.number_to_string(
                 _distance,
@@ -723,7 +710,6 @@ class DeepDiff(ResultDict, Base):
         """Diff of unhashable iterables. Only used when ignoring the order."""
         print(f"{self._pass['count']* ' '}__diff_iterable_with_deephash: {level}")
         # if level.t1 == [1, 2, 4, 5, 5, 5]:
-        #     import ipdb; ipdb.set_trace()
         #     print(f"{self._pass['count']* ' '}!! again [1, 2, 4, 5, 5, 5] at {level.path()}")
         t1_hashtable = self.__create_hashtable(level, 't1')
         t2_hashtable = self.__create_hashtable(level, 't2')
@@ -734,8 +720,10 @@ class DeepDiff(ResultDict, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
+        # if self.is_root:
+        #     import pytest; pytest.set_trace()
         # cache_key = hash(''.join(map(str, hashes_added)) + ''.join(map(str, hashes_removed)))
-        # level_cache_key = level.get_cache_key()
+        # level_cache_key = level.get_cache_key(self.hashes)
 
         # if cache_key in self._cache:
         #     does_level_cache_exist = level_cache_key in self._cache
@@ -835,6 +823,7 @@ class DeepDiff(ResultDict, Base):
                         new_repeat=t2_indexes_len,
                         old_indexes=t1_indexes,
                         new_indexes=t2_indexes)
+                    # import pytest; pytest.set_trace()
                     self.__report_result('repetition_change',
                                          repetition_change_level)
 
@@ -961,11 +950,11 @@ class DeepDiff(ResultDict, Base):
         self.__report_result('type_changes', level)
 
     def __get_from_cache(self, level):
-        cache_key = level.get_cache_key()
+        cache_key = level.get_cache_key(self.hashes)
         cache_hit = False
         if cache_key in self._cache:
             cache_hit = True
-            # import ipdb; ipdb.set_trace()
+            # import pytest; pytest.set_trace()
             for report_key, report_values in self._cache[cache_key].items():
                 for report_level in report_values:
                     new_report = report_level.stitch_to_parent(level)
@@ -1032,63 +1021,7 @@ class DeepDiff(ResultDict, Base):
         else:
             self.__diff_obj(level, parents_ids)
 
-    def to_json_pickle(self):
-        """
-        :ref:`to_json_pickle_label`
-        Get the json pickle of the diff object. Unless you need all the attributes and functionality of DeepDiff, running to_json() is the safer option that json pickle.
-        """
-        if jsonpickle:
-            copied = self.copy()
-            return jsonpickle.encode(copied)
-        else:
-            logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')
-
-    @classmethod
-    def from_json_pickle(cls, value):
-        """
-        :ref:`from_json_pickle_label`
-        Load DeepDiff object with all the bells and whistles from the json pickle dump.
-        Note that json pickle dump comes from to_json_pickle
-        """
-        if jsonpickle:
-            return jsonpickle.decode(value)
-        else:
-            logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')
-
-    def to_json(self, default_mapping=None):
-        """
-        Dump json of the text view.
-        **Parameters**
-
-        default_mapping : dictionary(optional), a dictionary of mapping of different types to json types.
-
-        by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
-        If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
-        conversion through this dictionary.
-
-        **Example**
-
-        Serialize custom objects
-            >>> class A:
-            ...     pass
-            ...
-            >>> class B:
-            ...     pass
-            ...
-            >>> t1 = A()
-            >>> t2 = B()
-            >>> ddiff = DeepDiff(t1, t2)
-            >>> ddiff.to_json()
-            TypeError: We do not know how to convert <__main__.A object at 0x10648> of type <class '__main__.A'> for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.
-
-            >>> default_mapping = {A: lambda x: 'obj A', B: lambda x: 'obj B'}
-            >>> ddiff.to_json(default_mapping=default_mapping)
-            '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
-        """
-        dic = self.to_dict(view_override=TEXT_VIEW)
-        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping))
-
-    def __get_view_results(self, view):
+    def _get_view_results(self, view):
         """
         Get the results based on the view
         """
@@ -1105,145 +1038,6 @@ class DeepDiff(ResultDict, Base):
         else:
             raise ValueError('The only valid values for the view parameter are text and tree.')
         return result
-
-    def to_dict(self, view_override=None):
-        """
-        convert the result to a python dictionary. You can override the view type by passing view_override.
-
-        **Parameters**
-
-        view_override: view type, default=None,
-            override the view that was used to generate the diff when converting to the dictionary.
-            The options are the text or tree.
-        """
-
-        view = view_override if view_override else self.view
-        return self.__get_view_results(view)
-
-    def to_delta_dict(self, directed=True, report_repetition_required=True):
-        """
-        Dump to a dictionary suitable for delta usage.
-        Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
-
-        **Parameters**
-
-        directed : Boolean, default=True, whether to create a directional delta dictionary or a symmetrical
-
-        Note that in the current implementation the symmetrical delta (non-directional) is ONLY used for verifying that
-        the delta is being applied to the exact same values as what was used to generate the delta and has
-        no other usages.
-
-        If this option is set as True, then the dictionary will not have the "old_value" in the output.
-        Otherwise it will have the "old_value". "old_value" is the value of the item in t1.
-
-        If delta = Delta(DeepDiff(t1, t2)) then
-        t1 + delta == t2
-
-        Note that it the items in t1 + delta might have slightly different order of items than t2 if ignore_order
-        was set to be True in the diff object.
-
-        """
-        result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
-        result.remove_empty_keys()
-        if report_repetition_required and self.ignore_order and not self.report_repetition:
-            raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
-        if directed:
-            for report_key, report_value in result.items():
-                if isinstance(report_value, Mapping):
-                    for path, value in report_value.items():
-                        if isinstance(value, Mapping) and 'old_value' in value:
-                            del value['old_value']
-        if self.numpy_used:
-            result['numpy_used'] = True
-
-        return dict(result)
-
-    def to_delta_dump(self):
-        """
-        Dump the delta dictionary into a special format that includes header + delta pickle
-        """
-        return pickle_dump(self.to_delta_dict())
-
-    def pretty(self):
-        """
-        The pretty human readable string output for the diff object.
-
-        This is regardless of what view was used to generate the diff.
-
-        Example:
-            >>> t1={1,2,4}
-            >>> t2={2,3}
-            >>> print(DeepDiff(t1, t2).pretty())
-            Item root[3] added to set.
-            Item root[4] removed from set.
-            Item root[1] removed from set.
-        """
-        result = []
-        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
-        for key in keys:
-            for item_key in self.tree[key]:
-                result += [pretty_print_diff(item_key)]
-
-        return '\n'.join(result)
-
-    def __get_item_rough_length(self, item, parent='root'):
-        """
-        Get the rough length of an item.
-        It is used as a part of calculating the rough distance between objects.
-
-        **parameters**
-
-        item: The item to calculate the rough length for
-        parent: It is only used for DeepHash reporting purposes. Not really useful here.
-        """
-        length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
-        if length is None:
-            DeepHash(
-                item,
-                hashes=self.hashes,
-                parent='root',
-                apply_hash=True,
-                **self.deephash_parameters,
-            )
-            length = DeepHash._get(self.hashes, key=item, default=None, extract_index=1)
-        return length
-
-    def get_deep_distance(self):
-        """
-        Gives a numeric value for the distance of t1 and t2 based on how many operations are needed to convert
-        one to the other.
-
-        This is a similar concept to the Levenshtein Edit Distance but for the structured data and is it is designed
-        to be between 0 and 1.
-
-        A distance of zero means the objects are equal and a distance of 1 is very far.
-
-        Note: The deep distance calculations are currently only internally used when ignore_order=True so
-        it is implemented as a part of an algorithm that ONLY runs when ignore_order=True.
-        It DOES NOT work properly when ignore_order=False (default).
-        If you have a use case for the deep distance to be calculated when ignore_order=False, then please open a ticket.
-
-        Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
-        by the number of items that make up t1 and t2.
-        """
-        if not self.hashes:
-            raise ValueError(
-                'Only during the hash calculations, the objects hierarchical '
-                'counts are evaluated. As a result, the deep distance is only calculated when ignore_order=True.'
-                'If you have a usage for this function when ignore_order=False, then let us know')
-        if not self.ignore_order or self.report_repetition:
-            raise ValueError(
-                'The deep distance is only calculated when ignore_order=True and report_repetition=False in the current implementation.'
-            )
-        diff_length = get_diff_length(self)
-
-        if diff_length == 0:
-            return 0
-
-        t1_len = self.__get_item_rough_length(self.t1)
-        t2_len = self.__get_item_rough_length(self.t2)
-
-        return diff_length / (t1_len + t2_len)
 
 
 if __name__ == "__main__":  # pragma: no cover

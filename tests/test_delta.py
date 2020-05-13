@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
-from deepdiff.helper import np
+from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError)
@@ -35,6 +35,7 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         t3 = [{1}, 3, 5]
+        import pytest; pytest.set_trace()
         dump1 = DeepDiff(t1, t2).to_delta_dump()
         dump2 = DeepDiff(t2, t3).to_delta_dump()
 
@@ -508,7 +509,7 @@ DELTA_IGNORE_ORDER_CASES = {
                 }
             }
         },
-        'expected_t1_plus_delta': 't2',
+        'expected_t1_plus_delta': [8, 4, 4, 1, 3, 4, 7],
     },
     'delta_ignore_order_case5': {
         't1': (5, 1, 3, 1, 4, 4, 6),
@@ -521,21 +522,21 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {
             'iterable_items_added_at_indexes': {
                 'root': {
-                    0: 7,
-                    6: 8,
                     1: 4,
                     2: 4,
                     5: 4
                 }
             },
-            'iterable_items_removed_at_indexes': {
-                'root': {
-                    6: 6,
-                    0: 5
+            'values_changed': {
+                'root[6]': {
+                    'new_value': 7
+                },
+                'root[0]': {
+                    'new_value': 8
                 }
             }
         },
-        'expected_t1_plus_delta': 't2',
+        'expected_t1_plus_delta': (8, 4, 4, 1, 3, 4, 1, 7),
     },
     'delta_ignore_order_case6': {
         't1': [{1, 2, 3}, {4, 5}],
@@ -610,7 +611,9 @@ class TestIgnoreOrderDelta:
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
-        assert t1 + delta == expected_t1_plus_delta
+        t1_plus_delta = t1 + delta
+        assert t1_plus_delta == expected_t1_plus_delta
+        assert t1 + delta == t1_plus_delta  # asserting that delta is not mutated once it is applied.
 
 
 DELTA_NUMPY_TEST_CASES = {
@@ -746,3 +749,68 @@ class TestNumpyDelta:
         else:
             result = delta + t1
             assert np.array_equal(result, expected_result)
+
+
+class TestDeltaOther:
+
+    def test_list_ignore_order_various_deltas1(self):
+        t1 = [5, 1, 3, 1, 4, 4, 6]
+        t2 = [7, 4, 4, 1, 3, 4, 8]
+
+        delta_dict1 = {'iterable_items_added_at_indexes': {'root': {0: 7, 6: 8, 1: 4, 2: 4, 5: 4, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {0: 5, 6: 6}}}
+        delta_dict2 = {'iterable_items_added_at_indexes': {'root': {1: 4, 2: 4, 5: 4, 3: 1}}, 'values_changed': {'root[6]': {'new_value': 7}, 'root[0]': {'new_value': 8}}}
+        delta1 = Delta(delta_dict1)
+        t1_plus_delta1 = t1 + delta1
+        assert t1_plus_delta1 == t2
+        delta2 = Delta(delta_dict2)
+        t1_plus_delta2 = t1 + delta2
+        assert t1_plus_delta2 == [8, 4, 4, 1, 3, 4, 7]
+
+    def test_list_ignore_order_various_deltas2(self):
+        t1 = (5, 1, 3, 1, 4, 4, 6)
+        t2 = (7, 4, 4, 1, 3, 4, 8, 1)
+
+        delta_dict1 = {'iterable_items_added_at_indexes': {'root': {0: 7, 6: 8, 1: 4, 2: 4, 5: 4}}, 'iterable_items_removed_at_indexes': {'root': {6: 6, 0: 5}}}
+        delta_dict2 = {'iterable_items_added_at_indexes': {'root': {1: 4, 2: 4, 5: 4}}, 'values_changed': {'root[6]': {'new_value': 7}, 'root[0]': {'new_value': 8}}}
+        delta1 = Delta(delta_dict1)
+        t1_plus_delta1 = t1 + delta1
+        assert t1_plus_delta1 == t2
+        delta2 = Delta(delta_dict2)
+        t1_plus_delta2 = t1 + delta2
+        assert t1_plus_delta2 == (8, 4, 4, 1, 3, 4, 1, 7)
+
+    def test_delta_view_and_to_delta_dict_are_equal_when_parameteres_passed(self):
+        t1 = [4, 2, 2, 1]
+        t2 = [4, 1, 1, 1]
+        parameters = {
+            'ignore_order': True,
+            'ignore_numeric_type_changes': False,
+            'ignore_string_type_changes': False,
+            'ignore_type_in_groups': [],
+            'report_repetition': True,
+            'exclude_paths': None,
+            'exclude_regex_paths': None,
+            'exclude_types': None,
+            'exclude_types_tuple': None,
+            'ignore_type_subclasses': False,
+            'ignore_string_case': False,
+            'exclude_obj_callback': None,
+            'ignore_private_variables': True,
+            'ignore_nan_inequality': False,
+            'hasher': None,
+            'significant_digits': None,
+            'number_format_notation': 'f',
+            'verbose_level': 1,
+            'view': DELTA_VIEW,
+            'max_passes': 10000000,
+            'number_to_string': number_to_string,
+            '_deep_distance_buckets_exponent': 11
+        }
+
+        expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}
+        diff1 = DeepDiff(t1, t2, parameters=parameters)
+        assert expected == diff1
+
+        parameters['view'] = TEXT_VIEW
+        diff2 = DeepDiff(t1, t2, parameters=parameters)
+        assert expected == diff2.to_delta_dict()

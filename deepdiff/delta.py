@@ -109,6 +109,7 @@ class Delta:
         self.raise_errors = raise_errors
         self.log_errors = log_errors
         self.numpy_used = self.diff.pop('numpy_used', False)
+        self.reset()
 
     def __repr__(self):
         return "<Delta: {}>".format(short_repr(self.diff, max_length=100))
@@ -117,7 +118,6 @@ class Delta:
         self.post_process_paths_to_convert = {}
 
     def __add__(self, other):
-        self.reset()
         if isinstance(other, numbers) and self.numpy_used:
             raise DeltaNumpyOperatorOverrideError(DELTA_NUMPY_OPERATOR_OVERRIDE_MSG)
         if self.mutate:
@@ -142,6 +142,7 @@ class Delta:
         other = self.root
         # removing the reference to other
         del self.root
+        self.reset()
         return other
 
     __radd__ = __add__
@@ -416,18 +417,20 @@ class Delta:
         """
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
-        import pytest; pytest.set_trace()
+        # import pytest; pytest.set_trace()
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
             # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.
             _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = self._get_elements_and_details("{}[0]".format(path))
-            fixed_indexes_per_path = fixed_indexes.get(path, {})
-            remove_indexes_per_path = remove_indexes.get(path, {})
+            # copying both these dictionaries since we don't want to mutate them.
+            fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
+            remove_indexes_per_path = remove_indexes.get(path, {}).copy()
             # TODO: this needs to be changed to use deephash so any item can be in this set even if not hashable.
             fixed_indexes_values = set(fixed_indexes_per_path.values())
 
             new_obj = []
+            # Numpy's NdArray does not like the bool function.
             if isinstance(obj, np_ndarray):
                 there_are_old_items = obj.size > 0
             else:

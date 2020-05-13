@@ -7,7 +7,6 @@ import warnings
 from ast import literal_eval
 from decimal import Decimal, localcontext
 from collections import namedtuple
-from collections.abc import Mapping, Iterable
 from ordered_set import OrderedSet
 from threading import Timer
 
@@ -104,6 +103,10 @@ ID_PREFIX = '!>*id'
 ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 KEY_TO_VAL_STR = "{}:{}"
+
+TREE_VIEW = 'tree'
+TEXT_VIEW = 'text'
+DELTA_VIEW = '_delta'
 
 
 def short_repr(item, max_length=15):
@@ -310,39 +313,6 @@ class DeepDiffDeprecationWarning(DeprecationWarning):
     Use this warning instead of DeprecationWarning
     """
     pass
-
-
-def get_diff_length(item):
-    """
-    Get the number of operations in a diff object.
-    It is designed mainly for the delta view output
-    but can be used with other dictionary types of view outputs too.
-    """
-    length = 0
-    if hasattr(item, '_diff_length'):
-        length = item._diff_length
-    elif isinstance(item, Mapping):
-        for key, subitem in item.items():
-            length += get_diff_length(subitem)
-    elif isinstance(item, numbers):
-        length = 1
-    elif isinstance(item, strings):
-        length = 1
-    elif isinstance(item, Iterable):
-        for subitem in item:
-            length += get_diff_length(subitem)
-    elif isinstance(item, type):  # it is a class
-        length = 1
-    else:
-        if hasattr(item, '__dict__'):
-            for subitem in item.__dict__:
-                length += get_diff_length(subitem)
-
-    try:
-        item._diff_length = length
-    except Exception:
-        pass
-    return length
 
 
 def cartesian_product(a, b):

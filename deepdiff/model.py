@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from copy import copy
 from ordered_set import OrderedSet
+from deepdiff.deephash import DeepHash
 from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended
 
 FORCE_DEFAULT = 'fake'
@@ -527,11 +528,13 @@ class DiffLevel:
     def repetition(self):
         return self.additional['repetition']
 
-    def get_cache_key(self):
+    def get_cache_key(self, hashes):
         """
         Get the cache key to store the results for dynamic programming.
         """
-        return '{}-{}'.format(id(self.t1), id(self.t2))
+        t1_hash = DeepHash.get_key(hashes, key=self.t1, default='not present')
+        t2_hash = DeepHash.get_key(hashes, key=self.t2, default='not present')
+        return '{}-{}'.format(t1_hash, t2_hash)
 
     def auto_generate_child_rel(self, klass, param):
         """
@@ -883,34 +886,3 @@ class AttributeRelationship(ChildRelationship):
 
     def get_param_from_obj(self, obj):
         return getattr(obj, self.param)
-
-
-PRETTY_FORM_TEXTS = {
-    "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
-    "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
-    "dictionary_item_added": "Item {diff_path} added to dictionary.",
-    "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
-    "iterable_item_added": "Item {diff_path} added to iterable.",
-    "iterable_item_removed": "Item {diff_path} removed from iterable.",
-    "attribute_added": "Attribute {diff_path} added.",
-    "attribute_removed": "Attribute {diff_path} removed.",
-    "set_item_added": "Item root[{val_t2}] added to set.",
-    "set_item_removed": "Item root[{val_t1}] removed from set.",
-    "repetition_change": "Repetition change for item {diff_path}.",
-}
-
-
-def pretty_print_diff(diff: DiffLevel):
-    type_t1 = get_type(diff.t1).__name__
-    type_t2 = get_type(diff.t2).__name__
-
-    val_t1 = '"{}"'.format(str(diff.t1)) if type_t1 == "str" else str(diff.t1)
-    val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
-
-    diff_path = diff.path(root='root')
-    return PRETTY_FORM_TEXTS.get(diff.report_type, "").format(
-        diff_path=diff_path,
-        type_t1=type_t1,
-        type_t2=type_t2,
-        val_t1=val_t1,
-        val_t2=val_t2)

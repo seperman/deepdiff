@@ -2,6 +2,7 @@ import pytest
 from unittest import mock
 from deepdiff.helper import number_to_string
 from deepdiff import DeepDiff
+from deepdiff.diff import TREE_VIEW
 from decimal import Decimal
 from tests import CustomClass2
 
@@ -53,6 +54,34 @@ class TestIgnoreOrder:
         assert {'iterable_item_removed': {'root[1][1]': 2}} == ddiff
 
     def test_ignore_order_depth5(self):
+        t1 = [4, 2, 2, 1]
+        t2 = [4, 1, 1, 1]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, _cache='keep')
+        expected = {
+            'iterable_item_removed': {
+                'root[1]': 2,
+                'root[2]': 2
+            },
+            'repetition_change': {
+                'root[3]': {
+                    'old_repeat': 1,
+                    'new_repeat': 3,
+                    'old_indexes': [3],
+                    'new_indexes': [1, 2, 3],
+                    'value': 1
+                }
+            }
+        }
+        assert expected == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False)
+        dist = ddiff.get_deep_distance()
+        assert 0.1 == dist
+        # tree_diff = ddiff.to_dict(view_override=TREE_VIEW)
+        # import pytest; pytest.set_trace()
+        # assert ddiff._cache
+
+    def test_ignore_order_depth6(self):
         t1 = [[1, 2, 3, 4], [4, 2, 2, 1]]
         t2 = [[4, 1, 1, 1], [1, 3, 2, 4]]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)

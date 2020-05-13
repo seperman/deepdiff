@@ -4,7 +4,8 @@ import numpy as np
 from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
-    cartesian_product_of_shape, literal_eval_extended, _get_numbers_distance)
+    cartesian_product_of_shape, literal_eval_extended, _get_numbers_distance,
+)
 
 
 class TestHelper:

@@ -230,10 +230,15 @@ class DeepHash(Base):
         It can extract the hash for a given key that is already calculated when extract_index=0
         or the count of items that went to building the object whenextract_index=1.
         """
-        return self._get(self.hashes, key, default=default, extract_index=extract_index)
+        return self.get_key(self.hashes, key, default=default, extract_index=extract_index)
 
     @staticmethod
-    def _get(hashes, key, default=None, extract_index=0):
+    def get_key(hashes, key, default=None, extract_index=0):
+        """
+        get_key method for the hashes dictionary.
+        It can extract the hash for a given key that is already calculated when extract_index=0
+        or the count of items that went to building the object whenextract_index=1.
+        """
         try:
             result = DeepHash._getitem(hashes, key, extract_index=extract_index)
         except KeyError:
