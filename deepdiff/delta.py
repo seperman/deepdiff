@@ -26,6 +26,7 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'and NOT ndarray + delta')
 BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to Delta by passing 'b' in open(..., 'b'): {}"
 DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
+INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action when calling _get_elem_and_compare_to_old_value'
 
 
 class DeltaError(ValueError):
@@ -176,7 +177,7 @@ class Delta:
             elif action == GETATTR:
                 current_old_value = getattr(obj, elem)
             else:
-                raise DeltaError('invalid action when calling _get_elem_and_compare_to_old_value')
+                raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM)
         except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:

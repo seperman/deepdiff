@@ -7,7 +7,8 @@ from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
-    BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED)
+    BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
+    INVALID_ACTION_WHEN_CALLING_GET_ELEM)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -96,6 +97,20 @@ class TestBasicsOfDelta:
         diff = DeepDiff(t1, t2)
         delta = Delta(diff)
         assert "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>" == repr(delta)
+
+    def test_get_elem_and_compare_to_old_value(self):
+        delta = Delta({})
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._get_elem_and_compare_to_old_value(
+                obj=None, path_for_err_reporting=None, expected_old_value=None, action='invalid action')
+        assert INVALID_ACTION_WHEN_CALLING_GET_ELEM == str(excinfo.value)
+
+    def test_identical_delta(self):
+        delta = Delta({})
+
+        t1 = [1, 3]
+        assert t1 + delta == t1
 
     @mock.patch('deepdiff.delta.logger.error')
     def test_list_difference_add_delta_when_index_not_valid(self, mock_logger):
