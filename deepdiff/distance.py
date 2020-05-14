@@ -32,7 +32,7 @@ class DistanceMixin:
             raise ValueError(
                 'The deep distance is only calculated when ignore_order=True in the current implementation.'
             )
-        item = self if self.view == DELTA_VIEW else self.to_delta_dict(report_repetition_required=False)
+        item = self if self.view == DELTA_VIEW else self._to_delta_dict(report_repetition_required=False)
         diff_length = _get_diff_length(item)
 
         if diff_length == 0:

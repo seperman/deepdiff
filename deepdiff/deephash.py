@@ -17,10 +17,10 @@ try:
 except ImportError:  # pragma: no cover
     mmh3 = False  # pragma: no cover
 
-UNPROCESSED = 'unprocessed'
+UNPROCESSED_KEY = 'unprocessed'
 MURMUR_SEED = 1203
 
-RESERVED_DICT_KEYS = {UNPROCESSED}
+RESERVED_DICT_KEYS = {UNPROCESSED_KEY}
 EMPTY_FROZENSET = frozenset({})
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
@@ -149,7 +149,7 @@ class DeepHash(Base):
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.hasher = default_hasher if hasher is None else hasher
-        self.hashes[UNPROCESSED] = []
+        self.hashes[UNPROCESSED_KEY] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.number_format_notation = number_format_notation
@@ -172,10 +172,10 @@ class DeepHash(Base):
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
-        if self.hashes[UNPROCESSED]:
-            logger.warning("Can not hash the following items: {}.".format(self.hashes[UNPROCESSED]))
+        if self.hashes[UNPROCESSED_KEY]:
+            logger.warning("Can not hash the following items: {}.".format(self.hashes[UNPROCESSED_KEY]))
         else:
-            del self.hashes[UNPROCESSED]
+            del self.hashes[UNPROCESSED_KEY]
 
     sha256hex = sha256hex
     sha1hex = sha1hex
@@ -283,10 +283,10 @@ class DeepHash(Base):
         return self.hashes.keys()
 
     def values(self):
-        return self.hashes.values()
+        return (i[0] for i in self.hashes.values())  # Just grab the item and not its count
 
     def items(self):
-        return self.hashes.items()
+        return ((i, v[0]) for i, v in self.hashes.items())
 
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """prepping objects"""
@@ -300,7 +300,7 @@ class DeepHash(Base):
             try:
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
-                self.hashes[UNPROCESSED].append(obj)
+                self.hashes[UNPROCESSED_KEY].append(obj)
                 return (unprocessed, 0)
 
         result, counts = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
@@ -461,7 +461,7 @@ class DeepHash(Base):
             result, counts = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 
         if result is not_hashed:  # pragma: no cover
-            self.hashes[UNPROCESSED].append(obj)
+            self.hashes[UNPROCESSED_KEY].append(obj)
 
         elif result is unprocessed:
             pass

@@ -7,7 +7,8 @@ from functools import partial
 from enum import Enum
 from decimal import Decimal
 from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj, HASH_LOOKUP_ERR_MSG
+from deepdiff.deephash import (
+    prepare_string_for_hashing, unprocessed, UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
 from deepdiff.helper import pypy3, get_id, number_to_string, np, py_current_version
 from tests import CustomClass2
 
@@ -49,12 +50,45 @@ class TestDeepHash:
         result = DeepHash(obj)
         assert result[a]
 
+    def test_deephash_repr(self):
+        obj = "a"
+        result = DeepHash(obj)
+        assert "{'a': 92909720888655291083736678792297797326}" == repr(result)
+
+    def test_deephash_values(self):
+        obj = "a"
+        result = list(DeepHash(obj).values())
+        assert [92909720888655291083736678792297797326] == result
+
+    def test_deephash_keys(self):
+        obj = "a"
+        result = list(DeepHash(obj).keys())
+        assert ["a"] == result
+
+    def test_deephash_items(self):
+        obj = "a"
+        result = list(DeepHash(obj).items())
+        assert [('a', 92909720888655291083736678792297797326)] == result
+
     def test_get_hash_by_obj_when_does_not_exist(self):
         a = "a"
         obj = {1: a}
         result = DeepHash(obj)
         with pytest.raises(KeyError):
             result[2]
+
+    def test_get_reserved_keyword(self):
+        hashes = {UNPROCESSED_KEY: 'full item', 'key1': ('item', 'count')}
+        result = DeepHash._getitem(hashes, obj='key1')
+        assert 'item' == result
+        # For reserved keys, it should just grab the object instead of grabbing an item in the tuple object.
+        result = DeepHash._getitem(hashes, obj=UNPROCESSED_KEY)
+        assert 'full item' == result
+
+    def test_get_key(self):
+        hashes = {'key1': ('item', 'count')}
+        result = DeepHash.get_key(hashes, key='key2', default='banana')
+        assert 'banana' == result
 
     def test_list_of_sets(self):
         a = {1}
@@ -738,3 +772,14 @@ class TestCounts:
 
         result = DeepHash(obj).get(obj, extract_index=1)
         assert expected_count == result
+
+
+class TestOtherHashFuncs:
+
+    @pytest.mark.parametrize('items, prefix, expected', [
+        ([[1], [2]], 'pre', 'pre193457943119183791520927887192579877848'),
+        ([[1], [2]], b'pre', 'pre193457943119183791520927887192579877848'),
+    ])
+    def test_combine_hashes_lists(self, items, prefix, expected):
+        result = combine_hashes_lists(items, prefix)
+        assert expected == result

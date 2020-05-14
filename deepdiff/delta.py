@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
-from deepdiff.serialization import pickle_load
+from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
     DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray, not_found)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
@@ -87,19 +87,21 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True, safe_to_import=None):
+    def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False,
+                 raise_errors=False, log_errors=True, safe_to_import=None,
+                 serializer=pickle_dump, deserializer=pickle_load):
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
-                self.diff = diff.to_delta_dict()
+                self.diff = diff._to_delta_dict()
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
-                self.diff = pickle_load(diff, safe_to_import=safe_to_import)
+                self.diff = deserializer(diff, safe_to_import=safe_to_import)
         elif delta_path:
             with open(delta_path, 'rb'):
                 content = delta_path.read()
-            self.diff = pickle_load(content, safe_to_import=safe_to_import)
+            self.diff = deserializer(content, safe_to_import=safe_to_import)
         else:
             raise ValueError('Either diff or delta_path need to be specified.')
 
@@ -108,6 +110,8 @@ class Delta:
         self.raise_errors = raise_errors
         self.log_errors = log_errors
         self.numpy_used = self.diff.pop('numpy_used', False)
+        self.serializer = serializer
+        self.deserializer = deserializer
         self.reset()
 
     def __repr__(self):
@@ -453,6 +457,21 @@ class Delta:
             # and we had to turn it into a mutable one. In such cases the object has a new id.
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
+
+    def dump(self, file):
+        """
+        Dump into file object
+        """
+        file.write(self._to_delta_dump())
+
+    def dumps(self):
+        """
+        Return the serialized representation of the object as a bytes object, instead of writing it to a file.
+        """
+        return self.serializer(self.diff)
+
+    def to_dict(self):
+        return dict(self)
 
 
 if __name__ == "__main__":  # pragma: no cover

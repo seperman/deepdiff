@@ -1064,7 +1064,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             result = TextResult(tree_results=self.tree, verbose_level=self.verbose_level)
             result.remove_empty_keys()
         elif view == DELTA_VIEW:
-            result = self.to_delta_dict(report_repetition_required=False)
+            result = self._to_delta_dict(report_repetition_required=False)
         else:
             raise ValueError('The only valid values for the view parameter are text and tree.')
         return result
@@ -1079,7 +1079,3 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 if __name__ == "__main__":  # pragma: no cover
     import doctest
     doctest.testmod()
-
-
-class AA(dict):
-    pass

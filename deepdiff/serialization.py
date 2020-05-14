@@ -142,7 +142,7 @@ class SerializationMixin:
         view = view_override if view_override else self.view
         return self._get_view_results(view)
 
-    def to_delta_dict(self, directed=True, report_repetition_required=True):
+    def _to_delta_dict(self, directed=True, report_repetition_required=True):
         """
         Dump to a dictionary suitable for delta usage.
         Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
@@ -179,12 +179,6 @@ class SerializationMixin:
             result['numpy_used'] = True
 
         return dict(result)
-
-    def to_delta_dump(self):
-        """
-        Dump the delta dictionary into a special format that includes header + delta pickle
-        """
-        return pickle_dump(self.to_delta_dict())
 
     def pretty(self):
         """

@@ -26,7 +26,7 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
-        dump = diff.to_delta_dump()
+        dump = Delta(diff).dumps()
         delta = Delta(dump)
 
         assert delta + t1 == t2
@@ -35,8 +35,8 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         t3 = [{1}, 3, 5]
-        dump1 = DeepDiff(t1, t2).to_delta_dump()
-        dump2 = DeepDiff(t2, t3).to_delta_dump()
+        dump1 = Delta(DeepDiff(t1, t2)).dumps()
+        dump2 = Delta(DeepDiff(t2, t3)).dumps()
 
         delta1 = Delta(dump1)
         delta2 = Delta(dump2)
@@ -409,7 +409,7 @@ class TestDelta:
     @pytest.mark.parametrize(**DELTA_CASES_PARAMS)
     def test_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta == t2
@@ -612,7 +612,7 @@ class TestIgnoreOrderDelta:
     def test_ignore_order_delta_cases(
             self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
@@ -737,7 +737,7 @@ class TestNumpyDelta:
     @pytest.mark.parametrize(**DELTA_NUMPY_TEST_PARAMS)
     def test_numpy_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         if expected_delta_dict:
             assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
@@ -824,4 +824,4 @@ class TestDeltaOther:
 
         parameters['view'] = TEXT_VIEW
         diff2 = DeepDiff(t1, t2, parameters=parameters)
-        assert expected == diff2.to_delta_dict()
+        assert expected == diff2._to_delta_dict()
