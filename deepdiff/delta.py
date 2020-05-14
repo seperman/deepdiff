@@ -416,7 +416,6 @@ class Delta:
         """
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
-        # import pytest; pytest.set_trace()
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
@@ -425,7 +424,6 @@ class Delta:
             # copying both these dictionaries since we don't want to mutate them.
             fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
             remove_indexes_per_path = remove_indexes.get(path, {}).copy()
-            # TODO: this needs to be changed to use deephash so any item can be in this set even if not hashable.
             fixed_indexes_values = AnySet(fixed_indexes_per_path.values())
 
             new_obj = []

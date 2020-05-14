@@ -346,7 +346,6 @@ class TestIgnoreOrder:
         result = {'iterable_item_added': {'root[0]': {4}}}
         assert result == ddiff
 
-
     def test_dictionary_of_list_of_dictionary_ignore_order(self):
         t1 = {
             'item': [{
@@ -574,9 +573,8 @@ class TestIgnoreOrder:
     @pytest.mark.parametrize('max_passes, expected', [
         (1, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
         (2, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
-        (62, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0]": {'new_value': [1, 3, 5, 4], 'old_value': [1, 2, 4, 5]}}}),
-        # only distance caching done by 22 passes!
-        (64, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
+        (15, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0]": {'new_value': [[[1, 3, 5, 4]]], 'old_value': [[[1, 2, 4, 5]]]}}}),
+        (19, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
     ])
     def test_ignore_order_passes(self, max_passes, expected):
         t1 = [

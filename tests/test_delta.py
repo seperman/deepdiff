@@ -571,7 +571,7 @@ DELTA_IGNORE_ORDER_CASES = {
                 }
             }
         },
-        'expected_t1_plus_delta': [{1, 2, 3}, {'hello', 'right!', 5}, {(2,), 4, 5, 6}],
+        'expected_t1_plus_delta': 't2',
     },
     'delta_ignore_order_case8_multi_dimensional_list': {
         't1': [[1, 2, 3, 4], [4, 2, 2, 1]],
