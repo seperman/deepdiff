@@ -6,12 +6,11 @@ from deepdiff.serialization import pickle_load
 from deepdiff.helper import (
     DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray, not_found)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
+from deepdiff.anyset import AnySet
 
 DISABLE_DELTA = not DICT_IS_SORTED
 DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DICT_TYPE_SORTED)
 
-
-# TODO: it needs python3.6+ since dictionaries are ordered.
 
 logger = logging.getLogger(__name__)
 
@@ -427,7 +426,7 @@ class Delta:
             fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
             remove_indexes_per_path = remove_indexes.get(path, {}).copy()
             # TODO: this needs to be changed to use deephash so any item can be in this set even if not hashable.
-            fixed_indexes_values = set(fixed_indexes_per_path.values())
+            fixed_indexes_values = AnySet(fixed_indexes_per_path.values())
 
             new_obj = []
             # Numpy's NdArray does not like the bool function.

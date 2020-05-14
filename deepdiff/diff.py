@@ -21,7 +21,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             not_found)
+                             not_found, bcolors)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -63,7 +63,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     # Only used when ignore_order = True.
     MAX_COMMON_PAIR_DISTANCES = 10000
     # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
-    PAIR_MAX_DISTANCE_THRESHOLD = Decimal('0.4')
+    PAIR_MAX_DISTANCE_THRESHOLD = Decimal('0.3')
 
     def __init__(self,
                  t1,
@@ -668,8 +668,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if cache_key in self._cache:
             print('Pairs already exist for these hashes. Using the cached version.')
             return self._cache[cache_key].copy()
-        # distance to hashes
-        used_target_hashes = set()
 
         # A dictionary of hashes to distances and each distance to an ordered set of hashes.
         # It tells us about the distance of each object from other objects.
@@ -686,8 +684,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
                 _distance = self.__get_and_cache_rough_distance(
                     added_hash, removed_hash, added_hash_obj, removed_hash_obj)
-                print(f'distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}')
-
+                print(f'{bcolors.HEADER}distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}{bcolors.ENDC}')
                 # Discard potential pairs that are too far.
                 if _distance >= self.PAIR_MAX_DISTANCE_THRESHOLD:
                     continue
@@ -703,18 +700,29 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         del pairs_of_item[current_max_distance_from_item]
                         pairs_of_item['max'] = _distance
 
-        for added_hash, distances in most_in_common_pairs.items():
-            del distances['max']
-            for key in sorted(distances):
-                target_hashes = distances[key]
-                target_hashes -= used_target_hashes
-                if target_hashes:
-                    target_hash = target_hashes.lpop()
-                    used_target_hashes.add(target_hash)
-                    pairs[added_hash] = target_hash
-                    break
-                else:
-                    del distances[key]
+        used_to_hashes = set()
+        from pprint import pprint
+        pprint(most_in_common_pairs)
+
+        distances_to_from_hashes = defaultdict(OrderedSetPlus)
+        for from_hash, distances_to_to_hashes in most_in_common_pairs.items():
+            del distances_to_to_hashes['max']
+            for dist in distances_to_to_hashes:
+                distances_to_from_hashes[dist].add(from_hash)
+
+        for dist in sorted(distances_to_from_hashes.keys()):
+            from_hashes = distances_to_from_hashes[dist]
+            while from_hashes:
+                from_hash = from_hashes.lpop()
+                if from_hash not in used_to_hashes:
+                    to_hashes = most_in_common_pairs[from_hash][dist]
+                    while to_hashes:
+                        to_hash = to_hashes.lpop()
+                        if to_hash not in used_to_hashes:
+                            used_to_hashes.add(from_hash)
+                            used_to_hashes.add(to_hash)
+                            print(f'{bcolors.FAIL}Adding {t2_hashtable[from_hash].item} as a pairs of {t1_hashtable[to_hash].item} with distance of {dist}{bcolors.ENDC}')
+                            pairs[from_hash] = to_hash
 
         inverse_pairs = {v: k for k, v in pairs.items()}
         pairs.update(inverse_pairs)

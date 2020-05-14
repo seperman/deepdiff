@@ -558,11 +558,17 @@ DELTA_IGNORE_ORDER_CASES = {
         'to_delta_kwargs': {},
         'expected_delta_dict': {
             'set_item_removed': {
-                'root[2]': {(2, 4, 7)},
                 'root[1]': {4}
             },
-            'set_item_added': {
-                'root[2]': {(2, ), 6}
+            'iterable_items_added_at_indexes': {
+                'root': {
+                    0: {(2, ), 4, 5, 6}
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root': {
+                    2: {4, 5, (2, 4, 7)}
+                }
             }
         },
         'expected_t1_plus_delta': [{1, 2, 3}, {'hello', 'right!', 5}, {(2,), 4, 5, 6}],
