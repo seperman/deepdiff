@@ -403,6 +403,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t_keys_removed = t1_keys - t_keys_intersect
 
         for key in t_keys_added:
+            if self.__count_diff() is StopIteration:
+                return
+
             key = t2_clean_to_keys[key] if t2_clean_to_keys else key
             change_level = level.branch_deeper(
                 notpresent,
@@ -412,6 +415,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.__report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
+            if self.__count_diff() is StopIteration:
+                return
+
             key = t1_clean_to_keys[key] if t1_clean_to_keys else key
             change_level = level.branch_deeper(
                 t1[key],
@@ -421,6 +427,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.__report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
+            if self.__count_diff() is StopIteration:
+                return
+
             key1 = t1_clean_to_keys[key] if t1_clean_to_keys else key
             key2 = t2_clean_to_keys[key] if t2_clean_to_keys else key
             item_id = id(t1[key1])
@@ -451,11 +460,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         items_removed = [t1_hashtable[i].item for i in hashes_removed]
 
         for item in items_added:
+            if self.__count_diff() is StopIteration:
+                return
+
             change_level = level.branch_deeper(
                 notpresent, item, child_relationship_class=SetRelationship)
             self.__report_result('set_item_added', change_level)
 
         for item in items_removed:
+            if self.__count_diff() is StopIteration:
+                return
+
             change_level = level.branch_deeper(
                 item, notpresent, child_relationship_class=SetRelationship)
             self.__report_result('set_item_removed', change_level)
@@ -488,6 +503,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         for i, (x, y) in enumerate(
                 zip_longest(
                     level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
+
+            if self.__count_diff() is StopIteration:
+                return
+
             if y is ListItemRemovedOrAdded:  # item removed completely
                 change_level = level.branch_deeper(
                     x,
@@ -737,8 +756,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
-        self._stats[PASSES_COUNT] += 1
         if self._stats[PASSES_COUNT] < self.max_passes:
+            self._stats[PASSES_COUNT] += 1
             pairs = self.__get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
         else:
@@ -772,6 +791,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if self.report_repetition:
             for hash_value in hashes_added:
+                if self.__count_diff() is StopIteration:
+                    return
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
@@ -790,6 +811,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                         self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
+                if self.__count_diff() is StopIteration:
+                    return
                 other = get_other_pair(hash_value, in_t1=False)
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
@@ -828,6 +851,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         else:
             for hash_value in hashes_added:
+                if self.__count_diff() is StopIteration:
+                    return
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
@@ -845,6 +870,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     self.__diff(change_level, parents_ids_added)
 
             for hash_value in hashes_removed:
+                if self.__count_diff() is StopIteration:
+                    return
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
@@ -961,13 +988,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         self.tree[report_key].add(new_report)
         return cache_hit
 
-    def __diff(self, level, parents_ids=frozenset({})):
-        """The main diff method"""
-        self._stats[DIFF_COUNT] += 1
-        if self.max_diffs and self._stats[DIFF_COUNT] > self.max_diffs:
+    def __count_diff(self):
+        if self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs:
             if not self._stats[MAX_DIFF_LIMIT_REACHED]:
                 self._stats[MAX_DIFF_LIMIT_REACHED] = True
-                logger.warning(MAX_DIFFS_REACHED_MSG.format(self.max_passes))
+                logger.warning(MAX_DIFFS_REACHED_MSG.format(self.max_diffs))
+            return StopIteration
+        self._stats[DIFF_COUNT] += 1
+
+    def __diff(self, level, parents_ids=frozenset({})):
+        """The main diff method"""
+        if self.__count_diff() is StopIteration:
             return
 
         cache_hit = self.__get_from_cache(level)

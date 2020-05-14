@@ -785,6 +785,11 @@ class TestDeltaOther:
         assert t1_plus_delta2 == (8, 4, 4, 1, 3, 4, 1, 7)
 
     def test_delta_view_and_to_delta_dict_are_equal_when_parameteres_passed(self):
+        """
+        This is a test that passes parameters in a dictionary instead of kwargs.
+        Note that when parameters are passed as a dictionary, all of them even the ones that
+        have default values need to be passed.
+        """
         t1 = [4, 2, 2, 1]
         t2 = [4, 1, 1, 1]
         parameters = {
@@ -808,6 +813,7 @@ class TestDeltaOther:
             'verbose_level': 1,
             'view': DELTA_VIEW,
             'max_passes': 10000000,
+            'max_diffs': None,
             'number_to_string': number_to_string,
             '_deep_distance_buckets_exponent': 11
         }
