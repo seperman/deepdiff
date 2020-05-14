@@ -9,6 +9,7 @@ class TestAnySet:
         result = AnySet(items)
         expected = ({1, 2, 4}, {})
         assert expected == result
+        assert repr(result) == r'< AnySet OrderedSet([1, 2, 4]), {} >'
 
     def test_anyset_init2(self):
         items = [1, 2, {1}, 4, 4, {1}]
@@ -27,10 +28,11 @@ class TestAnySet:
     def test_anyset_pop1(self):
         items = [1, 2, {1}, 4, 4, {1}]
         result = AnySet(items)
-        result_len = len(result)
-        item = result.pop()
-        assert item in items
-        assert len(result) == result_len - 1
+        while result:
+            result_len = len(result)
+            item = result.pop()
+            assert item in items
+            assert len(result) == result_len - 1
 
     @pytest.mark.skipif(not DICT_IS_SORTED, reason='python 3.6 is needed for this test to run.')
     def test_iter_anyset(self):

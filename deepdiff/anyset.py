@@ -50,6 +50,8 @@ class AnySet:
     def __repr__(self):
         return "< AnySet {}, {} >".format(self._set, self._hash_to_objects)
 
+    __str__ = __repr__
+
     def __len__(self):
         return len(self._set) + len(self._hash_to_objects)
 
@@ -58,3 +60,6 @@ class AnySet:
             yield item
         for item in self._hash_to_objects.values():
             yield item
+
+    def __bool__(self):
+        return bool(self._set or self._hash_to_objects)
