@@ -24,6 +24,8 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'A numpy ndarray is most likely being added to a delta. '
     'Due to Numpy override the + operator, you can only do: delta + ndarray '
     'and NOT ndarray + delta')
+BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to Delta by passing 'b' in open(..., 'b'): {}"
+DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
 
 
 class DeltaError(ValueError):
@@ -87,7 +89,7 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False,
+    def __init__(self, diff=None, delta_path=None, delta_file=None, mutate=False, verify_symmetry=False,
                  raise_errors=False, log_errors=True, safe_to_import=None,
                  serializer=pickle_dump, deserializer=pickle_load):
 
@@ -99,11 +101,17 @@ class Delta:
             elif isinstance(diff, strings):
                 self.diff = deserializer(diff, safe_to_import=safe_to_import)
         elif delta_path:
-            with open(delta_path, 'rb'):
-                content = delta_path.read()
+            with open(delta_path, 'rb') as the_file:
+                content = the_file.read()
+            self.diff = deserializer(content, safe_to_import=safe_to_import)
+        elif delta_file:
+            try:
+                content = delta_file.read()
+            except UnicodeDecodeError as e:
+                raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
             self.diff = deserializer(content, safe_to_import=safe_to_import)
         else:
-            raise ValueError('Either diff or delta_path need to be specified.')
+            raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
         self.mutate = mutate
         self.verify_symmetry = verify_symmetry
@@ -458,11 +466,11 @@ class Delta:
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
 
-    def dump(self, file):
+    def dump(self, file, delta_path=None):
         """
         Dump into file object
         """
-        file.write(self._to_delta_dump())
+        file.write(self.dumps())
 
     def dumps(self):
         """

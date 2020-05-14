@@ -1,11 +1,13 @@
 import pytest
+import os
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
-    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError)
+    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
+    BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -42,6 +44,58 @@ class TestBasicsOfDelta:
         delta2 = Delta(dump2)
 
         assert t1 + delta1 + delta2 == t3
+
+    def test_delta_dump_and_read1(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        path = '/tmp/delta_test.delta'
+        with open(path, 'wb') as the_file:
+            Delta(diff).dump(the_file)
+        delta = Delta(delta_path=path)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_dump_and_read2(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta_content = Delta(diff).dumps()
+        path = '/tmp/delta_test2.delta'
+        with open(path, 'wb') as the_file:
+            the_file.write(delta_content)
+        delta = Delta(delta_path=path)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_dump_and_read3(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta_content = Delta(diff).dumps()
+        path = '/tmp/delta_test2.delta'
+        with open(path, 'wb') as the_file:
+            the_file.write(delta_content)
+        with pytest.raises(ValueError) as excinfo:
+            with open(path, 'r') as the_file:
+                delta = Delta(delta_file=the_file)
+        assert BINIARY_MODE_NEEDED_MSG[:20] == str(excinfo.value)[:20]
+        with open(path, 'rb') as the_file:
+            delta = Delta(delta_file=the_file)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_when_no_arg_passed(self):
+        with pytest.raises(ValueError) as excinfo:
+            Delta()
+        assert DELTA_AT_LEAST_ONE_ARG_NEEDED == str(excinfo.value)
+
+    def test_delta_repr(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff)
+        assert "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>" == repr(delta)
 
     @mock.patch('deepdiff.delta.logger.error')
     def test_list_difference_add_delta_when_index_not_valid(self, mock_logger):
