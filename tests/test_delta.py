@@ -112,6 +112,14 @@ class TestBasicsOfDelta:
         t1 = [1, 3]
         assert t1 + delta == t1
 
+    def test_delta_mutate(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, mutate=True)
+        t1 + delta
+        assert t1 == t2
+
     @mock.patch('deepdiff.delta.logger.error')
     def test_list_difference_add_delta_when_index_not_valid(self, mock_logger):
         t1 = [1, 2]
