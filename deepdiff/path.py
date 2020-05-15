@@ -89,7 +89,14 @@ def _get_nested_obj(obj, elements):
 
 def get_item(obj, path):
     """
-    Get the item from obj based on path
+    Get the item from obj based on path.
+
+    Note that even if DeepDiff tried gives you a path to an item in a set,
+    there is no such thing in Python and hence you will get an error trying
+    to get that item from the set.
+    If you want to be able to get items from sets, use the OrderedSet module
+    to generate the sets.
+    Deepdiff uses OrderedSet as a dependency.
     """
     elements = _path_to_elements(path, root_element=None)
     return _get_nested_obj(obj, elements)
