@@ -1,7 +1,10 @@
-**Grep**
+.. _grep_label:
+
+Grep
+====
 
 grep is a new interface for Deep Search. It takes exactly the same arguments.
-And it works just like grep in shell!
+And it works just like grep in linux shell!
 
 **Examples**
 
