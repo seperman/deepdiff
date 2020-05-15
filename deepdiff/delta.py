@@ -15,10 +15,11 @@ DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DIC
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Error found on: {}'
+VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}'
 ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
-VERIFY_SYMMETRY_MSG = 'that the original objects that the delta is made from must be different than what the delta is applied to.'
+VERIFY_SYMMETRY_MSG = ('while checking the symmetry of the delta. You have applied the delta to an object that has '
+                       'different values than the original object the delta was made from')
 FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG = 'Failed to remove index[{}] on {}. It was expected to be {} but got {}'
 DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'A numpy ndarray is most likely being added to a delta. '
@@ -28,6 +29,9 @@ BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to D
 DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
 INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action of {} when calling _get_elem_and_compare_to_old_value'
 INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM = 'invalid action of {} when calling _simple_set_elem_value'
+INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM = 'invalid action of {} when calling _simple_set_elem_value'
+UNABLE_TO_GET_ITEM_MSG = 'Unable to get the item at {}: {}'
+INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Unable to add the following items at the specific indexes. {}'
 
 
 class DeltaError(ValueError):
@@ -97,7 +101,7 @@ class Delta:
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
-                self.diff = diff._to_delta_dict()
+                self.diff = diff._to_delta_dict(directed=not verify_symmetry)
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
@@ -179,7 +183,7 @@ class Delta:
                 current_old_value = getattr(obj, elem)
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
-        except (KeyError, IndexError, AttributeError) as e:
+        except (KeyError, IndexError, AttributeError, IndexError) as e:
             current_old_value = not_found
             if self.verify_symmetry:
                 if isinstance(path_for_err_reporting, (list, tuple)):
@@ -238,7 +242,7 @@ class Delta:
             elif action == GETATTR:
                 del obj.__dict__[elem]
             else:
-                raise DeltaError('invalid action when calling _simple_set_elem_value')
+                raise DeltaError(INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM.format(action))
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
 
@@ -277,8 +281,11 @@ class Delta:
 
     def _do_item_added(self, items):
         for path, new_value in items.items():
-            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
-
+            elem_and_details = self._get_elements_and_details(path)
+            if elem_and_details:
+                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+            else:
+                continue
             self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
                                 obj, elements, path, elem, action, new_value)
 
@@ -297,28 +304,37 @@ class Delta:
             self._do_values_or_type_changed(self.post_process_paths_to_convert, is_type_change=True)
 
     def _get_elements_and_details(self, path):
-        elements = _path_to_elements(path)
-        if len(elements) > 1:
-            parent = _get_nested_obj(obj=self, elements=elements[:-2])
-            parent_to_obj_elem, parent_to_obj_action = elements[-2]
-            obj = self._get_elem_and_compare_to_old_value(
-                obj=parent, path_for_err_reporting=path, expected_old_value=None,
-                elem=parent_to_obj_elem, action=parent_to_obj_action)
+        try:
+            elements = _path_to_elements(path)
+            if len(elements) > 1:
+                parent = _get_nested_obj(obj=self, elements=elements[:-2])
+                parent_to_obj_elem, parent_to_obj_action = elements[-2]
+                obj = self._get_elem_and_compare_to_old_value(
+                    obj=parent, path_for_err_reporting=path, expected_old_value=None,
+                    elem=parent_to_obj_elem, action=parent_to_obj_action)
+            else:
+                parent = parent_to_obj_elem = parent_to_obj_action = None
+                obj = _get_nested_obj(obj=self, elements=elements[:-1])
+            elem, action = elements[-1]
+        except Exception as e:
+            self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
+            return None
         else:
-            parent = parent_to_obj_elem = parent_to_obj_action = None
-            obj = _get_nested_obj(obj=self, elements=elements[:-1])
-        elem, action = elements[-1]
-        return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
+            return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
 
     def _do_values_or_type_changed(self, changes, is_type_change=False):
         for path, value in changes.items():
-            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+            elem_and_details = self._get_elements_and_details(path)
+            if elem_and_details:
+                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+            else:
+                continue
             expected_old_value = value.get('old_value', not_found)
 
             current_old_value = self._get_elem_and_compare_to_old_value(
                 obj=obj, path_for_err_reporting=path, expected_old_value=expected_old_value, elem=elem, action=action)
             if current_old_value is not_found:
-                continue
+                continue  # pragma: no cover. I have not been able to write a test for this case. But we should still check for it.
             # With type change if we could have originally converted the type from old_value
             # to new_value just by applying the class of the new_value, then we might not include the new_value
             # in the delta dictionary.
@@ -342,7 +358,11 @@ class Delta:
         Note: tuples needs to be a list of tuples or tuple of tuples om the form of (key, value)
         """
         for path, expected_old_value in tuples:
-            elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = self._get_elements_and_details(path)
+            elem_and_details = self._get_elements_and_details(path)
+            if elem_and_details:
+                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+            else:
+                continue
             current_old_value = self._get_elem_and_compare_to_old_value(
                 obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
             if current_old_value is not_found:
@@ -434,7 +454,11 @@ class Delta:
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
             # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.
-            _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = self._get_elements_and_details("{}[0]".format(path))
+            elem_and_details = self._get_elements_and_details("{}[0]".format(path))
+            if elem_and_details:
+                _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = elem_and_details
+            else:
+                continue
             # copying both these dictionaries since we don't want to mutate them.
             fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
             remove_indexes_per_path = remove_indexes.get(path, {}).copy()
@@ -453,13 +477,18 @@ class Delta:
                 if new_obj_index in fixed_indexes_per_path:
                     new_item = fixed_indexes_per_path.pop(new_obj_index)
                     new_obj.append(new_item)
-                else:
+                elif there_are_old_items:
                     try:
                         new_item = next(old_item_gen)
                     except StopIteration:
                         there_are_old_items = False
                     else:
                         new_obj.append(new_item)
+                else:
+                    # pop a random item from the fixed_indexes_per_path dictionary
+                    self._raise_or_log(INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER.format(fixed_indexes_per_path))
+                    new_item = fixed_indexes_per_path.pop(next(iter(fixed_indexes_per_path)))
+                    new_obj.append(new_item)
 
             if isinstance(obj, tuple):
                 new_obj = tuple(new_obj)

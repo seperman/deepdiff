@@ -9,7 +9,8 @@ from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
-    INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM)
+    INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
+    INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -119,6 +120,19 @@ class TestBasicsOfDelta:
             delta._simple_set_elem_value(
                 obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
         assert "Failed to set mypath due to unhashable type: 'set'" == str(excinfo.value)
+
+    def test_simple_delete_elem(self):
+        delta = Delta({}, raise_errors=True)
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._simple_delete_elem(
+                obj=None, elem=None, action='burnt oil', path_for_err_reporting=None)
+        assert INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM.format('burnt oil') == str(excinfo.value)
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._simple_delete_elem(
+                obj={}, elem=1, action=GET, path_for_err_reporting='mypath')
+        assert "Failed to set mypath due to 1" == str(excinfo.value)
 
     def test_identical_delta(self):
         delta = Delta({})
@@ -931,3 +945,106 @@ class TestDeltaOther:
                 action=GET,
                 elem='key')
         assert VERIFICATION_MSG.format('root', 'Expected Value', 'not found', "'key'") == str(excinfo.value)
+
+    def test_apply_delta_to_incompatible_object1(self):
+        t1 = {1: {2: [4, 5]}}
+        t2 = {1: {2: [4]}, 0: 'new'}
+
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, raise_errors=True)
+
+        t3 = []
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta + t3
+        assert "Unable to get the item at root[1][2][1]: list index out of range" == str(excinfo.value)
+        assert [] == t3
+
+    def test_apply_delta_to_incompatible_object3_errors_can_be_muted(self):
+        t1 = {1: {2: [4]}}
+        t2 = {1: {2: [4, 6]}}
+        t3 = []
+
+        diff = DeepDiff(t1, t2)
+
+        delta2 = Delta(diff, raise_errors=False)
+        t4 = delta2 + t3
+        assert [] == t4
+
+    def test_apply_delta_to_incompatible_object4_errors_can_be_muted(self):
+        t1 = {1: {2: [4, 5]}}
+        t2 = {1: {2: [4]}, 0: 'new'}
+        t3 = []
+
+        diff = DeepDiff(t1, t2)
+
+        # The original delta was based on a diff between 2 dictionaries.
+        # if we turn raise_errors=False, we can try to see what portions of the delta
+        delta2 = Delta(diff, raise_errors=False)
+        t4 = delta2 + t3
+        assert ['new'] == t4
+
+    def test_apply_delta_to_incompatible_object5_no_errors_detected(self):
+        t1 = {3: {2: [4]}}
+        t2 = {3: {2: [4]}, 0: 'new', 1: 'newer'}
+        diff = DeepDiff(t1, t2)
+
+        t3 = []
+        # The original delta was based on a diff between 2 dictionaries.
+        # if we turn raise_errors=True, and there are no errors, a delta can be applied fully to another object!
+        delta2 = Delta(diff, raise_errors=True)
+        t4 = delta2 + t3
+        assert ['new', 'newer'] == t4
+
+    def test_apply_delta_to_incompatible_object6_value_change(self):
+        t1 = {1: {2: [4]}}
+        t2 = {1: {2: [5]}}
+        t3 = []
+
+        diff = DeepDiff(t1, t2)
+
+        delta2 = Delta(diff, raise_errors=False)
+        t4 = delta2 + t3
+        assert [] == t4
+
+    def test_apply_delta_to_incompatible_object7_type_change(self):
+        t1 = ['1']
+        t2 = [1]
+        t3 = ['a']
+
+        diff = DeepDiff(t1, t2)
+
+        delta2 = Delta(diff, raise_errors=False)
+        t4 = delta2 + t3
+        assert ['a'] == t4
+
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_apply_delta_to_incompatible_object7_verify_symmetry(self, mock_logger):
+        t1 = [1]
+        t2 = [2]
+        t3 = [3]
+
+        diff = DeepDiff(t1, t2)
+
+        delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+        t4 = delta2 + t3
+
+        assert [2] == t4
+        expected_msg = VERIFICATION_MSG.format('root[0]', 1, 3, VERIFY_SYMMETRY_MSG)
+        mock_logger.assert_called_once_with(expected_msg)
+
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_apply_delta_to_incompatible_object8_verify_symmetry_ignore_order(self, mock_logger):
+        t1 = [1, 2, 'B', 3]
+        t2 = [1, 2, 3, 5]
+        t3 = []
+
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+
+        delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+        print(delta2)
+        t4 = delta2 + t3
+
+        assert [5] == t4
+        expected_msg = INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER.format({3: 5})
+        mock_logger.assert_called_once_with(expected_msg)
