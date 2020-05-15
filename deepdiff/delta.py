@@ -206,7 +206,7 @@ class Delta:
                 setattr(obj, elem, value)
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM.format(action))
-        except (KeyError, IndexError, AttributeError) as e:
+        except (KeyError, IndexError, AttributeError, TypeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
 
     def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,

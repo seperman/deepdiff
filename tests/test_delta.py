@@ -108,12 +108,17 @@ class TestBasicsOfDelta:
         assert INVALID_ACTION_WHEN_CALLING_GET_ELEM.format('ketchup on steak') == str(excinfo.value)
 
     def test_simple_set_elem_value(self):
-        delta = Delta({})
+        delta = Delta({}, raise_errors=True)
 
         with pytest.raises(DeltaError) as excinfo:
             delta._simple_set_elem_value(
                 obj=None, elem=None, value=None, action='mayo on salad', path_for_err_reporting=None)
         assert INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM.format('mayo on salad') == str(excinfo.value)
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._simple_set_elem_value(
+                obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
+        assert "Failed to set mypath due to unhashable type: 'set'" == str(excinfo.value)
 
     def test_identical_delta(self):
         delta = Delta({})
