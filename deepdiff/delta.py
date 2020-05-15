@@ -27,6 +27,7 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
 BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to Delta by passing 'b' in open(..., 'b'): {}"
 DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
 INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action of {} when calling _get_elem_and_compare_to_old_value'
+INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM = 'invalid action of {} when calling _simple_set_elem_value'
 
 
 class DeltaError(ValueError):
@@ -204,7 +205,7 @@ class Delta:
             elif action == GETATTR:
                 setattr(obj, elem, value)
             else:
-                raise DeltaError('invalid action when calling _simple_set_elem_value')
+                raise DeltaError(INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
 

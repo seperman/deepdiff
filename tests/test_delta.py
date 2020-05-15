@@ -9,7 +9,7 @@ from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
-    INVALID_ACTION_WHEN_CALLING_GET_ELEM)
+    INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -104,8 +104,16 @@ class TestBasicsOfDelta:
 
         with pytest.raises(DeltaError) as excinfo:
             delta._get_elem_and_compare_to_old_value(
-                obj=None, path_for_err_reporting=None, expected_old_value=None, action='invalid action')
-        assert INVALID_ACTION_WHEN_CALLING_GET_ELEM == str(excinfo.value)
+                obj=None, path_for_err_reporting=None, expected_old_value=None, action='ketchup on steak')
+        assert INVALID_ACTION_WHEN_CALLING_GET_ELEM.format('ketchup on steak') == str(excinfo.value)
+
+    def test_simple_set_elem_value(self):
+        delta = Delta({})
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._simple_set_elem_value(
+                obj=None, elem=None, value=None, action='mayo on salad', path_for_err_reporting=None)
+        assert INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM.format('mayo on salad') == str(excinfo.value)
 
     def test_identical_delta(self):
         delta = Delta({})
