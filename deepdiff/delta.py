@@ -15,7 +15,7 @@ DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DIC
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Due to {}'
+VERIFICATION_MSG = 'Expected the previous value for {} to be {} but it is {}. Error found on: {}'
 ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_SYMMETRY_MSG = 'that the original objects that the delta is made from must be different than what the delta is applied to.'
@@ -26,7 +26,7 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'and NOT ndarray + delta')
 BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to Delta by passing 'b' in open(..., 'b'): {}"
 DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
-INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action when calling _get_elem_and_compare_to_old_value'
+INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action of {} when calling _get_elem_and_compare_to_old_value'
 
 
 class DeltaError(ValueError):
@@ -177,7 +177,7 @@ class Delta:
             elif action == GETATTR:
                 current_old_value = getattr(obj, elem)
             else:
-                raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM)
+                raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:

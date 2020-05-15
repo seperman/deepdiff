@@ -4,6 +4,7 @@ from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
+from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
@@ -902,3 +903,18 @@ class TestDeltaOther:
         parameters['view'] = TEXT_VIEW
         diff2 = DeepDiff(t1, t2, parameters=parameters)
         assert expected == diff2._to_delta_dict()
+
+    def test_verify_symmetry_and_get_elem_and_compare_to_old_value(self):
+        """
+        Test a specific case where path was a list of elements (in the form of tuples)
+        and the item could not be found.
+        """
+        delta = Delta({}, verify_symmetry=True, raise_errors=True, log_errors=False)
+        with pytest.raises(DeltaError) as excinfo:
+            delta._get_elem_and_compare_to_old_value(
+                obj={},
+                path_for_err_reporting=(('root', GETATTR),),
+                expected_old_value='Expected Value',
+                action=GET,
+                elem='key')
+        assert VERIFICATION_MSG.format('root', 'Expected Value', 'not found', "'key'") == str(excinfo.value)

@@ -91,6 +91,27 @@ def get_item(obj, path):
     """
     Get the item from obj based on path.
 
+    Example
+        >>> from deepdiff import get_item
+        >>> obj = {1: [{'2': 'b'}, 3], 2: [4, 5]}
+        >>> path = "root[1][0]['2']"
+        >>> get_item(obj, path)
+        'b'
+
+    Note that you can use get_item in conjunction with DeepDiff results
+    or even with the search and :ref:`grep` modules. For example:
+        >>> from deepdiff import grep
+        >>> obj = {1: [{'2': 'b'}, 3], 2: [4, 5]}
+        >>> result = obj | grep(5)
+        >>> result
+        {'matched_values': OrderedSet(['root[2][1]'])}
+        >>> result['matched_values'][0]
+        'root[2][1]'
+        >>> path = result['matched_values'][0]
+        >>> get_item(obj, path)
+        5
+
+
     Note that even if DeepDiff tried gives you a path to an item in a set,
     there is no such thing in Python and hence you will get an error trying
     to get that item from the set.

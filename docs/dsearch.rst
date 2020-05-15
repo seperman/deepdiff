@@ -14,4 +14,6 @@ DeepSearch Reference
 .. autoclass:: DeepSearch
     :members:
 
+.. automodule:: deepdiff.path
+
 Back to :doc:`/index`
