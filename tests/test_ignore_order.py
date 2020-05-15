@@ -2,7 +2,6 @@ import pytest
 from unittest import mock
 from deepdiff.helper import number_to_string
 from deepdiff import DeepDiff
-from deepdiff.diff import TREE_VIEW
 from decimal import Decimal
 from tests import CustomClass2
 
@@ -77,9 +76,6 @@ class TestIgnoreOrder:
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False)
         dist = ddiff.get_deep_distance()
         assert 0.1 == dist
-        # tree_diff = ddiff.to_dict(view_override=TREE_VIEW)
-        # import pytest; pytest.set_trace()
-        # assert ddiff._cache
 
     def test_ignore_order_depth6(self):
         t1 = [[1, 2, 3, 4], [4, 2, 2, 1]]
@@ -346,7 +342,6 @@ class TestIgnoreOrder:
         result = {'iterable_item_added': {'root[0]': {4}}}
         assert result == ddiff
 
-
     def test_dictionary_of_list_of_dictionary_ignore_order(self):
         t1 = {
             'item': [{
@@ -572,13 +567,11 @@ class TestIgnoreOrder:
         assert ddiff == {}
 
     @pytest.mark.parametrize('max_passes, expected', [
-        (1, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
-        (2, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
-        (62, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0]": {'new_value': [1, 3, 5, 4], 'old_value': [1, 2, 4, 5]}}}),
-        # only distance caching done by 22 passes!
-        (64, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
+        (0, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
+        (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
+        (20, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
     ])
-    def test_ignore_order_passes(self, max_passes, expected):
+    def test_ignore_order_max_passes(self, max_passes, expected):
         t1 = [
             {
                 'key3': [[[[[1, 2, 4, 5]]]]],
@@ -602,4 +595,35 @@ class TestIgnoreOrder:
         ]
 
         ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2)
+        assert expected == ddiff
+
+    @pytest.mark.parametrize('max_diffs, expected', [
+        (1, {}),
+        (50, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}}),
+        (63, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}}),
+    ])
+    def test_ignore_order_max_diffs(self, max_diffs, expected):
+        t1 = [
+            {
+                'key3': [[[[[1, 2, 4, 5]]]]],
+                'key4': [7, 8],
+            },
+            {
+                'key5': 'val5',
+                'key6': 'val6',
+            },
+        ]
+
+        t2 = [
+            {
+                'key5': 'CHANGE',
+                'key6': 'val6',
+            },
+            {
+                'key3': [[[[[1, 3, 5, 4]]]]],
+                'key4': [7, 8],
+            },
+        ]
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2)
         assert expected == ddiff

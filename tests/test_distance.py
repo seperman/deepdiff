@@ -63,7 +63,7 @@ class TestDeepDistance:
         t1 = [{1, 2, 3}, {4, 5}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        delta = ddiff.to_delta_dict(report_repetition_required=False)
+        delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[1]': {6}}} == delta
         assert 1 == _get_diff_length(ddiff)
         assert '0.05882352' == str(ddiff.get_deep_distance())[:10]
@@ -75,7 +75,7 @@ class TestDeepDistance:
         t1 = [{1, 2, 3}, {4, 5}, {1}]
         t2 = [{4, 5, 6}, {1, 2, 3}, {1, 4}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level)
-        delta = ddiff.to_delta_dict(report_repetition_required=False)
+        delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == delta
         assert 2 == _get_diff_length(ddiff)
         assert '0.09090909' == str(ddiff.get_deep_distance())[:10]
@@ -87,20 +87,26 @@ class TestDeepDistance:
         t1 = [{1, 2, 3}, {4, 5, 'hello', 'right!'}, {4, 5, (2, 4, 7)}]
         t2 = [{4, 5, 6, (2, )}, {1, 2, 3}, {5, 'hello', 'right!'}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW, verbose_level=verbose_level)
-        delta = ddiff.to_delta_dict(report_repetition_required=False)
+        delta = ddiff._to_delta_dict(report_repetition_required=False)
         expected = {
             'set_item_removed': {
-                'root[2]': {(2, 4, 7)},
                 'root[1]': {4}
             },
-            'set_item_added': {
-                'root[2]': {(2, ), 6}
+            'iterable_items_added_at_indexes': {
+                'root': {
+                    0: {(2, ), 4, 5, 6}
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root': {
+                    2: {4, 5, (2, 4, 7)}
+                }
             }
         }
         assert expected == ddiff
         # If the diff was in delta view, spitting out another delta dict should produce identical results.
         assert delta == ddiff
-        assert 6 == _get_diff_length(ddiff)
+        assert 10 == _get_diff_length(ddiff)
 
     def test_distance_of_tuple_in_list(self):
         t1 = {(2,), 4, 5, 6}

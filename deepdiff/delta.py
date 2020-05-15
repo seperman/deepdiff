@@ -2,16 +2,15 @@ import logging
 from collections.abc import Mapping
 from copy import deepcopy
 from deepdiff import DeepDiff
-from deepdiff.serialization import pickle_load
+from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
     DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray, not_found)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
+from deepdiff.anyset import AnySet
 
 DISABLE_DELTA = not DICT_IS_SORTED
 DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DICT_TYPE_SORTED)
 
-
-# TODO: it needs python3.6+ since dictionaries are ordered.
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,9 @@ DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'A numpy ndarray is most likely being added to a delta. '
     'Due to Numpy override the + operator, you can only do: delta + ndarray '
     'and NOT ndarray + delta')
+BINIARY_MODE_NEEDED_MSG = "Please open the file in the binary mode and pass to Delta by passing 'b' in open(..., 'b'): {}"
+DELTA_AT_LEAST_ONE_ARG_NEEDED = 'At least one of the diff, delta_path or delta_file arguments need to be passed.'
+INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action when calling _get_elem_and_compare_to_old_value'
 
 
 class DeltaError(ValueError):
@@ -88,27 +90,37 @@ class Delta:
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
     """
-    def __init__(self, diff=None, delta_path=None, mutate=False, verify_symmetry=False, raise_errors=False, log_errors=True, safe_to_import=None):
+    def __init__(self, diff=None, delta_path=None, delta_file=None, mutate=False, verify_symmetry=False,
+                 raise_errors=False, log_errors=True, safe_to_import=None,
+                 serializer=pickle_dump, deserializer=pickle_load):
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
-                self.diff = diff.to_delta_dict()
+                self.diff = diff._to_delta_dict()
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
-                self.diff = pickle_load(diff, safe_to_import=safe_to_import)
+                self.diff = deserializer(diff, safe_to_import=safe_to_import)
         elif delta_path:
-            with open(delta_path, 'rb'):
-                content = delta_path.read()
-            self.diff = pickle_load(content, safe_to_import=safe_to_import)
+            with open(delta_path, 'rb') as the_file:
+                content = the_file.read()
+            self.diff = deserializer(content, safe_to_import=safe_to_import)
+        elif delta_file:
+            try:
+                content = delta_file.read()
+            except UnicodeDecodeError as e:
+                raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
+            self.diff = deserializer(content, safe_to_import=safe_to_import)
         else:
-            raise ValueError('Either diff or delta_path need to be specified.')
+            raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
         self.mutate = mutate
         self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
         self.numpy_used = self.diff.pop('numpy_used', False)
+        self.serializer = serializer
+        self.deserializer = deserializer
         self.reset()
 
     def __repr__(self):
@@ -165,7 +177,7 @@ class Delta:
             elif action == GETATTR:
                 current_old_value = getattr(obj, elem)
             else:
-                raise DeltaError('invalid action when calling _get_elem_and_compare_to_old_value')
+                raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM)
         except (KeyError, IndexError, AttributeError) as e:
             current_old_value = not_found
             if self.verify_symmetry:
@@ -417,7 +429,6 @@ class Delta:
         """
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
-        # import pytest; pytest.set_trace()
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
@@ -426,8 +437,7 @@ class Delta:
             # copying both these dictionaries since we don't want to mutate them.
             fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
             remove_indexes_per_path = remove_indexes.get(path, {}).copy()
-            # TODO: this needs to be changed to use deephash so any item can be in this set even if not hashable.
-            fixed_indexes_values = set(fixed_indexes_per_path.values())
+            fixed_indexes_values = AnySet(fixed_indexes_per_path.values())
 
             new_obj = []
             # Numpy's NdArray does not like the bool function.
@@ -456,6 +466,21 @@ class Delta:
             # and we had to turn it into a mutable one. In such cases the object has a new id.
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
+
+    def dump(self, file, delta_path=None):
+        """
+        Dump into file object
+        """
+        file.write(self.dumps())
+
+    def dumps(self):
+        """
+        Return the serialized representation of the object as a bytes object, instead of writing it to a file.
+        """
+        return self.serializer(self.diff)
+
+    def to_dict(self):
+        return dict(self)
 
 
 if __name__ == "__main__":  # pragma: no cover

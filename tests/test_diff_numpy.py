@@ -52,7 +52,7 @@ NUMPY_CASES = {
         't1': np.array([1, 2, 4, 3], np.int8),
         't2': np.array([3, 1, 2, 5], np.int32),
         'deepdiff_kwargs': {'ignore_numeric_type_changes': True, 'ignore_order': True},
-        'expected_result': {'iterable_item_added': {'root[3]': 5}, 'iterable_item_removed': {'root[2]': 4}},
+        'expected_result': {'values_changed': {'root[2]': {'new_value': 5, 'old_value': 4}}},
     },
     'numpy_array6_ignore_order_and_report_repetition': {
         't1': np.array([1, 2, 3, 3], np.int8),

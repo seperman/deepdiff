@@ -435,7 +435,9 @@ git push && git push --tags
 1. Please make your PR against the dev branch
 2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we strive to maintain around 100% test coverage on the code.
 
-Please run `pytest --cov=deepdiff tests/` to see the coverage report.
+Please run `pytest --cov=deepdiff` to see the coverage report.
+
+Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing`.
 
 Thank you!
 

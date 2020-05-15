@@ -1,11 +1,14 @@
 import pytest
+import os
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
 from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
 from deepdiff.delta import (
     DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
-    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError)
+    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
+    BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
+    INVALID_ACTION_WHEN_CALLING_GET_ELEM)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -26,7 +29,7 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
-        dump = diff.to_delta_dump()
+        dump = Delta(diff).dumps()
         delta = Delta(dump)
 
         assert delta + t1 == t2
@@ -35,13 +38,87 @@ class TestBasicsOfDelta:
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         t3 = [{1}, 3, 5]
-        dump1 = DeepDiff(t1, t2).to_delta_dump()
-        dump2 = DeepDiff(t2, t3).to_delta_dump()
+        dump1 = Delta(DeepDiff(t1, t2)).dumps()
+        dump2 = Delta(DeepDiff(t2, t3)).dumps()
 
         delta1 = Delta(dump1)
         delta2 = Delta(dump2)
 
         assert t1 + delta1 + delta2 == t3
+
+    def test_delta_dump_and_read1(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        path = '/tmp/delta_test.delta'
+        with open(path, 'wb') as the_file:
+            Delta(diff).dump(the_file)
+        delta = Delta(delta_path=path)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_dump_and_read2(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta_content = Delta(diff).dumps()
+        path = '/tmp/delta_test2.delta'
+        with open(path, 'wb') as the_file:
+            the_file.write(delta_content)
+        delta = Delta(delta_path=path)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_dump_and_read3(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta_content = Delta(diff).dumps()
+        path = '/tmp/delta_test2.delta'
+        with open(path, 'wb') as the_file:
+            the_file.write(delta_content)
+        with pytest.raises(ValueError) as excinfo:
+            with open(path, 'r') as the_file:
+                delta = Delta(delta_file=the_file)
+        assert BINIARY_MODE_NEEDED_MSG[:20] == str(excinfo.value)[:20]
+        with open(path, 'rb') as the_file:
+            delta = Delta(delta_file=the_file)
+        os.remove(path)
+        assert delta + t1 == t2
+
+    def test_delta_when_no_arg_passed(self):
+        with pytest.raises(ValueError) as excinfo:
+            Delta()
+        assert DELTA_AT_LEAST_ONE_ARG_NEEDED == str(excinfo.value)
+
+    def test_delta_repr(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff)
+        assert "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>" == repr(delta)
+
+    def test_get_elem_and_compare_to_old_value(self):
+        delta = Delta({})
+
+        with pytest.raises(DeltaError) as excinfo:
+            delta._get_elem_and_compare_to_old_value(
+                obj=None, path_for_err_reporting=None, expected_old_value=None, action='invalid action')
+        assert INVALID_ACTION_WHEN_CALLING_GET_ELEM == str(excinfo.value)
+
+    def test_identical_delta(self):
+        delta = Delta({})
+
+        t1 = [1, 3]
+        assert t1 + delta == t1
+
+    def test_delta_mutate(self):
+        t1 = [1, 2]
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, mutate=True)
+        t1 + delta
+        assert t1 == t2
 
     @mock.patch('deepdiff.delta.logger.error')
     def test_list_difference_add_delta_when_index_not_valid(self, mock_logger):
@@ -409,7 +486,7 @@ class TestDelta:
     @pytest.mark.parametrize(**DELTA_CASES_PARAMS)
     def test_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta == t2
@@ -558,14 +635,20 @@ DELTA_IGNORE_ORDER_CASES = {
         'to_delta_kwargs': {},
         'expected_delta_dict': {
             'set_item_removed': {
-                'root[2]': {(2, 4, 7)},
                 'root[1]': {4}
             },
-            'set_item_added': {
-                'root[2]': {(2, ), 6}
+            'iterable_items_added_at_indexes': {
+                'root': {
+                    0: {(2, ), 4, 5, 6}
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root': {
+                    2: {4, 5, (2, 4, 7)}
+                }
             }
         },
-        'expected_t1_plus_delta': [{1, 2, 3}, {'hello', 'right!', 5}, {(2,), 4, 5, 6}],
+        'expected_t1_plus_delta': 't2',
     },
     'delta_ignore_order_case8_multi_dimensional_list': {
         't1': [[1, 2, 3, 4], [4, 2, 2, 1]],
@@ -606,7 +689,7 @@ class TestIgnoreOrderDelta:
     def test_ignore_order_delta_cases(
             self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
@@ -731,7 +814,7 @@ class TestNumpyDelta:
     @pytest.mark.parametrize(**DELTA_NUMPY_TEST_PARAMS)
     def test_numpy_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        delta_dict = diff.to_delta_dict(**to_delta_kwargs)
+        delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         if expected_delta_dict:
             assert expected_delta_dict == delta_dict
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
@@ -779,6 +862,11 @@ class TestDeltaOther:
         assert t1_plus_delta2 == (8, 4, 4, 1, 3, 4, 1, 7)
 
     def test_delta_view_and_to_delta_dict_are_equal_when_parameteres_passed(self):
+        """
+        This is a test that passes parameters in a dictionary instead of kwargs.
+        Note that when parameters are passed as a dictionary, all of them even the ones that
+        have default values need to be passed.
+        """
         t1 = [4, 2, 2, 1]
         t2 = [4, 1, 1, 1]
         parameters = {
@@ -802,6 +890,7 @@ class TestDeltaOther:
             'verbose_level': 1,
             'view': DELTA_VIEW,
             'max_passes': 10000000,
+            'max_diffs': None,
             'number_to_string': number_to_string,
             '_deep_distance_buckets_exponent': 11
         }
@@ -812,4 +901,4 @@ class TestDeltaOther:
 
         parameters['view'] = TEXT_VIEW
         diff2 = DeepDiff(t1, t2, parameters=parameters)
-        assert expected == diff2.to_delta_dict()
+        assert expected == diff2._to_delta_dict()

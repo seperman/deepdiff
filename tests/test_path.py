@@ -1,5 +1,5 @@
 import pytest
-from deepdiff.path import _path_to_elements, GET, GETATTR
+from deepdiff.path import _path_to_elements, GET, GETATTR, get_item
 
 
 @pytest.mark.parametrize('path, expected', [
@@ -14,5 +14,18 @@ from deepdiff.path import _path_to_elements, GET, GETATTR
     (((4, GET), ('b', GET)), ((4, GET), ('b', GET))),
 ])
 def test_path_to_elements(path, expected):
-    result = _path_to_elements(path, first_element=None)
+    result = _path_to_elements(path, root_element=None)
     assert tuple(expected) == result
+
+
+@pytest.mark.parametrize('obj, path, expected', [
+    ({1: [2, 3], 2: [4, 5]},
+     "root[2][1]",
+     5),
+    ({1: [{'2': 'b'}, 3], 2: {4, 5}},
+     "root[1][0]['2']",
+     'b'),
+])
+def test_get_item(obj, path, expected):
+    result = get_item(obj, path)
+    assert expected == result
