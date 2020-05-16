@@ -49,8 +49,11 @@ notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 doc = get_doc('diff_doc.rst')
 
 
+PROGRESS_MSG = "DeepDiff in progress. Pass #{}, Diff #{}"
+
+
 def _report_progress(_stats, progress_logger):
-    progress_logger("DeepDiff in progress. Pass #{}, Diff #{}".format(_stats[PASSES_COUNT], _stats[DIFF_COUNT]))
+    progress_logger(PROGRESS_MSG.format(_stats[PASSES_COUNT], _stats[DIFF_COUNT]))
 
 
 CACHE_LEVEL_HIT = 'CACHE LEVEL HIT'
