@@ -10,7 +10,8 @@ from deepdiff.delta import (
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
-    INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER)
+    INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
+    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -1042,9 +1043,44 @@ class TestDeltaOther:
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
 
         delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
-        print(delta2)
         t4 = delta2 + t3
 
         assert [5] == t4
         expected_msg = INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER.format({3: 5})
+        mock_logger.assert_called_once_with(expected_msg)
+
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_apply_delta_to_incompatible_object9_ignore_order_and_verify_symmetry(self, mock_logger):
+        t1 = [1, 2, 'B']
+        t2 = [1, 2]
+        t3 = [1, 2, 'C']
+
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+
+        delta = Delta(diff, raise_errors=False, verify_symmetry=True)
+        t4 = delta + t3
+
+        assert [1, 2, 'C'] == t4
+        expected_msg = FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(2, 'root', 'B', 'C')
+        mock_logger.assert_called_once_with(expected_msg)
+
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_apply_delta_to_incompatible_object10_ignore_order(self, mock_logger):
+        t1 = [1, 2, 'B']
+        t2 = [1, 2]
+        t3 = [1, 2, 'C']
+
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+
+        # when verify_symmetry=False, we still won't remove the item that is different
+        # than what we expect specifically when ignore_order=True when generating the diff.
+        # The reason is that when ignore_order=True, we can' rely too much on the index
+        # of the item alone to delete it. We need to make sure we are deleting the correct value.
+        # The expected behavior is exactly the same as when verify_symmetry=True
+        # specifically for when ignore_order=True AND an item is removed.
+        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+        t5 = delta + t3
+
+        assert [1, 2, 'C'] == t5
+        expected_msg = FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(2, 'root', 'B', 'C')
         mock_logger.assert_called_once_with(expected_msg)

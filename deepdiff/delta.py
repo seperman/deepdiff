@@ -425,7 +425,8 @@ class Delta:
                 if current_old_obj == expected_obj_to_delete:
                     continue
                 else:
-                    self._raise_or_log(FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(old_obj_index, path_for_err_reporting, expected_obj_to_delete, current_old_obj))
+                    self._raise_or_log(FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(
+                        old_obj_index, path_for_err_reporting, expected_obj_to_delete, current_old_obj))
             yield current_old_obj
 
     def _do_ignore_order(self):
