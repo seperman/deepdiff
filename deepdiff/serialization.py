@@ -9,6 +9,7 @@ import datetime  # NOQA
 import decimal  # NOQA
 import ordered_set  # NOQA
 import collections  # NOQA
+from copy import deepcopy
 from collections.abc import Mapping
 from struct import unpack
 from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
@@ -178,7 +179,7 @@ class SerializationMixin:
         if self.numpy_used:
             result['numpy_used'] = True
 
-        return dict(result)
+        return deepcopy(dict(result))
 
     def pretty(self):
         """
