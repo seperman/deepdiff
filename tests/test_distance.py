@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_diff_length
+from deepdiff.distance import _get_item_length
 
 
 class TestDeepDistance:
@@ -45,8 +45,8 @@ class TestDeepDistance:
             3
         ),
     ])
-    def test_diff_length(self, diff, expected_length):
-        length = _get_diff_length(diff)
+    def test_item_length(self, diff, expected_length):
+        length = _get_item_length(diff)
         assert expected_length == length
 
     def test_distance_of_the_same_objects(self):
@@ -54,7 +54,7 @@ class TestDeepDistance:
         t2 = [{4, 5, 6}, {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert {} == ddiff
-        assert 0 == _get_diff_length(ddiff)
+        assert 0 == _get_item_length(ddiff)
         assert '0' == str(ddiff.get_deep_distance())[:10]
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
@@ -65,7 +65,7 @@ class TestDeepDistance:
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[1]': {6}}} == delta
-        assert 1 == _get_diff_length(ddiff)
+        assert 1 == _get_item_length(ddiff)
         assert '0.05882352' == str(ddiff.get_deep_distance())[:10]
         assert 8 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
@@ -77,7 +77,7 @@ class TestDeepDistance:
         ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == delta
-        assert 2 == _get_diff_length(ddiff)
+        assert 2 == _get_item_length(ddiff)
         assert '0.09090909' == str(ddiff.get_deep_distance())[:10]
         assert 10 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 12 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
@@ -106,7 +106,7 @@ class TestDeepDistance:
         assert expected == ddiff
         # If the diff was in delta view, spitting out another delta dict should produce identical results.
         assert delta == ddiff
-        assert 10 == _get_diff_length(ddiff)
+        assert 10 == _get_item_length(ddiff)
 
     def test_distance_of_tuple_in_list(self):
         t1 = {(2,), 4, 5, 6}
@@ -115,3 +115,10 @@ class TestDeepDistance:
         assert {'set_item_removed': {'root': {(2,), 6}}, 'set_item_added': {'root': {'hello', 'right!'}}} == diff
         dist = diff.get_deep_distance()
         assert 0.36363636363636365 == dist
+
+    def test_get_item_length_when_loops(self):
+        t1 = [[1, 2, 1, 3]]
+        t1.append(t1)
+
+        item_length = _get_item_length(t1)
+        assert 8 == item_length

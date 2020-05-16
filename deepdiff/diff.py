@@ -62,6 +62,7 @@ DIFF_COUNT = 'DIFF COUNT'
 PASSES_COUNT = 'PASSES COUNT'
 MAX_PASS_LIMIT_REACHED = 'MAX PASS LIMIT REACHED'
 MAX_DIFF_LIMIT_REACHED = 'MAX DIFF LIMIT REACHED'
+INPROGRESS = 'INPROGRESS'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = Decimal('0.3')
@@ -356,7 +357,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def __diff_dict(self,
                     level,
-                    parents_ids=frozenset({}),
+                    parents_ids=frozenset([]),
                     print_as_attribute=False,
                     override=False,
                     override_t1=None,
@@ -642,11 +643,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         cache_key = 'distance_cache' + str(default_hasher(hex(added_hash).encode('utf-8') + b'--' + hex(removed_hash).encode('utf-8')))
         if cache_key in self._cache:
             self._stats[DISTANCE_CACHE_HIT] += 1
-            _distance = self._cache[cache_key]
+            _current_value = self._cache[cache_key]
+            # We are in a self loop. Get out now!
+            if _current_value == INPROGRESS:
+                _distance = 1
+            else:
+                _distance = _current_value
         else:
             _distance = get_numeric_types_distance(
                 removed_hash_obj.item, added_hash_obj.item, max_=self.cutoff_distance_for_pairs)
             if _distance is not_found:
+                # Marking the cache as in progress so we avoid calculating the same distance
+                # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
+                # in the object.
+                self._cache[cache_key] = INPROGRESS
                 # We can only cache the rough distance and not the actual diff result for reuse.
                 # The reason is that we have modified the parameters explicitly so they are different and can't
                 # be used for diff reporting
@@ -792,10 +802,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if self.report_repetition:
             for hash_value in hashes_added:
                 if self.__count_diff() is StopIteration:
-                    return
+                    return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 if parents_ids and item_id in parents_ids:
+                    import pytest; pytest.set_trace()
                     continue
                 indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
                 for i in indexes:

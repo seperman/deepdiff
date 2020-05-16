@@ -1,5 +1,5 @@
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import DELTA_VIEW, numbers, strings
+from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set
 from collections.abc import Mapping, Iterable
 
 
@@ -33,7 +33,7 @@ class DistanceMixin:
                 'The deep distance is only calculated when ignore_order=True in the current implementation.'
             )
         item = self if self.view == DELTA_VIEW else self._to_delta_dict(report_repetition_required=False)
-        diff_length = _get_diff_length(item)
+        diff_length = _get_item_length(item)
 
         if diff_length == 0:
             return 0
@@ -66,20 +66,18 @@ class DistanceMixin:
         return length
 
 
-def _get_diff_length(item):
+def _get_item_length(item, parents_ids=frozenset([])):
     """
     Get the number of operations in a diff object.
     It is designed mainly for the delta view output
     but can be used with other dictionary types of view outputs too.
     """
-
     length = 0
     if hasattr(item, '_diff_length'):
         length = item._diff_length
     elif isinstance(item, Mapping):
         for key, subitem in item.items():
             if key in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
-                # import pytest; pytest.set_trace()
                 new_subitem = {}
                 for path_, indexes_to_items in subitem.items():
                     used_value_ids = set()
@@ -91,20 +89,33 @@ def _get_diff_length(item):
                             new_indexes_to_items[k] = v
                     new_subitem[path_] = new_indexes_to_items
                 subitem = new_subitem
-            length += _get_diff_length(subitem)
+
+            item_id = id(subitem)
+            if parents_ids and item_id in parents_ids:
+                continue
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+            length += _get_item_length(subitem, parents_ids_added)
     elif isinstance(item, numbers):
         length = 1
     elif isinstance(item, strings):
         length = 1
     elif isinstance(item, Iterable):
         for subitem in item:
-            length += _get_diff_length(subitem)
+            item_id = id(subitem)
+            if parents_ids and item_id in parents_ids:
+                continue
+            parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+            length += _get_item_length(subitem, parents_ids_added)
     elif isinstance(item, type):  # it is a class
         length = 1
     else:
         if hasattr(item, '__dict__'):
             for subitem in item.__dict__:
-                length += _get_diff_length(subitem)
+                item_id = id(subitem)
+                if parents_ids and item_id in parents_ids:
+                    continue
+                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+                length += _get_item_length(subitem, parents_ids_added)
 
     try:
         item._diff_length = length
