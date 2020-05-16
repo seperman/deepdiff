@@ -289,7 +289,7 @@ class Delta:
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
             else:
-                continue
+                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
             self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
                                 obj, elements, path, elem, action, new_value)
 
@@ -334,7 +334,7 @@ class Delta:
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
             else:
-                continue
+                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
             expected_old_value = value.get('old_value', not_found)
 
             current_old_value = self._get_elem_and_compare_to_old_value(
@@ -368,7 +368,7 @@ class Delta:
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
             else:
-                continue
+                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
             current_old_value = self._get_elem_and_compare_to_old_value(
                 obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
             if current_old_value is not_found:
@@ -465,7 +465,7 @@ class Delta:
             if elem_and_details:
                 _, parent, parent_to_obj_elem, parent_to_obj_action, obj, _, _ = elem_and_details
             else:
-                continue
+                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
             # copying both these dictionaries since we don't want to mutate them.
             fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
             remove_indexes_per_path = remove_indexes.get(path, {}).copy()
@@ -517,7 +517,7 @@ class Delta:
         return self.serializer(self.diff)
 
     def to_dict(self):
-        return dict(self)
+        return dict(self.diff)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -1100,3 +1100,13 @@ class TestDeltaOther:
         assert {} == t4
         expected_msg = UNABLE_TO_GET_PATH_MSG.format('root[0][0]')
         mock_logger.assert_called_once_with(expected_msg)
+
+    def test_delta_to_dict(self):
+        t1 = [1, 2, 'B']
+        t2 = [1, 2]
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+
+        result = delta.to_dict()
+        expected = {'iterable_items_removed_at_indexes': {'root': {2: 'B'}}}
+        assert expected == result
