@@ -11,7 +11,7 @@ from deepdiff.delta import (
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
-    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG)
+    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_ITEM_MSG, UNABLE_TO_GET_PATH_MSG)
 
 from tests import PicklableClass, parameterize_cases
 
@@ -244,7 +244,8 @@ class TestBasicsOfDelta:
 
         assert delta + t1 == t2
 
-    def test_list_difference_delta_if_item_is_already_removed(self):
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_list_difference_delta_if_item_is_already_removed(self, mock_logger):
         t1 = [1, 2, 'to_be_removed']
         t2 = [1, 2]
 
@@ -255,14 +256,15 @@ class TestBasicsOfDelta:
             }
         }
         expected_msg = VERIFICATION_MSG.format("root[3]", 'to_be_removed2', not_found, 'list index out of range')
-
         delta = Delta(diff, verify_symmetry=True, raise_errors=True)
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(DeltaError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta2 = Delta(diff, verify_symmetry=False, raise_errors=False)
         assert t1 + delta2 == t2
+        expected_msg = UNABLE_TO_GET_PATH_MSG.format('root[3]')
+        mock_logger.assert_called_with(expected_msg)
 
     def test_list_difference_delta_raises_error_if_prev_value_changed(self):
         t1 = {
@@ -1079,8 +1081,22 @@ class TestDeltaOther:
         # The expected behavior is exactly the same as when verify_symmetry=True
         # specifically for when ignore_order=True AND an item is removed.
         delta = Delta(diff, raise_errors=False, verify_symmetry=False)
-        t5 = delta + t3
+        t4 = delta + t3
 
-        assert [1, 2, 'C'] == t5
+        assert [1, 2, 'C'] == t4
         expected_msg = FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG.format(2, 'root', 'B', 'C')
+        mock_logger.assert_called_once_with(expected_msg)
+
+    @mock.patch('deepdiff.delta.logger.error')
+    def test_apply_delta_to_incompatible_object11_ignore_order(self, mock_logger):
+        t1 = [[1, 2, 'B']]
+        t2 = [[1, 2]]
+        t3 = {}
+
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+        t4 = delta + t3
+
+        assert {} == t4
+        expected_msg = UNABLE_TO_GET_PATH_MSG.format('root[0][0]')
         mock_logger.assert_called_once_with(expected_msg)

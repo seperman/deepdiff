@@ -31,6 +31,7 @@ INVALID_ACTION_WHEN_CALLING_GET_ELEM = 'invalid action of {} when calling _get_e
 INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM = 'invalid action of {} when calling _simple_set_elem_value'
 INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM = 'invalid action of {} when calling _simple_set_elem_value'
 UNABLE_TO_GET_ITEM_MSG = 'Unable to get the item at {}: {}'
+UNABLE_TO_GET_PATH_MSG = 'Unable to get the item at {}'
 INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Unable to add the following items at the specific indexes. {}'
 
 
@@ -185,12 +186,15 @@ class Delta:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError, IndexError) as e:
             current_old_value = not_found
+            if isinstance(path_for_err_reporting, (list, tuple)):
+                path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
             if self.verify_symmetry:
-                if isinstance(path_for_err_reporting, (list, tuple)):
-                    path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
                 self._raise_or_log(VERIFICATION_MSG.format(
                     path_for_err_reporting,
                     expected_old_value, current_old_value, e))
+            else:
+                self._raise_or_log(UNABLE_TO_GET_PATH_MSG.format(
+                    path_for_err_reporting))
         return current_old_value
 
     def _simple_set_elem_value(self, obj, path_for_err_reporting, elem=None, value=None, action=None):
@@ -320,6 +324,8 @@ class Delta:
             self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
             return None
         else:
+            if obj is not_found:
+                return None
             return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
 
     def _do_values_or_type_changed(self, changes, is_type_change=False):
