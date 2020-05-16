@@ -70,11 +70,6 @@ CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = Decimal('0.3')
 class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     __doc__ = doc
 
-    # Maximum number of calculated distances between pairs to be tracked.
-    # For huge lists, this number may need to be modified at the cost of more memory usage.
-    # Only used when ignore_order = True.
-    MAX_COMMON_PAIR_DISTANCES = 10000
-
     def __init__(self,
                  t1,
                  t2,
@@ -100,6 +95,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  hashes=None,
                  parameters=None,
                  max_passes=10000000,
+                 max_distances_to_keep_track_per_item=10000,
                  max_diffs=None,
                  cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
                  log_frequency_in_sec=0,
@@ -114,8 +110,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, max_diffs, cutoff_distance_for_pairs, "
-                "log_frequency_in_sec, _stats, and parameters.") % ', '.join(kwargs.keys()))
+                "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
+                "cutoff_distance_for_pairs, log_frequency_in_sec, _stats, and parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -154,6 +150,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # Setting up the cache for dynamic programming. One dictionary per instance of root of DeepDiff running.
             self.max_passes = max_passes
             self.max_diffs = max_diffs
+            # Maximum number of calculated distances between pairs to be tracked.
+            # For huge lists, this number may need to be modified at the cost of more memory usage.
+            # Only used when ignore_order = True.
+            self.max_distances_to_keep_track_per_item = max_distances_to_keep_track_per_item
             self.cutoff_distance_for_pairs = cutoff_distance_for_pairs
             # _deep_distance_buckets_exponent is only used for the number of buckets of distances when doing ignore_order=True calculations
             # The actual number of buckets will be 10 to the power of the _deep_distance_buckets_exponent
@@ -706,12 +706,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 pairs_of_item[_distance].add(removed_hash)
                 count_of_distances = len(pairs_of_item)
                 # There is a maximum number of distances we want to keep track of.
-                current_max_distance_from_item = pairs_of_item.get('max', 0)
-                if count_of_distances < self.MAX_COMMON_PAIR_DISTANCES:
+                current_max_distance_from_item = pairs_of_item.get('max', 1)
+                if count_of_distances < self.max_distances_to_keep_track_per_item:
                     pairs_of_item['max'] = max(_distance, current_max_distance_from_item)
                 elif _distance <= current_max_distance_from_item:
                     if _distance < current_max_distance_from_item:
-                        del pairs_of_item[current_max_distance_from_item]
+                        try:
+                            del pairs_of_item[current_max_distance_from_item]
+                        except KeyError:
+                            pass
                         pairs_of_item['max'] = _distance
 
         used_to_hashes = set()
