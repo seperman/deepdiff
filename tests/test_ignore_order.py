@@ -627,3 +627,23 @@ class TestIgnoreOrder:
 
         ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2)
         assert expected == ddiff
+
+    def test_stats_that_include_distance_cache_hits(self):
+        t1 = [
+            [1, 2, 3, 9], [9, 8, 5, 9]
+        ]
+
+        t2 = [
+            [1, 2, 4, 10], [4, 2, 5]
+        ]
+
+        diff = DeepDiff(t1, t2, ignore_order=True)
+        expected = {
+            'PASSES COUNT': 5,
+            'DIFF COUNT': 29,
+            'CACHE LEVEL HIT': 2,
+            'DISTANCE CACHE HIT': 8,
+            'MAX PASS LIMIT REACHED': False,
+            'MAX DIFF LIMIT REACHED': False
+        }
+        assert expected == diff.get_stats()

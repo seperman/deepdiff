@@ -413,7 +413,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         for key in t_keys_removed:
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             key = t1_clean_to_keys[key] if t1_clean_to_keys else key
             change_level = level.branch_deeper(
@@ -458,7 +458,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         for item in items_added:
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             change_level = level.branch_deeper(
                 notpresent, item, child_relationship_class=SetRelationship)
@@ -466,7 +466,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         for item in items_removed:
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             change_level = level.branch_deeper(
                 item, notpresent, child_relationship_class=SetRelationship)
@@ -502,7 +502,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
 
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             if y is ListItemRemovedOrAdded:  # item removed completely
                 change_level = level.branch_deeper(
