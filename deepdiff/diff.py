@@ -21,7 +21,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             not_found)
+                             not_found, np)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -33,12 +33,6 @@ from deepdiff.deephash import DeepHash, combine_hashes_lists, default_hasher
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
-
-
-try:
-    import numpy as np
-except ImportError:
-    np = None
 
 
 MAX_PASSES_REACHED_MSG = (
