@@ -138,9 +138,8 @@ def _get_numbers_distance(num1, num2, max_=1):
             return max_
         try:
             return min(max_, abs((num1 - num2) / divisor))
-        except Exception:
-            return max_
-    return max_
+        except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
+            return max_  # pragma: no cover
 
 
 def _get_datetime_distance(date1, date2, max_):

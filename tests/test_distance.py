@@ -185,6 +185,9 @@ class TestDeepDistance:
         (10, -10.1, .3, 0.3),
         (datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(days=100), 1, 0.002707370659621624),
         (1589703146.9556487, 1001589703146.9557, 1, 0.9968306702929068),
+        (datetime.time(10, 11), datetime.time(12, 11), .5, 0.0447093889716),
+        (datetime.timedelta(days=2), datetime.timedelta(12, 11), .5, 0.35714415626180646),
+        (datetime.date(2018, 1, 1), datetime.date(2020, 1, 10), 1, 0.0005013129787148886),
     ])
     def test_get_numeric_types_distance(self, num1, num2, max_, expected):
         result = get_numeric_types_distance(num1, num2, max_)
