@@ -641,8 +641,8 @@ class TestIgnoreOrder:
         expected = {
             'PASSES COUNT': 5,
             'DIFF COUNT': 29,
-            'CACHE LEVEL HIT': 2,
-            'DISTANCE CACHE HIT': 8,
+            'LEVEL CACHE HIT COUNT': 2,
+            'DISTANCE CACHE HIT COUNT': 8,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False
         }

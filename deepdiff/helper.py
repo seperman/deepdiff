@@ -4,6 +4,7 @@ import re
 import os
 import logging
 import warnings
+import time
 from ast import literal_eval
 from decimal import Decimal, localcontext
 from collections import namedtuple
@@ -409,9 +410,13 @@ class RepeatedTimer:
         self.interval = interval
         self.function = function
         self.args = args
+        self.start_time = time.time()
         self.kwargs = kwargs
         self.is_running = False
         self.start()
+
+    def _get_duration_sec(self):
+        return int(time.time() - self.start_time)
 
     def _run(self):
         self.is_running = False
@@ -419,14 +424,17 @@ class RepeatedTimer:
         self.function(*self.args, **self.kwargs)
 
     def start(self):
+        self.kwargs.update(duration=self._get_duration_sec())
         if not self.is_running:
             self._timer = Timer(self.interval, self._run)
             self._timer.start()
             self.is_running = True
 
     def stop(self):
+        duration = self._get_duration_sec()
         self._timer.cancel()
         self.is_running = False
+        return duration
 
 
 LITERAL_EVAL_PRE_PROCESS = [

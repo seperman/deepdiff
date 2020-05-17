@@ -29,7 +29,7 @@ from deepdiff.model import (
     DictRelationship, AttributeRelationship,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
     SetRelationship, NumpyArrayRelationship)
-from deepdiff.deephash import DeepHash, combine_hashes_lists, default_hasher
+from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 
 logger = logging.getLogger(__name__)
@@ -49,15 +49,15 @@ notpresent_indexed = IndexedHash(indexes=[0], item=notpresent)
 doc = get_doc('diff_doc.rst')
 
 
-PROGRESS_MSG = "DeepDiff in progress. Pass #{}, Diff #{}"
+PROGRESS_MSG = "DeepDiff {} seconds in progress. Pass #{}, Diff #{}"
 
 
-def _report_progress(_stats, progress_logger):
-    progress_logger(PROGRESS_MSG.format(_stats[PASSES_COUNT], _stats[DIFF_COUNT]))
+def _report_progress(_stats, progress_logger, duration):
+    progress_logger(PROGRESS_MSG.format(duration, _stats[PASSES_COUNT], _stats[DIFF_COUNT]))
 
 
-CACHE_LEVEL_HIT = 'CACHE LEVEL HIT'
-DISTANCE_CACHE_HIT = 'DISTANCE CACHE HIT'
+LEVEL_CACHE_HIT_COUNT = 'LEVEL CACHE HIT COUNT'
+DISTANCE_CACHE_HIT_COUNT = 'DISTANCE CACHE HIT COUNT'
 DIFF_COUNT = 'DIFF COUNT'
 PASSES_COUNT = 'PASSES COUNT'
 MAX_PASS_LIMIT_REACHED = 'MAX PASS LIMIT REACHED'
@@ -183,10 +183,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._stats = {
                 PASSES_COUNT: 0,
                 DIFF_COUNT: 0,
-                CACHE_LEVEL_HIT: 0,
-                DISTANCE_CACHE_HIT: 0,
+                LEVEL_CACHE_HIT_COUNT: 0,
+                DISTANCE_CACHE_HIT_COUNT: 0,
                 MAX_PASS_LIMIT_REACHED: False,
-                MAX_DIFF_LIMIT_REACHED: False}
+                MAX_DIFF_LIMIT_REACHED: False,
+            }
             if log_frequency_in_sec:
                 # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
                 repeated_timer = RepeatedTimer(log_frequency_in_sec, _report_progress, self._stats, progress_logger)
@@ -213,7 +214,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if _purge_cache:
                     del self._cache
             if repeated_timer:
-                repeated_timer.stop()
+                duration = repeated_timer.stop()
+                self._stats['DURATION SEC'] = duration
 
     def __get_deephash_params(self):
         result = {key: self.parameters[key] for key in (
@@ -638,11 +640,21 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                          (level.path(), e))
         return local_hashes
 
+    @staticmethod
+    def __get_distance_cache_key(added_hash, removed_hash):
+        if isinstance(added_hash, int):
+            added_hash = hex(added_hash).encode('utf-8')
+            removed_hash = hex(removed_hash).encode('utf-8')
+        elif isinstance(added_hash, str):
+            added_hash = added_hash.encode('utf-8')
+            removed_hash = removed_hash.encode('utf-8')
+        return b'distance_cache' + added_hash + b'--' + removed_hash
+
     def __get_and_cache_rough_distance(self, added_hash, removed_hash, added_hash_obj, removed_hash_obj):
         # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
-        cache_key = 'distance_cache' + str(default_hasher(hex(added_hash).encode('utf-8') + b'--' + hex(removed_hash).encode('utf-8')))
+        cache_key = self.__get_distance_cache_key(added_hash, removed_hash)
         if cache_key in self._cache:
-            self._stats[DISTANCE_CACHE_HIT] += 1
+            self._stats[DISTANCE_CACHE_HIT_COUNT] += 1
             _current_value = self._cache[cache_key]
             # We are in a self loop. Get out now!
             if _current_value == INPROGRESS:
@@ -991,7 +1003,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         cache_hit = False
         if cache_key in self._cache:
             cache_hit = True
-            self._stats[CACHE_LEVEL_HIT] += 1
+            self._stats[LEVEL_CACHE_HIT_COUNT] += 1
             for report_key, report_values in self._cache[cache_key].items():
                 for report_level in report_values:
                     new_report = report_level.stitch_to_parent(level)
@@ -1000,7 +1012,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return cache_hit
 
     def __count_diff(self):
-        if self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs:
+        if (self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs):
             if not self._stats[MAX_DIFF_LIMIT_REACHED]:
                 self._stats[MAX_DIFF_LIMIT_REACHED] = True
                 logger.warning(MAX_DIFFS_REACHED_MSG.format(self.max_diffs))

@@ -21,4 +21,4 @@ class TestDiffOther:
 
         progress_logger = mock.Mock()
         DeepDiff(t1, t2, log_frequency_in_sec=0.02, progress_logger=progress_logger)
-        assert PROGRESS_MSG.format(0, 0) == progress_logger.call_args[0][0]
+        assert PROGRESS_MSG.format(0, 0, 0) == progress_logger.call_args[0][0]

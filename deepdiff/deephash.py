@@ -31,13 +31,15 @@ HASH_LOOKUP_ERR_MSG = '{} is not one of the hashed items.'
 
 def sha256hex(obj):
     """Use Sha256 as a cryptographic hash."""
-    obj = obj.encode('utf-8')
+    if isinstance(obj, str):
+        obj = obj.encode('utf-8')
     return sha256(obj).hexdigest()
 
 
 def sha1hex(obj):
     """Use Sha1 as a cryptographic hash."""
-    obj = obj.encode('utf-8')
+    if isinstance(obj, str):
+        obj = obj.encode('utf-8')
     return sha1(obj).hexdigest()
 
 
