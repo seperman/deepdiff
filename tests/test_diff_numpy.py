@@ -111,6 +111,22 @@ NUMPY_CASES = {
         'deepdiff_kwargs': {'significant_digits': 3},
         'expected_result': {},
     },
+    'numpy_different_shape': {
+        't1': np.array([[1, 1], [2, 3]]),
+        't2': np.array([1]),
+        'deepdiff_kwargs': {},
+        'expected_result': {
+            'values_changed': {
+                'root.shape[0]': {
+                    'new_value': 1,
+                    'old_value': 2
+                }
+            },
+            'iterable_item_removed': {
+                'root.shape[1]': 2
+            }
+        },
+    },
 }
 
 

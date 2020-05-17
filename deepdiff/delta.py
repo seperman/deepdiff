@@ -95,6 +95,9 @@ class Delta:
     Importing
         >>> from deepdiff import DeepDiff, Delta
         >>> from pprint import pprint
+
+
+    Note: Delta objects can not fully reproduce objects if the diff reports Numpy array shape changes.
     """
     def __init__(self, diff=None, delta_path=None, delta_file=None, mutate=False, verify_symmetry=False,
                  raise_errors=False, log_errors=True, safe_to_import=None,

@@ -64,6 +64,7 @@ MAX_PASS_LIMIT_REACHED = 'MAX PASS LIMIT REACHED'
 MAX_DIFF_LIMIT_REACHED = 'MAX DIFF LIMIT REACHED'
 INPROGRESS = 'INPROGRESS'
 CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
+INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = Decimal('0.3')
@@ -1091,7 +1092,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif view == DELTA_VIEW:
             result = self._to_delta_dict(report_repetition_required=False)
         else:
-            raise ValueError('The only valid values for the view parameter are text and tree.')
+            raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
 
     def get_stats(self):
