@@ -570,6 +570,30 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'expected_t1_plus_delta': 't2',
     },
+    'delta_ignore_order_case_reverse2': {
+        't1': [1, 2, 3, 5],
+        't2': [1, 2, 'B', 3, 'B', 'B', 4],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root[3]': {
+                    'new_value': 4
+                }
+            },
+            'iterable_items_added_at_indexes': {
+                'root': {
+                    2: 'B',
+                    4: 'B',
+                    5: 'B'
+                }
+            }
+        },
+        'expected_t1_plus_delta': 't2',
+    },
     'delta_ignore_order_case3': {
         't1': [5, 1, 1, 1, 6],
         't2': [7, 1, 1, 1, 8],

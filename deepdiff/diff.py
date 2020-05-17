@@ -63,6 +63,7 @@ PASSES_COUNT = 'PASSES COUNT'
 MAX_PASS_LIMIT_REACHED = 'MAX PASS LIMIT REACHED'
 MAX_DIFF_LIMIT_REACHED = 'MAX DIFF LIMIT REACHED'
 INPROGRESS = 'INPROGRESS'
+CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = Decimal('0.3')
@@ -814,12 +815,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if self.report_repetition:
             for hash_value in hashes_added:
                 if self.__count_diff() is StopIteration:
-                    return  # pragma: no cover. This is already covered for addition.
+                    return  # pragma: no cover. This is already covered for addition (when report_repetition=False).
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
-                if parents_ids and item_id in parents_ids:
-                    import pytest; pytest.set_trace()
-                    continue
                 indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
                 for i in indexes:
                     change_level = level.branch_deeper(
@@ -835,8 +833,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         self.__diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
                 if self.__count_diff() is StopIteration:
-                    return
+                    return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
+                item_id = id(other.item)
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
@@ -846,8 +845,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     if other.item is notpresent:
                         self.__report_result('iterable_item_removed', change_level)
                     else:
-                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                        self.__diff(change_level, parents_ids_added)
+                        # I was not able to make a test case for the following 2 lines since the cases end up
+                        # getting resolved above in the hashes_added calcs. However I am leaving these 2 lines
+                        # in case things change in future.
+                        parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
+                        self.__diff(change_level, parents_ids_added)  # pragma: no cover.
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
@@ -878,8 +880,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     return
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
-                if parents_ids and item_id in parents_ids:
-                    continue
                 index = t2_hashtable[hash_value].indexes[0] if other.item is notpresent else other.indexes[0]
                 change_level = level.branch_deeper(
                     other.item,
@@ -894,11 +894,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             for hash_value in hashes_removed:
                 if self.__count_diff() is StopIteration:
-                    return
+                    return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
-                if parents_ids and item_id in parents_ids:
-                    continue
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
                     other.item,
@@ -908,8 +906,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if other.item is notpresent:
                     self.__report_result('iterable_item_removed', change_level)
                 else:
-                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                    self.__diff(change_level, parents_ids_added)
+                    # Just like the case when report_repetition = True, these lines never run currently.
+                    # However they will stay here in case things change in future.
+                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
+                    self.__diff(change_level, parents_ids_added)  # pragma: no cover.
 
     def __diff_booleans(self, level):
         if level.t1 != level.t2:
@@ -948,7 +948,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         """Diff numpy arrays"""
         self.numpy_used = True
         if np is None:
-            raise ImportError('Unable to import numpy. Please make sure it is installed.')
+            # This line should never be run. If it is ever called means the type check detected a numpy array
+            # which means numpy module needs to be available. So np can't be None.
+            raise ImportError(CANT_FIND_NUMPY_MSG)  # pragma: no cover
 
         if not self.ignore_order:
             # fast checks

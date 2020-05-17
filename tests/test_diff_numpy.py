@@ -105,6 +105,12 @@ NUMPY_CASES = {
             }
         },
     },
+    'numpy_almost_equal': {
+        't1': np.array([1.0, 2.3333333333333]),
+        't2': np.array([1.0, 2.33333334]),
+        'deepdiff_kwargs': {'significant_digits': 3},
+        'expected_result': {},
+    },
 }
 
 
