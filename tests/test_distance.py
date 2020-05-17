@@ -1,8 +1,10 @@
 import pytest
+import time
+import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length, _get_numbers_distance
+from deepdiff.distance import _get_item_length, _get_numbers_distance, get_numeric_types_distance
 from tests import CustomClass
 
 
@@ -135,7 +137,7 @@ class TestDeepDistance:
         t1 = 10
         t2 = 110
         dist = DeepDiff(t1, t2).get_deep_distance()
-        assert dist < 0.001
+        assert dist == Decimal('0.25')
 
     def test_get_distance_works_event_when_ignore_order_is_false2(self):
         t1 = ["a", "b"]
@@ -168,13 +170,22 @@ class TestDeepDistance:
 
     @pytest.mark.parametrize('num1, num2, max_, expected', [
         (10.0, 10, 1, 0),
-        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.000004926108374384236453201970443')),
+        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.004926108374384236453201970443')),
         (Decimal(10), Decimal(-10), 1, 1),
-        (2, 3, 1, 0.0002),
+        (2, 3, 1, 0.2),
         (10, -10, .1, .1),
         (10, -10.1, .1, .1),
-        (10, -10.1, .3, 0.20100000000000073),
+        (10, -10.1, .3, 0.3),
     ])
     def test_get_numbers_distance(self, num1, num2, max_, expected):
         result = _get_numbers_distance(num1, num2, max_)
-        assert expected == result
+        assert abs(expected - result) < 0.0001
+
+    @pytest.mark.parametrize('num1, num2, max_, expected', [
+        (10, -10.1, .3, 0.3),
+        (datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(days=100), 1, 0.002707370659621624),
+        (1589703146.9556487, 1001589703146.9557, 1, 0.9968306702929068),
+    ])
+    def test_get_numeric_types_distance(self, num1, num2, max_, expected):
+        result = get_numeric_types_distance(num1, num2, max_)
+        assert abs(expected - result) < 0.0001

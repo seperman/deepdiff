@@ -130,7 +130,7 @@ def _get_numbers_distance(num1, num2, max_=1):
         # getting the pairs of items during the ingore_order=True
         # calculations, we need to make the divisor of comparison very big
         # so that any 2 numbers can be chosen as pairs.
-        divisor = (num1 + num2) * 1000
+        divisor = (num1 + num2) / max_
     except Exception:
         return max_
     else:
