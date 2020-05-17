@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length
+from deepdiff.distance import _get_item_length, DISTANCE_CALCS_MSG
 
 
 class TestDeepDistance:
@@ -122,3 +122,10 @@ class TestDeepDistance:
 
         item_length = _get_item_length(t1)
         assert 8 == item_length
+
+    def test_get_distance_when_ignore_order_false_gets_error(self):
+        t1 = 10
+        t2 = 11
+        with pytest.raises(ValueError) as excinfo:
+            DeepDiff(t1, t2).get_deep_distance()
+        assert str(excinfo.value) == DISTANCE_CALCS_MSG

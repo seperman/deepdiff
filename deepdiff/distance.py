@@ -2,6 +2,11 @@ from deepdiff.deephash import DeepHash
 from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set
 from collections.abc import Mapping, Iterable
 
+DISTANCE_CALCS_MSG = (
+    'Only during the hash calculations, the objects hierarchical '
+    'counts are evaluated. As a result, the deep distance is only calculated when ignore_order=True.'
+    'If you have a usage for this function when ignore_order=False, then let us know.')
+
 
 class DistanceMixin:
 
@@ -15,6 +20,10 @@ class DistanceMixin:
 
         A distance of zero means the objects are equal and a distance of 1 is very far.
 
+        Note: The distance calculation formula is subject to change in future. Use the distance results only as a
+        way of comparing the distances of pairs of items with other pairs rather than an absolute distance
+        such as the one provided by Levenshtein edit distance.
+
         Note: The deep distance calculations are currently only internally used when ignore_order=True so
         it is implemented as a part of an algorithm that ONLY runs when ignore_order=True.
         It DOES NOT work properly when ignore_order=False (default).
@@ -23,15 +32,8 @@ class DistanceMixin:
         Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
         """
-        if not self.hashes:
-            raise ValueError(
-                'Only during the hash calculations, the objects hierarchical '
-                'counts are evaluated. As a result, the deep distance is only calculated when ignore_order=True.'
-                'If you have a usage for this function when ignore_order=False, then let us know')
-        if not self.ignore_order:
-            raise ValueError(
-                'The deep distance is only calculated when ignore_order=True in the current implementation.'
-            )
+        if not self.hashes or not self.ignore_order:
+            raise ValueError(DISTANCE_CALCS_MSG)
         item = self if self.view == DELTA_VIEW else self._to_delta_dict(report_repetition_required=False)
         diff_length = _get_item_length(item)
 
