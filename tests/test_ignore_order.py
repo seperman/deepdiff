@@ -3,6 +3,7 @@ from unittest import mock
 from deepdiff.helper import number_to_string
 from deepdiff import DeepDiff
 from decimal import Decimal
+from deepdiff.deephash import sha256hex
 from tests import CustomClass2
 
 
@@ -719,6 +720,29 @@ class TestIgnoreOrder:
                 'root[1]': {
                     'new_value': t2,
                     'old_value': t1
+                }
+            }
+        }
+        assert expected == diff
+
+    def test_ignore_order_with_sha256_hash(self):
+        t1 = [
+            [1, 2, 3, 9], [9, 8, 5, 9]
+        ]
+
+        t2 = [
+            [1, 2, 3, 10], [8, 2, 5]
+        ]
+        diff = DeepDiff(t1, t2, ignore_order=True, hasher=sha256hex)
+        expected = {
+            'values_changed': {
+                'root[0][3]': {
+                    'new_value': 10,
+                    'old_value': 9
+                },
+                'root[1][0]': {
+                    'new_value': 2,
+                    'old_value': 9
                 }
             }
         }
