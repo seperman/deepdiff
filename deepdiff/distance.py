@@ -1,5 +1,6 @@
+import datetime
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set, get_numeric_types_distance, not_found
+from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers
 from collections.abc import Mapping, Iterable
 
 
@@ -112,3 +113,63 @@ def _get_item_length(item, parents_ids=frozenset([])):
                 parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                 length += _get_item_length(subitem, parents_ids_added)
     return length
+
+
+def time_to_seconds(t):
+    return (t.hour * 60 + t.minute) * 60 + t.second
+
+
+def _get_numbers_distance(num1, num2, max_=1):
+    """
+    Get the distance of 2 numbers. The output is a number between 0 to the max.
+    The reason is the
+    When max is returned means the 2 numbers are really far, and 0 means they are equal.
+    """
+    try:
+        # Since we have a default cutoff of 0.3 distance when
+        # getting the pairs of items during the ingore_order=True
+        # calculations, we need to make the divisor of comparison very big
+        # so that any 2 numbers can be chosen as pairs.
+        divisor = (num1 + num2) * 1000
+    except Exception:
+        return max_
+    else:
+        if not divisor:
+            return max_
+        try:
+            return min(max_, abs((num1 - num2) / divisor))
+        except Exception:
+            return max_
+    return max_
+
+
+def _get_datetime_distance(date1, date2, max_):
+    return _get_numbers_distance(date1.timestamp(), date2.timestamp(), max_)
+
+
+def _get_date_distance(date1, date2, max_):
+    return _get_numbers_distance(date1.toordinal(), date2.toordinal(), max_)
+
+
+def _get_timedelta_distance(timedelta1, timedelta2, max_):
+    return _get_numbers_distance(timedelta1.total_seconds(), timedelta2.total_seconds(), max_)
+
+
+def _get_time_distance(time1, time2, max_):
+    return _get_numbers_distance(time_to_seconds(time1), time_to_seconds(time2), max_)
+
+
+TYPES_TO_DIST_FUNC = [
+    (only_numbers, _get_numbers_distance),
+    (datetime.datetime, _get_datetime_distance),
+    (datetime.date, _get_date_distance),
+    (datetime.timedelta, _get_timedelta_distance),
+    (datetime.time, _get_time_distance),
+]
+
+
+def get_numeric_types_distance(num1, num2, max_):
+    for type_, func in TYPES_TO_DIST_FUNC:
+        if isinstance(num1, type_) and isinstance(num2, type_):
+            return func(num1, num2, max_)
+    return not_found

@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length
+from deepdiff.distance import _get_item_length, _get_numbers_distance
 from tests import CustomClass
 
 
@@ -165,3 +165,16 @@ class TestDeepDistance:
         item.b = item
         item_length = _get_item_length(item)
         assert 2 == item_length
+
+    @pytest.mark.parametrize('num1, num2, max_, expected', [
+        (10.0, 10, 1, 0),
+        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.000004926108374384236453201970443')),
+        (Decimal(10), Decimal(-10), 1, 1),
+        (2, 3, 1, 0.0002),
+        (10, -10, .1, .1),
+        (10, -10.1, .1, .1),
+        (10, -10.1, .3, 0.20100000000000073),
+    ])
+    def test_get_numbers_distance(self, num1, num2, max_, expected):
+        result = _get_numbers_distance(num1, num2, max_)
+        assert expected == result

@@ -4,7 +4,8 @@ import numpy as np
 from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
-    cartesian_product_of_shape, literal_eval_extended, _get_numbers_distance,
+    cartesian_product_of_shape, literal_eval_extended,
+    not_found, OrderedSetPlus,
 )
 
 
@@ -79,15 +80,13 @@ class TestHelper:
         result = literal_eval_extended(item)
         assert expected == result
 
-    @pytest.mark.parametrize('num1, num2, max_, expected', [
-        (10.0, 10, 1, 0),
-        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.000004926108374384236453201970443')),
-        (Decimal(10), Decimal(-10), 1, 1),
-        (2, 3, 1, 0.0002),
-        (10, -10, .1, .1),
-        (10, -10.1, .1, .1),
-        (10, -10.1, .3, 0.20100000000000073),
-    ])
-    def test_get_numbers_distance(self, num1, num2, max_, expected):
-        result = _get_numbers_distance(num1, num2, max_)
-        assert expected == result
+    def test_not_found_inequality(self):
+        assert not_found != not_found
+
+    def test_ordered_set_plus_lpop(self):
+        obj = OrderedSetPlus([1, 1, 2])
+        assert 1 == obj.lpop()
+        assert 2 == obj.lpop()
+        with pytest.raises(KeyError) as excinfo:
+            obj.lpop()
+        assert str(excinfo.value) == "'lpop from an empty set'"
