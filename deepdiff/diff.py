@@ -430,7 +430,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             key1 = t1_clean_to_keys[key] if t1_clean_to_keys else key
             key2 = t2_clean_to_keys[key] if t2_clean_to_keys else key

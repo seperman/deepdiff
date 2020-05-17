@@ -2,7 +2,8 @@ import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length, DISTANCE_CALCS_MSG
+from deepdiff.distance import _get_item_length
+from tests import CustomClass
 
 
 class TestDeepDistance:
@@ -116,12 +117,19 @@ class TestDeepDistance:
         dist = diff.get_deep_distance()
         assert 0.36363636363636365 == dist
 
-    def test_get_item_length_when_loops(self):
+    def test_get_item_length_when_loops1(self):
         t1 = [[1, 2, 1, 3]]
         t1.append(t1)
 
         item_length = _get_item_length(t1)
         assert 8 == item_length
+
+    def test_get_item_length_when_loops2(self):
+        t1 = {1: 1}
+        t1[2] = t1
+
+        item_length = _get_item_length(t1)
+        assert 2 == item_length
 
     def test_get_distance_works_event_when_ignore_order_is_false1(self):
         t1 = 10
@@ -146,3 +154,14 @@ class TestDeepDistance:
         t2 = ["a", "b", "c", "dddddd"]
         dist = DeepDiff(t1, t2).get_deep_distance()
         assert str(dist)[:4] == '0.25'
+
+    def test_get_item_length_custom_class1(self):
+        item = CustomClass(a=10)
+        item_length = _get_item_length(item)
+        assert 2 == item_length
+
+    def test_get_item_length_custom_class2_loop(self):
+        item = CustomClass(a=10)
+        item.b = item
+        item_length = _get_item_length(item)
+        assert 2 == item_length
