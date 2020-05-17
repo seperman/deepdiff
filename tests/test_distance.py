@@ -123,9 +123,26 @@ class TestDeepDistance:
         item_length = _get_item_length(t1)
         assert 8 == item_length
 
-    def test_get_distance_when_ignore_order_false_gets_error(self):
+    def test_get_distance_works_event_when_ignore_order_is_false1(self):
         t1 = 10
-        t2 = 11
-        with pytest.raises(ValueError) as excinfo:
-            DeepDiff(t1, t2).get_deep_distance()
-        assert str(excinfo.value) == DISTANCE_CALCS_MSG
+        t2 = 110
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert dist < 0.001
+
+    def test_get_distance_works_event_when_ignore_order_is_false2(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.14'
+
+    def test_get_distance_works_event_when_ignore_order_is_false3(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c", "d"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.25'
+
+    def test_get_distance_does_not_care_about_the_size_of_string(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c", "dddddd"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.25'

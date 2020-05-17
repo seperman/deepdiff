@@ -20,8 +20,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             not_found, np)
+                             skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
+                             np)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -664,20 +664,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             else:
                 _distance = _current_value
         else:
-            _distance = get_numeric_types_distance(
-                removed_hash_obj.item, added_hash_obj.item, max_=self.cutoff_distance_for_pairs)
-            if _distance is not_found:
-                # Marking the cache as in progress so we avoid calculating the same distance
-                # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
-                # in the object.
-                self._cache[cache_key] = INPROGRESS
-                # We can only cache the rough distance and not the actual diff result for reuse.
-                # The reason is that we have modified the parameters explicitly so they are different and can't
-                # be used for diff reporting
-                diff = DeepDiff(
-                    removed_hash_obj.item, added_hash_obj.item,
-                    parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
-                _distance = diff.get_deep_distance()
+            # Marking the cache as in progress so we avoid calculating the same distance
+            # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
+            # in the object.
+            self._cache[cache_key] = INPROGRESS
+            # We can only cache the rough distance and not the actual diff result for reuse.
+            # The reason is that we have modified the parameters explicitly so they are different and can't
+            # be used for diff reporting
+            diff = DeepDiff(
+                removed_hash_obj.item, added_hash_obj.item,
+                parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
+            _distance = diff.get_deep_distance()
             _distance = Decimal(self.number_to_string(
                 _distance,
                 significant_digits=self._deep_distance_buckets_exponent,

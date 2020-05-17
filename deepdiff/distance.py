@@ -1,5 +1,5 @@
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set
+from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set, get_numeric_types_distance, not_found
 from collections.abc import Mapping, Iterable
 
 DISTANCE_CALCS_MSG = (
@@ -32,8 +32,14 @@ class DistanceMixin:
         Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
         """
-        if not self.hashes or not self.ignore_order:
-            raise ValueError(DISTANCE_CALCS_MSG)
+        # if not self.hashes or not self.ignore_order:
+        #     raise ValueError(DISTANCE_CALCS_MSG)
+
+        _distance = get_numeric_types_distance(
+            self.t1, self.t2, max_=self.cutoff_distance_for_pairs)
+        if _distance is not not_found:
+            return _distance
+
         item = self if self.view == DELTA_VIEW else self._to_delta_dict(report_repetition_required=False)
         diff_length = _get_item_length(item)
 
@@ -57,15 +63,18 @@ class DistanceMixin:
         """
         length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         if length is None:
-            DeepHash(
-                item,
-                hashes=self.hashes,
-                parent='root',
-                apply_hash=True,
-                **self.deephash_parameters,
-            )
+            self.__calculate_item_deephash(item)
             length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         return length
+
+    def __calculate_item_deephash(self, item):
+        DeepHash(
+            item,
+            hashes=self.hashes,
+            parent='root',
+            apply_hash=True,
+            **self.deephash_parameters,
+        )
 
 
 def _get_item_length(item, parents_ids=frozenset([])):

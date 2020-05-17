@@ -641,7 +641,7 @@ class TestIgnoreOrder:
         diff = DeepDiff(t1, t2, ignore_order=True)
         expected = {
             'PASSES COUNT': 5,
-            'DIFF COUNT': 29,
+            'DIFF COUNT': 47,
             'LEVEL CACHE HIT COUNT': 2,
             'DISTANCE CACHE HIT COUNT': 8,
             'MAX PASS LIMIT REACHED': False,
