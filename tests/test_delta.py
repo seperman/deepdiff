@@ -11,9 +11,9 @@ from deepdiff.delta import (
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
-    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_ITEM_MSG, UNABLE_TO_GET_PATH_MSG)
+    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG)
 
-from tests import PicklableClass, parameterize_cases
+from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
 
 @pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
@@ -505,6 +505,13 @@ DELTA_CASES = {
         'to_delta_kwargs': {},
         'expected_delta_dict': {'values_changed': {'root': {'new_value': 2}}}
     },
+    'delta_case16_diffmultiline_text': {
+        't1': {1: 1, 2: 2, 3: 3, 4: {'a': 'hello', 'b': 'world\n1\n2\nEnd'}},
+        't2': {1: 1, 2: 2, 3: 3, 4: {'a': 'hello', 'b': 'world!\nGoodbye!\n1\n2\nEnd'}},
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {"root[4]['b']": {'new_value': 'world!\nGoodbye!\n1\n2\nEnd'}}}
+    },
 }
 
 
@@ -767,7 +774,7 @@ DELTA_NUMPY_TEST_CASES = {
         't2': np.array([1, 2, 5], np.int8),
         'deepdiff_kwargs': {},
         'to_delta_kwargs': {},
-        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, 'numpy_used': True},
+        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, '_numpy_paths': {'root': 'int8'}},
         'expected_result': DeltaNumpyOperatorOverrideError
     },
     'delta_numpy2': {
@@ -775,7 +782,7 @@ DELTA_NUMPY_TEST_CASES = {
         't2': np.array([1, 2, 5], np.int8),
         'deepdiff_kwargs': {},
         'to_delta_kwargs': {},
-        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, 'numpy_used': True},
+        'expected_delta_dict': {'values_changed': {'root[2]': {'new_value': 5}}, '_numpy_paths': {'root': 'int8'}},
         'expected_result': 't2'
     },
     'delta_numpy3_type_change_but_no_value_change': {
@@ -809,7 +816,9 @@ DELTA_NUMPY_TEST_CASES = {
                     'new_value': 5
                 }
             },
-            'numpy_used': True
+            '_numpy_paths': {
+                'root': 'int16'
+            }
         },
         'expected_result': 't2'
     },
@@ -827,7 +836,9 @@ DELTA_NUMPY_TEST_CASES = {
                     'new_value': 1
                 }
             },
-            'numpy_used': True
+            '_numpy_paths': {
+                'root': 'int8'
+            }
         },
         'expected_result': 't2'
     },
@@ -853,11 +864,44 @@ DELTA_NUMPY_TEST_CASES = {
                     2: 2
                 }
             },
-            'numpy_used': True
+            '_numpy_paths': {
+                'root': 'int8'
+            }
         },
         'expected_result': 't2_via_deepdiff'
     },
+    'delta_numpy7_arrays_of_different_sizes': {
+        't1': np.array([1, 2, 3, 4]),
+        't2': np.array([5, 6, 7, 8, 9, 10]),
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'values_changed': {
+                'root[0]': {
+                    'new_value': 5
+                },
+                'root[1]': {
+                    'new_value': 6
+                },
+                'root[2]': {
+                    'new_value': 7
+                },
+                'root[3]': {
+                    'new_value': 8
+                }
+            },
+            'iterable_item_added': {
+                'root[4]': 9,
+                'root[5]': 10
+            },
+            '_numpy_paths': {
+                'root': 'int64'
+            }
+        },
+        'expected_result': 't2'
+    },
 }
+
 
 DELTA_NUMPY_TEST_PARAMS = parameterize_cases(
     't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result', DELTA_NUMPY_TEST_CASES)
@@ -1134,3 +1178,12 @@ class TestDeltaOther:
         result = delta.to_dict()
         expected = {'iterable_items_removed_at_indexes': {'root': {2: 'B'}}}
         assert expected == result
+
+    def test_class_type_change(self):
+        t1 = CustomClass
+        t2 = CustomClass2
+        diff = DeepDiff(t1, t2, view=DELTA_VIEW)
+        expected = {'type_changes': {'root': {'new_type': CustomClass2,
+                    'old_type': CustomClass}}}
+
+        assert expected == diff

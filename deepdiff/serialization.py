@@ -176,8 +176,8 @@ class SerializationMixin:
                     for path, value in report_value.items():
                         if isinstance(value, Mapping) and 'old_value' in value:
                             del value['old_value']
-        if self.numpy_used:
-            result['numpy_used'] = True
+        if self._numpy_paths:
+            result['_numpy_paths'] = self._numpy_paths
 
         return deepcopy(dict(result))
 

@@ -20,6 +20,7 @@ try:
     import numpy as np
 except ImportError:  # pragma: no cover. The case without Numpy is tested locally only.
     np = None  # pragma: no cover.
+    np_array_factory = 'numpy not available'  # pragma: no cover.
     np_ndarray = np_type  # pragma: no cover.
     np_bool_ = np_type  # pragma: no cover.
     np_int8 = np_type  # pragma: no cover.
@@ -39,6 +40,7 @@ except ImportError:  # pragma: no cover. The case without Numpy is tested locall
     np_complex128 = np_type  # pragma: no cover.
     np_complex_ = np_type  # pragma: no cover.
 else:
+    np_array_factory = np.array
     np_ndarray = np.ndarray
     np_bool_ = np.bool_
     np_int8 = np.int8
@@ -63,6 +65,13 @@ numpy_numbers = (
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
     np_float32, np_float64, np_float_, np_complex64,
     np_complex128, np_complex_, )
+
+numpy_dtypes = set(numpy_numbers)
+numpy_dtypes.add(np_bool_)
+
+numpy_dtype_str_to_type = {
+    item.__name__: item for item in numpy_dtypes
+}
 
 logger = logging.getLogger(__name__)
 
@@ -261,6 +270,10 @@ def get_type(obj):
     if isinstance(obj, np_ndarray):
         return obj.dtype.type
     return obj if type(obj) is type else type(obj)
+
+
+def numpy_dtype_string_to_type(dtype_str):
+    return numpy_dtype_str_to_type[dtype_str]
 
 
 def type_in_type_group(item, type_group):
