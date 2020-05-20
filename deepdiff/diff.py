@@ -20,8 +20,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemove
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             not_found, np)
+                             skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
+                             np)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -98,6 +98,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  hasher=None,
                  hashes=None,
                  parameters=None,
+                 shared_parameters=None,
                  max_passes=10000000,
                  max_distances_to_keep_track_per_item=10000,
                  max_diffs=None,
@@ -106,6 +107,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger=logger.warning,
                  _stats=None,
                  _cache=None,
+                 _numpy_paths=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -115,7 +117,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, _stats, and parameters.") % ', '.join(kwargs.keys()))
+                "cutoff_distance_for_pairs, log_frequency_in_sec, _stats, _numpy_paths, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
         if parameters:
             self.__dict__ = deepcopy(parameters)
         else:
@@ -169,11 +171,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             parameters = self.__dict__.copy()
 
         _purge_cache = True
-        if _stats:
-            # We are in some pass other than root
+        if shared_parameters:
             self.is_root = False
-            self._stats = _stats
-            self._cache = _cache
+            self.shared_parameters = shared_parameters
+            self.__dict__.update(shared_parameters)
+            # We are in some pass other than root
             repeated_timer = None
         else:
             # we are at the root
@@ -191,19 +193,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 MAX_PASS_LIMIT_REACHED: False,
                 MAX_DIFF_LIMIT_REACHED: False,
             }
+            self.hashes = {} if hashes is None else hashes
+            self._numpy_paths = {} if _numpy_paths is None else _numpy_paths
+            self.shared_parameters = {
+                'hashes': self.hashes,
+                '_stats': self._stats,
+                '_cache': self._cache,
+                '_numpy_paths': self._numpy_paths
+            }
             if log_frequency_in_sec:
                 # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
                 repeated_timer = RepeatedTimer(log_frequency_in_sec, _report_progress, self._stats, progress_logger)
             else:
                 repeated_timer = None
-        self.hashes = {} if hashes is None else hashes
+
         self.parameters = parameters
         self.deephash_parameters = self.__get_deephash_params()
         self.tree = TreeResult()
         self.t1 = t1
         self.t2 = t2
-
-        self.numpy_used = False
 
         try:
             root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
@@ -216,6 +224,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if self.is_root:
                 if _purge_cache:
                     del self._cache
+                del self.shared_parameters
+                del self.parameters
             if repeated_timer:
                 duration = repeated_timer.stop()
                 self._stats['DURATION SEC'] = duration
@@ -431,7 +441,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
             if self.__count_diff() is StopIteration:
-                return
+                return  # pragma: no cover. This is already covered for addition.
 
             key1 = t1_clean_to_keys[key] if t1_clean_to_keys else key
             key2 = t2_clean_to_keys[key] if t2_clean_to_keys else key
@@ -665,20 +675,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             else:
                 _distance = _current_value
         else:
-            _distance = get_numeric_types_distance(
-                removed_hash_obj.item, added_hash_obj.item, max_=self.cutoff_distance_for_pairs)
-            if _distance is not_found:
-                # Marking the cache as in progress so we avoid calculating the same distance
-                # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
-                # in the object.
-                self._cache[cache_key] = INPROGRESS
-                # We can only cache the rough distance and not the actual diff result for reuse.
-                # The reason is that we have modified the parameters explicitly so they are different and can't
-                # be used for diff reporting
-                diff = DeepDiff(
-                    removed_hash_obj.item, added_hash_obj.item,
-                    parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
-                _distance = diff.get_deep_distance()
+            # Marking the cache as in progress so we avoid calculating the same distance
+            # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
+            # in the object.
+            self._cache[cache_key] = INPROGRESS
+            # We can only cache the rough distance and not the actual diff result for reuse.
+            # The reason is that we have modified the parameters explicitly so they are different and can't
+            # be used for diff reporting
+            diff = DeepDiff(
+                removed_hash_obj.item, added_hash_obj.item,
+                parameters=self.parameters,
+                shared_parameters=self.shared_parameters,
+                view=DELTA_VIEW)
+                # parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
+            _distance = diff.get_deep_distance()
             _distance = Decimal(self.number_to_string(
                 _distance,
                 significant_digits=self._deep_distance_buckets_exponent,
@@ -958,7 +968,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def __diff_numpy_array(self, level, parents_ids=frozenset({})):
         """Diff numpy arrays"""
-        self.numpy_used = True
+        if level.path() not in self._numpy_paths:
+            self._numpy_paths[level.path()] = get_type(level.t2).__name__
         if np is None:
             # This line should never be run. If it is ever called means the type check detected a numpy array
             # which means numpy module needs to be available. So np can't be None.
@@ -978,11 +989,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         # compare array meta-data
         if level.t1.shape != level.t2.shape:
-            next_level = level.branch_deeper(
-                level.t1.shape, level.t2.shape,
-                child_relationship_class=AttributeRelationship,
-                child_relationship_param='shape')
-            self.__diff(next_level, parents_ids)
+            level.t1 = level.t1.tolist()
+            level.t2 = level.t2.tolist()
+            self.__diff_iterable(level, parents_ids)
         else:
             # metadata same -- the difference is in the content
             shape = level.t1.shape

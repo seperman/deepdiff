@@ -1,8 +1,11 @@
 import pytest
+import time
+import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length, DISTANCE_CALCS_MSG
+from deepdiff.distance import _get_item_length, _get_numbers_distance, get_numeric_types_distance
+from tests import CustomClass
 
 
 class TestDeepDistance:
@@ -116,16 +119,76 @@ class TestDeepDistance:
         dist = diff.get_deep_distance()
         assert 0.36363636363636365 == dist
 
-    def test_get_item_length_when_loops(self):
+    def test_get_item_length_when_loops1(self):
         t1 = [[1, 2, 1, 3]]
         t1.append(t1)
 
         item_length = _get_item_length(t1)
         assert 8 == item_length
 
-    def test_get_distance_when_ignore_order_false_gets_error(self):
+    def test_get_item_length_when_loops2(self):
+        t1 = {1: 1}
+        t1[2] = t1
+
+        item_length = _get_item_length(t1)
+        assert 2 == item_length
+
+    def test_get_distance_works_event_when_ignore_order_is_false1(self):
         t1 = 10
-        t2 = 11
-        with pytest.raises(ValueError) as excinfo:
-            DeepDiff(t1, t2).get_deep_distance()
-        assert str(excinfo.value) == DISTANCE_CALCS_MSG
+        t2 = 110
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert dist == Decimal('0.25')
+
+    def test_get_distance_works_event_when_ignore_order_is_false2(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.14'
+
+    def test_get_distance_works_event_when_ignore_order_is_false3(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c", "d"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.25'
+
+    def test_get_distance_does_not_care_about_the_size_of_string(self):
+        t1 = ["a", "b"]
+        t2 = ["a", "b", "c", "dddddd"]
+        dist = DeepDiff(t1, t2).get_deep_distance()
+        assert str(dist)[:4] == '0.25'
+
+    def test_get_item_length_custom_class1(self):
+        item = CustomClass(a=10)
+        item_length = _get_item_length(item)
+        assert 2 == item_length
+
+    def test_get_item_length_custom_class2_loop(self):
+        item = CustomClass(a=10)
+        item.b = item
+        item_length = _get_item_length(item)
+        assert 2 == item_length
+
+    @pytest.mark.parametrize('num1, num2, max_, expected', [
+        (10.0, 10, 1, 0),
+        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.004926108374384236453201970443')),
+        (Decimal(10), Decimal(-10), 1, 1),
+        (2, 3, 1, 0.2),
+        (10, -10, .1, .1),
+        (10, -10.1, .1, .1),
+        (10, -10.1, .3, 0.3),
+    ])
+    def test_get_numbers_distance(self, num1, num2, max_, expected):
+        result = _get_numbers_distance(num1, num2, max_)
+        assert abs(expected - result) < 0.0001
+
+    @pytest.mark.parametrize('num1, num2, max_, expected', [
+        (10, -10.1, .3, 0.3),
+        (datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(days=100), 1, 0.002707370659621624),
+        (1589703146.9556487, 1001589703146.9557, 1, 0.9968306702929068),
+        (datetime.time(10, 11), datetime.time(12, 11), .5, 0.0447093889716),
+        (datetime.timedelta(days=2), datetime.timedelta(12, 11), .5, 0.35714415626180646),
+        (datetime.date(2018, 1, 1), datetime.date(2020, 1, 10), 1, 0.0005013129787148886),
+    ])
+    def test_get_numeric_types_distance(self, num1, num2, max_, expected):
+        result = get_numeric_types_distance(num1, num2, max_)
+        assert abs(expected - result) < 0.0001

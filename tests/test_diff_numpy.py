@@ -116,14 +116,16 @@ NUMPY_CASES = {
         't2': np.array([1]),
         'deepdiff_kwargs': {},
         'expected_result': {
-            'values_changed': {
-                'root.shape[0]': {
-                    'new_value': 1,
-                    'old_value': 2
+            'type_changes': {
+                'root[0]': {
+                    'old_type': list,
+                    'new_type': int,
+                    'old_value': [1, 1],
+                    'new_value': 1
                 }
             },
             'iterable_item_removed': {
-                'root.shape[1]': 2
+                'root[1]': [2, 3]
             }
         },
     },

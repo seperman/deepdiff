@@ -332,8 +332,11 @@ class DeltaResult(TextResult):
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
                 self['values_changed'][change.path(
                     force=FORCE_DEFAULT)] = the_changed
-                if 'diff' in change.additional:
-                    the_changed.update({'diff': change.additional['diff']})
+                # If we ever want to store the difflib results instead of the new_value
+                # these lines need to be uncommented and the Delta object needs to be able
+                # to use them.
+                # if 'diff' in change.additional:
+                #     the_changed.update({'diff': change.additional['diff']})
 
     def _from_tree_repetition_change(self, tree):
         if 'repetition_change' in tree:
@@ -347,14 +350,6 @@ class DeltaResult(TextResult):
                     iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path] = {}
                 for index in repetition['new_indexes']:
                     iterable_items_added_at_indexes[index] = value
-                # self['repetition_change'][path][]
-                # old_indexes = set(repetition['old_indexes'])
-                # new_indexes = set(repetition['new_indexes'])
-                # value['old_indexes'] = old_indexes - new_indexes
-                # value['new_indexes'] = new_indexes - old_indexes
-                # self['repetition_change'][path] = RemapDict(change.additional[
-                #     'repetition'])
-                # self['repetition_change'][path]['value'] = change.t1
 
 
 class DiffLevel:

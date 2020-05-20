@@ -1,7 +1,7 @@
 import sys
-import datetime
 import re
 import os
+import datetime
 import logging
 import warnings
 import time
@@ -18,27 +18,29 @@ class np_type:
 
 try:
     import numpy as np
-except ImportError:
-    np = None
-    np_ndarray = np_type
-    np_bool_ = np_type
-    np_int8 = np_type
-    np_int16 = np_type
-    np_int32 = np_type
-    np_int64 = np_type
-    np_uint8 = np_type
-    np_uint16 = np_type
-    np_uint32 = np_type
-    np_uint64 = np_type
-    np_intp = np_type
-    np_uintp = np_type
-    np_float32 = np_type
-    np_float64 = np_type
-    np_float_ = np_type
-    np_complex64 = np_type
-    np_complex128 = np_type
-    np_complex_ = np_type
+except ImportError:  # pragma: no cover. The case without Numpy is tested locally only.
+    np = None  # pragma: no cover.
+    np_array_factory = 'numpy not available'  # pragma: no cover.
+    np_ndarray = np_type  # pragma: no cover.
+    np_bool_ = np_type  # pragma: no cover.
+    np_int8 = np_type  # pragma: no cover.
+    np_int16 = np_type  # pragma: no cover.
+    np_int32 = np_type  # pragma: no cover.
+    np_int64 = np_type  # pragma: no cover.
+    np_uint8 = np_type  # pragma: no cover.
+    np_uint16 = np_type  # pragma: no cover.
+    np_uint32 = np_type  # pragma: no cover.
+    np_uint64 = np_type  # pragma: no cover.
+    np_intp = np_type  # pragma: no cover.
+    np_uintp = np_type  # pragma: no cover.
+    np_float32 = np_type  # pragma: no cover.
+    np_float64 = np_type  # pragma: no cover.
+    np_float_ = np_type  # pragma: no cover.
+    np_complex64 = np_type  # pragma: no cover.
+    np_complex128 = np_type  # pragma: no cover.
+    np_complex_ = np_type  # pragma: no cover.
 else:
+    np_array_factory = np.array
     np_ndarray = np.ndarray
     np_bool_ = np.bool_
     np_int8 = np.int8
@@ -63,6 +65,13 @@ numpy_numbers = (
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
     np_float32, np_float64, np_float_, np_complex64,
     np_complex128, np_complex_, )
+
+numpy_dtypes = set(numpy_numbers)
+numpy_dtypes.add(np_bool_)
+
+numpy_dtype_str_to_type = {
+    item.__name__: item for item in numpy_dtypes
+}
 
 logger = logging.getLogger(__name__)
 
@@ -264,6 +273,10 @@ def get_type(obj):
     return obj if type(obj) is type else type(obj)
 
 
+def numpy_dtype_string_to_type(dtype_str):
+    return numpy_dtype_str_to_type[dtype_str]
+
+
 def type_in_type_group(item, type_group):
     return get_type(item) in type_group
 
@@ -392,7 +405,7 @@ class OrderedSetPlus(OrderedSet):
             1
         """
         if not self.items:
-            raise KeyError("Set is empty")
+            raise KeyError('lpop from an empty set')
 
         elem = self.items[0]
         del self.items[0]
@@ -462,55 +475,6 @@ def time_to_seconds(t):
     return (t.hour * 60 + t.minute) * 60 + t.second
 
 
-def _get_numbers_distance(num1, num2, max_=1):
-    """
-    Get the distance of 2 numbers. The output is a number between 0 to the max.
-    The reason is the
-    When max is returned means the 2 numbers are really far, and 0 means they are equal.
-    """
-    try:
-        # Since we have a default cutoff of 0.3 distance when
-        # getting the pairs of items during the ingore_order=True
-        # calculations, we need to make the divisor of comparison very big
-        # so that any 2 numbers can be chosen as pairs.
-        divisor = (num1 + num2) * 1000
-    except Exception:
-        return max_
-    else:
-        if not divisor:
-            return max_
-        try:
-            return min(max_, abs((num1 - num2) / divisor))
-        except Exception:
-            return max_
-    return max_
-
-
-def _get_datetime_distance(date1, date2, max_):
-    return _get_numbers_distance(date1.timestamp(), date2.timestamp(), max_)
-
-
-def _get_date_distance(date1, date2, max_):
-    return _get_numbers_distance(date1.toordinal(), date2.toordinal(), max_)
-
-
-def _get_timedelta_distance(timedelta1, timedelta2, max_):
-    return _get_numbers_distance(timedelta1.total_seconds(), timedelta2.total_seconds(), max_)
-
-
-def _get_time_distance(time1, time2, max_):
-    return _get_numbers_distance(time_to_seconds(time1), time_to_seconds(time2), max_)
-
-
-TYPES_TO_DIST_FUNC = [
-    (only_numbers, _get_numbers_distance),
-    (datetime.datetime, _get_datetime_distance),
-    (datetime.date, _get_date_distance),
-    (datetime.timedelta, _get_timedelta_distance),
-    (datetime.time, _get_time_distance),
-]
-
-
 def datetime_normalize(truncate_datetime, obj):
     if truncate_datetime:
         if truncate_datetime == 'second':
@@ -526,25 +490,3 @@ def datetime_normalize(truncate_datetime, obj):
     elif isinstance(obj, datetime.time):
         obj = time_to_seconds(obj)
     return obj
-
-
-def get_numeric_types_distance(num1, num2, max_):
-    for type_, func in TYPES_TO_DIST_FUNC:
-        if isinstance(num1, type_) and isinstance(num2, type_):
-            return func(num1, num2, max_)
-    return not_found
-
-
-class bcolors:
-    """
-    For color printing and debugging
-    https://stackoverflow.com/a/287944/1497443
-    """
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'

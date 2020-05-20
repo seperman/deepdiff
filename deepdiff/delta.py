@@ -4,7 +4,9 @@ from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
-    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers, np_ndarray, not_found)
+    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers,
+    np_ndarray, np_array_factory, numpy_dtypes,
+    not_found, numpy_dtype_string_to_type)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 from deepdiff.anyset import AnySet
 
@@ -33,6 +35,7 @@ INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM = 'invalid action of {} when call
 UNABLE_TO_GET_ITEM_MSG = 'Unable to get the item at {}: {}'
 UNABLE_TO_GET_PATH_MSG = 'Unable to get the item at {}'
 INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Unable to add the following items at the specific indexes. {}'
+NUMPY_TO_LIST = 'NUMPY_TO_LIST'
 
 
 class DeltaError(ValueError):
@@ -127,7 +130,7 @@ class Delta:
         self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
-        self.numpy_used = self.diff.pop('numpy_used', False)
+        self._numpy_paths = self.diff.pop('_numpy_paths', False)
         self.serializer = serializer
         self.deserializer = deserializer
         self.reset()
@@ -139,12 +142,13 @@ class Delta:
         self.post_process_paths_to_convert = {}
 
     def __add__(self, other):
-        if isinstance(other, numbers) and self.numpy_used:
+        if isinstance(other, numbers) and self._numpy_paths:
             raise DeltaNumpyOperatorOverrideError(DELTA_NUMPY_OPERATOR_OVERRIDE_MSG)
         if self.mutate:
             self.root = other
         else:
             self.root = deepcopy(other)
+        self._do_pre_process()
         self._do_values_changed()
         self._do_set_item_added()
         self._do_set_item_removed()
@@ -172,7 +176,7 @@ class Delta:
         if self.log_errors:
             getattr(logger, level)(msg)
         if self.raise_errors:
-            raise DeltaError(msg) from None
+            raise DeltaError(msg)
 
     def _do_verify_changes(self, path, expected_old_value, current_old_value):
         if self.verify_symmetry and expected_old_value != current_old_value:
@@ -220,24 +224,38 @@ class Delta:
         except (KeyError, IndexError, AttributeError, TypeError) as e:
             self._raise_or_log('Failed to set {} due to {}'.format(path_for_err_reporting, e))
 
+    def _coerce_obj(self, parent, obj, path, parent_to_obj_elem,
+                    parent_to_obj_action, elements, to_type, from_type):
+        """
+        Coerce obj and mark it in post_process_paths_to_convert for later to be converted back.
+        Also reassign it to its parent to replace the old object.
+        """
+        self.post_process_paths_to_convert[elements[:-1]] = {'old_type': to_type, 'new_type': from_type}
+        if from_type is np_ndarray:
+            obj = obj.tolist()
+        else:
+            obj = to_type(obj)
+
+        if parent:
+            # Making sure that the object is re-instated inside the parent especially if it was immutable
+            # and we had to turn it into a mutable one. In such cases the object has a new id.
+            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                        value=obj, action=parent_to_obj_action)
+        return obj
+
     def _set_new_value(self, parent, parent_to_obj_elem, parent_to_obj_action,
                        obj, elements, path, elem, action, new_value):
         """
         Set the element value on an object and if necessary convert the object to the proper mutable type
         """
-        obj_is_new = False
         if isinstance(obj, tuple):
             # convert this object back to a tuple later
-            self.post_process_paths_to_convert[elements[:-1]] = {'old_type': list, 'new_type': tuple}
-            obj = list(obj)
-            obj_is_new = True
+            obj = self._coerce_obj(
+                parent, obj, path, parent_to_obj_elem,
+                parent_to_obj_action, elements,
+                to_type=list, from_type=tuple)
         self._simple_set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
                                     value=new_value, action=action)
-        if obj_is_new and parent:
-            # Making sure that the object is re-instated inside the parent especially if it was immutable
-            # and we had to turn it into a mutable one. In such cases the object has a new id.
-            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
-                                        value=obj, action=parent_to_obj_action)
 
     def _simple_delete_elem(self, obj, path_for_err_reporting, elem=None, action=None):
         """
@@ -310,6 +328,20 @@ class Delta:
         if self.post_process_paths_to_convert:
             self._do_values_or_type_changed(self.post_process_paths_to_convert, is_type_change=True)
 
+    def _do_pre_process(self):
+        if self._numpy_paths and ('iterable_item_added' in self.diff or 'iterable_item_removed' in self.diff):
+            preprocess_paths = {}
+            for path, type_ in self._numpy_paths.items():
+                preprocess_paths[path] = {'old_type': np_ndarray, 'new_type': list}
+                try:
+                    type_ = numpy_dtype_string_to_type(type_)
+                except Exception as e:
+                    self._raise_or_log("{} is not a valid numpy type.".format(e))
+                    continue
+                self.post_process_paths_to_convert[path] = {'old_type': list, 'new_type': type_}
+            if preprocess_paths:
+                self._do_values_or_type_changed(preprocess_paths, is_type_change=True)
+
     def _get_elements_and_details(self, path):
         try:
             elements = _path_to_elements(path)
@@ -349,7 +381,12 @@ class Delta:
             # in the delta dictionary.
             if is_type_change and 'new_value' not in value:
                 try:
-                    new_value = value['new_type'](current_old_value)
+                    new_type = value['new_type']
+                    # in case of Numpy we pass the ndarray plus the dtype in a tuple
+                    if new_type in numpy_dtypes:
+                        new_value = np_array_factory(current_old_value, new_type)
+                    else:
+                        new_value = new_type(current_old_value)
                 except Exception as e:
                     self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[elem], value.get('new_type', 'unknown'), e))
                     continue

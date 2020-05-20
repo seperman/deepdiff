@@ -1,11 +1,7 @@
+import datetime
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set
+from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, time_to_seconds
 from collections.abc import Mapping, Iterable
-
-DISTANCE_CALCS_MSG = (
-    'Only during the hash calculations, the objects hierarchical '
-    'counts are evaluated. As a result, the deep distance is only calculated when ignore_order=True.'
-    'If you have a usage for this function when ignore_order=False, then let us know.')
 
 
 class DistanceMixin:
@@ -24,16 +20,15 @@ class DistanceMixin:
         way of comparing the distances of pairs of items with other pairs rather than an absolute distance
         such as the one provided by Levenshtein edit distance.
 
-        Note: The deep distance calculations are currently only internally used when ignore_order=True so
-        it is implemented as a part of an algorithm that ONLY runs when ignore_order=True.
-        It DOES NOT work properly when ignore_order=False (default).
-        If you have a use case for the deep distance to be calculated when ignore_order=False, then please open a ticket.
-
         Info: The current algorithm is based on the number of operations that are needed to convert t1 to t2 divided
         by the number of items that make up t1 and t2.
         """
-        if not self.hashes or not self.ignore_order:
-            raise ValueError(DISTANCE_CALCS_MSG)
+
+        _distance = get_numeric_types_distance(
+            self.t1, self.t2, max_=self.cutoff_distance_for_pairs)
+        if _distance is not not_found:
+            return _distance
+
         item = self if self.view == DELTA_VIEW else self._to_delta_dict(report_repetition_required=False)
         diff_length = _get_item_length(item)
 
@@ -57,15 +52,18 @@ class DistanceMixin:
         """
         length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         if length is None:
-            DeepHash(
-                item,
-                hashes=self.hashes,
-                parent='root',
-                apply_hash=True,
-                **self.deephash_parameters,
-            )
+            self.__calculate_item_deephash(item)
             length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         return length
+
+    def __calculate_item_deephash(self, item):
+        DeepHash(
+            item,
+            hashes=self.hashes,
+            parent='root',
+            apply_hash=True,
+            **self.deephash_parameters,
+        )
 
 
 def _get_item_length(item, parents_ids=frozenset([])):
@@ -75,10 +73,9 @@ def _get_item_length(item, parents_ids=frozenset([])):
     but can be used with other dictionary types of view outputs too.
     """
     length = 0
-    if hasattr(item, '_diff_length'):
-        length = item._diff_length
-    elif isinstance(item, Mapping):
+    if isinstance(item, Mapping):
         for key, subitem in item.items():
+            # dedupe the repetition report so the number of times items have shown up does not affect the distance.
             if key in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
                 new_subitem = {}
                 for path_, indexes_to_items in subitem.items():
@@ -91,6 +88,10 @@ def _get_item_length(item, parents_ids=frozenset([])):
                             new_indexes_to_items[k] = v
                     new_subitem[path_] = new_indexes_to_items
                 subitem = new_subitem
+
+            # internal keys such as _numpy_paths should not count towards the distance
+            if isinstance(key, strings) and key.startswith('_'):
+                continue
 
             item_id = id(subitem)
             if parents_ids and item_id in parents_ids:
@@ -114,13 +115,61 @@ def _get_item_length(item, parents_ids=frozenset([])):
         if hasattr(item, '__dict__'):
             for subitem in item.__dict__:
                 item_id = id(subitem)
-                if parents_ids and item_id in parents_ids:
-                    continue
                 parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                 length += _get_item_length(subitem, parents_ids_added)
-
-    try:
-        item._diff_length = length
-    except Exception:
-        pass
     return length
+
+
+def _get_numbers_distance(num1, num2, max_=1):
+    """
+    Get the distance of 2 numbers. The output is a number between 0 to the max.
+    The reason is the
+    When max is returned means the 2 numbers are really far, and 0 means they are equal.
+    """
+    try:
+        # Since we have a default cutoff of 0.3 distance when
+        # getting the pairs of items during the ingore_order=True
+        # calculations, we need to make the divisor of comparison very big
+        # so that any 2 numbers can be chosen as pairs.
+        divisor = (num1 + num2) / max_
+    except Exception:
+        return max_
+    else:
+        if not divisor:
+            return max_
+        try:
+            return min(max_, abs((num1 - num2) / divisor))
+        except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
+            return max_  # pragma: no cover
+
+
+def _get_datetime_distance(date1, date2, max_):
+    return _get_numbers_distance(date1.timestamp(), date2.timestamp(), max_)
+
+
+def _get_date_distance(date1, date2, max_):
+    return _get_numbers_distance(date1.toordinal(), date2.toordinal(), max_)
+
+
+def _get_timedelta_distance(timedelta1, timedelta2, max_):
+    return _get_numbers_distance(timedelta1.total_seconds(), timedelta2.total_seconds(), max_)
+
+
+def _get_time_distance(time1, time2, max_):
+    return _get_numbers_distance(time_to_seconds(time1), time_to_seconds(time2), max_)
+
+
+TYPES_TO_DIST_FUNC = [
+    (only_numbers, _get_numbers_distance),
+    (datetime.datetime, _get_datetime_distance),
+    (datetime.date, _get_date_distance),
+    (datetime.timedelta, _get_timedelta_distance),
+    (datetime.time, _get_time_distance),
+]
+
+
+def get_numeric_types_distance(num1, num2, max_):
+    for type_, func in TYPES_TO_DIST_FUNC:
+        if isinstance(num1, type_) and isinstance(num2, type_):
+            return func(num1, num2, max_)
+    return not_found
