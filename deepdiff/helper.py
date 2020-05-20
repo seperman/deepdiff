@@ -92,6 +92,7 @@ unicode_type = str
 bytes_type = bytes
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
+times = (datetime.datetime, datetime.time)
 numbers = only_numbers + datetimes
 booleans = (bool, np_bool_)
 
@@ -508,6 +509,23 @@ TYPES_TO_DIST_FUNC = [
     (datetime.timedelta, _get_timedelta_distance),
     (datetime.time, _get_time_distance),
 ]
+
+
+def datetime_normalize(truncate_datetime, obj):
+    if truncate_datetime:
+        if truncate_datetime == 'second':
+            obj = obj.replace(microsecond=0)
+        elif truncate_datetime == 'minute':
+            obj = obj.replace(second=0, microsecond=0)
+        elif truncate_datetime == 'hour':
+            obj = obj.replace(minute=0, second=0, microsecond=0)
+        elif truncate_datetime == 'day':
+            obj = obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    if isinstance(obj, datetime.datetime):
+        obj = obj.replace(tzinfo=datetime.timezone.utc).timestamp()
+    elif isinstance(obj, datetime.time):
+        obj = time_to_seconds(obj)
+    return obj
 
 
 def get_numeric_types_distance(num1, num2, max_):

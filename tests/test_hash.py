@@ -2,6 +2,7 @@
 import re
 import pytest
 import logging
+import datetime
 from collections import namedtuple
 from functools import partial
 from enum import Enum
@@ -76,6 +77,26 @@ class TestDeepHash:
         result = DeepHash(obj)
         with pytest.raises(KeyError):
             result[2]
+
+    def test_datetime(self):
+        now = datetime.datetime.now()
+        a = b = now
+        a_hash = DeepHash(a)
+        b_hash = DeepHash(b)
+        assert a_hash[a] == b_hash[b]
+
+    def test_datetime_truncate(self):
+        a = datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)
+        b = datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)
+        c = datetime.datetime(2020, 5, 17, 22, 15, 34, 500000)
+
+        a_hash = DeepHash(a, truncate_datetime='minute')
+        b_hash = DeepHash(b, truncate_datetime='minute')
+        assert a_hash[a] == b_hash[b]
+
+        a_hash = DeepHash(a, truncate_datetime='second')
+        c_hash = DeepHash(c, truncate_datetime='second')
+        assert a_hash[a] == c_hash[c]
 
     def test_get_reserved_keyword(self):
         hashes = {UNPROCESSED_KEY: 'full item', 'key1': ('item', 'count')}

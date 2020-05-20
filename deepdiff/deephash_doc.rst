@@ -73,6 +73,9 @@ significant_digits : int >= 0, default=None
 
     When you set the number_format_notation="e", we use "{:.Xe}".format(Your Number) where X=significant_digits.
 
+truncate_datetime: string, default = None
+    Can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+
 number_format_notation : string, default="f"
     number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
 

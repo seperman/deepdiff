@@ -13,12 +13,12 @@ from collections import defaultdict
 from decimal import Decimal
 from itertools import zip_longest
 from ordered_set import OrderedSet
-from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
+from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
-                             number_to_string, KEY_TO_VAL_STR, booleans,
+                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, get_numeric_types_distance, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
                              not_found, np)
@@ -92,6 +92,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  number_to_string_func=None,
                  ignore_nan_inequality=False,
                  ignore_private_variables=True,
+                 truncate_datetime=None,
                  verbose_level=1,
                  view=TEXT_VIEW,
                  hasher=None,
@@ -115,7 +116,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
                 "cutoff_distance_for_pairs, log_frequency_in_sec, _stats, and parameters.") % ', '.join(kwargs.keys()))
-
         if parameters:
             self.__dict__ = deepcopy(parameters)
         else:
@@ -147,6 +147,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.hasher = hasher
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+            self.truncate_datetime = self.get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             self.verbose_level = verbose_level
             self.view = view
@@ -945,6 +946,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if t1_s != t2_s:
                 self.__report_result('values_changed', level)
 
+    def __diff_datetimes(self, level):
+        """Diff DateTimes"""
+        levels = []
+        if self.truncate_datetime:
+            level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
+            level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+
+        if level.t1 != level.t2:
+            self.__report_result('values_changed', level)
+
     def __diff_numpy_array(self, level, parents_ids=frozenset({})):
         """Diff numpy arrays"""
         self.numpy_used = True
@@ -1055,6 +1066,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if isinstance(level.t1, strings):
             self.__diff_str(level)
+
+        elif isinstance(level.t1, times):
+            self.__diff_datetimes(level)
 
         elif isinstance(level.t1, numbers):
             self.__diff_numbers(level)

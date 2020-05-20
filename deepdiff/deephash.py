@@ -4,11 +4,11 @@ from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
 from enum import Enum
-from deepdiff.helper import (strings, numbers, unprocessed, not_hashed, add_to_frozen_set,
+from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, KEY_TO_VAL_STR, short_repr)
+                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -119,6 +119,7 @@ class DeepHash(Base):
                  hasher=None,
                  ignore_repetition=True,
                  significant_digits=None,
+                 truncate_datetime=None,
                  number_format_notation="f",
                  apply_hash=True,
                  ignore_type_in_groups=None,
@@ -134,7 +135,7 @@ class DeepHash(Base):
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
-                 "The valid parameters are obj, hashes, exclude_types, significant_digits, "
+                 "The valid parameters are obj, hashes, exclude_types, significant_digits, truncate_datetime,"
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
@@ -154,6 +155,7 @@ class DeepHash(Base):
         self.hashes[UNPROCESSED_KEY] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+        self.truncate_datetime = self.get_truncate_datetime(truncate_datetime)
         self.number_format_notation = number_format_notation
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
             ignore_type_in_groups=ignore_type_in_groups,
@@ -405,6 +407,11 @@ class DeepHash(Base):
                                         number_format_notation=self.number_format_notation)
         return KEY_TO_VAL_STR.format(type_, obj)
 
+    def _prep_datetime(self, obj):
+        type_ = 'datetime'
+        obj = datetime_normalize(self.truncate_datetime, obj)
+        return KEY_TO_VAL_STR.format(type_, obj)
+
     def _prep_tuple(self, obj, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
@@ -444,6 +451,9 @@ class DeepHash(Base):
             result = prepare_string_for_hashing(
                 obj, ignore_string_type_changes=self.ignore_string_type_changes,
                 ignore_string_case=self.ignore_string_case)
+
+        elif isinstance(obj, times):
+            result = self._prep_datetime(obj)
 
         elif isinstance(obj, numbers):
             result = self._prep_number(obj)
