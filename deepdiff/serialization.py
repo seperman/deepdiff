@@ -177,6 +177,8 @@ class SerializationMixin:
                         if isinstance(value, Mapping) and 'old_value' in value:
                             del value['old_value']
         if self._numpy_paths:
+            # Note that keys that start with '_' are considered internal to DeepDiff
+            # and will be omitted when counting distance. (Look inside the distance module.)
             result['_numpy_paths'] = self._numpy_paths
 
         return deepcopy(dict(result))

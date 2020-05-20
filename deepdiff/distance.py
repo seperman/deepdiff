@@ -75,6 +75,7 @@ def _get_item_length(item, parents_ids=frozenset([])):
     length = 0
     if isinstance(item, Mapping):
         for key, subitem in item.items():
+            # dedupe the repetition report so the number of times items have shown up does not affect the distance.
             if key in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
                 new_subitem = {}
                 for path_, indexes_to_items in subitem.items():
@@ -87,6 +88,10 @@ def _get_item_length(item, parents_ids=frozenset([])):
                             new_indexes_to_items[k] = v
                     new_subitem[path_] = new_indexes_to_items
                 subitem = new_subitem
+
+            # internal keys such as _numpy_paths should not count towards the distance
+            if isinstance(key, strings) and key.startswith('_'):
+                continue
 
             item_id = id(subitem)
             if parents_ids and item_id in parents_ids:

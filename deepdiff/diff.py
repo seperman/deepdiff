@@ -223,6 +223,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if self.is_root:
                 if _purge_cache:
                     del self._cache
+                del self.shared_parameters
+                del self.parameters
             if repeated_timer:
                 duration = repeated_timer.stop()
                 self._stats['DURATION SEC'] = duration
@@ -684,6 +686,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 parameters=self.parameters,
                 shared_parameters=self.shared_parameters,
                 view=DELTA_VIEW)
+                # parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
             _distance = diff.get_deep_distance()
             _distance = Decimal(self.number_to_string(
                 _distance,

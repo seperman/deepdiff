@@ -52,13 +52,6 @@ class DeltaNumpyOperatorOverrideError(ValueError):
     pass
 
 
-class NDArrayDetected(Exception):
-    """
-    Numpy NdArray detected
-    """
-    pass
-
-
 class Delta:
     r"""
     **Delta**
@@ -221,8 +214,6 @@ class Delta:
                     obj[elem] = value
                 except IndexError:
                     if elem == len(obj):
-                        if isinstance(obj, np_ndarray):
-                            raise NDArrayDetected('Can not append to ndarray')
                         obj.append(value)
                     else:
                         self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path_for_err_reporting))
