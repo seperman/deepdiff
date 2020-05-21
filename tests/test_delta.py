@@ -1187,3 +1187,25 @@ class TestDeltaOther:
                     'old_type': CustomClass}}}
 
         assert expected == diff
+
+    def test_numpy_type_invalid(self):
+        t1 = np.array([[1, 2, 3], [4, 2, 2]], np.int8)
+        diff = {
+            'iterable_item_added': {'root[2]': [7, 8, 9]},
+            'values_changed': {
+                'root[0][2]': {
+                    'new_value': 5
+                },
+                'root[1][1]': {
+                    'new_value': 1
+                }
+            },
+            '_numpy_paths': {
+                'root': 'int88'
+            }
+        }
+
+        delta = Delta(diff, raise_errors=True)
+        with pytest.raises(DeltaError) as excinfo:
+            delta + t1
+        assert "'int88' is not a valid numpy type." == str(excinfo.value)

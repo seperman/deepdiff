@@ -231,10 +231,11 @@ class Delta:
         Also reassign it to its parent to replace the old object.
         """
         self.post_process_paths_to_convert[elements[:-1]] = {'old_type': to_type, 'new_type': from_type}
-        if from_type is np_ndarray:
-            obj = obj.tolist()
-        else:
-            obj = to_type(obj)
+        # If this function is going to ever be used to convert numpy arrays, uncomment these lines:
+        # if from_type is np_ndarray:
+        #     obj = obj.tolist()
+        # else:
+        obj = to_type(obj)
 
         if parent:
             # Making sure that the object is re-instated inside the parent especially if it was immutable

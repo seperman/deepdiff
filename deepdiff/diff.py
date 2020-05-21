@@ -31,6 +31,7 @@ from deepdiff.model import (
     SetRelationship, NumpyArrayRelationship)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
+from deepdiff.lfucache import LFUCache
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  max_diffs=None,
                  cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
                  log_frequency_in_sec=0,
-                 progress_logger=logger.warning,
+                 progress_logger=logger.info,
+                 cache_size=5000,
                  _stats=None,
                  _cache=None,
                  _numpy_paths=None,
@@ -116,7 +118,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
                 "ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, _stats, _numpy_paths, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
+                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, _stats, _numpy_paths, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -183,7 +185,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if _cache == 'keep':
                 _purge_cache = False
             # Caching the DeepDiff results for dynamic programming
-            self._cache = defaultdict(lambda: defaultdict(OrderedSet))
+            # self._cache = defaultdict(lambda: defaultdict(OrderedSet))
+            self._cache = LFUCache(cache_size)
             self._stats = {
                 PASSES_COUNT: 0,
                 DIFF_COUNT: 0,
@@ -203,6 +206,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if log_frequency_in_sec:
                 # Creating a progress log reporter that runs in a separate thread every log_frequency_in_sec seconds.
                 repeated_timer = RepeatedTimer(log_frequency_in_sec, _report_progress, self._stats, progress_logger)
+                logging.basicConfig(level=logging.INFO)
             else:
                 repeated_timer = None
 
@@ -228,6 +232,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if repeated_timer:
                 duration = repeated_timer.stop()
                 self._stats['DURATION SEC'] = duration
+                logger.info('stats {}'.format(self.get_stats()))
 
     def __get_deephash_params(self):
         result = {key: self.parameters[key] for key in (
@@ -268,7 +273,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             parent_level = level.up
             if parent_level:
                 cache_key = parent_level.get_cache_key(self.hashes)
-                self._cache[cache_key][report_type].add(level)
+                self._cache.set(key=cache_key, report_type=report_type, value=level)
 
     @staticmethod
     def __dict_from_slots(object):
@@ -667,7 +672,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         cache_key = self.__get_distance_cache_key(added_hash, removed_hash)
         if cache_key in self._cache:
             self._stats[DISTANCE_CACHE_HIT_COUNT] += 1
-            _current_value = self._cache[cache_key]
+            _current_value = self._cache.get(cache_key)
             # We are in a self loop. Get out now!
             if _current_value == INPROGRESS:
                 _distance = 1
@@ -677,7 +682,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # Marking the cache as in progress so we avoid calculating the same distance
             # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
             # in the object.
-            self._cache[cache_key] = INPROGRESS
+            self._cache.set(cache_key, value=INPROGRESS)
             # We can only cache the rough distance and not the actual diff result for reuse.
             # The reason is that we have modified the parameters explicitly so they are different and can't
             # be used for diff reporting
@@ -686,13 +691,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 parameters=self.parameters,
                 shared_parameters=self.shared_parameters,
                 view=DELTA_VIEW)
-                # parameters=self.parameters, hashes=self.hashes, _stats=self._stats, _cache=self._cache, view=DELTA_VIEW)
             _distance = diff.get_deep_distance()
             _distance = Decimal(self.number_to_string(
                 _distance,
                 significant_digits=self._deep_distance_buckets_exponent,
                 number_format_notation=self.number_format_notation))
-            self._cache[cache_key] = _distance
+            self._cache.set(cache_key, value=_distance)
         return _distance
 
     def __get_most_in_common_pairs_in_iterables(self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable):
@@ -714,7 +718,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         """
         cache_key = combine_hashes_lists(items=[hashes_added, hashes_removed], prefix='pairs_cache')
         if cache_key in self._cache:
-            return self._cache[cache_key].copy()
+            return self._cache.get(cache_key).copy()
 
         # A dictionary of hashes to distances and each distance to an ordered set of hashes.
         # It tells us about the distance of each object from other objects.
@@ -776,7 +780,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         inverse_pairs = {v: k for k, v in pairs.items()}
         pairs.update(inverse_pairs)
-        self._cache[cache_key] = pairs
+        self._cache.set(cache_key, value=pairs)
         return pairs.copy()
 
     def __diff_iterable_with_deephash(self, level, parents_ids):
@@ -1016,7 +1020,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if cache_key in self._cache:
             cache_hit = True
             self._stats[LEVEL_CACHE_HIT_COUNT] += 1
-            for report_key, report_values in self._cache[cache_key].items():
+            for report_key, report_values in self._cache.get(cache_key).items():
                 for report_level in report_values:
                     new_report = report_level.stitch_to_parent(level)
                     if new_report is not skipped:
