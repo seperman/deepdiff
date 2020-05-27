@@ -1048,7 +1048,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=NumpyArrayRelationship,
                         child_relationship_param=t1_path)
 
-                    self.__diff_iterable_with_deephash(new_level, parents_ids)
+                    self.__diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type)
 
     def __diff_types(self, level):
         """Diff types"""
