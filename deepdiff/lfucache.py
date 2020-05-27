@@ -200,3 +200,15 @@ class LFUCache:
         result = [(i, freq.freq_node.freq) for i, freq in self.cache.items()]
         result.sort(key=lambda x: -x[1])
         return result
+
+
+class DummyLFU:
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    set = __init__
+    get = __init__
+
+    def __contains__(self, key):
+        return False

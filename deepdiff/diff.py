@@ -21,9 +21,9 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             np)
+                             np, cartesian_product_numpy, np_array_factory)
 from deepdiff.serialization import SerializationMixin
-from deepdiff.distance import DistanceMixin
+from deepdiff.distance import DistanceMixin, _get_numpy_array_distance
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship,
@@ -31,7 +31,10 @@ from deepdiff.model import (
     SetRelationship, NumpyArrayRelationship)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
-from deepdiff.lfucache import LFUCache
+from deepdiff.lfucache import LFUCache, DummyLFU
+# from colorama import init as colorama_init
+# colorama_init()
+# from colorama import Fore, Back, Style
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,7 @@ CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff si
 INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
-CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = Decimal('0.3')
+CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
 
 class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
@@ -109,16 +112,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  _stats=None,
                  _cache=None,
                  _numpy_paths=None,
+                 _original_type=None,
                  **kwargs):
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_private_variables, "
-                "ignore_nan_inequality, number_to_string_func, verbose_level, "
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
+                "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, _stats, _numpy_paths, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
+                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, _stats, _numpy_paths, _original_type "
+                "parameters and shared_parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -161,7 +166,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # For huge lists, this number may need to be modified at the cost of more memory usage.
             # Only used when ignore_order = True.
             self.max_distances_to_keep_track_per_item = max_distances_to_keep_track_per_item
-            self.cutoff_distance_for_pairs = cutoff_distance_for_pairs
+            self.cutoff_distance_for_pairs = float(cutoff_distance_for_pairs)
             # _deep_distance_buckets_exponent is only used for the number of buckets of distances when doing ignore_order=True calculations
             # The actual number of buckets will be 10 to the power of the _deep_distance_buckets_exponent
             self._deep_distance_buckets_exponent = len(str(self.max_passes)) + 3  # Adding some padding to it.
@@ -172,6 +177,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             parameters = self.__dict__.copy()
 
         _purge_cache = True
+
         if shared_parameters:
             self.is_root = False
             self.shared_parameters = shared_parameters
@@ -185,8 +191,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if _cache == 'keep':
                 _purge_cache = False
             # Caching the DeepDiff results for dynamic programming
-            # self._cache = defaultdict(lambda: defaultdict(OrderedSet))
-            self._cache = LFUCache(cache_size)
+            self._cache = LFUCache(cache_size) if cache_size else DummyLFU()
             self._stats = {
                 PASSES_COUNT: 0,
                 DIFF_COUNT: 0,
@@ -218,7 +223,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         try:
             root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
-            self.__diff(root, parents_ids=frozenset({id(t1)}))
+            # _original_type is only used to pass the original type of the data. Currently only used for numpy arrays.
+            # The reason is that we convert the numpy array to python list and then later for distance calculations
+            # we convert only the the last dimension of it into numpy arrays.
+            self.__diff(root, parents_ids=frozenset({id(t1)}), _original_type=_original_type)
 
             self.tree.remove_empty_keys()
             view_results = self._get_view_results(self.view)
@@ -502,14 +510,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         except AttributeError:
             return False
 
-    def __diff_iterable(self, level, parents_ids=frozenset({})):
+    def __diff_iterable(self, level, parents_ids=frozenset({}), _original_type=None):
         """Difference of iterables"""
         if self.ignore_order:
-            self.__diff_iterable_with_deephash(level, parents_ids)
+            self.__diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
         else:
-            self.__diff_iterable_in_order(level, parents_ids)
+            self.__diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
 
-    def __diff_iterable_in_order(self, level, parents_ids=frozenset({})):
+    def __diff_iterable_in_order(self, level, parents_ids=frozenset({}), _original_type=None):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
@@ -624,13 +632,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 # It only includes the ones needed when comparing iterables.
                 # The self.hashes dictionary gets shared between different runs of DeepHash
                 # So that any object that is already calculated to have a hash is not re-calculated.
-                hashes_all = DeepHash(item,
-                                      hashes=self.hashes,
-                                      parent=parent,
-                                      apply_hash=True,
-                                      **self.deephash_parameters,
-                                      )
-                item_hash = hashes_all[item]
+                deep_hash = DeepHash(item,
+                                     hashes=self.hashes,
+                                     parent=parent,
+                                     apply_hash=True,
+                                     **self.deephash_parameters,
+                                     )
+                item_hash = deep_hash[item]
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %
@@ -667,7 +675,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             removed_hash = removed_hash.encode('utf-8')
         return b'distance_cache' + added_hash + b'--' + removed_hash
 
-    def __get_and_cache_rough_distance(self, added_hash, removed_hash, added_hash_obj, removed_hash_obj):
+    def __get_and_cache_rough_distance(
+            self, added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type=None):
         # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
         cache_key = self.__get_distance_cache_key(added_hash, removed_hash)
         if cache_key in self._cache:
@@ -690,18 +699,24 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 removed_hash_obj.item, added_hash_obj.item,
                 parameters=self.parameters,
                 shared_parameters=self.shared_parameters,
-                view=DELTA_VIEW)
+                view=DELTA_VIEW,
+                _original_type=_original_type)
             _distance = diff.get_deep_distance()
-            _distance = Decimal(self.number_to_string(
-                _distance,
-                significant_digits=self._deep_distance_buckets_exponent,
-                number_format_notation=self.number_format_notation))
+            # TODO: Do we really need to consider the significant digits in rounding distance calculations?
+            # _distance = Decimal(self.number_to_string(
+            #     _distance,
+            #     significant_digits=self._deep_distance_buckets_exponent,
+            #     number_format_notation=self.number_format_notation))
             self._cache.set(cache_key, value=_distance)
         return _distance
 
-    def __get_most_in_common_pairs_in_iterables(self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable):
+    def __get_most_in_common_pairs_in_iterables(
+            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
         """
         Get the closest pairs between items that are removed and items that are added.
+
+        returns a dictionary of hashes that are closest to each other.
+        The dictionary is going to be symmetrical so any key will be a value too and otherwise.
 
         Note that due to the current reporting structure in DeepDiff, we don't compare an item that
         was added to an item that is in both t1 and t2.
@@ -728,15 +743,30 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         most_in_common_pairs = defaultdict(lambda: defaultdict(OrderedSetPlus))
         pairs = {}
 
+        pre_calced_distances = None
+
+        if hashes_added and hashes_removed and np:
+            # pre-calculates distances ONLY for 1D arrays whether an _original_type
+            # was explicitly passed or a homogeneous array is detected.
+            # Numpy is needed for this optimization.
+            pre_calced_distances = self._precalculate_numpy_arrays_distance(
+                hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
+            if pre_calced_distances:
+                # We will be using all the values in this cache
+                self._stats[DISTANCE_CACHE_HIT_COUNT] += len(pre_calced_distances)
+
         for added_hash in hashes_added:
             for removed_hash in hashes_removed:
                 added_hash_obj = t2_hashtable[added_hash]
                 removed_hash_obj = t1_hashtable[removed_hash]
 
-                _distance = self.__get_and_cache_rough_distance(
-                    added_hash, removed_hash, added_hash_obj, removed_hash_obj)
+                if pre_calced_distances:
+                    _distance = pre_calced_distances["{}--{}".format(added_hash, removed_hash)]
+                else:
+                    _distance = self.__get_and_cache_rough_distance(
+                        added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type)
                 # Left for future debugging
-                # print(f'{bcolors.HEADER}distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}{bcolors.ENDC}')
+                # print(f'{Fore.RED}distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}{Style.RESET_ALL}')
                 # Discard potential pairs that are too far.
                 if _distance >= self.cutoff_distance_for_pairs:
                     continue
@@ -783,21 +813,31 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self._cache.set(cache_key, value=pairs)
         return pairs.copy()
 
-    def __diff_iterable_with_deephash(self, level, parents_ids):
-        """Diff of unhashable iterables. Only used when ignoring the order."""
-        t1_hashtable = self.__create_hashtable(level, 't1')
-        t2_hashtable = self.__create_hashtable(level, 't2')
+    def __diff_iterable_with_deephash(self, level, parents_ids, _original_type=None):
+        """Diff of hashable or unhashable iterables. Only used when ignoring the order."""
 
-        t1_hashes = OrderedSet(t1_hashtable.keys())
-        t2_hashes = OrderedSet(t2_hashtable.keys())
+        print(f"level.t1: {level.t1}, level.t2: {level.t2}, _original_type: {_original_type}")
 
+        full_t1_hashtable = self.__create_hashtable(level, 't1')
+        full_t2_hashtable = self.__create_hashtable(level, 't2')
+        t1_hashes = OrderedSet(full_t1_hashtable.keys())
+        t2_hashes = OrderedSet(full_t2_hashtable.keys())
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
+        # reduce the size of hashtables
+        if self.report_repetition:
+            t1_hashtable = full_t1_hashtable
+            t2_hashtable = full_t2_hashtable
+        else:
+            t1_hashtable = {k: v for k, v in full_t1_hashtable.items() if k in hashes_removed}
+            t2_hashtable = {k: v for k, v in full_t2_hashtable.items() if k in hashes_added}
+
         if self._stats[PASSES_COUNT] < self.max_passes:
             self._stats[PASSES_COUNT] += 1
+
             pairs = self.__get_most_in_common_pairs_in_iterables(
-                hashes_added, hashes_removed, t1_hashtable, t2_hashtable)
+                hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
         else:
             if not self._stats[MAX_PASS_LIMIT_REACHED]:
                 self._stats[MAX_PASS_LIMIT_REACHED] = True
@@ -981,21 +1021,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     pass    # do detailed checking below
 
         # compare array meta-data
+        # converting to python list with the current algorithm increases the performance by 15% !!!
+        _original_type = level.t1.dtype
         if level.t1.shape != level.t2.shape:
             level.t1 = level.t1.tolist()
             level.t2 = level.t2.tolist()
-            self.__diff_iterable(level, parents_ids)
+            self.__diff_iterable(level, parents_ids, _original_type=_original_type)
         else:
             # metadata same -- the difference is in the content
             shape = level.t1.shape
             dimensions = len(shape)
             if dimensions == 1:
-                self.__diff_iterable(level, parents_ids)
+                self.__diff_iterable(level, parents_ids, _original_type=_original_type)
             elif self.ignore_order:
                 # convert to list
                 level.t1 = level.t1.tolist()
                 level.t2 = level.t2.tolist()
-                self.__diff_iterable(level, parents_ids)
+                self.__diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
             else:
                 for (t1_path, t1_row), (t2_path, t2_row) in zip(
                         get_numpy_ndarray_rows(level.t1, shape),
@@ -1007,7 +1049,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=NumpyArrayRelationship,
                         child_relationship_param=t1_path)
 
-                    self.__diff_iterable(new_level, parents_ids)
+                    self.__diff_iterable_with_deephash(new_level, parents_ids)
 
     def __diff_types(self, level):
         """Diff types"""
@@ -1035,7 +1077,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             return StopIteration
         self._stats[DIFF_COUNT] += 1
 
-    def __diff(self, level, parents_ids=frozenset({})):
+    def __diff(self, level, parents_ids=frozenset({}), _original_type=None):
         """The main diff method"""
         if self.__count_diff() is StopIteration:
             return
@@ -1085,7 +1127,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.__diff_numpy_array(level, parents_ids)
 
         elif isinstance(level.t1, Iterable):
-            self.__diff_iterable(level, parents_ids)
+            self.__diff_iterable(level, parents_ids, _original_type=_original_type)
 
         else:
             self.__diff_obj(level, parents_ids)

@@ -5,7 +5,7 @@ from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
     cartesian_product_of_shape, literal_eval_extended,
-    not_found, OrderedSetPlus,
+    not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy
 )
 
 
@@ -90,3 +90,31 @@ class TestHelper:
         with pytest.raises(KeyError) as excinfo:
             obj.lpop()
         assert str(excinfo.value) == "'lpop from an empty set'"
+
+    @pytest.mark.parametrize('array1, array2, expected', [
+        (np.array([3, 1, 2, 4, 3]), np.array([5, 2, 4]), [3, 1, 3]),
+        (np.array([5, 2, 4]), np.array([3, 1, 2, 4, 3]), [5]),
+    ])
+    def test_diff_numpy_array(self, array1, array2, expected):
+        result = diff_numpy_array(array1, array2)
+        assert expected == result.tolist()
+
+    def test_cartesian_product_numpy(self):
+        result = cartesian_product_numpy(np.array([3, 1, 2, 4, 3]), np.array([5, 2, 4]))
+        expected = [
+            [3, 5],
+            [3, 2],
+            [3, 4],
+            [1, 5],
+            [1, 2],
+            [1, 4],
+            [2, 5],
+            [2, 2],
+            [2, 4],
+            [4, 5],
+            [4, 2],
+            [4, 4],
+            [3, 5],
+            [3, 2],
+            [3, 4]]
+        assert expected == result.tolist()

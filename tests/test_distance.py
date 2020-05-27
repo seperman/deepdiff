@@ -1,10 +1,12 @@
 import pytest
-import time
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.helper import np
 from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length, _get_numbers_distance, get_numeric_types_distance
+from deepdiff.distance import (
+    _get_item_length, _get_numbers_distance, get_numeric_types_distance,
+    _get_numpy_array_distance)
 from tests import CustomClass
 
 
@@ -180,6 +182,15 @@ class TestDeepDistance:
     def test_get_numbers_distance(self, num1, num2, max_, expected):
         result = _get_numbers_distance(num1, num2, max_)
         assert abs(expected - result) < 0.0001
+
+    @pytest.mark.parametrize('arr1, arr2', [
+        (np.array([4.1978, 4.1979, 4.1980]), np.array([4.1971, 4.1879, 4.1981])),
+        (np.array([1, 2, 4]), np.array([4, 2, 3])),
+    ])
+    def test_numpy_distance_vs_get_numbers_distance(self, arr1, arr2):
+        dist_arr = _get_numpy_array_distance(arr1, arr2)
+        for i in range(3):
+            assert dist_arr[i] == _get_numbers_distance(arr1[i], arr2[i])
 
     @pytest.mark.parametrize('num1, num2, max_, expected', [
         (10, -10.1, .3, 0.3),
