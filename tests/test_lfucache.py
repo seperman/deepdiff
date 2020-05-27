@@ -14,7 +14,7 @@ class TestLFUcache:
     def test_lfu(self, items, size, expected_results):
         lfucache = LFUCache(size)
         for item in items:
-            lfucache.set(item, value=f'{item}_cached')
+            lfucache.set(item, value='{}_cached'.format(item))
         for item in items:
             lfucache.get(item)
         results = lfucache.get_sorted_cache_keys()

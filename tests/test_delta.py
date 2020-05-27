@@ -120,7 +120,8 @@ class TestBasicsOfDelta:
         with pytest.raises(DeltaError) as excinfo:
             delta._simple_set_elem_value(
                 obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
-        assert "Failed to set mypath due to unhashable type: 'set'" == str(excinfo.value)
+        assert str(excinfo.value) in {"Failed to set mypath due to unhashable type: 'set'",
+                                      "Failed to set mypath due to 'set' objects are unhashable"}
 
     def test_simple_delete_elem(self):
         delta = Delta({}, raise_errors=True)
