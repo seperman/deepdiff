@@ -815,8 +815,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def __diff_iterable_with_deephash(self, level, parents_ids, _original_type=None):
         """Diff of hashable or unhashable iterables. Only used when ignoring the order."""
 
-        print(f"level.t1: {level.t1}, level.t2: {level.t2}, _original_type: {_original_type}")
-
         full_t1_hashtable = self.__create_hashtable(level, 't1')
         full_t2_hashtable = self.__create_hashtable(level, 't2')
         t1_hashes = OrderedSet(full_t1_hashtable.keys())
