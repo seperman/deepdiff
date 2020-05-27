@@ -10,7 +10,6 @@ import logging
 from copy import deepcopy
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
-from decimal import Decimal
 from itertools import zip_longest
 from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdded, notpresent,
@@ -21,9 +20,9 @@ from deepdiff.helper import (strings, bytes_type, numbers, ListItemRemovedOrAdde
                              number_to_string, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             np, cartesian_product_numpy, np_array_factory)
+                             np)
 from deepdiff.serialization import SerializationMixin
-from deepdiff.distance import DistanceMixin, _get_numpy_array_distance
+from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship,
