@@ -11,7 +11,7 @@ from deepdiff.delta import (
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
-    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG)
+    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG, NOT_VALID_NUMPY_TYPE)
 
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
@@ -931,6 +931,17 @@ class TestNumpyDelta:
         else:
             result = delta + t1
             assert np.array_equal(result, expected_result)
+
+    def test_invalid_numpy_type(self):
+
+        t1 = np.array([1, 2, 3], np.int8)
+        delta_dict = {'iterable_item_added': {'root[2]': 5}, '_numpy_paths': {'root': 'int11'}}
+
+        with pytest.raises(DeltaError) as excinfo:
+            Delta(delta_dict, raise_errors=True) + t1
+
+        expected_msg = NOT_VALID_NUMPY_TYPE.format("'int11'")
+        assert expected_msg == str(excinfo.value)
 
 
 class TestDeltaOther:

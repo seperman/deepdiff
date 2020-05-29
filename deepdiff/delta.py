@@ -36,6 +36,7 @@ UNABLE_TO_GET_ITEM_MSG = 'Unable to get the item at {}: {}'
 UNABLE_TO_GET_PATH_MSG = 'Unable to get the item at {}'
 INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Unable to add the following items at the specific indexes. {}'
 NUMPY_TO_LIST = 'NUMPY_TO_LIST'
+NOT_VALID_NUMPY_TYPE = "{} is not a valid numpy type."
 
 
 class DeltaError(ValueError):
@@ -337,7 +338,7 @@ class Delta:
                 try:
                     type_ = numpy_dtype_string_to_type(type_)
                 except Exception as e:
-                    self._raise_or_log("{} is not a valid numpy type.".format(e))
+                    self._raise_or_log(NOT_VALID_NUMPY_TYPE.format(e))
                     continue
                 self.post_process_paths_to_convert[path] = {'old_type': list, 'new_type': type_}
             if preprocess_paths:
