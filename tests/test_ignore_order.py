@@ -56,7 +56,7 @@ class TestIgnoreOrder:
     def test_ignore_order_depth5(self):
         t1 = [4, 2, 2, 1]
         t2 = [4, 1, 1, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, _cache='keep')
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, purge_level=0)
         expected = {
             'iterable_item_removed': {
                 'root[1]': 2,
@@ -74,8 +74,8 @@ class TestIgnoreOrder:
         }
         assert expected == ddiff
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False)
-        dist = ddiff.get_deep_distance()
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False, purge_level=0)
+        dist = ddiff._get_rough_distance()
         assert 0.1 == dist
 
     def test_ignore_order_depth6(self):
@@ -641,9 +641,9 @@ class TestIgnoreOrder:
         diff = DeepDiff(t1, t2, ignore_order=True)
         expected = {
             'PASSES COUNT': 5,
-            'DIFF COUNT': 47,
+            'DIFF COUNT': 29,
             'LEVEL CACHE HIT COUNT': 2,
-            'DISTANCE CACHE HIT COUNT': 8,
+            'DISTANCE CACHE HIT COUNT': 26,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False
         }

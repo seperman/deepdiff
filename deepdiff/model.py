@@ -131,6 +131,7 @@ class TextResult(ResultDict):
         self._from_tree_set_item_removed(tree)
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
+        self._from_tree_deep_distance(tree)
 
     def _from_tree_default(self, tree, report_type):
         if report_type in tree:
@@ -223,6 +224,10 @@ class TextResult(ResultDict):
                 self['repetition_change'][path] = RemapDict(change.additional[
                     'repetition'])
                 self['repetition_change'][path]['value'] = change.t1
+
+    def _from_tree_deep_distance(self, tree):
+        if 'deep_distance' in tree:
+            self['deep_distance'] = tree['deep_distance']
 
 
 class DeltaResult(TextResult):
@@ -605,12 +610,12 @@ class DiffLevel:
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
         cache_key = "{}{}".format(force, get_parent_too)
         if cache_key in self._path:
-            result = self._path[cache_key]
+            cached = self._path[cache_key]
             if get_parent_too:
-                # parent, param, result
-                return (self._format_result(root, result[0]), result[1], self._format_result(root, result[2]))
+                parent, param, result = cached
+                return (self._format_result(root, parent), param, self._format_result(root, result))
             else:
-                return self._format_result(root, result)
+                return self._format_result(root, cached)
 
         result = parent = param = ""
         level = self.all_up  # start at the root
@@ -638,12 +643,13 @@ class DiffLevel:
             # Prepare processing next level
             level = level.down
 
-        self._path[force] = result
-        result = self._format_result(root, result)
         if get_parent_too:
-            parent = self._format_result(root, parent)
-            return (parent, param, result)
-        return result
+            self._path[cache_key] = (parent, param, result)
+            output = (self._format_result(root, parent), param, self._format_result(root, result))
+        else:
+            self._path[cache_key] = result
+            output = self._format_result(root, result)
+        return output
 
     def create_deeper(self,
                       new_t1,
@@ -691,8 +697,8 @@ class DiffLevel:
         new_parent.down, new_self.up = new_self, new_parent
         new_parent.t2_child_rel = self.up.t2_child_rel
         new_parent.t1_child_rel = self.up.t1_child_rel
-        # flush the path cache if any
-        new_self._path.clear()
+        # make a new dictionary for the path so it is not shared.
+        new_self._path = {}
         return new_self
 
     def copy(self):

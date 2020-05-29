@@ -8,6 +8,7 @@ import time
 from ast import literal_eval
 from decimal import Decimal, localcontext
 from collections import namedtuple
+from itertools import repeat
 from ordered_set import OrderedSet
 from threading import Timer
 
@@ -490,3 +491,49 @@ def datetime_normalize(truncate_datetime, obj):
     elif isinstance(obj, datetime.time):
         obj = time_to_seconds(obj)
     return obj
+
+
+def cartesian_product_numpy(*arrays):
+    """
+    Cartesian product of Numpy arrays by Paul Panzer
+    https://stackoverflow.com/a/49445693/1497443
+    """
+    la = len(arrays)
+    dtype = np.result_type(*arrays)
+    arr = np.empty((la, *map(len, arrays)), dtype=dtype)
+    idx = slice(None), *repeat(None, la)
+    for i, a in enumerate(arrays):
+        arr[i, ...] = a[idx[:la - i]]
+    return arr.reshape(la, -1).T
+
+
+def diff_numpy_array(A, B):
+    """
+    Numpy Array A - B
+    return items in A that are not in B
+    By Divakar
+    https://stackoverflow.com/a/52417967/1497443
+    """
+    return A[~np.in1d(A, B)]
+
+
+PYTHON_TYPE_TO_NUMPY_TYPE = {
+    int: np_int64,
+    float: np_float64,
+    Decimal: np_float64
+}
+
+
+def get_homogeneous_numpy_compatible_type_of_seq(seq):
+    """
+    Return with the numpy dtype if the array can be converted to a non-object numpy array.
+    Originally written by mgilson https://stackoverflow.com/a/13252348/1497443
+    This is the modified version.
+    """
+    iseq = iter(seq)
+    first_type = type(next(iseq))
+    if first_type in {int, float, Decimal}:
+        type_ = first_type if all((type(x) is first_type) for x in iseq ) else False
+        return PYTHON_TYPE_TO_NUMPY_TYPE.get(type_, False)
+    else:
+        return False

@@ -36,6 +36,7 @@ UNABLE_TO_GET_ITEM_MSG = 'Unable to get the item at {}: {}'
 UNABLE_TO_GET_PATH_MSG = 'Unable to get the item at {}'
 INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Unable to add the following items at the specific indexes. {}'
 NUMPY_TO_LIST = 'NUMPY_TO_LIST'
+NOT_VALID_NUMPY_TYPE = "{} is not a valid numpy type."
 
 
 class DeltaError(ValueError):
@@ -231,10 +232,11 @@ class Delta:
         Also reassign it to its parent to replace the old object.
         """
         self.post_process_paths_to_convert[elements[:-1]] = {'old_type': to_type, 'new_type': from_type}
-        if from_type is np_ndarray:
-            obj = obj.tolist()
-        else:
-            obj = to_type(obj)
+        # If this function is going to ever be used to convert numpy arrays, uncomment these lines:
+        # if from_type is np_ndarray:
+        #     obj = obj.tolist()
+        # else:
+        obj = to_type(obj)
 
         if parent:
             # Making sure that the object is re-instated inside the parent especially if it was immutable
@@ -336,8 +338,8 @@ class Delta:
                 try:
                     type_ = numpy_dtype_string_to_type(type_)
                 except Exception as e:
-                    self._raise_or_log("{} is not a valid numpy type.".format(e))
-                    continue
+                    self._raise_or_log(NOT_VALID_NUMPY_TYPE.format(e))
+                    continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
                 self.post_process_paths_to_convert[path] = {'old_type': list, 'new_type': type_}
             if preprocess_paths:
                 self._do_values_or_type_changed(preprocess_paths, is_type_change=True)

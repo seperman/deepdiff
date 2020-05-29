@@ -1,12 +1,17 @@
 import datetime
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, time_to_seconds
+from deepdiff.helper import (
+    DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
+    cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq)
 from collections.abc import Mapping, Iterable
+
+
+DISTANCE_CALCS_NEEDS_CACHE = "Distance calculation can not happen once the cache is purged. Try with _cache='keep'"
 
 
 class DistanceMixin:
 
-    def get_deep_distance(self):
+    def _get_rough_distance(self):
         """
         Gives a numeric value for the distance of t1 and t2 based on how many operations are needed to convert
         one to the other.
@@ -50,6 +55,8 @@ class DistanceMixin:
         item: The item to calculate the rough length for
         parent: It is only used for DeepHash reporting purposes. Not really useful here.
         """
+        if not hasattr(self, 'hashes'):
+            raise RuntimeError(DISTANCE_CALCS_NEEDS_CACHE)
         length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         if length is None:
             self.__calculate_item_deephash(item)
@@ -64,6 +71,43 @@ class DistanceMixin:
             apply_hash=True,
             **self.deephash_parameters,
         )
+
+    def _precalculate_numpy_arrays_distance(
+            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
+
+        # We only want to deal with 1D arrays.
+        if isinstance(t2_hashtable[hashes_added[0]].item, (np_ndarray, list)):
+            return
+
+        pre_calced_distances = {}
+        added = [t2_hashtable[k].item for k in hashes_added]
+        removed = [t1_hashtable[k].item for k in hashes_removed]
+
+        if _original_type is None:
+            added_numpy_compatible_type = get_homogeneous_numpy_compatible_type_of_seq(added)
+            removed_numpy_compatible_type = get_homogeneous_numpy_compatible_type_of_seq(removed)
+            if added_numpy_compatible_type and added_numpy_compatible_type == removed_numpy_compatible_type:
+                _original_type = added_numpy_compatible_type
+        if _original_type is None:
+            return
+
+        added = np_array_factory(added, dtype=_original_type)
+        removed = np_array_factory(removed, dtype=_original_type)
+
+        pairs = cartesian_product_numpy(added, removed)
+
+        pairs_transposed = pairs.T
+
+        distances = _get_numpy_array_distance(
+            pairs_transposed[0], pairs_transposed[1],
+            max_=self.cutoff_distance_for_pairs)
+
+        i = 0
+        for added_hash in hashes_added:
+            for removed_hash in hashes_removed:
+                pre_calced_distances["{}--{}".format(added_hash, removed_hash)] = distances[i]
+                i += 1
+        return pre_calced_distances
 
 
 def _get_item_length(item, parents_ids=frozenset([])):
@@ -90,7 +134,7 @@ def _get_item_length(item, parents_ids=frozenset([])):
                 subitem = new_subitem
 
             # internal keys such as _numpy_paths should not count towards the distance
-            if isinstance(key, strings) and key.startswith('_'):
+            if isinstance(key, strings) and (key.startswith('_') or key == 'deep_distance'):
                 continue
 
             item_id = id(subitem)
@@ -126,21 +170,46 @@ def _get_numbers_distance(num1, num2, max_=1):
     The reason is the
     When max is returned means the 2 numbers are really far, and 0 means they are equal.
     """
-    try:
-        # Since we have a default cutoff of 0.3 distance when
-        # getting the pairs of items during the ingore_order=True
-        # calculations, we need to make the divisor of comparison very big
-        # so that any 2 numbers can be chosen as pairs.
-        divisor = (num1 + num2) / max_
-    except Exception:
+    if num1 == num2:
+        return 0
+    if isinstance(num1, float):
+        num1 = float(num1)
+    if isinstance(num2, float):
+        num2 = float(num2)
+    # Since we have a default cutoff of 0.3 distance when
+    # getting the pairs of items during the ingore_order=True
+    # calculations, we need to make the divisor of comparison very big
+    # so that any 2 numbers can be chosen as pairs.
+    divisor = (num1 + num2) / max_
+    if divisor == 0:
         return max_
-    else:
-        if not divisor:
-            return max_
-        try:
-            return min(max_, abs((num1 - num2) / divisor))
-        except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
-            return max_  # pragma: no cover
+    try:
+        return min(max_, abs((num1 - num2) / divisor))
+    except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
+        return max_  # pragma: no cover
+
+
+def _numpy_div(a, b, replace_inf_with=1):
+    max_array = np.full(shape=a.shape, fill_value=replace_inf_with, dtype=np_float64)
+    result = np.divide(a, b, out=max_array, where=b != 0, dtype=np_float64)
+    # wherever 2 numbers are the same, make sure the distance is zero. This is mainly for 0 divided by zero.
+    result[a == b] = 0
+    return result
+
+
+def _get_numpy_array_distance(num1, num2, max_=1):
+    """
+    Get the distance of 2 numbers. The output is a number between 0 to the max.
+    The reason is the
+    When max is returned means the 2 numbers are really far, and 0 means they are equal.
+    """
+    # Since we have a default cutoff of 0.3 distance when
+    # getting the pairs of items during the ingore_order=True
+    # calculations, we need to make the divisor of comparison very big
+    # so that any 2 numbers can be chosen as pairs.
+    divisor = (num1 + num2) / max_
+    result = _numpy_div((num1 - num2), divisor, replace_inf_with=max_)
+    return np.clip(np.absolute(result), 0, max_)
 
 
 def _get_datetime_distance(date1, date2, max_):

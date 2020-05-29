@@ -11,7 +11,7 @@ from deepdiff.delta import (
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
-    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG)
+    FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG, NOT_VALID_NUMPY_TYPE)
 
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
@@ -120,7 +120,8 @@ class TestBasicsOfDelta:
         with pytest.raises(DeltaError) as excinfo:
             delta._simple_set_elem_value(
                 obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
-        assert "Failed to set mypath due to unhashable type: 'set'" == str(excinfo.value)
+        assert str(excinfo.value) in {"Failed to set mypath due to unhashable type: 'set'",
+                                      "Failed to set mypath due to 'set' objects are unhashable"}
 
     def test_simple_delete_elem(self):
         delta = Delta({}, raise_errors=True)
@@ -931,6 +932,17 @@ class TestNumpyDelta:
             result = delta + t1
             assert np.array_equal(result, expected_result)
 
+    def test_invalid_numpy_type(self):
+
+        t1 = np.array([1, 2, 3], np.int8)
+        delta_dict = {'iterable_item_added': {'root[2]': 5}, '_numpy_paths': {'root': 'int11'}}
+
+        with pytest.raises(DeltaError) as excinfo:
+            Delta(delta_dict, raise_errors=True) + t1
+
+        expected_msg = NOT_VALID_NUMPY_TYPE.format("'int11'")
+        assert expected_msg == str(excinfo.value)
+
 
 class TestDeltaOther:
 
@@ -1187,3 +1199,25 @@ class TestDeltaOther:
                     'old_type': CustomClass}}}
 
         assert expected == diff
+
+    def test_numpy_type_invalid(self):
+        t1 = np.array([[1, 2, 3], [4, 2, 2]], np.int8)
+        diff = {
+            'iterable_item_added': {'root[2]': [7, 8, 9]},
+            'values_changed': {
+                'root[0][2]': {
+                    'new_value': 5
+                },
+                'root[1][1]': {
+                    'new_value': 1
+                }
+            },
+            '_numpy_paths': {
+                'root': 'int88'
+            }
+        }
+
+        delta = Delta(diff, raise_errors=True)
+        with pytest.raises(DeltaError) as excinfo:
+            delta + t1
+        assert "'int88' is not a valid numpy type." == str(excinfo.value)

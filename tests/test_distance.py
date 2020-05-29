@@ -1,10 +1,12 @@
 import pytest
-import time
 import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.diff import DELTA_VIEW
-from deepdiff.distance import _get_item_length, _get_numbers_distance, get_numeric_types_distance
+from deepdiff.helper import np
+from deepdiff.diff import DELTA_VIEW, CUTOFF_RANGE_ERROR_MSG
+from deepdiff.distance import (
+    _get_item_length, _get_numbers_distance, get_numeric_types_distance,
+    _get_numpy_array_distance, DISTANCE_CALCS_NEEDS_CACHE)
 from tests import CustomClass
 
 
@@ -55,21 +57,21 @@ class TestDeepDistance:
     def test_distance_of_the_same_objects(self):
         t1 = [{1, 2, 3}, {4, 5, 6}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, purge_level=0)
         assert {} == ddiff
         assert 0 == _get_item_length(ddiff)
-        assert '0' == str(ddiff.get_deep_distance())[:10]
+        assert '0' == str(ddiff._get_rough_distance())[:10]
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
 
     def test_distance_of_list_sets(self):
         t1 = [{1, 2, 3}, {4, 5}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, purge_level=0)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[1]': {6}}} == delta
         assert 1 == _get_item_length(ddiff)
-        assert '0.05882352' == str(ddiff.get_deep_distance())[:10]
+        assert '0.05882352' == str(ddiff._get_rough_distance())[:10]
         assert 8 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 9 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
 
@@ -77,11 +79,12 @@ class TestDeepDistance:
     def test_distance_of_list_sets2(self, verbose_level):
         t1 = [{1, 2, 3}, {4, 5}, {1}]
         t2 = [{4, 5, 6}, {1, 2, 3}, {1, 4}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level,
+                         get_deep_distance=True, purge_level=0)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == delta
         assert 2 == _get_item_length(ddiff)
-        assert '0.09090909' == str(ddiff.get_deep_distance())[:10]
+        assert '0.09090909' == str(ddiff['deep_distance'])[:10]
         assert 10 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t1)
         assert 12 == ddiff._DistanceMixin__get_item_rough_length(ddiff.t2)
 
@@ -114,10 +117,10 @@ class TestDeepDistance:
     def test_distance_of_tuple_in_list(self):
         t1 = {(2,), 4, 5, 6}
         t2 = {'right!', 'hello', 4, 5}
-        diff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW)
+        diff = DeepDiff(t1, t2, ignore_order=True, view=DELTA_VIEW, get_deep_distance=True)
         assert {'set_item_removed': {'root': {(2,), 6}}, 'set_item_added': {'root': {'hello', 'right!'}}} == diff
-        dist = diff.get_deep_distance()
-        assert 0.36363636363636365 == dist
+        # delta view should not have the distance info in it
+        assert 'get_deep_distance' not in diff
 
     def test_get_item_length_when_loops1(self):
         t1 = [[1, 2, 1, 3]]
@@ -136,25 +139,30 @@ class TestDeepDistance:
     def test_get_distance_works_event_when_ignore_order_is_false1(self):
         t1 = 10
         t2 = 110
-        dist = DeepDiff(t1, t2).get_deep_distance()
+        diff = DeepDiff(t1, t2, get_deep_distance=True)
+        dist = diff['deep_distance']
         assert dist == Decimal('0.25')
 
     def test_get_distance_works_event_when_ignore_order_is_false2(self):
         t1 = ["a", "b"]
         t2 = ["a", "b", "c"]
-        dist = DeepDiff(t1, t2).get_deep_distance()
+        diff = DeepDiff(t1, t2, get_deep_distance=True)
+        dist = diff['deep_distance']
         assert str(dist)[:4] == '0.14'
+        assert list(diff.keys()) == ['iterable_item_added', 'deep_distance']
 
     def test_get_distance_works_event_when_ignore_order_is_false3(self):
         t1 = ["a", "b"]
         t2 = ["a", "b", "c", "d"]
-        dist = DeepDiff(t1, t2).get_deep_distance()
+        diff = DeepDiff(t1, t2, get_deep_distance=True)
+        dist = diff['deep_distance']
         assert str(dist)[:4] == '0.25'
 
     def test_get_distance_does_not_care_about_the_size_of_string(self):
         t1 = ["a", "b"]
         t2 = ["a", "b", "c", "dddddd"]
-        dist = DeepDiff(t1, t2).get_deep_distance()
+        diff = DeepDiff(t1, t2, get_deep_distance=True)
+        dist = diff['deep_distance']
         assert str(dist)[:4] == '0.25'
 
     def test_get_item_length_custom_class1(self):
@@ -181,6 +189,15 @@ class TestDeepDistance:
         result = _get_numbers_distance(num1, num2, max_)
         assert abs(expected - result) < 0.0001
 
+    @pytest.mark.parametrize('arr1, arr2', [
+        (np.array([4.1978, 4.1979, 4.1980]), np.array([4.1971, 4.1879, 4.1981])),
+        (np.array([1, 2, 4]), np.array([4, 2, 3])),
+    ])
+    def test_numpy_distance_vs_get_numbers_distance(self, arr1, arr2):
+        dist_arr = _get_numpy_array_distance(arr1, arr2)
+        for i in range(3):
+            assert dist_arr[i] == _get_numbers_distance(arr1[i], arr2[i])
+
     @pytest.mark.parametrize('num1, num2, max_, expected', [
         (10, -10.1, .3, 0.3),
         (datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(days=100), 1, 0.002707370659621624),
@@ -192,3 +209,14 @@ class TestDeepDistance:
     def test_get_numeric_types_distance(self, num1, num2, max_, expected):
         result = get_numeric_types_distance(num1, num2, max_)
         assert abs(expected - result) < 0.0001
+
+    def test_get_rough_length_after_cache_purge(self):
+        diff = DeepDiff([1], ['a'])
+        with pytest.raises(RuntimeError) as excinfo:
+            diff._get_rough_distance()
+        assert DISTANCE_CALCS_NEEDS_CACHE == str(excinfo.value)
+
+    def test_cutoff_distance_for_pairs_range(self):
+        with pytest.raises(ValueError) as excinfo:
+            DeepDiff(1, 2, cutoff_distance_for_pairs=2)
+        assert CUTOFF_RANGE_ERROR_MSG == str(excinfo.value)
