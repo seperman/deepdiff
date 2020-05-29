@@ -54,3 +54,9 @@ class TestDiffOther:
         diff2 = DeepDiff([1], [2], purge_level=2, view='tree')
         assert not diff2.__dict__
         assert list(diff2.keys()) == ['values_changed']
+
+    def test_path_cache(self):
+        diff = DeepDiff([1], [2], purge_level=2, view='tree')
+        path1 = diff['values_changed'][0].path()
+        path2 = diff['values_changed'][0].path()
+        assert 'root[0]' == path1 == path2
