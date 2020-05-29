@@ -3,10 +3,10 @@ import datetime
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import np
-from deepdiff.diff import DELTA_VIEW
+from deepdiff.diff import DELTA_VIEW, CUTOFF_RANGE_ERROR_MSG
 from deepdiff.distance import (
     _get_item_length, _get_numbers_distance, get_numeric_types_distance,
-    _get_numpy_array_distance)
+    _get_numpy_array_distance, DISTANCE_CALCS_NEEDS_CACHE)
 from tests import CustomClass
 
 
@@ -209,3 +209,14 @@ class TestDeepDistance:
     def test_get_numeric_types_distance(self, num1, num2, max_, expected):
         result = get_numeric_types_distance(num1, num2, max_)
         assert abs(expected - result) < 0.0001
+
+    def test_get_rough_length_after_cache_purge(self):
+        diff = DeepDiff([1], ['a'])
+        with pytest.raises(RuntimeError) as excinfo:
+            diff._get_rough_distance()
+        assert DISTANCE_CALCS_NEEDS_CACHE == str(excinfo.value)
+
+    def test_cutoff_distance_for_pairs_range(self):
+        with pytest.raises(ValueError) as excinfo:
+            DeepDiff(1, 2, cutoff_distance_for_pairs=2)
+        assert CUTOFF_RANGE_ERROR_MSG == str(excinfo.value)

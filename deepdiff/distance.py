@@ -6,6 +6,9 @@ from deepdiff.helper import (
 from collections.abc import Mapping, Iterable
 
 
+DISTANCE_CALCS_NEEDS_CACHE = "Distance calculation can not happen once the cache is purged. Try with _cache='keep'"
+
+
 class DistanceMixin:
 
     def _get_rough_distance(self):
@@ -53,7 +56,7 @@ class DistanceMixin:
         parent: It is only used for DeepHash reporting purposes. Not really useful here.
         """
         if not hasattr(self, 'hashes'):
-            raise RuntimeError('Distance calculation are asked for AFTER the cache is purged.')
+            raise RuntimeError(DISTANCE_CALCS_NEEDS_CACHE)
         length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         if length is None:
             self.__calculate_item_deephash(item)
@@ -177,21 +180,17 @@ def _get_numbers_distance(num1, num2, max_=1):
         num1 = float(num1)
     if isinstance(num2, float):
         num2 = float(num2)
-    try:
-        # Since we have a default cutoff of 0.3 distance when
-        # getting the pairs of items during the ingore_order=True
-        # calculations, we need to make the divisor of comparison very big
-        # so that any 2 numbers can be chosen as pairs.
-        divisor = (num1 + num2) / max_
-    except Exception:
+    # Since we have a default cutoff of 0.3 distance when
+    # getting the pairs of items during the ingore_order=True
+    # calculations, we need to make the divisor of comparison very big
+    # so that any 2 numbers can be chosen as pairs.
+    divisor = (num1 + num2) / max_
+    if divisor == 0:
         return max_
-    else:
-        if not divisor:
-            return max_
-        try:
-            return min(max_, abs((num1 - num2) / divisor))
-        except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
-            return max_  # pragma: no cover
+    try:
+        return min(max_, abs((num1 - num2) / divisor))
+    except Exception:  # pragma: no cover. I don't think this line will ever run but doesn't hurt to leave it.
+        return max_  # pragma: no cover
 
 
 def _numpy_div(a, b, replace_inf_with=1):

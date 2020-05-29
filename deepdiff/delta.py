@@ -339,7 +339,7 @@ class Delta:
                     type_ = numpy_dtype_string_to_type(type_)
                 except Exception as e:
                     self._raise_or_log(NOT_VALID_NUMPY_TYPE.format(e))
-                    continue
+                    continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
                 self.post_process_paths_to_convert[path] = {'old_type': list, 'new_type': type_}
             if preprocess_paths:
                 self._do_values_or_type_changed(preprocess_paths, is_type_change=True)

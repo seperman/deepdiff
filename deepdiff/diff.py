@@ -68,6 +68,7 @@ MAX_DIFF_LIMIT_REACHED = 'MAX DIFF LIMIT REACHED'
 INPROGRESS = 'INPROGRESS'
 CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
 INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
+CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float max 1.'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
@@ -182,9 +183,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # Only used when ignore_order = True.
             self.max_distances_to_keep_track_per_item = max_distances_to_keep_track_per_item
             self.cutoff_distance_for_pairs = float(cutoff_distance_for_pairs)
-            # _deep_distance_buckets_exponent is only used for the number of buckets of distances when doing ignore_order=True calculations
-            # The actual number of buckets will be 10 to the power of the _deep_distance_buckets_exponent
-            self._deep_distance_buckets_exponent = len(str(self.max_passes)) + 3  # Adding some padding to it.
+            if self.cutoff_distance_for_pairs <= 0 or self.cutoff_distance_for_pairs > 1:
+                raise ValueError(CUTOFF_RANGE_ERROR_MSG)
             # Parameters are the clean parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
             # However DeepHash has its own set of parameters that are slightly different than DeepDIff.
