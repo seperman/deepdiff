@@ -2,7 +2,9 @@ import pytest
 from time import sleep
 from unittest import mock
 from deepdiff.model import DiffLevel
-from deepdiff.diff import DeepDiff, PROGRESS_MSG, INVALID_VIEW_MSG
+from deepdiff.diff import (
+    DeepDiff, PROGRESS_MSG, INVALID_VIEW_MSG, VERBOSE_LEVEL_RANGE_MSG,
+    PURGE_LEVEL_RANGE_MSG)
 
 
 class SlowDiffLevel(DiffLevel):
@@ -30,3 +32,25 @@ class TestDiffOther:
         with pytest.raises(ValueError) as excinfo:
             DeepDiff(t1, t2, view='blah')
         assert str(excinfo.value) == INVALID_VIEW_MSG.format('blah')
+
+    def test_invalid_verbose_level(self):
+        with pytest.raises(ValueError) as excinfo:
+            DeepDiff(1, 2, verbose_level=5)
+        assert str(excinfo.value) == VERBOSE_LEVEL_RANGE_MSG
+
+    def test_invalid_purge_level(self):
+        with pytest.raises(ValueError) as excinfo:
+            DeepDiff(1, 2, purge_level=5)
+        assert str(excinfo.value) == PURGE_LEVEL_RANGE_MSG
+
+    def test_purge_level_max(self):
+        diff = DeepDiff([1], [2], purge_level=1)
+        assert len(diff.__dict__.keys()) > 10
+        diff2 = DeepDiff([1], [2], purge_level=2)
+        assert not diff2.__dict__
+        expected = {'values_changed': {'root[0]': {'new_value': 2, 'old_value': 1}}}
+        assert expected == diff2
+
+        diff2 = DeepDiff([1], [2], purge_level=2, view='tree')
+        assert not diff2.__dict__
+        assert list(diff2.keys()) == ['values_changed']

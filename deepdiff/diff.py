@@ -69,6 +69,8 @@ INPROGRESS = 'INPROGRESS'
 CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
 INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
 CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float max 1.'
+VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
+PURGE_LEVEL_RANGE_MSG = 'purge_level should be 0, 1, or 2.'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
@@ -125,6 +127,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger=logger.info,
                  cache_size=5000,
                  get_deep_distance=False,
+                 purge_level=1,
                  _stats=None,
                  _cache=None,
                  _numpy_paths=None,
@@ -138,7 +141,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, get_deep_distance, _stats, "
+                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, get_deep_distance, purge_level, _stats, "
                 "_numpy_paths, _original_type, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
@@ -173,7 +176,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.number_format_notation = number_format_notation
-            self.verbose_level = verbose_level
+            if verbose_level in {0, 1, 2}:
+                self.verbose_level = verbose_level
+            else:
+                raise ValueError(VERBOSE_LEVEL_RANGE_MSG)
+            if purge_level not in {0, 1, 2}:
+                raise ValueError(PURGE_LEVEL_RANGE_MSG)
             self.view = view
             # Setting up the cache for dynamic programming. One dictionary per instance of root of DeepDiff running.
             self.max_passes = max_passes
@@ -191,20 +199,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # DeepDiff parameters are transformed to DeepHash parameters via __get_deephash_params method.
             parameters = self.__dict__.copy()
 
-        _purge_cache = True
-
+        # Non-Root
         if shared_parameters:
             self.is_root = False
             self.shared_parameters = shared_parameters
             self.__dict__.update(shared_parameters)
             # We are in some pass other than root
             repeated_timer = None
+        # Root
         else:
-            # we are at the root
             self.is_root = True
-            # keep the cache. Only used for debugging what was in the cache.
-            if _cache == 'keep':
-                _purge_cache = False
             # Caching the DeepDiff results for dynamic programming
             self._cache = LFUCache(cache_size) if cache_size else DummyLFU()
             self._stats = {
@@ -251,7 +255,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.update(view_results)
         finally:
             if self.is_root:
-                if _purge_cache:
+                if purge_level:
                     del self._cache
                     del self.hashes
                 del self.shared_parameters
@@ -260,6 +264,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 duration = repeated_timer.stop()
                 self._stats['DURATION SEC'] = duration
                 logger.info('stats {}'.format(self.get_stats()))
+            if purge_level == 2:
+                self.__dict__.clear()
 
     def __get_deephash_params(self):
         result = {key: self.parameters[key] for key in DEEPHASH_PARAM_KEYS}
