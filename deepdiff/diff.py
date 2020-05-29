@@ -706,7 +706,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 parameters=self.parameters,
                 shared_parameters=self.shared_parameters,
                 view=DELTA_VIEW,
-                _original_type=_original_type)
+                _original_type=_original_type,)
+            # For non-root diff passes, we keep the cache automatically
+            # so there is no need to pass _cache='keep'
             _distance = diff._get_rough_distance()
             self._cache.set(cache_key, value=_distance)
         return _distance
