@@ -131,6 +131,7 @@ class TextResult(ResultDict):
         self._from_tree_set_item_removed(tree)
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
+        self._from_tree_deep_distance(tree)
 
     def _from_tree_default(self, tree, report_type):
         if report_type in tree:
@@ -223,6 +224,10 @@ class TextResult(ResultDict):
                 self['repetition_change'][path] = RemapDict(change.additional[
                     'repetition'])
                 self['repetition_change'][path]['value'] = change.t1
+
+    def _from_tree_deep_distance(self, tree):
+        if 'deep_distance' in tree:
+            self['deep_distance'] = tree['deep_distance']
 
 
 class DeltaResult(TextResult):

@@ -8,7 +8,7 @@ from collections.abc import Mapping, Iterable
 
 class DistanceMixin:
 
-    def get_deep_distance(self):
+    def _get_rough_distance(self):
         """
         Gives a numeric value for the distance of t1 and t2 based on how many operations are needed to convert
         one to the other.
@@ -52,6 +52,8 @@ class DistanceMixin:
         item: The item to calculate the rough length for
         parent: It is only used for DeepHash reporting purposes. Not really useful here.
         """
+        if not hasattr(self, 'hashes'):
+            raise RuntimeError('Distance calculation are asked for AFTER the cache is purged.')
         length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         if length is None:
             self.__calculate_item_deephash(item)
@@ -129,7 +131,7 @@ def _get_item_length(item, parents_ids=frozenset([])):
                 subitem = new_subitem
 
             # internal keys such as _numpy_paths should not count towards the distance
-            if isinstance(key, strings) and key.startswith('_'):
+            if isinstance(key, strings) and (key.startswith('_') or key == 'deep_distance'):
                 continue
 
             item_id = id(subitem)

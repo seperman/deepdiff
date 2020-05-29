@@ -74,8 +74,8 @@ class TestIgnoreOrder:
         }
         assert expected == ddiff
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False)
-        dist = ddiff.get_deep_distance()
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False, _cache='keep')
+        dist = ddiff._get_rough_distance()
         assert 0.1 == dist
 
     def test_ignore_order_depth6(self):

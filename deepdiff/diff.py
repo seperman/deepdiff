@@ -72,6 +72,21 @@ INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tr
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
+DEEPHASH_PARAM_KEYS = (
+    'exclude_types',
+    'exclude_paths',
+    'exclude_regex_paths',
+    'hasher',
+    'significant_digits',
+    'number_format_notation',
+    'ignore_string_type_changes',
+    'ignore_numeric_type_changes',
+    'ignore_type_in_groups',
+    'ignore_type_subclasses',
+    'ignore_string_case',
+    'exclude_obj_callback',
+    'ignore_private_variables',)
+
 
 class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     __doc__ = doc
@@ -108,6 +123,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  log_frequency_in_sec=0,
                  progress_logger=logger.info,
                  cache_size=5000,
+                 get_deep_distance=False,
                  _stats=None,
                  _cache=None,
                  _numpy_paths=None,
@@ -121,8 +137,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, _stats, _numpy_paths, _original_type "
-                "parameters and shared_parameters.") % ', '.join(kwargs.keys()))
+                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, get_deep_distance, _stats, "
+                "_numpy_paths, _original_type, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
             self.__dict__ = deepcopy(parameters)
@@ -227,6 +243,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # we convert only the the last dimension of it into numpy arrays.
             self.__diff(root, parents_ids=frozenset({id(t1)}), _original_type=_original_type)
 
+            if get_deep_distance and view in {TEXT_VIEW, TREE_VIEW}:
+                self.tree['deep_distance'] = self._get_rough_distance()
+
             self.tree.remove_empty_keys()
             view_results = self._get_view_results(self.view)
             self.update(view_results)
@@ -234,6 +253,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if self.is_root:
                 if _purge_cache:
                     del self._cache
+                    del self.hashes
                 del self.shared_parameters
                 del self.parameters
             if repeated_timer:
@@ -242,20 +262,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 logger.info('stats {}'.format(self.get_stats()))
 
     def __get_deephash_params(self):
-        result = {key: self.parameters[key] for key in (
-            'exclude_types',
-            'exclude_paths',
-            'exclude_regex_paths',
-            'hasher',
-            'significant_digits',
-            'number_format_notation',
-            'ignore_string_type_changes',
-            'ignore_numeric_type_changes',
-            'ignore_type_in_groups',
-            'ignore_type_subclasses',
-            'ignore_string_case',
-            'exclude_obj_callback',
-            'ignore_private_variables',)}
+        result = {key: self.parameters[key] for key in DEEPHASH_PARAM_KEYS}
         result['ignore_repetition'] = not self.report_repetition
         result['number_to_string_func'] = self.number_to_string
         return result
@@ -700,12 +707,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 shared_parameters=self.shared_parameters,
                 view=DELTA_VIEW,
                 _original_type=_original_type)
-            _distance = diff.get_deep_distance()
-            # TODO: Do we really need to consider the significant digits in rounding distance calculations?
-            # _distance = Decimal(self.number_to_string(
-            #     _distance,
-            #     significant_digits=self._deep_distance_buckets_exponent,
-            #     number_format_notation=self.number_format_notation))
+            _distance = diff._get_rough_distance()
             self._cache.set(cache_key, value=_distance)
         return _distance
 
