@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import pytest
+import datetime
 import numpy as np
 from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
     cartesian_product_of_shape, literal_eval_extended,
-    not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy
+    not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
+    get_truncate_datetime, datetime_normalize
 )
 
 
@@ -118,3 +120,21 @@ class TestHelper:
             [3, 2],
             [3, 4]]
         assert expected == result.tolist()
+
+    def test_get_truncate_datetime(self):
+        result = get_truncate_datetime('hour')
+        assert 'hour' == result
+        with pytest.raises(ValueError):
+            get_truncate_datetime('blah')
+
+    @pytest.mark.parametrize('truncate_datetime, obj, expected', [
+        ('hour',
+         datetime.datetime(2020, 5, 30, 7, 28, 51, 698308),
+         datetime.datetime(2020, 5, 30, 7, 0, tzinfo=datetime.timezone.utc)),
+        ('day',
+         datetime.datetime(2020, 5, 30, 7, 28, 51, 698308),
+         datetime.datetime(2020, 5, 30, 0, 0, tzinfo=datetime.timezone.utc)),
+    ])
+    def test_datetime_normalize(self, truncate_datetime, obj, expected):
+        result = datetime_normalize(truncate_datetime, obj)
+        assert expected == result

@@ -493,6 +493,15 @@ def datetime_normalize(truncate_datetime, obj):
     return obj
 
 
+def get_truncate_datetime(truncate_datetime):
+    """
+    Validates truncate_datetime value
+    """
+    if truncate_datetime not in {None, 'second', 'minute', 'hour', 'day'}:
+        raise ValueError("truncate_datetime must be second, minute, hour or day")
+    return truncate_datetime
+
+
 def cartesian_product_numpy(*arrays):
     """
     Cartesian product of Numpy arrays by Paul Panzer

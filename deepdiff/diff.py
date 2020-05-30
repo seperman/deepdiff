@@ -20,7 +20,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemove
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             np)
+                             np, get_truncate_datetime)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -176,7 +176,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.hasher = hasher
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
-            self.truncate_datetime = self.get_truncate_datetime(truncate_datetime)
+            self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             if verbose_level in {0, 1, 2}:
                 self.verbose_level = verbose_level

@@ -8,7 +8,8 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr)
+                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
+                             get_truncate_datetime, )
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ class DeepHash(Base):
         self.hashes[UNPROCESSED_KEY] = []
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
-        self.truncate_datetime = self.get_truncate_datetime(truncate_datetime)
+        self.truncate_datetime = get_truncate_datetime(truncate_datetime)
         self.number_format_notation = number_format_notation
         self.ignore_type_in_groups = self.get_ignore_types_in_groups(
             ignore_type_in_groups=ignore_type_in_groups,
