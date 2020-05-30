@@ -23,6 +23,9 @@ report_repetition : Boolean, default=False
 significant_digits : int >= 0, default=None
     :ref:`significant_digits_label` defines the number of digits AFTER the decimal point to be used in the comparison. However you can override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
 
+truncate_datetime: string, default = None
+    Can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+
 number_format_notation : string, default="f"
     :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
 

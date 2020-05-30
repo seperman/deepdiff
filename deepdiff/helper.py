@@ -102,6 +102,7 @@ unicode_type = str
 bytes_type = bytes
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
+times = (datetime.datetime, datetime.time)
 numbers = only_numbers + datetimes
 booleans = (bool, np_bool_)
 
@@ -469,6 +470,27 @@ def literal_eval_extended(item):
                 item2 = item[len(begin): -len(end)].strip('\'\"')
                 return func(item2)
         raise
+
+
+def time_to_seconds(t):
+    return (t.hour * 60 + t.minute) * 60 + t.second
+
+
+def datetime_normalize(truncate_datetime, obj):
+    if truncate_datetime:
+        if truncate_datetime == 'second':
+            obj = obj.replace(microsecond=0)
+        elif truncate_datetime == 'minute':
+            obj = obj.replace(second=0, microsecond=0)
+        elif truncate_datetime == 'hour':
+            obj = obj.replace(minute=0, second=0, microsecond=0)
+        elif truncate_datetime == 'day':
+            obj = obj.replace(hour=0, minute=0, second=0, microsecond=0)
+    if isinstance(obj, datetime.datetime):
+        obj = obj.replace(tzinfo=datetime.timezone.utc).timestamp()
+    elif isinstance(obj, datetime.time):
+        obj = time_to_seconds(obj)
+    return obj
 
 
 def cartesian_product_numpy(*arrays):

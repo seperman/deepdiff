@@ -1,7 +1,7 @@
 import datetime
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
-    DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64,
+    DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
     cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq)
 from collections.abc import Mapping, Iterable
 
@@ -162,10 +162,6 @@ def _get_item_length(item, parents_ids=frozenset([])):
                 parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                 length += _get_item_length(subitem, parents_ids_added)
     return length
-
-
-def time_to_seconds(t):
-    return (t.hour * 60 + t.minute) * 60 + t.second
 
 
 def _get_numbers_distance(num1, num2, max_=1):
