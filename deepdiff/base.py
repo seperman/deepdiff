@@ -48,3 +48,8 @@ class Base:
             ignore_type_in_groups = list(map(tuple, ignore_type_in_groups))
 
         return ignore_type_in_groups
+
+    def get_truncate_datetime(self, truncate_datetime):
+        if truncate_datetime not in {None, 'second', 'minute', 'hour', 'day'}:
+            raise ValueError("truncate_datetime must be second, minute, hour or day")
+        return truncate_datetime

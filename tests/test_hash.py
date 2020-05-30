@@ -2,15 +2,14 @@
 import re
 import pytest
 import logging
-from time import sleep
+import datetime
 from collections import namedtuple
 from functools import partial
 from enum import Enum
-from decimal import Decimal
 from deepdiff import DeepHash
 from deepdiff.deephash import (
     prepare_string_for_hashing, unprocessed, UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
-from deepdiff.helper import pypy3, get_id, number_to_string, np, py_current_version
+from deepdiff.helper import pypy3, get_id, number_to_string, np
 from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
@@ -77,6 +76,26 @@ class TestDeepHash:
         result = DeepHash(obj)
         with pytest.raises(KeyError):
             result[2]
+
+    def test_datetime(self):
+        now = datetime.datetime.now()
+        a = b = now
+        a_hash = DeepHash(a)
+        b_hash = DeepHash(b)
+        assert a_hash[a] == b_hash[b]
+
+    def test_datetime_truncate(self):
+        a = datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)
+        b = datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)
+        c = datetime.datetime(2020, 5, 17, 22, 15, 34, 500000)
+
+        a_hash = DeepHash(a, truncate_datetime='minute')
+        b_hash = DeepHash(b, truncate_datetime='minute')
+        assert a_hash[a] == b_hash[b]
+
+        a_hash = DeepHash(a, truncate_datetime='second')
+        c_hash = DeepHash(c, truncate_datetime='second')
+        assert a_hash[a] == c_hash[c]
 
     def test_get_reserved_keyword(self):
         hashes = {UNPROCESSED_KEY: 'full item', 'key1': ('item', 'count')}
