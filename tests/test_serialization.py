@@ -3,6 +3,7 @@ import json
 import sys
 import pytest
 import datetime
+from pickle import UnpicklingError
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.serialization import (
@@ -97,6 +98,17 @@ class TestPickling:
         loaded = pickle_load(serialized)
         assert obj == loaded
 
+        serialized2 = pickle_dump(obj, header='')
+        with pytest.raises(AssertionError) as excinfo:
+            pickle_load(serialized2)
+        expected_msg = 'Delta payload header can not be verified. Aborting.'
+        assert expected_msg == str(excinfo.value)
+
+    def test_pickle_that_is_string(self):
+        serialized_str = 'DeepDiff Delta Payload v0-0-1\nBlah'
+        with pytest.raises(UnpicklingError) as excinfo:
+            pickle_load(serialized_str)
+
     def test_custom_object_deserialization_fails_without_explicit_permission(self):
         obj = PicklableClass(10)
         module_dot_name = 'tests.{}'.format(PicklableClass.__name__)
@@ -111,6 +123,10 @@ class TestPickling:
         # Explicitly allowing the module to be loaded
         loaded = pickle_load(serialized, safe_to_import={module_dot_name})
         assert obj == loaded
+
+        # Explicitly allowing the module to be loaded. It can take a list instead of a set.
+        loaded2 = pickle_load(serialized, safe_to_import=[module_dot_name])
+        assert obj == loaded2
 
     def test_unpickling_object_that_is_not_imported_raises_error(self):
 

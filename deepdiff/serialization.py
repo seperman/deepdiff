@@ -238,7 +238,11 @@ def pickle_dump(obj, header=BASIC_HEADER):
     if isinstance(header, str):
         header = header.encode('utf-8')
     # We expect at least python 3.5 so protocol 4 is good.
-    return header + b'\n' + pickle.dumps(obj, protocol=4, fix_imports=False)
+    if header:
+        result = header + b'\n' + pickle.dumps(obj, protocol=4, fix_imports=False)
+    else:
+        result = pickle.dumps(obj, protocol=4, fix_imports=False)
+    return result
 
 
 def basic_header_checker(header, content):
