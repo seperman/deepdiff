@@ -12,6 +12,7 @@ from deepdiff.delta import (
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
     FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG, NOT_VALID_NUMPY_TYPE)
+from deepdiff.serialization import DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT
 
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
@@ -1221,3 +1222,12 @@ class TestDeltaOther:
         with pytest.raises(DeltaError) as excinfo:
             delta + t1
         assert "'int88' is not a valid numpy type." == str(excinfo.value)
+
+    def test_ignore_order_but_not_report_repetition(self):
+        t1 = [1, 2, 'B', 3]
+        t2 = [1, 2, 3, 5]
+
+        with pytest.raises(ValueError) as excinfo:
+            Delta(DeepDiff(t1, t2, ignore_order=True))
+
+        assert DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT == str(excinfo.value)

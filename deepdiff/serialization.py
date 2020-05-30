@@ -19,10 +19,8 @@ logger = logging.getLogger(__name__)
 
 try:
     import jsonpickle
-except ImportError:
-    jsonpickle = None
-    logger.info('jsonpickle is not installed. The to_json_pickle and from_json_pickle functions will not work.'
-                'If you dont need those functions, there is nothing to do.')
+except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
+    jsonpickle = None  # pragma: no cover. Json pickle is getting deprecated.
 
 
 MAX_HEADER_LENGTH = 256
@@ -30,6 +28,7 @@ MAX_HEADER_LENGTH = 256
 MODULE_NOT_FOUND_MSG = 'DeepDiff Delta did not find {} in your modules. Please make sure it is already imported.'
 FORBIDDEN_MODULE_MSG = "Module '{}' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter"
 BASIC_HEADER = b"DeepDiff Delta Payload v0-0-1"
+DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT = 'report_repetition must be set to True when ignore_order is True to create the delta object.'
 
 SAFE_TO_IMPORT = {
     'builtins.range',
@@ -82,7 +81,7 @@ class SerializationMixin:
             copied = self.copy()
             return jsonpickle.encode(copied)
         else:
-            logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')
+            logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
     @classmethod
     def from_json_pickle(cls, value):
@@ -94,7 +93,7 @@ class SerializationMixin:
         if jsonpickle:
             return jsonpickle.decode(value)
         else:
-            logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')
+            logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
     def to_json(self, default_mapping=None):
         """
@@ -169,7 +168,7 @@ class SerializationMixin:
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
         result.remove_empty_keys()
         if report_repetition_required and self.ignore_order and not self.report_repetition:
-            raise ValueError('report_repetition must be set to True when ignore_order is True to create the delta object.')
+            raise ValueError(DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT)
         if directed:
             for report_key, report_value in result.items():
                 if isinstance(report_value, Mapping):
