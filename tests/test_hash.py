@@ -2,6 +2,7 @@
 import re
 import pytest
 import logging
+from time import sleep
 from collections import namedtuple
 from functools import partial
 from enum import Enum
@@ -631,13 +632,25 @@ class TestDeepHashPrep:
         t1_hash = DeepHashPrep(t1, ignore_numeric_type_changes=True)
         assert t1_hash[t1] == 'ndarray:ndarray:number:1.000000000000,number:2.000000000000'
 
-    @pytest.mark.skipif(py_current_version < Decimal('3.8'), reason='Somehow pytest is not catching the exception in Python 3.7 and older')
     def test_hash_numpy_array2_multi_dimensional_can_not_retrieve_individual_array_item_hashes(self):
+        """
+        This is a very interesting case. When DeepHash extracts t1[0] to create a hash for it,
+        Numpy creates an array. But that array will only be technically available during the DeepHash run.
+        Once DeepHash is run, the array is marked to be deleted by the garbage collector.
+        However depending on the version of the python and the machine that runs it, by the time we get
+        to the line that is t1_hash[t1[0]], the t1[0] may or may not be still in memory.
+        If it is still in the memory, t1_hash[t1[0]] works without a problem.
+        If it is already garbage collected, t1_hash[t1[0]] will throw a key error since there will be
+        a new t1[0] by the time t1_hash[t1[0]] is called. Hence it will have a new ID and thus it
+        will not be available anymore in t1_hash. Remember that since Numpy arrays are not hashable,
+        the ID of the array is stored in t1_hash as a key and not the object itself.
+        """
         t1 = np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8)
         t1_hash = DeepHashPrep(t1)
-        with pytest.raises(KeyError) as excinfo:
+        try:
             t1_hash[t1[0]]
-        assert str(excinfo.value).strip("'") == HASH_LOOKUP_ERR_MSG.format(t1[0])
+        except Exception as e:
+            assert str(e).strip("'") == HASH_LOOKUP_ERR_MSG.format(t1[0])
 
 
 class TestDeepHashSHA:

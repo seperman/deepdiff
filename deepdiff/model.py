@@ -791,15 +791,6 @@ class ChildRelationship:
         """
         return self.stringify_param(force)
 
-    def get_param_from_obj(self, obj):  # pragma: no cover
-        """
-        Get item from external object.
-
-        This is used to get the item with the same path from another object.
-        This way you can apply the path tree to any object.
-        """
-        pass
-
     def stringify_param(self, force=None):
         """
         Convert param to a string. Return None if there is no string representation.
@@ -843,25 +834,14 @@ class DictRelationship(ChildRelationship):
     param_repr_format = "[{}]"
     quote_str = "'{}'"
 
-    def get_param_from_obj(self, obj):
-        return obj.get(self.param)
-
 
 class NumpyArrayRelationship(ChildRelationship):
     param_repr_format = "[{}]"
     quote_str = None
 
-    def get_param_from_obj(self, obj):
-        for key in self.param:
-            obj = obj[key]
-        return obj
-
 
 class SubscriptableIterableRelationship(DictRelationship):
-    # for our purposes, we can see lists etc. as special cases of dicts
-
-    def get_param_from_obj(self, obj):
-        return obj[self.param]
+    pass
 
 
 class InaccessibleRelationship(ChildRelationship):
@@ -890,6 +870,3 @@ class NonSubscriptableIterableRelationship(InaccessibleRelationship):
 
 class AttributeRelationship(ChildRelationship):
     param_repr_format = ".{}"
-
-    def get_param_from_obj(self, obj):
-        return getattr(obj, self.param)
