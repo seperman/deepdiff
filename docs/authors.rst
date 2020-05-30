@@ -9,7 +9,6 @@ DeepDiff Core Developer:
 
     - `Github <https://github.com/seperman>`_
     - `ZepWorks <http://www.zepworks.com>`_
-    - `Linkedin <http://www.linkedin.com/in/sepehr>`_
     - `Articles about Deepdiff <https://zepworks.com/tags/deepdiff/>`_
 
 And many thanks to the following people for their contributions to DeepDiff!
@@ -44,6 +43,7 @@ And many thanks to the following people for their contributions to DeepDiff!
 - Nathaniel Brown (nathanielobrown) Adds support for datetime.time
 - Michał Karaś (MKaras93) for the pretty view
 - Christian Kothe (chkothe) for the basic support for diffing numpy arrays
+- Timothy (timson) for truncate_datetime
 
 
 Back to :doc:`/index`
