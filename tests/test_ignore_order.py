@@ -725,6 +725,9 @@ class TestIgnoreOrder:
         }
         assert expected == diff
 
+        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=0)
+        assert expected == diff2
+
     def test_ignore_order_with_sha256_hash(self):
         t1 = [
             [1, 2, 3, 9], [9, 8, 5, 9]

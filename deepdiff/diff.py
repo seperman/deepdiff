@@ -714,7 +714,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 parameters=self.parameters,
                 shared_parameters=self.shared_parameters,
                 view=DELTA_VIEW,
-                _original_type=_original_type,)
+                _original_type=_original_type,
+            )
             # For non-root diff passes, we keep the cache automatically
             # so there is no need to pass _cache='keep'
             _distance = diff._get_rough_distance()
@@ -722,7 +723,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return _distance
 
     def __get_most_in_common_pairs_in_iterables(
-            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
+            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type):
         """
         Get the closest pairs between items that are removed and items that are added.
 
@@ -770,6 +771,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             for removed_hash in hashes_removed:
                 added_hash_obj = t2_hashtable[added_hash]
                 removed_hash_obj = t1_hashtable[removed_hash]
+
+                # Loop is detected
+                if id(removed_hash_obj.item) in parents_ids:
+                    continue
 
                 if pre_calced_distances:
                     _distance = pre_calced_distances["{}--{}".format(added_hash, removed_hash)]
@@ -846,7 +851,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._stats[PASSES_COUNT] += 1
 
             pairs = self.__get_most_in_common_pairs_in_iterables(
-                hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
+                hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type)
         else:
             if not self._stats[MAX_PASS_LIMIT_REACHED]:
                 self._stats[MAX_PASS_LIMIT_REACHED] = True
