@@ -1213,6 +1213,22 @@ class TestDeepDiffText:
         assert 'dictionary_item_added' in ddiff, {}
         assert 'dictionary_item_removed' not in ddiff, {}
 
+    def test_skip_path5(self):
+        t1 = [{'cn': 'tuser', 'first_name': 'Test', 'last_name': 'User', 'name': 'Test User', 'email': 'tuser@example.com'}]
+        t2 = [{'name': 'Test User', 'email': 'tuser@example.com'}]
+
+        diff = DeepDiff(
+            t1,
+            t2,
+            ignore_order=True,
+            exclude_paths={
+                "root['cn']",
+                "root['first_name']",
+                "root['last_name']"
+            })
+
+        assert not diff
+
     def test_skip_custom_object_path(self):
         t1 = CustomClass(1)
         t2 = CustomClass(2)

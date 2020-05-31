@@ -149,7 +149,7 @@ class TestDeepDistance:
         diff = DeepDiff(t1, t2, get_deep_distance=True)
         dist = diff['deep_distance']
         assert str(dist)[:4] == '0.14'
-        assert list(diff.keys()) == ['iterable_item_added', 'deep_distance']
+        assert set(diff.keys()) == {'iterable_item_added', 'deep_distance'}
 
     def test_get_distance_works_event_when_ignore_order_is_false3(self):
         t1 = ["a", "b"]
