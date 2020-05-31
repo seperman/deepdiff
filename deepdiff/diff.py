@@ -65,7 +65,6 @@ DIFF_COUNT = 'DIFF COUNT'
 PASSES_COUNT = 'PASSES COUNT'
 MAX_PASS_LIMIT_REACHED = 'MAX PASS LIMIT REACHED'
 MAX_DIFF_LIMIT_REACHED = 'MAX DIFF LIMIT REACHED'
-INPROGRESS = 'INPROGRESS'
 CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
 INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
 CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float max 1.'
@@ -697,16 +696,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if cache_key in self._cache:
             self._stats[DISTANCE_CACHE_HIT_COUNT] += 1
             _current_value = self._cache.get(cache_key)
-            # We are in a self loop. Get out now!
-            if _current_value == INPROGRESS:
-                _distance = 1
-            else:
-                _distance = _current_value
+            _distance = _current_value
         else:
-            # Marking the cache as in progress so we avoid calculating the same distance
-            # as a part of the distance calculations. Basically to avoid getting stuck when there is a loop
-            # in the object.
-            self._cache.set(cache_key, value=INPROGRESS)
             # We can only cache the rough distance and not the actual diff result for reuse.
             # The reason is that we have modified the parameters explicitly so they are different and can't
             # be used for diff reporting

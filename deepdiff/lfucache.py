@@ -115,7 +115,7 @@ class LFUCache:
     def __init__(self, capacity):
         self.cache = {}  # {key: cache_node}
         if capacity <= 0:
-            raise ValueError('Capacity of LFUCache needs to be positive.')
+            raise ValueError('Capacity of LFUCache needs to be positive.')  # pragma: no cover.
         self.capacity = capacity
         self.freq_link_head = None
         self.lock = Lock()
