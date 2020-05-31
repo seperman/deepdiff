@@ -25,7 +25,7 @@ class TestLFUcache:
         lfucache = LFUCache(2)
 
         def _do_set(cache, key):
-            cache.set(key, value=f'{key}_cached')
+            cache.set(key, value='{}_cached'.format(key))
 
         def _do_get(cache, key):
             return cache.get(key)
