@@ -687,7 +687,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(added_hash, str):
             added_hash = added_hash.encode('utf-8')
             removed_hash = removed_hash.encode('utf-8')
-        return b'distance_cache' + added_hash + b'--' + removed_hash
+        key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
+        return key1 + b'--' + key2 + b'dc'
 
     def __get_and_cache_rough_distance(
             self, added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type=None):

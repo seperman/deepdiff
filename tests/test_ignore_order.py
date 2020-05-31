@@ -750,3 +750,39 @@ class TestIgnoreOrder:
             }
         }
         assert expected == diff
+
+    def test_ignore_order_cache_for_individual_distances(self):
+        t1 = [[1, 2, 'B', 3], 'B']
+        t2 = [[1, 2, 3, 5], 5]
+        diff = DeepDiff(t1, t2, ignore_order=True)
+        expected = {
+            'values_changed': {
+                'root[1]': {
+                    'new_value': 5,
+                    'old_value': 'B'
+                }
+            },
+            'iterable_item_added': {
+                'root[0][3]': 5
+            },
+            'iterable_item_removed': {
+                'root[0][2]': 'B'
+            }
+        }
+        assert expected == diff
+
+        stats = diff.get_stats()
+        expected_stats = {
+            'PASSES COUNT': 2,
+            'DIFF COUNT': 11,
+            'LEVEL CACHE HIT COUNT': 1,
+            'DISTANCE CACHE HIT COUNT': 1,
+            'MAX PASS LIMIT REACHED': False,
+            'MAX DIFF LIMIT REACHED': False
+        }
+        assert expected_stats == stats
+
+        t1 = [[1, 2, 'B', 3], 5]
+        t2 = [[1, 2, 3, 5], 'B']
+        diff2 = DeepDiff(t1, t2, ignore_order=True)
+        assert expected_stats == diff2.get_stats()
