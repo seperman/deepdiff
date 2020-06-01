@@ -1222,9 +1222,9 @@ class TestDeepDiffText:
             t2,
             ignore_order=True,
             exclude_paths={
-                "root['cn']",
-                "root['first_name']",
-                "root['last_name']"
+                "root[0]['cn']",
+                "root[0]['first_name']",
+                "root[0]['last_name']"
             })
 
         assert not diff
