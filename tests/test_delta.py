@@ -945,6 +945,7 @@ class TestNumpyDelta:
         assert expected_msg == str(excinfo.value)
 
 
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestDeltaOther:
 
     def test_list_ignore_order_various_deltas1(self):

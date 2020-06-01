@@ -7,7 +7,7 @@ import warnings
 import time
 from ast import literal_eval
 from decimal import Decimal, localcontext
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from itertools import repeat
 from ordered_set import OrderedSet
 from threading import Timer
@@ -88,6 +88,25 @@ py4 = py_major_version == 4
 MINIMUM_PY_DICT_TYPE_SORTED = Decimal('3.6')
 DICT_IS_SORTED = py_current_version >= MINIMUM_PY_DICT_TYPE_SORTED
 
+
+class OrderedDictPlus(OrderedDict):
+
+    def __repr__(self):
+        return str(dict(self))
+
+    def copy(self):
+        result = OrderedDict()
+        for k, v in self.items():
+            result[k] = v
+        return result
+
+
+if DICT_IS_SORTED:
+    dict_ = dict
+else:
+    dict_ = OrderedDictPlus
+
+
 if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover
     py3 = True  # pragma: no cover
@@ -96,6 +115,7 @@ if py2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
+PY_3_5 = py_current_version == Decimal('3.5')
 
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
@@ -172,10 +192,10 @@ notpresent = NotPresent()
 
 
 # Disabling remapping from old to new keys since the mapping is deprecated.
-RemapDict = dict
+RemapDict = dict_
 
 
-# class RemapDict(dict):
+# class RemapDict(dict_):
 #     """
 #     DISABLED
 #     Remap Dictionary.

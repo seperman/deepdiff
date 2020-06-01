@@ -6,7 +6,7 @@ from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
     DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes,
-    not_found, numpy_dtype_string_to_type)
+    not_found, numpy_dtype_string_to_type, dict_)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 from deepdiff.anyset import AnySet
 
@@ -140,7 +140,7 @@ class Delta:
         return "<Delta: {}>".format(short_repr(self.diff, max_length=100))
 
     def reset(self):
-        self.post_process_paths_to_convert = {}
+        self.post_process_paths_to_convert = dict_()
 
     def __add__(self, other):
         if isinstance(other, numbers) and self._numpy_paths:
@@ -332,7 +332,7 @@ class Delta:
 
     def _do_pre_process(self):
         if self._numpy_paths and ('iterable_item_added' in self.diff or 'iterable_item_removed' in self.diff):
-            preprocess_paths = {}
+            preprocess_paths = dict_()
             for path, type_ in self._numpy_paths.items():
                 preprocess_paths[path] = {'old_type': np_ndarray, 'new_type': list}
                 try:
@@ -497,8 +497,8 @@ class Delta:
             }
 
         """
-        fixed_indexes = self.diff.get('iterable_items_added_at_indexes', {})
-        remove_indexes = self.diff.get('iterable_items_removed_at_indexes', {})
+        fixed_indexes = self.diff.get('iterable_items_added_at_indexes', dict_())
+        remove_indexes = self.diff.get('iterable_items_removed_at_indexes', dict_())
         paths = set(fixed_indexes.keys()) | set(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
@@ -509,8 +509,8 @@ class Delta:
             else:
                 continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
             # copying both these dictionaries since we don't want to mutate them.
-            fixed_indexes_per_path = fixed_indexes.get(path, {}).copy()
-            remove_indexes_per_path = remove_indexes.get(path, {}).copy()
+            fixed_indexes_per_path = fixed_indexes.get(path, dict_()).copy()
+            remove_indexes_per_path = remove_indexes.get(path, dict_()).copy()
             fixed_indexes_values = AnySet(fixed_indexes_per_path.values())
 
             new_obj = []

@@ -1,5 +1,6 @@
 from ordered_set import OrderedSet
 from deepdiff.deephash import DeepHash
+from deepdiff.helper import dict_
 
 
 class AnySet:
@@ -11,8 +12,8 @@ class AnySet:
     """
     def __init__(self, items=None):
         self._set = OrderedSet()
-        self._hashes = {}
-        self._hash_to_objects = {}
+        self._hashes = dict_()
+        self._hash_to_objects = dict_()
         if items:
             for item in items:
                 self.add(item)

@@ -9,7 +9,7 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
-                             get_truncate_datetime, )
+                             get_truncate_datetime, dict_)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ UNPROCESSED_KEY = 'unprocessed'
 MURMUR_SEED = 1203
 
 RESERVED_DICT_KEYS = {UNPROCESSED_KEY}
-EMPTY_FROZENSET = frozenset({})
+EMPTY_FROZENSET = frozenset()
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
 
@@ -146,7 +146,7 @@ class DeepHash(Base):
         elif isinstance(hashes, DeepHash):
             self.hashes = hashes.hashes
         else:
-            self.hashes = {}
+            self.hashes = dict_()
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
@@ -256,7 +256,7 @@ class DeepHash(Base):
         or a dictionary of objects to the count of items that went to build them.
         extract_index=0 for hashes and extract_index=1 for counts.
         """
-        result = {}
+        result = dict_()
         for key, value in self.hashes.items():
             if key in RESERVED_DICT_KEYS:
                 result[key] = value

@@ -2,7 +2,9 @@ from collections.abc import Mapping
 from copy import copy
 from ordered_set import OrderedSet
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended
+from deepdiff.helper import (
+    RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
+    dict_)
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -93,18 +95,18 @@ class TextResult(ResultDict):
 
         # TODO: centralize keys
         self.update({
-            "type_changes": {},
+            "type_changes": dict_(),
             "dictionary_item_added": self.__set_or_dict(),
             "dictionary_item_removed": self.__set_or_dict(),
-            "values_changed": {},
+            "values_changed": dict_(),
             "unprocessed": [],
-            "iterable_item_added": {},
-            "iterable_item_removed": {},
+            "iterable_item_added": dict_(),
+            "iterable_item_removed": dict_(),
             "attribute_added": self.__set_or_dict(),
             "attribute_removed": self.__set_or_dict(),
             "set_item_removed": PrettyOrderedSet(),
             "set_item_added": PrettyOrderedSet(),
-            "repetition_change": {}
+            "repetition_change": dict_()
         })
 
         if tree_results:
@@ -238,18 +240,18 @@ class DeltaResult(TextResult):
         self.ignore_order = ignore_order
 
         self.update({
-            "type_changes": {},
-            "dictionary_item_added": {},
-            "dictionary_item_removed": {},
-            "values_changed": {},
-            "iterable_item_added": {},
-            "iterable_item_removed": {},
-            "attribute_added": {},
-            "attribute_removed": {},
-            "set_item_removed": {},
-            "set_item_added": {},
-            "iterable_items_added_at_indexes": {},
-            "iterable_items_removed_at_indexes": {},
+            "type_changes": dict_(),
+            "dictionary_item_added": dict_(),
+            "dictionary_item_removed": dict_(),
+            "values_changed": dict_(),
+            "iterable_item_added": dict_(),
+            "iterable_item_removed": dict_(),
+            "attribute_added": dict_(),
+            "attribute_removed": dict_(),
+            "set_item_removed": dict_(),
+            "set_item_added": dict_(),
+            "iterable_items_added_at_indexes": dict_(),
+            "iterable_items_removed_at_indexes": dict_(),
         })
 
         if tree_results:
@@ -295,7 +297,7 @@ class DeltaResult(TextResult):
                 try:
                     iterable_items_added_at_indexes = self[delta_report_key][path]
                 except KeyError:
-                    iterable_items_added_at_indexes = self[delta_report_key][path] = {}
+                    iterable_items_added_at_indexes = self[delta_report_key][path] = dict_()
                 iterable_items_added_at_indexes[param] = item
 
     def _from_tree_type_changes(self, tree):
@@ -352,7 +354,7 @@ class DeltaResult(TextResult):
                 try:
                     iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path]
                 except KeyError:
-                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path] = {}
+                    iterable_items_added_at_indexes = self['iterable_items_added_at_indexes'][path] = dict_()
                 for index in repetition['new_indexes']:
                     iterable_items_added_at_indexes[index] = value
 
@@ -477,7 +479,7 @@ class DiffLevel:
         # Examples: "set_item_added", "values_changed"
 
         # Note: don't use {} as additional's default value - this would turn out to be always the same dict object
-        self.additional = {} if additional is None else additional
+        self.additional = dict_() if additional is None else additional
 
         # For some types of changes we store some additional information.
         # This is a dict containing this information.
@@ -498,7 +500,7 @@ class DiffLevel:
         self.t2_child_rel = child_rel2
 
         # Will cache result of .path() per 'force' as key for performance
-        self._path = {}
+        self._path = dict_()
 
         self.verbose_level = verbose_level
 
@@ -698,7 +700,7 @@ class DiffLevel:
         new_parent.t2_child_rel = self.up.t2_child_rel
         new_parent.t1_child_rel = self.up.t1_child_rel
         # make a new dictionary for the path so it is not shared.
-        new_self._path = {}
+        new_self._path = dict_()
         return new_self
 
     def copy(self):

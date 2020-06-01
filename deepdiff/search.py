@@ -4,7 +4,7 @@ from collections.abc import MutableMapping, Iterable
 from ordered_set import OrderedSet
 import logging
 
-from deepdiff.helper import strings, numbers, add_to_frozen_set, get_doc
+from deepdiff.helper import strings, numbers, add_to_frozen_set, get_doc, dict_
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ class DeepSearch(dict):
             del self[k]
 
     def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else OrderedSet()
+        return dict_() if self.verbose_level >= 2 else OrderedSet()
 
     def __report(self, report_key, key, value):
         if self.verbose_level >= 2:
@@ -128,7 +128,7 @@ class DeepSearch(dict):
                      obj,
                      item,
                      parent,
-                     parents_ids=frozenset({}),
+                     parents_ids=frozenset(),
                      is_namedtuple=False):
         """Search objects"""
         found = False
@@ -175,7 +175,7 @@ class DeepSearch(dict):
                       obj,
                       item,
                       parent,
-                      parents_ids=frozenset({}),
+                      parents_ids=frozenset(),
                       print_as_attribute=False):
         """Search dictionaries"""
         if print_as_attribute:
@@ -221,7 +221,7 @@ class DeepSearch(dict):
                           obj,
                           item,
                           parent="root",
-                          parents_ids=frozenset({})):
+                          parents_ids=frozenset()):
         """Search iterables except dictionaries, sets and strings."""
 
         for i, thing in enumerate(obj):
@@ -269,7 +269,7 @@ class DeepSearch(dict):
             self.__search_obj(
                 obj, item, parent, parents_ids, is_namedtuple=True)
 
-    def __search(self, obj, item, parent="root", parents_ids=frozenset({})):
+    def __search(self, obj, item, parent="root", parents_ids=frozenset()):
         """The main search method"""
 
         if self.__skip_this(item, parent):

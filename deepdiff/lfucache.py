@@ -7,7 +7,7 @@ Modified by Sep Dehpour
 from collections import defaultdict
 from ordered_set import OrderedSet
 from threading import Lock
-from deepdiff.helper import not_found
+from deepdiff.helper import not_found, dict_
 
 
 class CacheNode:
@@ -113,7 +113,7 @@ class FreqNode:
 class LFUCache:
 
     def __init__(self, capacity):
-        self.cache = {}  # {key: cache_node}
+        self.cache = dict_()  # {key: cache_node}
         if capacity <= 0:
             raise ValueError('Capacity of LFUCache needs to be positive.')  # pragma: no cover.
         self.capacity = capacity

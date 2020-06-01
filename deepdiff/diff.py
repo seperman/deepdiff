@@ -20,7 +20,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemove
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             np, get_truncate_datetime)
+                             np, get_truncate_datetime, dict_)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -133,6 +133,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  _numpy_paths=None,
                  _original_type=None,
                  **kwargs):
+        super().__init__()
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
@@ -145,7 +146,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "_numpy_paths, _original_type, parameters and shared_parameters.") % ', '.join(kwargs.keys()))
 
         if parameters:
-            self.__dict__ = deepcopy(parameters)
+            self.__dict__.update(deepcopy(parameters))
         else:
             self.ignore_order = ignore_order
             ignore_type_in_groups = ignore_type_in_groups or []
@@ -220,8 +221,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 MAX_PASS_LIMIT_REACHED: False,
                 MAX_DIFF_LIMIT_REACHED: False,
             }
-            self.hashes = {} if hashes is None else hashes
-            self._numpy_paths = {} if _numpy_paths is None else _numpy_paths
+            self.hashes = dict_() if hashes is None else hashes
+            self._numpy_paths = dict_() if _numpy_paths is None else _numpy_paths
             self.shared_parameters = {
                 'hashes': self.hashes,
                 '_stats': self._stats,
@@ -323,7 +324,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
-    def __diff_obj(self, level, parents_ids=frozenset({}),
+    def __diff_obj(self, level, parents_ids=frozenset(),
                    is_namedtuple=False):
         """Difference of 2 objects"""
         try:
@@ -376,7 +377,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         TODO: needs also some key conversion for groups of types other than the built-in strings and numbers.
         """
-        result = {}
+        result = dict_()
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
@@ -523,14 +524,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         except AttributeError:
             return False
 
-    def __diff_iterable(self, level, parents_ids=frozenset({}), _original_type=None):
+    def __diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
         """Difference of iterables"""
         if self.ignore_order:
             self.__diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
         else:
             self.__diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
 
-    def __diff_iterable_in_order(self, level, parents_ids=frozenset({}), _original_type=None):
+    def __diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
@@ -636,7 +637,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         """Create hashtable of {item_hash: (indexes, item)}"""
         obj = getattr(level, t)
 
-        local_hashes = {}
+        local_hashes = dict_()
         for (i, item) in enumerate(obj):
             try:
                 parent = "{}[{}]".format(level.path(), i)
@@ -745,7 +746,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         # It also includes a "max" key that is just the value of the biggest current distance in the
         # most_in_common_pairs dictionary.
         most_in_common_pairs = defaultdict(lambda: defaultdict(OrderedSetPlus))
-        pairs = {}
+        pairs = dict_()
 
         pre_calced_distances = None
 
@@ -848,7 +849,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if not self._stats[MAX_PASS_LIMIT_REACHED]:
                 self._stats[MAX_PASS_LIMIT_REACHED] = True
                 logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
-            pairs = {}
+            pairs = dict_()
 
         def get_other_pair(hash_value, in_t1=True):
             """
@@ -1014,7 +1015,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if level.t1 != level.t2:
             self.__report_result('values_changed', level)
 
-    def __diff_numpy_array(self, level, parents_ids=frozenset({})):
+    def __diff_numpy_array(self, level, parents_ids=frozenset()):
         """Diff numpy arrays"""
         if level.path() not in self._numpy_paths:
             self._numpy_paths[level.path()] = get_type(level.t2).__name__
@@ -1092,7 +1093,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             return StopIteration
         self._stats[DIFF_COUNT] += 1
 
-    def __diff(self, level, parents_ids=frozenset({}), _original_type=None):
+    def __diff(self, level, parents_ids=frozenset(), _original_type=None):
         """The main diff method"""
         if self.__count_diff() is StopIteration:
             return

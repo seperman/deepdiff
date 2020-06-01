@@ -6,6 +6,8 @@ import datetime
 from pickle import UnpicklingError
 from decimal import Decimal
 from deepdiff import DeepDiff
+from deepdiff.helper import PY_3_5, pypy3
+from deepdiff.delta import DISABLE_DELTA, DELTA_SKIP_MSG
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff)
@@ -28,6 +30,7 @@ class TestSerialization:
         jsoned = ddiff.to_json()
         assert "world" in jsoned
 
+    @pytest.mark.skipif(PY_3_5, reason='json pickle does not work well with py 3.5')
     def test_deserialization(self):
         ddiff = DeepDiff(t1, t2)
         jsoned = ddiff.to_json_pickle()
@@ -41,6 +44,7 @@ class TestSerialization:
         jsoned = ddiff.to_json()
         assert "world" in jsoned
 
+    @pytest.mark.skipif(PY_3_5, reason='json pickle does not work well with py 3.5')
     def test_deserialization_tree(self):
         ddiff = DeepDiff(t1, t2, view='tree')
         jsoned = ddiff.to_json_pickle()
@@ -89,6 +93,7 @@ class TestSerialization:
         assert expected == ddiff.to_dict()
 
 
+@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestPickling:
 
     def test_serialize(self):
@@ -104,9 +109,10 @@ class TestPickling:
         expected_msg = 'Delta payload header can not be verified. Aborting.'
         assert expected_msg == str(excinfo.value)
 
+    @pytest.mark.skipif(pypy3, reason='short pickle not supported in pypy3')
     def test_pickle_that_is_string(self):
         serialized_str = 'DeepDiff Delta Payload v0-0-1\nBlah'
-        with pytest.raises(UnpicklingError) as excinfo:
+        with pytest.raises(UnpicklingError):
             pickle_load(serialized_str)
 
     def test_custom_object_deserialization_fails_without_explicit_permission(self):

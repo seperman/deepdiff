@@ -2,7 +2,7 @@ import datetime
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
-    cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq)
+    cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq, dict_)
 from collections.abc import Mapping, Iterable
 
 
@@ -79,7 +79,7 @@ class DistanceMixin:
         if isinstance(t2_hashtable[hashes_added[0]].item, (np_ndarray, list)):
             return
 
-        pre_calced_distances = {}
+        pre_calced_distances = dict_()
         added = [t2_hashtable[k].item for k in hashes_added]
         removed = [t1_hashtable[k].item for k in hashes_removed]
 
@@ -121,10 +121,10 @@ def _get_item_length(item, parents_ids=frozenset([])):
         for key, subitem in item.items():
             # dedupe the repetition report so the number of times items have shown up does not affect the distance.
             if key in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
-                new_subitem = {}
+                new_subitem = dict_()
                 for path_, indexes_to_items in subitem.items():
                     used_value_ids = set()
-                    new_indexes_to_items = {}
+                    new_indexes_to_items = dict_()
                     for k, v in indexes_to_items.items():
                         v_id = id(v)
                         if v_id not in used_value_ids:
