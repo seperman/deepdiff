@@ -90,23 +90,27 @@ DICT_IS_SORTED = py_current_version >= MINIMUM_PY_DICT_TYPE_SORTED
 
 
 class OrderedDictPlus(OrderedDict):
+    """
+    This class is only used when a python version is used where
+    the built-in dictionary is not ordered.
+    """
 
-    def __repr__(self):
-        return str(dict(self))
+    def __repr__(self):  # pragma: no cover. Only used in pypy3 and py3.5
+        return str(dict(self))  # pragma: no cover. Only used in pypy3 and py3.5
 
     __str__ = __repr__
 
-    def copy(self):
-        result = OrderedDictPlus()
-        for k, v in self.items():
-            result[k] = v
-        return result
+    def copy(self):  # pragma: no cover. Only used in pypy3 and py3.5
+        result = OrderedDictPlus()  # pragma: no cover. Only used in pypy3 and py3.5
+        for k, v in self.items():  # pragma: no cover. Only used in pypy3 and py3.5
+            result[k] = v  # pragma: no cover. Only used in pypy3 and py3.5
+        return result  # pragma: no cover. Only used in pypy3 and py3.5
 
 
 if DICT_IS_SORTED:
     dict_ = dict
 else:
-    dict_ = OrderedDictPlus
+    dict_ = OrderedDictPlus  # pragma: no cover. Only used in pypy3 and py3.5
 
 
 if py4:
