@@ -4,14 +4,11 @@ from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
-    DICT_IS_SORTED, MINIMUM_PY_DICT_TYPE_SORTED, strings, short_repr, numbers,
+    strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes,
     not_found, numpy_dtype_string_to_type, dict_)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 from deepdiff.anyset import AnySet
-
-DISABLE_DELTA = not DICT_IS_SORTED
-DELTA_SKIP_MSG = 'Python {} or newer is needed for Delta.'.format(MINIMUM_PY_DICT_TYPE_SORTED)
 
 
 logger = logging.getLogger(__name__)
@@ -307,7 +304,8 @@ class Delta:
             self._do_item_added(attribute_added)
 
     def _do_item_added(self, items):
-        for path, new_value in items.items():
+        # sorting the items by their path so that the items with smaller index are applied first.
+        for path, new_value in sorted(items.items(), key=lambda x: x[0]):
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
@@ -400,12 +398,13 @@ class Delta:
 
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
-    def _do_item_removed(self, tuples):
+    def _do_item_removed(self, items):
         """
-        Handle removing tuples.
-        Note: tuples needs to be a list of tuples or tuple of tuples om the form of (key, value)
+        Handle removing items.
         """
-        for path, expected_old_value in tuples:
+        # Sorting the iterable_item_removed in reverse order based on the paths.
+        # So that we delete a bigger index before a smaller index
+        for path, expected_old_value in sorted(items.items(), key=lambda x: x[0], reverse=True):
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
@@ -421,21 +420,18 @@ class Delta:
 
     def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed')
-        # Sorting the iterable_item_removed in reverse order based on the paths.
-        # So that we delete a bigger index before a smaller index
         if iterable_item_removed:
-            iterable_item_removed = sorted(iterable_item_removed.items(), key=lambda x: x[0], reverse=True)
             self._do_item_removed(iterable_item_removed)
 
     def _do_dictionary_item_removed(self):
         dictionary_item_removed = self.diff.get('dictionary_item_removed')
         if dictionary_item_removed:
-            self._do_item_removed(dictionary_item_removed.items())
+            self._do_item_removed(dictionary_item_removed)
 
     def _do_attribute_removed(self):
         attribute_removed = self.diff.get('attribute_removed')
         if attribute_removed:
-            self._do_item_removed(attribute_removed.items())
+            self._do_item_removed(attribute_removed)
 
     def _do_set_item_added(self):
         items = self.diff.get('set_item_added')

@@ -27,7 +27,6 @@ MAX_HEADER_LENGTH = 256
 
 MODULE_NOT_FOUND_MSG = 'DeepDiff Delta did not find {} in your modules. Please make sure it is already imported.'
 FORBIDDEN_MODULE_MSG = "Module '{}' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter"
-BASIC_HEADER = b"DeepDiff Delta Payload v0-0-1"
 DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT = 'report_repetition must be set to True when ignore_order is True to create the delta object.'
 
 SAFE_TO_IMPORT = {
@@ -52,6 +51,7 @@ SAFE_TO_IMPORT = {
     'decimal.Decimal',
     'ordered_set.OrderedSet',
     'collections.namedtuple',
+    'deepdiff.helper.OrderedDictPlus',
     're.Pattern',
 }
 
@@ -234,27 +234,12 @@ class _RestrictedUnpickler(pickle.Unpickler):
         raise ForbiddenModule(FORBIDDEN_MODULE_MSG.format(module_dot_class)) from None
 
 
-def pickle_dump(obj, header=BASIC_HEADER):
-    if isinstance(header, str):
-        header = header.encode('utf-8')
+def pickle_dump(obj):
     # We expect at least python 3.5 so protocol 4 is good.
-    if header:
-        result = header + b'\n' + pickle.dumps(obj, protocol=4, fix_imports=False)
-    else:
-        result = pickle.dumps(obj, protocol=4, fix_imports=False)
-    return result
+    return pickle.dumps(obj, protocol=4, fix_imports=False)
 
 
-def basic_header_checker(header, content):
-    """
-    This is a basic header checker.
-    In future it will have more sophisticated header checkers.
-    Perhaps something to check the signature of the delta.
-    """
-    assert header == BASIC_HEADER, "Delta payload header can not be verified. Aborting."
-
-
-def pickle_load(content, header_checker=basic_header_checker, safe_to_import=None):
+def pickle_load(content, safe_to_import=None):
     """
     **pickle_load**
     Load the pickled content. content should be a bytes object.
@@ -263,8 +248,6 @@ def pickle_load(content, header_checker=basic_header_checker, safe_to_import=Non
 
     content : Bytes of pickled object. It needs to have Delta header in it that is
         separated by a newline character from the rest of the pickled object.
-
-    header_checker : the header checker function. The default is basic_header_checker
 
     safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
         Example: {'mymodule.MyClass', 'decimal.Decimal'}
@@ -285,13 +268,6 @@ def pickle_load(content, header_checker=basic_header_checker, safe_to_import=Non
     """
     if isinstance(content, str):
         content = content.encode('utf-8')
-    max_header_to_unpack = '{}c'.format(min(MAX_HEADER_LENGTH, len(content)))
-    top_of_content = unpack(max_header_to_unpack, content)
-    break_index = top_of_content.index(b'\n')
-    header = content[: break_index]
-    content = content[break_index + 1:]
-    if header_checker:
-        header_checker(header, content)
     return _RestrictedUnpickler(io.BytesIO(content), safe_to_import=safe_to_import).load()
 
 

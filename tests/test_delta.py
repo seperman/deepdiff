@@ -6,7 +6,7 @@ from deepdiff import Delta, DeepDiff
 from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
-    DISABLE_DELTA, DELTA_SKIP_MSG, ELEM_NOT_FOUND_TO_ADD_MSG,
+    ELEM_NOT_FOUND_TO_ADD_MSG,
     VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
@@ -17,13 +17,12 @@ from deepdiff.serialization import DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
 
-@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestBasicsOfDelta:
 
     def test_list_difference_add_delta(self):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
-        diff = {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}
+        diff = {'iterable_item_added': {'root[3]': 5, 'root[2]': 3}}
         delta = Delta(diff)
 
         assert delta + t1 == t2
@@ -100,7 +99,10 @@ class TestBasicsOfDelta:
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
         delta = Delta(diff)
-        assert "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>" == repr(delta)
+        options = {
+            "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>",
+            "<Delta: {'iterable_item_added': {'root[3]': 5, 'root[2]': 3}}>"}
+        assert repr(delta) in options
 
     def test_get_elem_and_compare_to_old_value(self):
         delta = Delta({})
@@ -520,7 +522,6 @@ DELTA_CASES = {
 DELTA_CASES_PARAMS = parameterize_cases('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_CASES)
 
 
-@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestDelta:
 
     @pytest.mark.parametrize(**DELTA_CASES_PARAMS)
@@ -746,7 +747,6 @@ DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(
     't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta', DELTA_IGNORE_ORDER_CASES)
 
 
-@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestIgnoreOrderDelta:
 
     @pytest.mark.parametrize(**DELTA_IGNORE_ORDER_CASES_PARAMS)
@@ -909,7 +909,6 @@ DELTA_NUMPY_TEST_PARAMS = parameterize_cases(
     't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result', DELTA_NUMPY_TEST_CASES)
 
 
-@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestNumpyDelta:
 
     @pytest.mark.parametrize(**DELTA_NUMPY_TEST_PARAMS)
@@ -945,7 +944,6 @@ class TestNumpyDelta:
         assert expected_msg == str(excinfo.value)
 
 
-@pytest.mark.skipif(DISABLE_DELTA, reason=DELTA_SKIP_MSG)
 class TestDeltaOther:
 
     def test_list_ignore_order_various_deltas1(self):
