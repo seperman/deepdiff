@@ -645,7 +645,9 @@ class TestIgnoreOrder:
             'LEVEL CACHE HIT COUNT': 2,
             'DISTANCE CACHE HIT COUNT': 26,
             'MAX PASS LIMIT REACHED': False,
-            'MAX DIFF LIMIT REACHED': False
+            'MAX DIFF LIMIT REACHED': False,
+            'DISTANCE_CACHE_ENABLED': True,
+            'LEVEL_CACHE_ENABLED': True,
         }
         assert expected == diff.get_stats()
 
@@ -778,7 +780,9 @@ class TestIgnoreOrder:
             'LEVEL CACHE HIT COUNT': 1,
             'DISTANCE CACHE HIT COUNT': 1,
             'MAX PASS LIMIT REACHED': False,
-            'MAX DIFF LIMIT REACHED': False
+            'MAX DIFF LIMIT REACHED': False,
+            'DISTANCE_CACHE_ENABLED': True,
+            'LEVEL_CACHE_ENABLED': True
         }
         assert expected_stats == stats
 
