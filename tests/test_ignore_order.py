@@ -595,7 +595,7 @@ class TestIgnoreOrder:
             },
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2, cache_size=5000)
         assert expected == ddiff
 
     @pytest.mark.parametrize('max_diffs, expected', [
@@ -626,7 +626,7 @@ class TestIgnoreOrder:
             },
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2, cache_size=5000)
         assert expected == ddiff
 
     def test_stats_that_include_distance_cache_hits(self):
@@ -638,7 +638,7 @@ class TestIgnoreOrder:
             [1, 2, 4, 10], [4, 2, 5]
         ]
 
-        diff = DeepDiff(t1, t2, ignore_order=True)
+        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
         expected = {
             'PASSES COUNT': 5,
             'DIFF COUNT': 29,
@@ -756,7 +756,7 @@ class TestIgnoreOrder:
     def test_ignore_order_cache_for_individual_distances(self):
         t1 = [[1, 2, 'B', 3], 'B']
         t2 = [[1, 2, 3, 5], 5]
-        diff = DeepDiff(t1, t2, ignore_order=True)
+        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
         expected = {
             'values_changed': {
                 'root[1]': {
@@ -788,5 +788,5 @@ class TestIgnoreOrder:
 
         t1 = [[1, 2, 'B', 3], 5]
         t2 = [[1, 2, 3, 5], 'B']
-        diff2 = DeepDiff(t1, t2, ignore_order=True)
+        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
         assert expected_stats == diff2.get_stats()

@@ -141,7 +141,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
                  log_frequency_in_sec=0,
                  progress_logger=logger.info,
-                 cache_size=5000,
+                 cache_size=0,
                  cache_auto_adjust_frequency_in_sec=0,
                  get_deep_distance=False,
                  purge_level=1,
