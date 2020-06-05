@@ -980,7 +980,7 @@ class TestDeltaOther:
         """
         t1 = [4, 2, 2, 1]
         t2 = [4, 1, 1, 1]
-        parameters = {
+        _parameters = {
             'ignore_order': True,
             'ignore_numeric_type_changes': False,
             'ignore_string_type_changes': False,
@@ -1003,15 +1003,16 @@ class TestDeltaOther:
             'max_passes': 10000000,
             'max_diffs': None,
             'number_to_string': number_to_string,
-            '_deep_distance_buckets_exponent': 11
+            'cache_tuning_sample_size': 500,
+            'cache_size': 500,
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}
-        diff1 = DeepDiff(t1, t2, parameters=parameters)
+        diff1 = DeepDiff(t1, t2, _parameters=_parameters)
         assert expected == diff1
 
-        parameters['view'] = TEXT_VIEW
-        diff2 = DeepDiff(t1, t2, parameters=parameters)
+        _parameters['view'] = TEXT_VIEW
+        diff2 = DeepDiff(t1, t2, _parameters=_parameters)
         assert expected == diff2._to_delta_dict()
 
     def test_verify_symmetry_and_get_elem_and_compare_to_old_value(self):
