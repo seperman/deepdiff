@@ -7,6 +7,7 @@ Modified by Sep Dehpour
 from collections import defaultdict
 from ordered_set import OrderedSet
 from threading import Lock
+from statistics import mean
 from deepdiff.helper import not_found, dict_
 
 
@@ -200,6 +201,9 @@ class LFUCache:
         result = [(i, freq.freq_node.freq) for i, freq in self.cache.items()]
         result.sort(key=lambda x: -x[1])
         return result
+
+    def get_average_frequency(self):
+        return mean(freq.freq_node.freq for freq in self.cache.values())
 
 
 class DummyLFU:
