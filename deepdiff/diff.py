@@ -75,7 +75,6 @@ CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float
 VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
 PURGE_LEVEL_RANGE_MSG = 'purge_level should be 0, 1, or 2.'
 _ENABLE_CACHE_EVERY_X_DIFF = '_ENABLE_CACHE_EVERY_X_DIFF'
-DEFAULT_CACHE_TUNING_SAMPLE_SIZE = 500
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
@@ -134,7 +133,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  log_frequency_in_sec=0,
                  progress_logger=logger.info,
                  cache_size=0,
-                 cache_tuning_sample_size=DEFAULT_CACHE_TUNING_SAMPLE_SIZE,
+                 cache_tuning_sample_size=0,
                  get_deep_distance=False,
                  purge_level=1,
                  _original_type=None,
