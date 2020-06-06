@@ -626,6 +626,7 @@ class TestIgnoreOrder:
             },
         ]
 
+        # Note: these tests are not exactly deterministic
         ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2, cache_size=5000)
         assert expected == ddiff
 
