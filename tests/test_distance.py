@@ -4,6 +4,7 @@ from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import np
 from deepdiff.diff import DELTA_VIEW, CUTOFF_RANGE_ERROR_MSG
+from deepdiff.deephash import sha256hex
 from deepdiff.distance import (
     _get_item_length, _get_numbers_distance, get_numeric_types_distance,
     _get_numpy_array_distance, DISTANCE_CALCS_NEEDS_CACHE)
@@ -157,6 +158,14 @@ class TestDeepDistance:
         diff = DeepDiff(t1, t2, get_deep_distance=True)
         dist = diff['deep_distance']
         assert str(dist)[:4] == '0.25'
+
+    def test_get_distance_works_event_when_ignore_order_and_different_hasher(self):
+        t1 = ["a", "b", 2]
+        t2 = ["a", "b", "c", 2.2]
+        diff = DeepDiff(t1, t2, ignore_order=True, get_deep_distance=True,
+                        cache_size=100, hasher=sha256hex)
+        dist = diff['deep_distance']
+        assert str(dist)[:4] == '0.44'
 
     def test_get_distance_does_not_care_about_the_size_of_string(self):
         t1 = ["a", "b"]

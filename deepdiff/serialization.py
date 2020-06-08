@@ -11,7 +11,6 @@ import ordered_set  # NOQA
 import collections  # NOQA
 from copy import deepcopy
 from collections.abc import Mapping
-from struct import unpack
 from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
 from deepdiff.model import DeltaResult
 

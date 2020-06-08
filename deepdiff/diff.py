@@ -79,6 +79,10 @@ _ENABLE_CACHE_EVERY_X_DIFF = '_ENABLE_CACHE_EVERY_X_DIFF'
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
+# What is the threshold to calculate pairs of items between 2 iterables.
+# For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
+CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT = 0.4
+
 DEEPHASH_PARAM_KEYS = (
     'exclude_types',
     'exclude_paths',
@@ -130,6 +134,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  max_distances_to_keep_track_per_item=10000,
                  max_diffs=None,
                  cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
+                 cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
                  log_frequency_in_sec=0,
                  progress_logger=logger.info,
                  cache_size=0,
@@ -147,8 +152,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
-                "cutoff_distance_for_pairs, log_frequency_in_sec, cache_size, cache_tuning_sample_size, "
-                "get_deep_distance, purge_level, "
+                "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
+                "cache_tuning_sample_size, get_deep_distance, purge_level, "
                 "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -200,6 +205,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # Only used when ignore_order = True.
             self.max_distances_to_keep_track_per_item = max_distances_to_keep_track_per_item
             self.cutoff_distance_for_pairs = float(cutoff_distance_for_pairs)
+            self.cutoff_intersection_for_pairs = float(cutoff_intersection_for_pairs)
             if self.cutoff_distance_for_pairs <= 0 or self.cutoff_distance_for_pairs > 1:
                 raise ValueError(CUTOFF_RANGE_ERROR_MSG)
             # _Parameters are the clean _parameters to initialize DeepDiff with so we avoid all the above
@@ -701,13 +707,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     @staticmethod
     def __get_distance_cache_key(added_hash, removed_hash):
-        if isinstance(added_hash, int):
-            added_hash = hex(added_hash).encode('utf-8')
-            removed_hash = hex(removed_hash).encode('utf-8')
-        elif isinstance(added_hash, str):
-            added_hash = added_hash.encode('utf-8')
-            removed_hash = removed_hash.encode('utf-8')
         key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
+        if isinstance(key1, int):
+            key1 = hex(key1).encode('utf-8')
+            key2 = hex(key2).encode('utf-8')
+        elif isinstance(key1, str):
+            key1 = key1.encode('utf-8')
+            key2 = key2.encode('utf-8')
         return key1 + b'--' + key2 + b'dc'
 
     def __get_rough_distance(
@@ -852,6 +858,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
+        # Deciding whether to calculate pairs or not.
+        if (len(hashes_added) + len(hashes_removed)) / (len(full_t1_hashtable) + len(full_t2_hashtable) + 1) > self.cutoff_intersection_for_pairs:
+            get_pairs = False
+        else:
+            get_pairs = True
+
         # reduce the size of hashtables
         if self.report_repetition:
             t1_hashtable = full_t1_hashtable
@@ -860,15 +872,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_hashtable = {k: v for k, v in full_t1_hashtable.items() if k in hashes_removed}
             t2_hashtable = {k: v for k, v in full_t2_hashtable.items() if k in hashes_added}
 
-        if self._stats[PASSES_COUNT] < self.max_passes:
+        if self._stats[PASSES_COUNT] < self.max_passes and get_pairs:
             self._stats[PASSES_COUNT] += 1
 
             pairs = self.__get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type)
-        else:
+        elif get_pairs:
             if not self._stats[MAX_PASS_LIMIT_REACHED]:
                 self._stats[MAX_PASS_LIMIT_REACHED] = True
                 logger.warning(MAX_PASSES_REACHED_MSG.format(self.max_passes))
+            pairs = dict_()
+        else:
             pairs = dict_()
 
         def get_other_pair(hash_value, in_t1=True):
@@ -1108,28 +1122,31 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return cache_hit
 
     def __count_diff(self):
+        if (self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs):
+            if not self._stats[MAX_DIFF_LIMIT_REACHED]:
+                self._stats[MAX_DIFF_LIMIT_REACHED] = True
+                logger.warning(MAX_DIFFS_REACHED_MSG.format(self.max_diffs))
+            return StopIteration
         self._stats[DIFF_COUNT] += 1
         if self.cache_size and self.cache_tuning_sample_size:
-            take_sample = (self._stats[DIFF_COUNT] % self.cache_tuning_sample_size == 0)
-            if (self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs):
-                if not self._stats[MAX_DIFF_LIMIT_REACHED]:
-                    self._stats[MAX_DIFF_LIMIT_REACHED] = True
-                    logger.warning(MAX_DIFFS_REACHED_MSG.format(self.max_diffs))
-                return StopIteration
-            if self.cache_tuning_sample_size:
-                if (self._stats[DISTANCE_CACHE_ENABLED] or self._stats[LEVEL_CACHE_ENABLED]):
-                    if take_sample:
-                        self.__auto_off_cache()
-                # Turn on the cache once in a while
-                elif self._stats[DIFF_COUNT] % self._shared_parameters[_ENABLE_CACHE_EVERY_X_DIFF] == 0:
-                    self.progress_logger('Re-enabling the cache.')
-                    # decreasing the sampling frequency
-                    self._shared_parameters[_ENABLE_CACHE_EVERY_X_DIFF] *= 10
-                    self._stats[DISTANCE_CACHE_ENABLED] = self._stats[LEVEL_CACHE_ENABLED] = True
-            if take_sample:
-                for key in (PREVIOUS_DIFF_COUNT, PREVIOUS_DISTANCE_CACHE_HIT_COUNT, PREVIOUS_LEVEL_CACHE_HIT_COUNT):
-                    # Removing the prefix: len('PREVIOUS_') is 9
-                    self._stats[key] = self._stats[key[9:]]
+            self.__auto_tune_cache()
+
+    def __auto_tune_cache(self):
+        take_sample = (self._stats[DIFF_COUNT] % self.cache_tuning_sample_size == 0)
+        if self.cache_tuning_sample_size:
+            if (self._stats[DISTANCE_CACHE_ENABLED] or self._stats[LEVEL_CACHE_ENABLED]):
+                if take_sample:
+                    self.__auto_off_cache()
+            # Turn on the cache once in a while
+            elif self._stats[DIFF_COUNT] % self._shared_parameters[_ENABLE_CACHE_EVERY_X_DIFF] == 0:
+                import pytest; pytest.set_trace()
+                self.progress_logger('Re-enabling the distance and level caches.')
+                # decreasing the sampling frequency
+                self._shared_parameters[_ENABLE_CACHE_EVERY_X_DIFF] *= 10
+                self._stats[DISTANCE_CACHE_ENABLED] = self._stats[LEVEL_CACHE_ENABLED] = True
+        if take_sample:
+            for key in (PREVIOUS_DIFF_COUNT, PREVIOUS_DISTANCE_CACHE_HIT_COUNT, PREVIOUS_LEVEL_CACHE_HIT_COUNT):
+                self._stats[key] = self._stats[key[9:]]
 
     def __auto_off_cache(self):
         """
