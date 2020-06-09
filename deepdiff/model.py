@@ -1,7 +1,6 @@
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping
 from copy import copy
 from ordered_set import OrderedSet
-from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_)

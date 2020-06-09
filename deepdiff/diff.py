@@ -18,8 +18,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemove
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             skipped, TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
-                             np, get_truncate_datetime, dict_, not_found)
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
+                             np, get_truncate_datetime, dict_)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
