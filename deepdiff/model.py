@@ -534,20 +534,6 @@ class DiffLevel:
     def repetition(self):
         return self.additional['repetition']
 
-    def get_cache_key(self, hashes):
-        """
-        Get the cache key to store the results for dynamic programming.
-        Ideally the cache key is based on the hash of the object.
-        But if the hash of the object is not available, we will use the id instead.
-        """
-        if hashes:
-            t1_hash = DeepHash.get_key(hashes, key=self.t1, default=id(self.t1))
-            t2_hash = DeepHash.get_key(hashes, key=self.t2, default=id(self.t2))
-        else:
-            t1_hash = id(self.t1)
-            t2_hash = id(self.t2)
-        return '{}-{}'.format(t1_hash, t2_hash)
-
     def auto_generate_child_rel(self, klass, param):
         """
         Auto-populate self.child_rel1 and self.child_rel2.
@@ -691,21 +677,6 @@ class DiffLevel:
         branch = self.copy()
         return branch.create_deeper(new_t1, new_t2, child_relationship_class,
                                     child_relationship_param, report_type)
-
-    def stitch_to_parent(self, parent):
-        """
-        Stitch the current level to a new parent level and create a whole new branch of tree.
-        This is used to re-use the cache of diff of 2 objects, even if the path has changed.
-        """
-
-        new_self = self.copy()
-        new_parent = parent.copy()
-        new_parent.down, new_self.up = new_self, new_parent
-        new_parent.t2_child_rel = self.up.t2_child_rel
-        new_parent.t1_child_rel = self.up.t1_child_rel
-        # make a new dictionary for the path so it is not shared.
-        new_self._path = dict_()
-        return new_self
 
     def copy(self):
         """

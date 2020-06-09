@@ -7,20 +7,15 @@ class TestCache:
     @pytest.mark.slow
     def test_cache_deeply_nested_a1(self, nested_a_t1, nested_a_t2, nested_a_result):
 
-        # Very slow so it is saved as a fixture
-        # diff_without_cache = DeepDiff(t1, t2, ignore_order=True,
-        #                               cache_size=0, cache_tuning_sample_size=0,
-        #                               cutoff_intersection_for_pairs=1)
-
         diff = DeepDiff(nested_a_t1, nested_a_t2, ignore_order=True,
-                        cache_size=5000, cache_tuning_sample_size=0,
+                        cache_size=5000, cache_tuning_sample_size=280,
                         cutoff_intersection_for_pairs=1)
 
         stats = diff.get_stats()
         expected_stats = {
-            'PASSES COUNT': 1486,
-            'DIFF COUNT': 6637,
-            'DISTANCE CACHE HIT COUNT': 3440,
+            'PASSES COUNT': 1772,
+            'DIFF COUNT': 9206,
+            'DISTANCE CACHE HIT COUNT': 3442,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False
         }
