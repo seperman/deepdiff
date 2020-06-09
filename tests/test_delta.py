@@ -1005,6 +1005,7 @@ class TestDeltaOther:
             'number_to_string': number_to_string,
             'cache_tuning_sample_size': 500,
             'cache_size': 500,
+            'cutoff_intersection_for_pairs': 0.6,
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}

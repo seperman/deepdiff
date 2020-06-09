@@ -78,7 +78,7 @@ CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
 # What is the threshold to calculate pairs of items between 2 iterables.
 # For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
-CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT = 0.4
+CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT = 0.7
 
 DEEPHASH_PARAM_KEYS = (
     'exclude_types',

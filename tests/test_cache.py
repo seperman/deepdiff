@@ -1,8 +1,10 @@
+import pytest
 from deepdiff import DeepDiff
 
 
 class TestCache:
 
+    @pytest.mark.slow
     def test_cache_deeply_nested_a1(self, nested_a_t1, nested_a_t2, nested_a_result):
 
         # Very slow so it is saved as a fixture
@@ -27,6 +29,7 @@ class TestCache:
         diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=True)
         assert not diff_of_diff
 
+    @pytest.mark.slow
     def test_cache_deeply_nested_a2(self, nested_a_t1, nested_a_t2, nested_a_result):
 
         diff = DeepDiff(nested_a_t1, nested_a_t2, ignore_order=True,
@@ -120,7 +123,33 @@ class TestCache:
         }
         assert expected_stats == stats
 
-        expected = {'values_changed': {'root[11]': {'new_value': 30, 'old_value': 12}, 'root[10]': {'new_value': 31, 'old_value': 11}, 'root[9]': {'new_value': 32, 'old_value': 10}}, 'iterable_item_removed': {'root[0]': 1, 'root[1]': 2, 'root[2]': 3, 'root[3]': 4, 'root[4]': 5, 'root[5]': 6, 'root[6]': 7, 'root[7]': 8, 'root[8]': 9}}
+        expected = {
+            'values_changed': {
+                'root[11]': {
+                    'new_value': 30,
+                    'old_value': 12
+                },
+                'root[10]': {
+                    'new_value': 31,
+                    'old_value': 11
+                },
+                'root[9]': {
+                    'new_value': 32,
+                    'old_value': 10
+                }
+            },
+            'iterable_item_removed': {
+                'root[0]': 1,
+                'root[1]': 2,
+                'root[2]': 3,
+                'root[3]': 4,
+                'root[4]': 5,
+                'root[5]': 6,
+                'root[6]': 7,
+                'root[7]': 8,
+                'root[8]': 9
+            }
+        }
         assert expected == diff
 
     def test_cache_does_not_affect_final_results(self):

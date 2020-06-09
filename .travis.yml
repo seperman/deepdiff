@@ -12,7 +12,7 @@ matrix:
 install:
   - pip install -r requirements-dev.txt
 
-script: pytest --cov=deepdiff tests/
+script: pytest --cov=deepdiff tests/  --runslow
 
 after_success:
   - coveralls

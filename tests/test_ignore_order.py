@@ -564,13 +564,13 @@ class TestIgnoreOrder:
             ],
         }
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1)
         assert ddiff == {}
 
     @pytest.mark.parametrize('max_passes, expected', [
         (0, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
         (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
-        (20, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
+        (22, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
     ])
     def test_ignore_order_max_passes(self, max_passes, expected):
         t1 = [
@@ -595,13 +595,13 @@ class TestIgnoreOrder:
             },
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2, cache_size=5000)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1)
         assert expected == ddiff
 
     @pytest.mark.parametrize('max_diffs, expected', [
         (1, {}),
-        (50, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}}),
-        (63, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}}),
+        (65, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}}),
+        (80, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}}),
     ])
     def test_ignore_order_max_diffs(self, max_diffs, expected):
         t1 = [
@@ -627,7 +627,7 @@ class TestIgnoreOrder:
         ]
 
         # Note: these tests are not exactly deterministic
-        ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2, cache_size=5000)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_diffs=max_diffs, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1)
         assert expected == ddiff
 
     def test_stats_that_include_distance_cache_hits(self):
@@ -639,11 +639,10 @@ class TestIgnoreOrder:
             [1, 2, 4, 10], [4, 2, 5]
         ]
 
-        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
+        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         expected = {
-            'PASSES COUNT': 5,
-            'DIFF COUNT': 29,
-            'LEVEL CACHE HIT COUNT': 2,
+            'PASSES COUNT': 7,
+            'DIFF COUNT': 37,
             'DISTANCE CACHE HIT COUNT': 0,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False,
@@ -659,7 +658,7 @@ class TestIgnoreOrder:
             [1, 2, 4, 10], [4, 2, 5]
         ]
 
-        diff = DeepDiff(t1, t2, ignore_order=True)
+        diff = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1)
         expected = {
             'values_changed': {
                 'root[0][2]': {
@@ -685,7 +684,8 @@ class TestIgnoreOrder:
         diff = DeepDiff(t1,
                         t2,
                         ignore_order=True,
-                        max_distances_to_keep_track_per_item=1)
+                        max_distances_to_keep_track_per_item=1,
+                        cutoff_intersection_for_pairs=1)
         expected = {
             'values_changed': {
                 'root[0][2]': {
@@ -711,7 +711,7 @@ class TestIgnoreOrder:
         t2 = [[1, 2, 2, 2, 4]]
         t2.append(t2)
 
-        diff = DeepDiff(t1, t2, ignore_order=True)
+        diff = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1)
         expected = {
             'values_changed': {
                 'root[0][3]': {
@@ -726,7 +726,7 @@ class TestIgnoreOrder:
         }
         assert expected == diff
 
-        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=0)
+        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         assert expected == diff2
 
     def test_ignore_order_with_sha256_hash(self):
@@ -737,7 +737,7 @@ class TestIgnoreOrder:
         t2 = [
             [1, 2, 3, 10], [8, 2, 5]
         ]
-        diff = DeepDiff(t1, t2, ignore_order=True, hasher=sha256hex)
+        diff = DeepDiff(t1, t2, ignore_order=True, hasher=sha256hex, cutoff_intersection_for_pairs=1)
         expected = {
             'values_changed': {
                 'root[0][3]': {
@@ -755,7 +755,7 @@ class TestIgnoreOrder:
     def test_ignore_order_cache_for_individual_distances(self):
         t1 = [[1, 2, 'B', 3], 'B']
         t2 = [[1, 2, 3, 5], 5]
-        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
+        diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         expected = {
             'values_changed': {
                 'root[1]': {
@@ -774,16 +774,15 @@ class TestIgnoreOrder:
 
         stats = diff.get_stats()
         expected_stats = {
-            'PASSES COUNT': 2,
-            'DIFF COUNT': 11,
-            'LEVEL CACHE HIT COUNT': 1,
+            'PASSES COUNT': 3,
+            'DIFF COUNT': 13,
             'DISTANCE CACHE HIT COUNT': 1,
             'MAX PASS LIMIT REACHED': False,
-            'MAX DIFF LIMIT REACHED': False,
+            'MAX DIFF LIMIT REACHED': False
         }
         assert expected_stats == stats
 
         t1 = [[1, 2, 'B', 3], 5]
         t2 = [[1, 2, 3, 5], 'B']
-        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=5000)
+        diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         assert expected_stats == diff2.get_stats()
