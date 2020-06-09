@@ -50,10 +50,6 @@ class PrettyOrderedSet(OrderedSet):
     def __repr__(self):
         return '[{}]'.format(", ".join(map(str, self)))
 
-from colorama import init
-init()
-from colorama import Fore, Back, Style
-
 
 class TreeResult(ResultDict):
     def __init__(self):
