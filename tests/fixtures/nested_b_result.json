@@ -1,0 +1,19 @@
+{
+    "iterable_item_removed": {
+        "root[0]['key3'][0][0][0][0][0][0][1][0][0][1]": 7
+    },
+    "values_changed": {
+        "root[0]['key3'][0][0][0][0][0][0][0][0][0][1]": {
+            "new_value": 3,
+            "old_value": 2
+        },
+        "root[0]['key3'][0][0][0][0][0][0][1][0][0][2]": {
+            "new_value": 1,
+            "old_value": 3
+        },
+        "root[1]['key5']": {
+            "new_value": "CHANGE",
+            "old_value": "val5"
+        }
+    }
+}

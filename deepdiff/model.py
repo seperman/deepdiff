@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
 from copy import copy
 from ordered_set import OrderedSet
 from deepdiff.deephash import DeepHash
@@ -49,6 +49,10 @@ class PrettyOrderedSet(OrderedSet):
     """
     def __repr__(self):
         return '[{}]'.format(", ".join(map(str, self)))
+
+from colorama import init
+init()
+from colorama import Fore, Back, Style
 
 
 class TreeResult(ResultDict):

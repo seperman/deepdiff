@@ -139,7 +139,7 @@ class SerializationMixin:
         """
 
         view = view_override if view_override else self.view
-        return self._get_view_results(view)
+        return dict(self._get_view_results(view))
 
     def _to_delta_dict(self, directed=True, report_repetition_required=True):
         """
