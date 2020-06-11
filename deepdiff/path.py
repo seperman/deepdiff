@@ -87,19 +87,21 @@ def _get_nested_obj(obj, elements):
     return obj
 
 
-def get_item(obj, path):
+def extract(obj, path):
     """
     Get the item from obj based on path.
 
-    Example
-        >>> from deepdiff import get_item
+    Example:
+
+        >>> from deepdiff import extract
         >>> obj = {1: [{'2': 'b'}, 3], 2: [4, 5]}
         >>> path = "root[1][0]['2']"
-        >>> get_item(obj, path)
+        >>> extract(obj, path)
         'b'
 
-    Note that you can use get_item in conjunction with DeepDiff results
-    or even with the search and :ref:`grep` modules. For example:
+    Note that you can use extract in conjunction with DeepDiff results
+    or even with the search and :ref:`deepsearch_label` modules. For example:
+
         >>> from deepdiff import grep
         >>> obj = {1: [{'2': 'b'}, 3], 2: [4, 5]}
         >>> result = obj | grep(5)
@@ -108,16 +110,36 @@ def get_item(obj, path):
         >>> result['matched_values'][0]
         'root[2][1]'
         >>> path = result['matched_values'][0]
-        >>> get_item(obj, path)
+        >>> extract(obj, path)
         5
 
 
-    Note that even if DeepDiff tried gives you a path to an item in a set,
-    there is no such thing in Python and hence you will get an error trying
-    to get that item from the set.
-    If you want to be able to get items from sets, use the OrderedSet module
-    to generate the sets.
-    Deepdiff uses OrderedSet as a dependency.
+    .. note::
+        Note that even if DeepDiff tried gives you a path to an item in a set,
+        there is no such thing in Python and hence you will get an error trying
+        to extract that item from a set.
+        If you want to be able to get items from sets, use the OrderedSet module
+        to generate the sets.
+        In fact Deepdiff uses OrderedSet as a dependency.
+
+        >>> from deepdiff import grep, extract
+        >>> obj = {"a", "b"}
+        >>> obj | grep("b")
+        Set item detected in the path.'set' objects do NOT support indexing. But DeepSearch will still report a path.
+        {'matched_values': OrderedSet(['root[0]'])}
+        >>> extract(obj, 'root[0]')
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+          File "deepdiff/deepdiff/path.py", line 126, in extract
+            return _get_nested_obj(obj, elements)
+          File "deepdiff/deepdiff/path.py", line 84, in _get_nested_obj
+            obj = obj[elem]
+        TypeError: 'set' object is not subscriptable
+        >>> from deepdiff.helper import OrderedSetPlus
+        >>> obj = OrderedSetPlus(["a", "b"])
+        >>> extract(obj, 'root[0]')
+        'a'
+
     """
     elements = _path_to_elements(path, root_element=None)
     return _get_nested_obj(obj, elements)

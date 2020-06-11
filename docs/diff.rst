@@ -1,7 +1,9 @@
 :doc:`/index`
 
-DeepDiff Reference
-==================
+.. _deepdiff_label:
+
+DeepDiff
+========
 
 .. automodule:: deepdiff.diff
 
@@ -19,5 +21,6 @@ DeepDiff Reference
    numbers
    serialization
    optimizations
+   troubleshoot
 
 Back to :doc:`/index`

@@ -1,5 +1,5 @@
 import pytest
-from deepdiff.path import _path_to_elements, GET, GETATTR, get_item
+from deepdiff.path import _path_to_elements, GET, GETATTR, extract
 
 
 @pytest.mark.parametrize('path, expected', [
@@ -27,5 +27,5 @@ def test_path_to_elements(path, expected):
      'b'),
 ])
 def test_get_item(obj, path, expected):
-    result = get_item(obj, path)
+    result = extract(obj, path)
     assert expected == result

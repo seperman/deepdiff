@@ -11,4 +11,4 @@ from .diff import DeepDiff
 from .search import DeepSearch, grep
 from .deephash import DeepHash
 from .delta import Delta
-from .path import get_item
+from .path import extract

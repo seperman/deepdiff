@@ -1,9 +1,4 @@
-.. _grep_label:
-
-Grep
-====
-
-grep is a new interface for Deep Search. It takes exactly the same arguments.
+grep is a more user friendly interface for DeepSearch. It takes exactly the same arguments as DeepSearch.
 And it works just like grep in linux shell!
 
 **Examples**

@@ -1,7 +1,9 @@
 :doc:`/index`
 
-DeepSearch Reference
-====================
+.. _deepsearch_label:
+
+DeepSearch
+==========
 
 .. toctree::
    :maxdepth: 3
@@ -13,7 +15,5 @@ DeepSearch Reference
 
 .. autoclass:: DeepSearch
     :members:
-
-.. automodule:: deepdiff.path
 
 Back to :doc:`/index`
