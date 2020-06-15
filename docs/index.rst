@@ -15,7 +15,7 @@ The DeepDiff library includes the following modules:
 
 - **DeepDiff** For Deep Difference of 2 objects. :doc:`/diff`
 
-    It return the deep Difference of python objects.
+    It return the deep Difference of python objects. It can also be used to take the distance between objects. :doc:`/deep_distance`
 
 - **DeepSearch** Search for objects within other objects. :doc:`/dsearch`
 

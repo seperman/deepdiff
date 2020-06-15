@@ -147,4 +147,59 @@ Max Passes Example
 .. note::
     If you plan to generate Delta objects from the DeepDiff result, and ignore_order=True, you need to also set the report_repetition=True.
 
+
+
+.. _cutoff_distance_for_pairs_label:
+
+Cutoff Distance For Pairs
+-------------------------
+
+cutoff_distance_for_pairs : 1 >= float >= 0, default=0.3
+    What is the threshold to consider 2 items as pairs.
+    Note that it is only used when ignore_order = True.
+
+.. _cutoff_intersection_for_pairs_label:
+
+Cutoff Intersection For Pairs
+-----------------------------
+
+cutoff_intersection_for_pairs : 1 >= float >= 0, default=0.7
+    What is the threshold to calculate pairs of items between 2 iterables.
+    For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
+    Note that it is only used when ignore_order = True.
+
+Behind the scene DeepDiff takes the :ref:`deep_distance_label` of objects when running ignore_order=True.
+The distance is between zero and 1.
+A distance of zero means the items are equal. A distance of 1 means they are 100% different.
+When comparing iterables, the cutoff_intersection_for_pairs is used to decide whether to compare every single item in each iterable
+with every single item in the other iterable or not. If the distance between the 2 iterables is equal or bigger than the
+cutoff_intersection_for_pairs, then the 2 iterables items are only compared as added or removed items and NOT modified items.
+However, if the distance between 2 iterables is below the cutoff, every single item from each iterable will be compared to every
+single item from the other iterable to find the closest "pair" of each item.
+
+.. note::
+    The process of comparing every item to the other is very expensive so :ref:`cutoff_intersection_for_pairs_label` in combination with :ref:`cutoff_distance_for_pairs_label` is used to give acceptable results with much higher speed.
+
+With a low cutoff_intersection_for_pairs, the 2 iterables above will be considered too
+far off from each other to get the individual pairs of items.
+So numbers that are not only related to each other via their positions in the lists
+and not their values are paired together in the results.
+
+    >>> t1 = [1.0, 2.0, 3.0, 4.0, 5.0]
+    >>> t2 = [5.0, 3.01, 1.2, 2.01, 4.0]
+    >>>
+    >>> DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=0.1)
+    {'values_changed': {'root[1]': {'new_value': 3.01, 'old_value': 2.0}, 'root[2]': {'new_value': 1.2, 'old_value': 3.0}}, 'iterable_item_added': {'root[3]': 2.01}, 'iterable_item_removed': {'root[0]': 1.0}}
+
+With the cutoff_intersection_for_pairs of 0.7 (which is the default value),
+the 2 iterables will be considered close enough to get pairs of items between the 2.
+So 2.0 and 2.01 are paired together for example.
+
+    >>> t1 = [1.0, 2.0, 3.0, 4.0, 5.0]
+    >>> t2 = [5.0, 3.01, 1.2, 2.01, 4.0]
+    >>>
+    >>> DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=0.7)
+    {'values_changed': {'root[2]': {'new_value': 3.01, 'old_value': 3.0}, 'root[0]': {'new_value': 1.2, 'old_value': 1.0}, 'root[1]': {'new_value': 2.01, 'old_value': 2.0}}}
+
+
 Back to :doc:`/index`

@@ -58,7 +58,7 @@ class TestDeepDistance:
     def test_distance_of_the_same_objects(self):
         t1 = [{1, 2, 3}, {4, 5, 6}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, purge_level=0)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, cache_purge_level=0)
         assert {} == ddiff
         assert 0 == _get_item_length(ddiff)
         assert '0' == str(ddiff._get_rough_distance())[:10]
@@ -68,7 +68,7 @@ class TestDeepDistance:
     def test_distance_of_list_sets(self):
         t1 = [{1, 2, 3}, {4, 5}]
         t2 = [{4, 5, 6}, {1, 2, 3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, purge_level=0)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, cache_purge_level=0)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[1]': {6}}} == delta
         assert 1 == _get_item_length(ddiff)
@@ -81,7 +81,7 @@ class TestDeepDistance:
         t1 = [{1, 2, 3}, {4, 5}, {1}]
         t2 = [{4, 5, 6}, {1, 2, 3}, {1, 4}]
         ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=verbose_level,
-                         get_deep_distance=True, purge_level=0)
+                         get_deep_distance=True, cache_purge_level=0)
         delta = ddiff._to_delta_dict(report_repetition_required=False)
         assert {'set_item_added': {'root[2]': {4}, 'root[1]': {6}}} == delta
         assert 2 == _get_item_length(ddiff)

@@ -13,6 +13,52 @@ t1 : A dictionary, list, string or any python object that has __dict__ or __slot
 t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
     The second item is to be compared to the first one
 
+
+                 cache_size=0,
+                 cache_tuning_sample_size=0,
+                 cache_purge_level=1,
+                 exclude_paths=None,
+                 exclude_regex_paths=None,
+                 exclude_types=None,
+                 exclude_obj_callback=None,
+                 get_deep_distance=False,
+                 hasher=None,
+                 hashes=None,
+                 ignore_order=False,
+                 ignore_type_in_groups=None,
+                 ignore_string_type_changes=False,
+                 ignore_numeric_type_changes=False,
+                 ignore_type_subclasses=False,
+                 ignore_string_case=False,
+                 ignore_nan_inequality=False,
+                 ignore_private_variables=True,
+                 log_frequency_in_sec=0,
+                 max_passes=10000000,
+                 max_distances_to_keep_track_per_item=10000,
+                 max_diffs=None,
+                 number_format_notation="f",
+                 number_to_string_func=None,
+                 progress_logger=logger.info,
+                 report_repetition=False,
+                 significant_digits=None,
+                 truncate_datetime=None,
+                 verbose_level=1,
+                 view=TEXT_VIEW,
+
+cutoff_distance_for_pairs : 1 >= float >= 0, default=0.3
+    :ref:`cutoff_distance_for_pairs_label` What is the threshold to consider 2 items as pairs.
+    Note that it is only used when ignore_order = True.
+
+cutoff_intersection_for_pairs : 1 >= float >= 0, default=0.7
+    :ref:`cutoff_intersection_for_pairs_label` What is the threshold to calculate pairs of items between 2 iterables.
+    For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
+    Note that it is only used when ignore_order = True.
+
+cache_size : int >= 0, default=0
+    :ref:`cutoff_intersection_for_pairs_label` What is the threshold to calculate pairs of items between 2 iterables.
+    For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
+    Note that it is only used when ignore_order = True.
+
 ignore_order : Boolean, default=False
     :ref:`ignore_order_label` ignores order of elements when comparing iterables (lists)
     Normally ignore_order does not report duplicates and repetition changes.

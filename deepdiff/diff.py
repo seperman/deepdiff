@@ -70,7 +70,7 @@ CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff si
 INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
 CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float max 1.'
 VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
-PURGE_LEVEL_RANGE_MSG = 'purge_level should be 0, 1, or 2.'
+PURGE_LEVEL_RANGE_MSG = 'cache_purge_level should be 0, 1, or 2.'
 _ENABLE_CACHE_EVERY_X_DIFF = '_ENABLE_CACHE_EVERY_X_DIFF'
 
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
@@ -129,7 +129,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  max_diffs=None,
                  number_format_notation="f",
                  number_to_string_func=None,
-                 purge_level=1,
+                 cache_purge_level=1,
                  progress_logger=logger.info,
                  report_repetition=False,
                  significant_digits=None,
@@ -150,7 +150,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_distances_to_keep_track_per_item, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                "cache_tuning_sample_size, get_deep_distance, purge_level, "
+                "cache_tuning_sample_size, get_deep_distance, cache_purge_level, "
                 "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -191,7 +191,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self.verbose_level = verbose_level
             else:
                 raise ValueError(VERBOSE_LEVEL_RANGE_MSG)
-            if purge_level not in {0, 1, 2}:
+            if cache_purge_level not in {0, 1, 2}:
                 raise ValueError(PURGE_LEVEL_RANGE_MSG)
             self.view = view
             # Setting up the cache for dynamic programming. One dictionary per instance of root of DeepDiff running.
@@ -203,7 +203,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.max_distances_to_keep_track_per_item = max_distances_to_keep_track_per_item
             self.cutoff_distance_for_pairs = float(cutoff_distance_for_pairs)
             self.cutoff_intersection_for_pairs = float(cutoff_intersection_for_pairs)
-            if self.cutoff_distance_for_pairs <= 0 or self.cutoff_distance_for_pairs > 1:
+            if self.cutoff_distance_for_pairs < 0 or self.cutoff_distance_for_pairs > 1:
                 raise ValueError(CUTOFF_RANGE_ERROR_MSG)
             # _Parameters are the clean _parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
@@ -271,7 +271,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.update(view_results)
         finally:
             if self.is_root:
-                if purge_level:
+                if cache_purge_level:
                     del self._distance_cache
                     del self.hashes
                 del self._shared_parameters
@@ -283,7 +283,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     duration = progress_timer.stop()
                     self._stats['DURATION SEC'] = duration
                     logger.info('stats {}'.format(self.get_stats()))
-                if purge_level == 2:
+                if cache_purge_level == 2:
                     self.__dict__.clear()
 
     def __get_deephash_params(self):
@@ -860,7 +860,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if self._stats[PASSES_COUNT] < self.max_passes and get_pairs:
             self._stats[PASSES_COUNT] += 1
-
             pairs = self.__get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type)
         elif get_pairs:
