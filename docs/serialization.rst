@@ -51,7 +51,7 @@ To Json Pickle
 If you want the original DeepDiff object to be serialized with all the bells and whistles, you can use the to_json_pickle() and from_json_pickle() in order to serialize and deserialize its results into json. Note that json_pickle is unsafe and json pickle dumps from untrusted sources should never be loaded. It is recommended not to use this serialization unless you have to.
 
 .. note::
-    You need to install the jsonpickle package to use the to_json_pickle() method.
+    You need to install the `jsonpickle <https://github.com/jsonpickle/jsonpickle>`_ package to use the to_json_pickle() method.
 
 Serialize and then deserialize back to deepdiff
     >>> t1 = {1: 1, 2: 2, 3: 3}
@@ -72,13 +72,5 @@ From Json Pickle
 
 Load the diff object from the json pickle dump.
 Take a look at the above :ref:`to_json_pickle_label` for an example.
-
-
-.. _to_delta_dict_label:
-
-To Delta Dict
--------------
-
-to_delta_dict() is used to serialize the DeepDiff result into a delta suitable dictionary.
 
 Back to :doc:`/index`

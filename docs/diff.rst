@@ -22,6 +22,7 @@ DeepDiff
    numbers
    serialization
    optimizations
+   stats
    troubleshoot
 
 Back to :doc:`/index`

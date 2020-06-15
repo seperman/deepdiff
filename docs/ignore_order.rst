@@ -71,7 +71,9 @@ If you have deeply nested objects, DeepDiff needs to run multiple passes in orde
 That can dramatically increase the time spent to find the difference.
 You can control the maximum number of passes that can be run via the max_passes parameter.
 
-Note: The definition of pass is whenever 2 objects are being compared with each other.
+.. note::
+    The definition of pass is whenever 2 iterable objects are being compared with each other and deepdiff decides to compare every single element of one iterable with every single element of the other iterable.
+    Refer to :ref:`cutoff_distance_for_pairs_label` and :ref:`cutoff_intersection_for_pairs_label` for more info on how DeepDiff decides to start a new pass.
 
 Max Passes Example
     >>> from pprint import pprint
@@ -138,15 +140,11 @@ Max Passes Example
 
 .. note::
     If there are potential passes left to be run and the max_passes value is reached, DeepDiff will issue a warning.
-    However the most accurate result might have been found even before all the potential passes are run.
+    However the most accurate result might have already been found when there are still potential passes left to be run.
 
     For example in the above example at max_passes=64, DeepDiff finds the optimal result however it has one more pass
     to go before it has run all the potential passes. Hence just for the sake of example we are using max_passes=65
     as an example of a number that doesn't issue warnings.
-
-.. note::
-    If you plan to generate Delta objects from the DeepDiff result, and ignore_order=True, you need to also set the report_repetition=True.
-
 
 
 .. _cutoff_distance_for_pairs_label:
@@ -155,8 +153,23 @@ Cutoff Distance For Pairs
 -------------------------
 
 cutoff_distance_for_pairs : 1 >= float >= 0, default=0.3
-    What is the threshold to consider 2 items as pairs.
+    What is the threshold to consider 2 items as potential pairs.
     Note that it is only used when ignore_order = True.
+
+cutoff_distance_for_pairs in combination with :ref:`cutoff_intersection_for_pairs_label` are the parameters that decide whether 2 objects to be paired with each other during ignore_order=True algorithm or not. Note that these parameters are mainly used for nested iterables.
+
+For example by going from the default of cutoff_distance_for_pairs=0.3 to 0.1, we have essentially disallowed the 1.0 and 20.0 to be paired with each other. As you can see, DeepDiff has decided that the :ref:`deep_distance_label` of 1.0 and 20.0 to be around 0.27. Since that is way above cutoff_distance_for_pairs of 0.1, the 2 items are not paired. As a result the lists containing the 2 numbers are directly compared with each other:
+
+    >>> from deepdiff import DeepDiff
+    >>> t1 = [[1.0]]
+    >>> t2 = [[20.0]]
+    >>> DeepDiff(t1, t2, ignore_order=True, cutoff_distance_for_pairs=0.3)
+    {'values_changed': {'root[0][0]': {'new_value': 20.0, 'old_value': 1.0}}}
+    >>> DeepDiff(t1, t2, ignore_order=True, cutoff_distance_for_pairs=0.1)
+    {'values_changed': {'root[0]': {'new_value': [20.0], 'old_value': [1.0]}}}
+    >>> DeepDiff(1.0, 20.0, get_deep_distance=True)
+    {'values_changed': {'root': {'new_value': 20.0, 'old_value': 1.0}}, 'deep_distance': 0.2714285714285714}
+
 
 .. _cutoff_intersection_for_pairs_label:
 

@@ -786,3 +786,19 @@ class TestIgnoreOrder:
         t2 = [[1, 2, 3, 5], 'B']
         diff2 = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         assert expected_stats == diff2.get_stats()
+
+    def test_cutoff_distance_for_pairs(self):
+        t1 = [[1.0]]
+        t2 = [[20.0]]
+        diff1 = DeepDiff(t1, t2, ignore_order=True, cutoff_distance_for_pairs=0.3)
+        expected1 = {'values_changed': {'root[0][0]': {'new_value': 20.0, 'old_value': 1.0}}}
+        assert expected1 == diff1
+
+        diff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_distance_for_pairs=0.1)
+        expected2 = {'values_changed': {'root[0]': {'new_value': [20.0], 'old_value': [1.0]}}}
+        assert expected2 == diff2
+
+        diff_with_dist = DeepDiff(1.0, 20.0, get_deep_distance=True)
+        expected = {'values_changed': {'root': {'new_value': 20.0, 'old_value': 1.0}}, 'deep_distance': 0.2714285714285714}
+
+        assert expected == diff_with_dist
