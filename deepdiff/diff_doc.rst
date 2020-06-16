@@ -15,14 +15,10 @@ t2 : dictionary, list, string or almost any python object that has __dict__ or _
 
 
             Remaining for docs:
-                 cache_tuning_sample_size=0,
-                 cache_purge_level=1,
                  get_deep_distance=False,
                  max_distances_to_keep_track_per_item=10000,
                  max_diffs=None,
-                 truncate_datetime=None,
-                 verbose_level=1,
-                 view=TEXT_VIEW,
+
 
 cutoff_distance_for_pairs : 1 >= float >= 0, default=0.3
     :ref:`cutoff_distance_for_pairs_label` What is the threshold to consider 2 items as pairs.
@@ -34,9 +30,14 @@ cutoff_intersection_for_pairs : 1 >= float >= 0, default=0.7
     Note that it is only used when ignore_order = True.
 
 cache_size : int >= 0, default=0
-    :ref:`cutoff_intersection_for_pairs_label` What is the threshold to calculate pairs of items between 2 iterables.
-    For example 2 iterables that have nothing in common, do not need their pairs to be calculated.
-    Note that it is only used when ignore_order = True.
+    :ref:`cache_size_label` Cache size to be used to improve the performance. A cache size of zero means it is disabled.
+    Using the cache_size can dramatically improve the diff performance especially for the nested objects at the cost of more memory usage.
+
+cache_purge_level: int, 0, 1, or 2. default=1
+    :ref:`cache_purge_level_label` defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
+
+cache_tuning_sample_size : int >= 0, default = 0
+    :ref:`cache_tuning_sample_size_label` This is an experimental feature. It works hands in hands with the :ref:`cache_size_label`. When cache_tuning_sample_size is set to anything above zero, it will sample the cache usage with the passed sample size and decide whether to use the cache or not. And will turn it back on occasionally during the diffing process. This option can be useful if you are not sure if you need any cache or not. However you will gain much better performance with keeping this parameter zero and running your diff with different cache sizes and benchmarking to find the optimal cache size.
 
 ignore_order : Boolean, default=False
     :ref:`ignore_order_label` ignores order of elements when comparing iterables (lists)
@@ -51,7 +52,7 @@ significant_digits : int >= 0, default=None
     :ref:`significant_digits_label` defines the number of digits AFTER the decimal point to be used in the comparison. However you can override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
 
 truncate_datetime: string, default = None
-    Can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+    :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
 
 number_format_notation : string, default="f"
     :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.

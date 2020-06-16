@@ -119,5 +119,9 @@ ignore_nan_inequality: Boolean, default = False
     >>> DeepDiff(float('nan'), float('nan'), ignore_nan_inequality=True)
     {}
 
+Performance Improvement of Numbers diffing
+------------------------------------------
+
+Take a look at :ref:`diffing_numbers_optimizations_label`
 
 Back to :doc:`/index`

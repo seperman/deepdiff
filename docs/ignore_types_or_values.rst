@@ -273,4 +273,20 @@ exclude_obj_callback: function, default = None
     {}
 
 
+.. _truncate_datetime_label:
+
+Truncate Datetime
+-----------------
+
+truncate_datetime: string, default = None
+    truncate_datetime can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+
+    >>> import datetime
+    >>> from deepdiff import DeepDiff
+    >>> d1 = {'a': datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)}
+    >>> d2 = {'a': datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)}
+    >>> DeepDiff(d1, d2, truncate_datetime='minute')
+    {}
+
+
 Back to :doc:`/index`
