@@ -32,33 +32,6 @@ cache_purge_level: int, 0, 1, or 2. default=1
 cache_tuning_sample_size : int >= 0, default = 0
     :ref:`cache_tuning_sample_size_label` This is an experimental feature. It works hands in hands with the :ref:`cache_size_label`. When cache_tuning_sample_size is set to anything above zero, it will sample the cache usage with the passed sample size and decide whether to use the cache or not. And will turn it back on occasionally during the diffing process. This option can be useful if you are not sure if you need any cache or not. However you will gain much better performance with keeping this parameter zero and running your diff with different cache sizes and benchmarking to find the optimal cache size.
 
-ignore_order : Boolean, default=False
-    :ref:`ignore_order_label` ignores order of elements when comparing iterables (lists)
-    Normally ignore_order does not report duplicates and repetition changes.
-    In order to report repetitions, set report_repetition=True in addition to ignore_order=True
-
-report_repetition : Boolean, default=False
-    :ref:`report_repetition_label` reports repetitions when set True
-    It only works when ignore_order is set to True too.
-
-significant_digits : int >= 0, default=None
-    :ref:`significant_digits_label` defines the number of digits AFTER the decimal point to be used in the comparison. However you can override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
-
-truncate_datetime: string, default = None
-    :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
-
-number_format_notation : string, default="f"
-    :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
-
-number_to_string_func : function, default=None
-    :ref:`number_to_string_func_label` is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
-
-verbose_level: int >= 0, default = 1
-    Higher verbose level shows you more details.
-    For example verbose level 1 shows what dictionary item are added or removed.
-    And verbose level 2 shows the value of the items that are added or removed too.
-    Note that the verbose_level is ignore for the delta view.
-
 exclude_paths: list, default = None
     :ref:`exclude_paths_label`
     List of paths to exclude from the report. If only one item, you can path it as a string.
@@ -66,17 +39,6 @@ exclude_paths: list, default = None
 exclude_regex_paths: list, default = None
     :ref:`exclude_regex_paths_label`
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.
-
-hasher: default = DeepHash.murmur3_128bit
-    Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
-    by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
-
-view: string, default = text
-    :ref:`view_label`
-    Views are different "formats" of results. Each view comes with its own features.
-    The choices are text (the default) and tree.
-    The text view is the original format of the results.
-    The tree view allows you to traverse through the tree of results. So you can traverse through the tree and see what items were compared to what.
 
 exclude_types: list, default = None
     :ref:`exclude_types_label`
@@ -86,6 +48,19 @@ exclude_obj_callback: function, default = None
     :ref:`exclude_obj_callback_label`
     A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
     This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
+
+get_deep_distance: Boolean, default = False
+    :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
+
+hasher: default = DeepHash.murmur3_128bit
+    Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
+    by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
+
+ignore_order : Boolean, default=False
+    :ref:`ignore_order_label` ignores order of elements when comparing iterables (lists)
+    Normally ignore_order does not report duplicates and repetition changes.
+    In order to report repetitions, set report_repetition=True in addition to ignore_order=True
+
 
 ignore_string_type_changes: Boolean, default = False
     :ref:`ignore_string_type_changes_label`
@@ -115,23 +90,51 @@ ignore_private_variables: Boolean, default = True
     :ref:`ignore_private_variables_label`
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
 
-max_passes: Integer, default = 10000000
-    :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
-
-max_diffs: Integer, default = None
-    :ref:`max_diffs_label` defined the maximum number of diffs to run on objects to pin point what exactly is different. This is only used when ignore_order=True
-
 log_frequency_in_sec: Integer, default = 0
     :ref:`log_frequency_in_sec_label`
     How often to log the progress. The default of 0 means logging progress is disabled.
     If you set it to 20, it will log every 20 seconds. This is useful only when running DeepDiff
     on massive objects that will take a while to run. If you are only dealing with small objects, keep it at 0 to disable progress logging.
 
+max_passes: Integer, default = 10000000
+    :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
+
+max_diffs: Integer, default = None
+    :ref:`max_diffs_label` defined the maximum number of diffs to run on objects to pin point what exactly is different. This is only used when ignore_order=True
+
+number_format_notation : string, default="f"
+    :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
+
+number_to_string_func : function, default=None
+    :ref:`number_to_string_func_label` is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
+
+
 progress_logger: log function, default = logger.info
     :ref:`progress_logger_label` defines what logging function to use specifically for progress reporting. This function is only used when progress logging is enabled which happens by setting log_frequency_in_sec to anything above zero.
 
-get_deep_distance: Boolean, default = False
-    :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
+report_repetition : Boolean, default=False
+    :ref:`report_repetition_label` reports repetitions when set True
+    It only works when ignore_order is set to True too.
+
+significant_digits : int >= 0, default=None
+    :ref:`significant_digits_label` defines the number of digits AFTER the decimal point to be used in the comparison. However you can override that by setting the number_format_notation="e" which will make it mean the digits in scientific notation.
+
+truncate_datetime: string, default = None
+    :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+
+verbose_level: int >= 0, default = 1
+    Higher verbose level shows you more details.
+    For example verbose level 1 shows what dictionary item are added or removed.
+    And verbose level 2 shows the value of the items that are added or removed too.
+    Note that the verbose_level is ignore for the delta view.
+
+view: string, default = text
+    :ref:`view_label`
+    Views are different "formats" of results. Each view comes with its own features.
+    The choices are text (the default) and tree.
+    The text view is the original format of the results.
+    The tree view allows you to traverse through the tree of results. So you can traverse through the tree and see what items were compared to what.
+
 
 **Returns**
 
