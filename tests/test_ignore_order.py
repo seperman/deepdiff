@@ -649,61 +649,6 @@ class TestIgnoreOrder:
         }
         assert expected == diff.get_stats()
 
-    def test_decreasing_max_distances_to_keep_track_per_item(self):
-        t1 = [
-            [1, 2, 3, 9], [9, 8, 5, 9]
-        ]
-
-        t2 = [
-            [1, 2, 4, 10], [4, 2, 5]
-        ]
-
-        diff = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1)
-        expected = {
-            'values_changed': {
-                'root[0][2]': {
-                    'new_value': 4,
-                    'old_value': 3
-                },
-                'root[0][3]': {
-                    'new_value': 10,
-                    'old_value': 9
-                },
-                'root[1][1]': {
-                    'new_value': 4,
-                    'old_value': 8
-                },
-                'root[1][0]': {
-                    'new_value': 2,
-                    'old_value': 9
-                }
-            }
-        }
-        assert expected == diff
-
-        diff = DeepDiff(t1,
-                        t2,
-                        ignore_order=True,
-                        max_distances_to_keep_track_per_item=1,
-                        cutoff_intersection_for_pairs=1)
-        expected = {
-            'values_changed': {
-                'root[0][2]': {
-                    'new_value': 4,
-                    'old_value': 3
-                },
-                'root[0][3]': {
-                    'new_value': 10,
-                    'old_value': 9
-                },
-                'root[1]': {
-                    'new_value': [4, 2, 5],
-                    'old_value': [9, 8, 5, 9]
-                }
-            }
-        }
-        assert expected == diff
-
     def test_ignore_order_report_repetition_and_self_loop(self):
         t1 = [[1, 2, 1, 3]]
         t1.append(t1)

@@ -146,6 +146,8 @@ Max Passes Example
     to go before it has run all the potential passes. Hence just for the sake of example we are using max_passes=65
     as an example of a number that doesn't issue warnings.
 
+.. note::
+    Also take a look at :ref:`max_passes_label`
 
 .. _cutoff_distance_for_pairs_label:
 

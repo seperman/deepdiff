@@ -13,13 +13,6 @@ t1 : A dictionary, list, string or any python object that has __dict__ or __slot
 t2 : dictionary, list, string or almost any python object that has __dict__ or __slots__
     The second item is to be compared to the first one
 
-
-            Remaining for docs:
-                 get_deep_distance=False,
-                 max_distances_to_keep_track_per_item=10000,
-                 max_diffs=None,
-
-
 cutoff_distance_for_pairs : 1 >= float >= 0, default=0.3
     :ref:`cutoff_distance_for_pairs_label` What is the threshold to consider 2 items as pairs.
     Note that it is only used when ignore_order = True.
@@ -34,7 +27,7 @@ cache_size : int >= 0, default=0
     Using the cache_size can dramatically improve the diff performance especially for the nested objects at the cost of more memory usage.
 
 cache_purge_level: int, 0, 1, or 2. default=1
-    :ref:`cache_purge_level_label` defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
+    :ref:`cache_purge_level` defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
 
 cache_tuning_sample_size : int >= 0, default = 0
     :ref:`cache_tuning_sample_size_label` This is an experimental feature. It works hands in hands with the :ref:`cache_size_label`. When cache_tuning_sample_size is set to anything above zero, it will sample the cache usage with the passed sample size and decide whether to use the cache or not. And will turn it back on occasionally during the diffing process. This option can be useful if you are not sure if you need any cache or not. However you will gain much better performance with keeping this parameter zero and running your diff with different cache sizes and benchmarking to find the optimal cache size.
@@ -123,7 +116,10 @@ ignore_private_variables: Boolean, default = True
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
 
 max_passes: Integer, default = 10000000
-    :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True
+    :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
+
+max_diffs: Integer, default = None
+    :ref:`max_diffs_label` defined the maximum number of diffs to run on objects to pin point what exactly is different. This is only used when ignore_order=True
 
 log_frequency_in_sec: Integer, default = 0
     :ref:`log_frequency_in_sec_label`
@@ -134,6 +130,8 @@ log_frequency_in_sec: Integer, default = 0
 progress_logger: log function, default = logger.info
     :ref:`progress_logger_label` defines what logging function to use specifically for progress reporting. This function is only used when progress logging is enabled which happens by setting log_frequency_in_sec to anything above zero.
 
+get_deep_distance: Boolean, default = False
+    :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
 
 **Returns**
 

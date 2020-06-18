@@ -17,6 +17,7 @@ log_frequency_in_sec: Integer, default = 0
 
 For example we have run a diff on 2 nested objects that took 2 seconds to get the results. By passing the log_frequency_in_sec=1, we get the following in the logs:
 
+    >>> DeepDiff(t1, t2, log_frequency_in_sec=1)
     INFO:deepdiff.diff:DeepDiff 1 seconds in progress. Pass #1634, Diff #8005
     INFO:deepdiff.diff:DeepDiff 2 seconds in progress. Pass #3319, Diff #16148
     INFO:deepdiff.diff:stats {'PASSES COUNT': 3960, 'DIFF COUNT': 19469, 'DISTANCE CACHE HIT COUNT': 11847, 'MAX PASS LIMIT REACHED': False, 'MAX DIFF LIMIT REACHED': False, 'DURATION SEC': 2}
@@ -35,10 +36,16 @@ Progress Logger
 
 progress_logger: log function, default = logger.info
     What logging function to use specifically for progress reporting. This function is only used when progress logging is enabled
-    by setting log_frequency_in_sec to anything above zero. The function that is passed needs to be thread safe.
+    by setting log_frequency_in_sec to anything above zero. The function that is passed as the progress_logger needs to be thread safe.
 
 
-For example you can pass progress_logger=logger.warning or any other logging function that you desire.
+For example you can pass progress_logger=logger.warning to the example above and everything is logged as warning level:
+
+    >>> DeepDiff(t1, t2, log_frequency_in_sec=1, progress_logger=logger.warning)
+    WARNING:deepdiff.diff:DeepDiff 1 seconds in progress. Pass #1634, Diff #8005
+    WARNING:deepdiff.diff:DeepDiff 2 seconds in progress. Pass #3319, Diff #16148
+    WARNING:deepdiff.diff:stats {'PASSES COUNT': 3960, 'DIFF COUNT': 19469, 'DISTANCE CACHE HIT COUNT': 11847, 'MAX PASS LIMIT REACHED': False, 'MAX DIFF LIMIT REACHED': False, 'DURATION SEC': 2}
+
 
 .. _get_stats_label:
 

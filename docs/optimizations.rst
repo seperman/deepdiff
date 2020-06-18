@@ -14,6 +14,35 @@ Max Passes
 :ref:`max_passes_label` comes with the default of 10000000.
 If you don't need to exactly pinpoint the difference and you can get away with getting a less granular report, you can reduce the number of passes. It is recommended to get a diff of your objects with the defaults max_passes and take a look at the stats by running :ref:`get_stats_label` before deciding to reduce this number. In many cases reducing this number does not yield faster results.
 
+A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
+
+.. _max_diffs_label:
+
+Max Diffs
+---------
+
+max_diffs: Integer, default = None
+    max_diffs defined the maximum number of diffs to run on objects to pin point what exactly is different. This is only used when ignore_order=True. Every time 2 individual items are compared a diff is counted. The default value of None means there is no limit in the number of diffs that will take place. Any positive integer can make DeepDiff stop doing the calculations upon reaching that max_diffs count.
+
+You can run diffs and then :ref:`get_stats_label` to see how many diffs and passes have happened.
+
+    >>> from deepdiff import DeepDiff
+    >>> diff=DeepDiff(1, 2)
+    >>> diff
+    {'values_changed': {'root': {'new_value': 2, 'old_value': 1}}}
+    >>> diff.get_stats()
+    {'PASSES COUNT': 0, 'DIFF COUNT': 1, 'DISTANCE CACHE HIT COUNT': 0, 'MAX PASS LIMIT REACHED': False, 'MAX DIFF LIMIT REACHED': False}
+    >>> diff=DeepDiff([[1,2]], [[2,3,1]])
+    >>> diff.get_stats()
+    {'PASSES COUNT': 0, 'DIFF COUNT': 8, 'DISTANCE CACHE HIT COUNT': 0, 'MAX PASS LIMIT REACHED': False, 'MAX DIFF LIMIT REACHED': False}
+    >>> diff=DeepDiff([[1,2]], [[2,3,1]], ignore_order=True)
+    >>> diff.get_stats()
+    {'PASSES COUNT': 3, 'DIFF COUNT': 6, 'DISTANCE CACHE HIT COUNT': 0, 'MAX PASS LIMIT REACHED': False, 'MAX DIFF LIMIT REACHED': False}
+
+.. note::
+    Compare :ref:`max_diffs_label` with :ref:`max_passes_label`
+
+
 .. _cache_size_label:
 
 Cache Size
@@ -160,13 +189,48 @@ As you can see the memory usage has gone up from around 500Mb to around 630Mb.
    Numpy but no cache
 
 
+Pypy
+----
+
+If you are diffing big blobs of data that do not mainly include numbers, you may gain some performance improvement by running DeepDiff on Pypy3 instead of cPython.
+
+For example lets take a look at the performance of the benchmark_big_jsons in the `DeepDiff-Benchmark repo <https://github.com/seperman/deepdiff-benchmark/blob/master/benchmark.py>`_.
+
+First we will run it on cPython 3.8:
+
+It takes around 17.5 seconds and 40Mb of memory:
+
+.. figure:: _static/benchmark_big_jsons__3.8__ignore_order=True__cache_size=0__cache_tuning_sample_size=0__max_diffs=300000__max_passes=40000__cutoff_intersection_for_pairs=1.png
+   :alt: Nested blob of text diffed in Python3.8
+
+   Nested blob of text diffed in Python3.8
+
+And then we run it in Pypy3.6-7.3.0. It takes 12 seconds now but around 110Mb of memory.
+
+.. figure:: _static/benchmark_big_jsons__pypy3.6__ignore_order=True__cache_size=0__cache_tuning_sample_size=0__max_diffs=300000__max_passes=40000__cutoff_intersection_for_pairs=1.png
+   :alt: Nested blob of text diffed in Pypy3.6-7.3.0
+
+   Nested blob of text diffed in Pypy3.6-7.3.0
+
+.. note::
+    Note that if you diffing numbers, and have Numpy installed as recommended, cPython will have a better performance than Pypy. But if you are diffing blobs of mixed strings and some numbers, Pypy will have a better CPU performance and worse memory usage.
+
+
+Cutoff Intersection For Pairs
+-----------------------------
+
+:ref:`cutoff_intersection_for_pairs_label` which is only used when ignore_order=True can have a huge affect on the granularity of the results and the performance. A value of zero essentially stops DeepDiff from doing passes while a value of 1 forced DeepDiff to do passes on iterables even when they are very different. Running passes is an expensive operation.
+
 .. _cache_purge_level:
 
 Cache Purge Level
 -----------------
 
 cache_purge_level: int, 0, 1, or 2. default=1
-    cache_purge_level_label defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
+    cache_purge_level defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
+
+
+
 
 
 Back to :doc:`/index`
