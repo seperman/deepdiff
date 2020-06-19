@@ -217,4 +217,6 @@ So 2.0 and 2.01 are paired together for example.
     {'values_changed': {'root[2]': {'new_value': 3.01, 'old_value': 3.0}, 'root[0]': {'new_value': 1.2, 'old_value': 1.0}, 'root[1]': {'new_value': 2.01, 'old_value': 2.0}}}
 
 
+As an example of how much this parameter can affect the results in deeply nested objects, please take a look at :ref:`distance_and_diff_granularity_label`.
+
 Back to :doc:`/index`

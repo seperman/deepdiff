@@ -221,6 +221,8 @@ Cutoff Intersection For Pairs
 
 :ref:`cutoff_intersection_for_pairs_label` which is only used when ignore_order=True can have a huge affect on the granularity of the results and the performance. A value of zero essentially stops DeepDiff from doing passes while a value of 1 forced DeepDiff to do passes on iterables even when they are very different. Running passes is an expensive operation.
 
+As an example of how much this parameter can affect the results in deeply nested objects, please take a look at :ref:`distance_and_diff_granularity_label`.
+
 .. _cache_purge_level:
 
 Cache Purge Level

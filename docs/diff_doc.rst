@@ -126,7 +126,6 @@ verbose_level: int >= 0, default = 1
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.
     And verbose level 2 shows the value of the items that are added or removed too.
-    Note that the verbose_level is ignore for the delta view.
 
 view: string, default = text
     :ref:`view_label`

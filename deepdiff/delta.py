@@ -5,7 +5,7 @@ from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
     strings, short_repr, numbers,
-    np_ndarray, np_array_factory, numpy_dtypes,
+    np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 from deepdiff.anyset import AnySet
@@ -35,6 +35,8 @@ INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Un
 NUMPY_TO_LIST = 'NUMPY_TO_LIST'
 NOT_VALID_NUMPY_TYPE = "{} is not a valid numpy type."
 
+doc = get_doc('delta_doc.rst')
+
 
 class DeltaError(ValueError):
     """
@@ -51,58 +53,22 @@ class DeltaNumpyOperatorOverrideError(ValueError):
 
 
 class Delta:
-    r"""
-    **Delta**
 
-    DeepDiff Delta is a directed delta that when applied to t1 can yield t2 where delta is the difference of t1 and t2.
+    __doc__ = doc
 
-    NOTE: THIS FEATURE IS IN BETA
-
-    **Parameters**
-
-    diff : Delta dictionary, Delta dump payload or a DeepDiff object, default=None.
-        Content to be loaded.
-
-    delta_path : String, default=None.
-        local path to the delta dump file to be loaded
-
-    You need to pass either diff or delta_path but not both.
-
-    safe_to_import : Set, default=None.
-        A set of modules that needs to be explicitly white listed to be loaded
-        Example: {'mymodule.MyClass', 'decimal.Decimal'}
-        Note that this set will be added to the basic set of modules that are already white listed.
-        The set of what is already white listed can be found in deepdiff.serialization.SAFE_TO_IMPORT
-
-    mutate : Boolean, default=False.
-        Whether to mutate the original object when adding the delta to it or not.
-        Note that this parameter is not always successful in mutating. For example if your original object
-        is an immutable type such as a frozenset or a tuple, mutation will not succeed.
-        Hence it is recommended to keep this parameter as the default value of False unless you are sure
-        that you do not have immutable objects. There is a small overhead of doing deepcopy on the original
-        object when mutate=False. If performance is a concern and modifying the original object is not a big deal,
-        set the mutate=True but always reassign the output back to the original object.
-
-        Example:
-
-        delta = Delta(diff, mutate=True)
-
-    **Returns**
-
-        A delta object that can be added to t1 to recreate t2.
-
-    **Examples**
-
-    Importing
-        >>> from deepdiff import DeepDiff, Delta
-        >>> from pprint import pprint
-
-
-    Note: Delta objects can not fully reproduce objects if the diff reports Numpy array shape changes.
-    """
-    def __init__(self, diff=None, delta_path=None, delta_file=None, mutate=False, verify_symmetry=False,
-                 raise_errors=False, log_errors=True, safe_to_import=None,
-                 serializer=pickle_dump, deserializer=pickle_load):
+    def __init__(
+        self,
+        diff=None,
+        delta_path=None,
+        delta_file=None,
+        deserializer=pickle_load,
+        log_errors=True,
+        mutate=False,
+        raise_errors=False,
+        safe_to_import=None,
+        serializer=pickle_dump,
+        verify_symmetry=False,
+    ):
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
@@ -542,7 +508,7 @@ class Delta:
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
 
-    def dump(self, file, delta_path=None):
+    def dump(self, file):
         """
         Dump into file object
         """
