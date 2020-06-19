@@ -160,17 +160,72 @@ In fact only a few Python object types are allowed by default. The user of DeepD
 Delta Mutate parameter
 ----------------------
 
-Whether to mutate the original object or not.
+Whether to mutate the original object when applying the delta or not.
+
+For example:
+
+>>> t1 = [1, 2, [3, 5, 6]]
+>>> t2 = [2, 3, [3, 6, 8]]
+
+>>> diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+>>> diff
+{'values_changed': {'root[0]': {'new_value': 3, 'old_value': 1}, 'root[2][1]': {'new_value': 8, 'old_value': 5}}}
+>>> delta = Delta(diff)
+>>> delta
+<Delta: {'values_changed': {'root[0]': {'new_value': 3}, 'root[2][1]': {'new_value': 8}}}>
+
+Note that we can apply delta to objects different than the original objects there were made from:
+
+>>> t3 = ["a", 2, [3, "b", "c"]]
+>>> t3 + delta
+[3, 2, [3, 8, 'c']]
+
+If we check t3, it is still the same as the original value of t3:
+
+>>> t3
+['a', 2, [3, 'b', 'c']]
+
+Now let's make the delta with mutate=True
+
+>>> delta2 = Delta(diff, mutate=True)
+>>> t3 + delta2
+[3, 2, [3, 8, 'c']]
+>>> t3
+[3, 2, [3, 8, 'c']]
+
+Applying the delta to t3 mutated the t3 itself in this case!
+
 
 .. _delta_and_numpy_label:
 
 Delta and Numpy
 ---------------
 
+>>> from deepdiff import DeepDiff, Delta
+>>> import numpy as np
+>>> t1 = np.array([1, 2, 3, 5])
+>>> t2 = np.array([2, 2, 7, 5])
+>>> diff = DeepDiff(t1, t2)
+>>> diff
+{'values_changed': {'root[0]': {'new_value': 2, 'old_value': 1}, 'root[2]': {'new_value': 7, 'old_value': 3}}}
+>>> delta = Delta(diff)
+
 .. note::
     When applying delta to Numpy arrays, make sure to put the delta object first and the numpy array second. This is because Numpy array overrides the + operator and thus DeepDiff's Delta won't be able to be applied.
 
-    >>>
+    >>> t1 + delta
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+        raise DeltaNumpyOperatorOverrideError(DELTA_NUMPY_OPERATOR_OVERRIDE_MSG)
+    deepdiff.delta.DeltaNumpyOperatorOverrideError: A numpy ndarray is most likely being added to a delta. Due to Numpy override the + operator, you can only do: delta + ndarray and NOT ndarray + delta
+
+Let's put the delta first then:
+
+>>> delta + t1
+array([2, 2, 7, 5])
+>>> delta + t2 == t2
+array([ True,  True,  True,  True])
+
 
 .. note::
     You can not apply a delta that was created from normal Python objects to Numpy arrays.
