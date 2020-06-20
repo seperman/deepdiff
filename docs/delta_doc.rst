@@ -28,7 +28,11 @@ serializer : Serializer function, default=pickle_dump
     :ref:`delta_serializer_label` is the function to serialize the delta content into a format that can be stored. The default is the pickle_dump function that comes with DeepDiff.
 
 log_errors : Boolean, default=True
-    Whether to log the errors or not.
+    Whether to log the errors or not when applying the delta object.
+
+raise_errors : Boolean, default=False
+    :ref:`raise_errors_label`
+    Whether to raise errors or not when applying a delta object.
 
 mutate : Boolean, default=False.
     :ref:`delta_mutate_label` defines whether to mutate the original object when adding the delta to it or not.
@@ -55,8 +59,8 @@ verify_symmetry : Boolean, default=False
 
 .. _delta_diff_label:
 
-Diff
-----
+Diff to load in Delta
+---------------------
 
 diff : Delta dictionary, Delta dump payload or a DeepDiff object, default=None.
     diff is the content to be loaded.
@@ -160,7 +164,14 @@ In fact only a few Python object types are allowed by default. The user of DeepD
 Delta Mutate parameter
 ----------------------
 
-Whether to mutate the original object when applying the delta or not.
+mutate : Boolean, default=False.
+    delta_mutate defines whether to mutate the original object when adding the delta to it or not.
+    Note that this parameter is not always successful in mutating. For example if your original object
+    is an immutable type such as a frozenset or a tuple, mutation will not succeed.
+    Hence it is recommended to keep this parameter as the default value of False unless you are sure
+    that you do not have immutable objects. There is a small overhead of doing deepcopy on the original
+    object when mutate=False. If performance is a concern and modifying the original object is not a big deal,
+    set the mutate=True but always reassign the output back to the original object.
 
 For example:
 
@@ -228,9 +239,48 @@ array([ True,  True,  True,  True])
 
 
 .. note::
-    You can not apply a delta that was created from normal Python objects to Numpy arrays.
+    You can apply a delta that was created from normal Python objects to Numpy arrays. But it is not recommended.
 
-    >>>
+.. _raise_errors_label:
+
+Delta Raise Errors parameter
+----------------------------
+
+raise_errors : Boolean, default=False
+    Whether to raise errors or not when applying a delta object.
+
+>>> from deepdiff import DeepDiff, Delta
+>>> t1 = [1, 2, [3, 5, 6]]
+>>> t2 = [2, 3, [3, 6, 8]]
+>>> diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+>>> delta = Delta(diff, raise_errors=False)
+
+Now let's apply the delta to a very different object:
+
+>>> t3 = [1, 2, 3, 5]
+>>> t4 = t3 + delta
+Unable to get the item at root[2][1]
+
+We get the above log message that it was unable to get the item at root[2][1]. We get the message since by default log_errors=True
+
+Let's see what t4 is now:
+
+>>> t4
+[3, 2, 3, 5]
+
+So the delta was partially applied on t3.
+
+Now let's set the raise_errors=True
+
+>>> delta2 = Delta(diff, raise_errors=True)
+>>>
+>>> t3 + delta2
+Unable to get the item at root[2][1]
+Traceback (most recent call last):
+current_old_value = obj[elem]
+TypeError: 'int' object is not subscriptable
+During handling of the above exception, another exception occurred:
+deepdiff.delta.DeltaError: Unable to get the item at root[2][1]
 
 
 .. _delta_safe_to_import_label:
@@ -238,7 +288,71 @@ array([ True,  True,  True,  True])
 Delta Safe To Import parameter
 ------------------------------
 
+safe_to_import : Set, default=None.
+    safe_to_import is a set of modules that needs to be explicitly white listed to be loaded
+    Example: {'mymodule.MyClass', 'decimal.Decimal'}
+    Note that this set will be added to the basic set of modules that are already white listed.
+
+
+As noted in :ref:`delta_dump_safety_label` and :ref:`delta_deserializer_label`, DeepDiff's Delta takes safety very seriously and thus limits the globals that can be deserialized when importing. However on occasions that you need a specific type (class) that needs to be used in delta objects, you need to pass it to the Delta via safe_to_import parameter.
+
+The set of what is already white listed can be found in deepdiff.serialization.SAFE_TO_IMPORT
+At the time of writing this document, this list consists of:
+
+>>> from deepdiff.serialization import SAFE_TO_IMPORT
+>>> from pprint import pprint
+>>> pprint(SAFE_TO_IMPORT)
+{'builtins.None',
+ 'builtins.bin',
+ 'builtins.bool',
+ 'builtins.bytes',
+ 'builtins.complex',
+ 'builtins.dict',
+ 'builtins.float',
+ 'builtins.frozenset',
+ 'builtins.int',
+ 'builtins.list',
+ 'builtins.range',
+ 'builtins.set',
+ 'builtins.slice',
+ 'builtins.str',
+ 'builtins.tuple',
+ 'collections.namedtuple',
+ 'datetime.datetime',
+ 'datetime.time',
+ 'datetime.timedelta',
+ 'decimal.Decimal',
+ 'deepdiff.helper.OrderedDictPlus',
+ 'ordered_set.OrderedSet',
+ 're.Pattern'}
+
+If you want to pass any other argument to safe_to_import, you will need to put the full path to the type as it appears in the sys.modules
+
+For example let's say you have a package call mypackage and has a module called mymodule. If you check the sys.modules, the address to this module must be mypackage.mymodule. In order for Delta to be able to serialize this object, first of all it has to be `picklable <https://docs.python.org/3/library/pickle.html#object.__reduce__>`_. Then you can pass:
+
+>>> delta = Delta(t1, t2, safe_to_import={'mypackage.mymodule'})
+
 .. _delta_verify_symmetry_label:
 
 Delta Verify Symmetry parameter
 -------------------------------
+
+verify_symmetry : Boolean, default=False
+    verify_symmetry is used to verify that the original value of items are the same as when the delta was created. Note that in order for this option to work, the delta object will need to store more data and thus the size of the object will increase. Let's say that the diff object says root[0] changed value from X to Y. If you create the delta with the default value of verify_symmetry=False, then what delta will store is root[0] = Y. And if this delta was applied to an object that has any root[0] value, it will still set the root[0] to Y. However if verify_symmetry=True, then the delta object will store also that the original value of root[0] was X and if you try to apply the delta to an object that has root[0] of any value other than X, it will notify you.
+
+
+
+>>> from deepdiff import DeepDiff, Delta
+>>> t1 = [1]
+>>> t2 = [2]
+>>> t3 = [3]
+>>>
+>>> diff = DeepDiff(t1, t2)
+>>>
+>>> delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+>>> t4 = delta2 + t3
+Expected the old value for root[0] to be 1 but it is 3. Error found on: while checking the symmetry of the delta. You have applied the delta to an object that has different values than the original object the delta was made from
+>>> t4
+[2]
+
+And if you had set raise_errors=True, then it would have raised the error in addition to logging it.

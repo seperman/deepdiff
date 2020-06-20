@@ -155,7 +155,7 @@ class Delta:
                 current_old_value = getattr(obj, elem)
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
-        except (KeyError, IndexError, AttributeError, IndexError) as e:
+        except (KeyError, IndexError, AttributeError, IndexError, TypeError) as e:
             current_old_value = not_found
             if isinstance(path_for_err_reporting, (list, tuple)):
                 path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])

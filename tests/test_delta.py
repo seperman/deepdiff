@@ -139,6 +139,21 @@ class TestBasicsOfDelta:
                 obj={}, elem=1, action=GET, path_for_err_reporting='mypath')
         assert "Failed to set mypath due to 1" == str(excinfo.value)
 
+    def test_raise_error(self):
+        t1 = [1, 2, [3, 5, 6]]
+        t2 = [2, 3, [3, 6, 8]]
+        diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        delta = Delta(diff, raise_errors=False)
+        t3 = [1, 2, 3, 5]
+        t4 = t3 + delta
+        assert [3, 2, 3, 5] == t4
+
+        delta2 = Delta(diff, raise_errors=True)
+
+        with pytest.raises(DeltaError) as excinfo:
+            t3 + delta2
+        assert "Unable to get the item at root[2][1]" == str(excinfo.value)
+
     def test_identical_delta(self):
         delta = Delta({})
 
