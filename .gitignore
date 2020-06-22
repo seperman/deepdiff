@@ -66,3 +66,6 @@ target/
 .python-version*
 
 temp*
+
+# env file
+.env

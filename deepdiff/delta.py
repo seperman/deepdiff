@@ -35,7 +35,7 @@ INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER = 'Delta added to an incompatible object. Un
 NUMPY_TO_LIST = 'NUMPY_TO_LIST'
 NOT_VALID_NUMPY_TYPE = "{} is not a valid numpy type."
 
-doc = get_doc('delta_doc.rst')
+doc = get_doc('delta.rst')
 
 
 class DeltaError(ValueError):

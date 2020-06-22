@@ -7,3 +7,6 @@ mmh3==2.5.1
 numpy==1.18.2
 pytest==5.4.2
 pytest-cov==2.8.1
+python-dotenv==0.13.0
+watchdog==0.10.2
+Sphinx==3.2.0

@@ -5,8 +5,10 @@
 Deep Distance
 =============
 
-The distance between 2 objects. A number between 0 and 1.
-Deep Distance in concept is inspired by Levenshtein Edit distance. At its core, the Deep Distance is the number of operations needed to convert one object to the other divided by the sum of the sizes of the 2 objects capped at 1. Note that it is the number of operations and NOT the "minimum" number of operations to convert one object to the other. The number is highly dependent on the granularity of the diff results controlled by the parameters passed to DeepDiff.
+
+Deep Distance is the distance between 2 objects. It is a floating point number between 0 and 1. Deep Distance in concept is inspired by `Levenshtein Edit Distance <https://en.wikipedia.org/wiki/Levenshtein_distance>`_.
+
+At its core, the Deep Distance is the number of operations needed to convert one object to the other divided by the sum of the sizes of the 2 objects capped at 1. Note that unlike Levensthtein Distance, the Deep Distance it is the based on the number of operations and NOT the “minimum” number of operations to convert one object to the other. The number is highly dependent on the granularity of the diff results. And the granularity is controlled by the parameters passed to DeepDiff.
 
 .. _get_deep_distance_label:
 
