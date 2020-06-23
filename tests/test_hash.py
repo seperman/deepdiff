@@ -2,12 +2,15 @@
 import re
 import pytest
 import logging
-from deepdiff import DeepHash
-from deepdiff.deephash import prepare_string_for_hashing, unprocessed, BoolObj
-from deepdiff.helper import pypy3, get_id, number_to_string
+import datetime
 from collections import namedtuple
 from functools import partial
 from enum import Enum
+from deepdiff import DeepHash
+from deepdiff.deephash import (
+    prepare_string_for_hashing, unprocessed, UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
+from deepdiff.helper import pypy3, get_id, number_to_string, np
+from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
 
@@ -47,12 +50,65 @@ class TestDeepHash:
         result = DeepHash(obj)
         assert result[a]
 
+    def test_deephash_repr(self):
+        obj = "a"
+        result = DeepHash(obj)
+        assert "{'a': 92909720888655291083736678792297797326}" == repr(result)
+
+    def test_deephash_values(self):
+        obj = "a"
+        result = list(DeepHash(obj).values())
+        assert [92909720888655291083736678792297797326] == result
+
+    def test_deephash_keys(self):
+        obj = "a"
+        result = list(DeepHash(obj).keys())
+        assert ["a"] == result
+
+    def test_deephash_items(self):
+        obj = "a"
+        result = list(DeepHash(obj).items())
+        assert [('a', 92909720888655291083736678792297797326)] == result
+
     def test_get_hash_by_obj_when_does_not_exist(self):
         a = "a"
         obj = {1: a}
         result = DeepHash(obj)
         with pytest.raises(KeyError):
             result[2]
+
+    def test_datetime(self):
+        now = datetime.datetime.now()
+        a = b = now
+        a_hash = DeepHash(a)
+        b_hash = DeepHash(b)
+        assert a_hash[a] == b_hash[b]
+
+    def test_datetime_truncate(self):
+        a = datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)
+        b = datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)
+        c = datetime.datetime(2020, 5, 17, 22, 15, 34, 500000)
+
+        a_hash = DeepHash(a, truncate_datetime='minute')
+        b_hash = DeepHash(b, truncate_datetime='minute')
+        assert a_hash[a] == b_hash[b]
+
+        a_hash = DeepHash(a, truncate_datetime='second')
+        c_hash = DeepHash(c, truncate_datetime='second')
+        assert a_hash[a] == c_hash[c]
+
+    def test_get_reserved_keyword(self):
+        hashes = {UNPROCESSED_KEY: 'full item', 'key1': ('item', 'count')}
+        result = DeepHash._getitem(hashes, obj='key1')
+        assert 'item' == result
+        # For reserved keys, it should just grab the object instead of grabbing an item in the tuple object.
+        result = DeepHash._getitem(hashes, obj=UNPROCESSED_KEY)
+        assert 'full item' == result
+
+    def test_get_key(self):
+        hashes = {'key1': ('item', 'count')}
+        result = DeepHash.get_key(hashes, key='key2', default='banana')
+        assert 'banana' == result
 
     def test_list_of_sets(self):
         a = {1}
@@ -71,6 +127,9 @@ class TestDeepHash:
 
             def __str__(self):
                 return "Bad Object"
+
+            def __repr__(self):
+                return "<Bad obj id {}>".format(id(self))
 
         t1 = Bad()
 
@@ -399,6 +458,13 @@ class TestDeepHashPrep:
                                  ignore_type_subclasses=ignore_type_subclasses)
         assert is_qual == (t1_result[t1] == t2_result[t2])
 
+    def test_custom_object(self):
+        cc_a = CustomClass2(prop1=["a"], prop2=["b"])
+        t1 = [cc_a, CustomClass2(prop1=["c"], prop2=["d"])]
+        t1_result = DeepHashPrep(t1)
+        expected = 'list:objCustomClass2:{str:prop1:list:str:a;str:prop2:list:str:b},objCustomClass2:{str:prop1:list:str:c;str:prop2:list:str:d}'  # NOQA
+        assert expected == t1_result[t1]
+
     def test_repetition_by_default_does_not_effect(self):
         list1 = [3, 4]
         list1_id = get_id(list1)
@@ -440,7 +506,6 @@ class TestDeepHashPrep:
 
         def hasher(obj):
             return str(next(hashes))
-
         obj = "a"
         expected_result = {obj: '0'}
         result = DeepHash(obj, hasher=hasher)
@@ -568,6 +633,44 @@ class TestDeepHashPrep:
         # Note: we ignore private names in calculating hashes now. So you dont see __init__ here for example.
         assert t1_hash[t1] == r'objClassC:{str:class_attr:int:0}'
 
+    def test_hash_set_in_list(self):
+        t1 = [{1, 2, 3}, {4, 5}]
+        t1_hash = DeepHashPrep(t1)
+        assert t1_hash[t1] == 'list:set:int:1,int:2,int:3,set:int:4,int:5'
+
+    def test_hash_numpy_array1(self):
+        t1 = np.array([[1, 2]], np.int8)
+        t2 = np.array([[2, 1]], np.int8)
+        t1_hash = DeepHashPrep(t1)
+        t2_hash = DeepHashPrep(t2)
+        assert t1_hash[t1] == 'ndarray:ndarray:int8:1,int8:2'
+        assert t2_hash[t2] == t1_hash[t1]
+
+    def test_hash_numpy_array_ignore_numeric_type_changes(self):
+        t1 = np.array([[1, 2]], np.int8)
+        t1_hash = DeepHashPrep(t1, ignore_numeric_type_changes=True)
+        assert t1_hash[t1] == 'ndarray:ndarray:number:1.000000000000,number:2.000000000000'
+
+    def test_hash_numpy_array2_multi_dimensional_can_not_retrieve_individual_array_item_hashes(self):
+        """
+        This is a very interesting case. When DeepHash extracts t1[0] to create a hash for it,
+        Numpy creates an array. But that array will only be technically available during the DeepHash run.
+        Once DeepHash is run, the array is marked to be deleted by the garbage collector.
+        However depending on the version of the python and the machine that runs it, by the time we get
+        to the line that is t1_hash[t1[0]], the t1[0] may or may not be still in memory.
+        If it is still in the memory, t1_hash[t1[0]] works without a problem.
+        If it is already garbage collected, t1_hash[t1[0]] will throw a key error since there will be
+        a new t1[0] by the time t1_hash[t1[0]] is called. Hence it will have a new ID and thus it
+        will not be available anymore in t1_hash. Remember that since Numpy arrays are not hashable,
+        the ID of the array is stored in t1_hash as a key and not the object itself.
+        """
+        t1 = np.array([[1, 2, 3, 4], [4, 2, 2, 1]], np.int8)
+        t1_hash = DeepHashPrep(t1)
+        try:
+            t1_hash[t1[0]]
+        except Exception as e:
+            assert str(e).strip("'") == HASH_LOOKUP_ERR_MSG.format(t1[0])
+
 
 class TestDeepHashSHA:
     """DeepHash with SHA Tests."""
@@ -672,3 +775,43 @@ class TestDeepHashMurmur3:
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_128bit)
         assert expected_result == result
+
+
+class TestCounts:
+
+    @pytest.mark.parametrize('obj, expected_count', [
+        (
+            {1: 1, 2: 3},
+            5
+        ),
+        (
+            {"key": {1: 1, 2: 4}, "key2": ["a", "b"]},
+            11
+        ),
+        (
+            [{1}],
+            3
+        ),
+        (
+            [ClassC(a=10, b=11)],
+            6
+        )
+    ])
+    def test_dict_count(self, obj, expected_count):
+        """
+        How many object went to build this dict?
+        """
+
+        result = DeepHash(obj).get(obj, extract_index=1)
+        assert expected_count == result
+
+
+class TestOtherHashFuncs:
+
+    @pytest.mark.parametrize('items, prefix, expected', [
+        ([[1], [2]], 'pre', 'pre193457943119183791520927887192579877848'),
+        ([[1], [2]], b'pre', 'pre193457943119183791520927887192579877848'),
+    ])
+    def test_combine_hashes_lists(self, items, prefix, expected):
+        result = combine_hashes_lists(items, prefix)
+        assert expected == result

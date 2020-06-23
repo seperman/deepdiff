@@ -2,12 +2,10 @@
 import datetime
 import pytest
 import logging
-from unittest import mock
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import number_to_string
 from deepdiff.helper import pypy3
-from tests import CustomClass, CustomClass2
+from tests import CustomClass
 
 logging.disable(logging.CRITICAL)
 
@@ -67,26 +65,6 @@ class TestDeepDiffText:
                 }
             }
         } == ddiff
-
-    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order, result", [
-        (10, 10.0, 5, False, {}),
-        ({10: 'a', 11.1: 'b'}, {10.0: 'a', Decimal('11.1000003'): 'b'}, 5, False, {}),
-    ])
-    def test_type_change_numeric_ignored(self, t1, t2, significant_digits, ignore_order, result):
-        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True,
-                         significant_digits=significant_digits, ignore_order=ignore_order)
-        assert result == ddiff
-
-    @pytest.mark.parametrize("t1, t2, expected_result",
-                             [
-                                 (10, 10.0, {}),
-                                 (10, 10.2, {'values_changed': {'root': {'new_value': 10.2, 'old_value': 10}}}),
-                                 (Decimal(10), 10.0, {}),
-                                 ({"a": Decimal(10), "b": 12, 11.0: None}, {b"b": 12, "a": 10.0, Decimal(11): None}, {}),
-                             ])
-    def test_type_change_numeric_when_ignore_order(self, t1, t2, expected_result):
-        ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True)
-        assert expected_result == ddiff
 
     def test_value_change(self):
         t1 = {1: 1, 2: 2, 3: 3}
@@ -164,6 +142,21 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_diffs_times(self):
+        t1 = datetime.time(1, 1)
+        t2 = datetime.time(1, 2)
+        t3 = datetime.time(1, 1)
+        expected_result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert DeepDiff(t1, t2) == expected_result
+        assert DeepDiff(t1, t3) == {}
+
     def test_string_difference(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world"}}
         t2 = {1: 1, 2: 4, 3: 3, 4: {"a": "hello", "b": "world!"}}
@@ -237,14 +230,15 @@ class TestDeepDiffText:
                 "c": b"\x80",
             }
         }
-        t2 = {1: 1,
-              2: 2,
-              3: 3,
-              4: {
-                  "a": b"hello",
-                  "b": b"world\n1\n2\nEnd",
-                  "c": b'\x81',
-              }
+        t2 = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: {
+                "a": b"hello",
+                "b": b"world\n1\n2\nEnd",
+                "c": b'\x81',
+            }
         }
 
         ddiff = DeepDiff(t1, t2)
@@ -397,212 +391,11 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    def test_list_difference_ignore_order(self):
-        t1 = {1: 1, 4: {"a": "hello", "b": [1, 2, 3]}}
-        t2 = {1: 1, 4: {"a": "hello", "b": [1, 3, 2, 3]}}
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    @pytest.mark.parametrize('t1_0, t2_0', [
-        (1, 2),
-        (True, False),
-        ('a', 'b'),
-    ])
-    def test_list_difference_of_bool_only_ignore_order(self, t1_0, t2_0):
-        t1 = [t1_0]
-        t2 = [t2_0]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[0]': t2_0}, 'iterable_item_removed': {'root[0]': t1_0}}
-        assert result == ddiff
-
-    def test_dictionary_difference_ignore_order(self):
-        t1 = {"a": [[{"b": 2, "c": 4}, {"b": 2, "c": 3}]]}
-        t2 = {"a": [[{"b": 2, "c": 3}, {"b": 2, "c": 4}]]}
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_nested_list_ignore_order(self):
-        t1 = [1, 2, [3, 4]]
-        t2 = [[4, 3, 3], 2, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_nested_list_difference_ignore_order(self):
-        t1 = [1, 2, [3, 4]]
-        t2 = [[4, 3], 2, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_nested_list_with_dictionarry_difference_ignore_order(self):
-        t1 = [1, 2, [3, 4, {1: 2}]]
-        t2 = [[4, 3, {1: 2}], 2, 1]
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-
-        result = {}
-        assert result == ddiff
-
-    def test_list_difference_ignore_order_report_repetition(self):
-        t1 = [1, 3, 1, 4]
-        t2 = [4, 4, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {
-            'iterable_item_removed': {
-                'root[1]': 3
-            },
-            'repetition_change': {
-                'root[0]': {
-                    'old_repeat': 2,
-                    'old_indexes': [0, 2],
-                    'new_indexes': [2],
-                    'value': 1,
-                    'new_repeat': 1
-                },
-                'root[3]': {
-                    'old_repeat': 1,
-                    'old_indexes': [3],
-                    'new_indexes': [0, 1],
-                    'value': 4,
-                    'new_repeat': 2
-                }
-            }
-        }
-        assert result == ddiff
-
-    # TODO: fix repeition report
-    def test_nested_list_ignore_order_report_repetition_wrong_currently(self):
-        t1 = [1, 2, [3, 4]]
-        t2 = [[4, 3, 3], 2, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {
-            'repetition_change': {
-                'root[2][0]': {
-                    'old_repeat': 1,
-                    'new_indexes': [1, 2],
-                    'old_indexes': [1],
-                    'value': 3,
-                    'new_repeat': 2
-                }
-            }
-        }
-        assert result != ddiff
-
-    def test_list_of_unhashable_difference_ignore_order(self):
-        t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
-        t2 = [{"b": [3, 4, {1: 1}]}, {"a": 2}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_list_of_unhashable_difference_ignore_order2(self):
-        t1 = [1, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
-        t2 = [{"b": [3, 4, {1: 1}]}, {"a": 2}, {1: 1}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {
-            'iterable_item_added': {
-                'root[2]': {
-                    1: 1
-                }
-            },
-            'iterable_item_removed': {
-                'root[3]': 'B',
-                'root[0]': 1
-            }
-        }
-        assert result == ddiff
-
-    def test_list_of_unhashable_difference_ignore_order3(self):
-        t1 = [1, {"a": 2}, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
-        t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {
-            'iterable_item_added': {
-                'root[1]': {
-                    1: 1
-                }
-            },
-            'iterable_item_removed': {
-                'root[4]': 'B',
-                'root[0]': 1,
-                'root[1]': {
-                    'a': 2
-                }
-            }
-        }
-        assert result == ddiff
-
-    def test_list_of_unhashable_difference_ignore_order_report_repetition(
-            self):
-        t1 = [1, {"a": 2}, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
-        t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {
-            'iterable_item_added': {
-                'root[1]': {
-                    1: 1
-                }
-            },
-            'iterable_item_removed': {
-                'root[4]': 'B',
-                'root[0]': 1,
-                'root[1]': {
-                    'a': 2
-                },
-                'root[2]': {
-                    'a': 2
-                }
-            }
-        }
-        assert result == ddiff
-
-    def test_list_of_unhashable_difference_ignore_order4(self):
-        t1 = [{"a": 2}, {"a": 2}]
-        t2 = [{"a": 2}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {}
-        assert result == ddiff
-
-    def test_list_of_unhashable_difference_ignore_order_report_repetition2(
-            self):
-        t1 = [{"a": 2}, {"a": 2}]
-        t2 = [{"a": 2}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {
-            'repetition_change': {
-                'root[0]': {
-                    'old_repeat': 2,
-                    'new_indexes': [0],
-                    'old_indexes': [0, 1],
-                    'value': {
-                        'a': 2
-                    },
-                    'new_repeat': 1
-                }
-            }
-        }
-        assert result == ddiff
-
-    def test_list_of_sets_difference_ignore_order(self):
-        t1 = [{1}, {2}, {3}]
-        t2 = [{4}, {1}, {2}, {3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[0]': {4}}}
-        assert result == ddiff
-
-    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate(
-            self):
-        t1 = [{1}, {2}, {3}]
-        t2 = [{4}, {1}, {2}, {3}, {3}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[0]': {4}}}
-        assert result == ddiff
-
-    def test_list_of_sets_difference_ignore_order_when_there_is_duplicate_and_mix_of_hashable_unhashable(
-            self):
-        t1 = [1, 1, {2}, {3}]
-        t2 = [{4}, 1, {2}, {3}, {3}, 1, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'iterable_item_added': {'root[0]': {4}}}
-        assert result == ddiff
+    def test_list_of_booleans(self):
+        t1 = [False, False, True, True]
+        t2 = [False, False, False, True]
+        ddiff = DeepDiff(t1, t2)
+        assert {'values_changed': {'root[2]': {'new_value': False, 'old_value': True}}} == ddiff
 
     def test_set_of_none(self):
         """
@@ -623,149 +416,6 @@ class TestDeepDiffText:
                     'new_value': 3
                 }
             }
-        }
-        assert result == ddiff
-
-    def test_dictionary_of_list_of_dictionary_ignore_order(self):
-        t1 = {
-            'item': [{
-                'title': 1,
-                'http://purl.org/rss/1.0/modules/content/:encoded': '1'
-            }, {
-                'title': 2,
-                'http://purl.org/rss/1.0/modules/content/:encoded': '2'
-            }]
-        }
-
-        t2 = {
-            'item': [{
-                'http://purl.org/rss/1.0/modules/content/:encoded': '1',
-                'title': 1
-            }, {
-                'http://purl.org/rss/1.0/modules/content/:encoded': '2',
-                'title': 2
-            }]
-        }
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_comprehensive_ignore_order(self):
-
-        t1 = {
-            'key1': 'val1',
-            'key2': [
-                {
-                    'key3': 'val3',
-                    'key4': 'val4',
-                },
-                {
-                    'key5': 'val5',
-                    'key6': 'val6',
-                },
-            ],
-        }
-
-        t2 = {
-            'key1': 'val1',
-            'key2': [
-                {
-                    'key5': 'val5',
-                    'key6': 'val6',
-                },
-                {
-                    'key3': 'val3',
-                    'key4': 'val4',
-                },
-            ],
-        }
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {} == ddiff
-
-    def test_ignore_order_when_objects_similar(self):
-        """
-        The current design can't recognize that
-
-        {
-            'key5': 'val5,
-            'key6': 'val6',
-        }
-
-        at index 1
-
-        has become
-
-        {
-            'key5': 'CHANGE',
-            'key6': 'val6',
-        }
-
-        at index 0.
-
-        Further thought needs to go into designing
-        an algorithm that can identify the modified objects when ignoring order.
-
-        The current algorithm computes the hash of the objects and since the hashes
-        are different, it assumes an object is removed and another one is added.
-        """
-
-        t1 = {
-            'key1': 'val1',
-            'key2': [
-                {
-                    'key3': 'val3',
-                    'key4': 'val4',
-                },
-                {
-                    'key5': 'val5',
-                    'key6': 'val6',
-                },
-            ],
-        }
-
-        t2 = {
-            'key1': 'val1',
-            'key2': [
-                {
-                    'key5': 'CHANGE',
-                    'key6': 'val6',
-                },
-                {
-                    'key3': 'val3',
-                    'key4': 'val4',
-                },
-            ],
-        }
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert {
-            'iterable_item_removed': {
-                "root['key2'][1]": {
-                    'key5': 'val5',
-                    'key6': 'val6'
-                }
-            },
-            'iterable_item_added': {
-                "root['key2'][0]": {
-                    'key5': 'CHANGE',
-                    'key6': 'val6'
-                }
-            }
-        } == ddiff
-
-    def test_set_ignore_order_report_repetition(self):
-        """
-        If this test fails, it means that DeepDiff is not checking
-        for set types before general iterables.
-        So it forces creating the hashtable because of report_repetition=True.
-        """
-        t1 = {2, 1, 8}
-        t2 = {1, 2, 3, 5}
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        result = {
-            'set_item_added': {'root[3]', 'root[5]'},
-            'set_item_removed': {'root[8]'}
         }
         assert result == ddiff
 
@@ -869,19 +519,6 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    def test_custom_objects2(self):
-        cc_a = CustomClass2(prop1=["a"], prop2=["b"])
-        cc_b = CustomClass2(prop1=["b"], prop2=["b"])
-        t1 = [cc_a, CustomClass2(prop1=["c"], prop2=["d"])]
-        t2 = [cc_b, CustomClass2(prop1=["c"], prop2=["d"])]
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-
-        result = {'iterable_item_added': {'root[0]': cc_b},
-                  'iterable_item_removed': {'root[0]': cc_a}}
-
-        assert result == ddiff
-
     def test_custom_objects_slot_change(self):
         class ClassA:
             __slots__ = ('x', 'y')
@@ -930,7 +567,7 @@ class TestDeepDiffText:
             __slots__ = ['x']
 
         ddiff = DeepDiff(ClassA, ClassB, ignore_type_in_groups=[(ClassA, ClassB)])
-        result = {'iterable_item_removed': {'root.__slots__[1]': 'y'}, 'attribute_removed': {'root.__init__', 'root.y'}}
+        result = {'attribute_removed': ['root.y']}
         assert result == ddiff
 
     def test_custom_object_changes_when_ignore_type_in_groups(self):
@@ -1116,27 +753,19 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
-    def test_custom_object_type_change_when_ignore_order(self):
+    def test_dictionary_with_string_keys(self):
+        t1 = {"veggie": "carrots"}
+        t2 = {"meat": "carrots"}
 
-        class Burrito:
-            bread = 'flour'
+        diff = DeepDiff(t1, t2)
+        assert {'dictionary_item_added': ["root['meat']"],
+                'dictionary_item_removed': ["root['veggie']"]} == diff
 
-            def __init__(self):
-                self.spicy = True
-
-        class Taco:
-            bread = 'flour'
-
-            def __init__(self):
-                self.spicy = True
-
-        burrito = Burrito()
-        taco = Taco()
-
-        burritos = [burrito]
-        tacos = [taco]
-
-        assert not DeepDiff(burritos, tacos, ignore_type_in_groups=[(Taco, Burrito)], ignore_order=True)
+    def test_dictionary_with_numeric_keys(self):
+        t1 = {Decimal('10.01'): "carrots"}
+        t2 = {10.01: "carrots"}
+        diff = DeepDiff(t1, t2)
+        assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff
 
     def test_loop(self):
         class LoopTest:
@@ -1250,13 +879,6 @@ class TestDeepDiffText:
                 }
             }
         }
-        assert result == ddiff
-
-    def test_decimal_ignore_order(self):
-        t1 = [{1: Decimal('10.1')}, {2: Decimal('10.2')}]
-        t2 = [{2: Decimal('10.2')}, {1: Decimal('10.1')}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {}
         assert result == ddiff
 
     def test_unicode_string_type_changes(self):
@@ -1408,21 +1030,6 @@ class TestDeepDiffText:
         with pytest.raises(ValueError):
             DeepDiff(1, 1, significant_digits=-1)
 
-    @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order", [
-        (100000, 100021, 3, False),
-        ([10, 12, 100000], [50, 63, 100021], 3, False),
-        ([10, 12, 100000], [50, 63, 100021], 3, True),
-    ])
-    def test_number_to_string_func(self, t1, t2, significant_digits, ignore_order):
-        def custom_number_to_string(number, *args, **kwargs):
-            number = 100 if number < 100 else number
-            return number_to_string(number, *args, **kwargs)
-
-        ddiff = DeepDiff(t1, t2, significant_digits=3, number_format_notation="e",
-                         number_to_string_func=custom_number_to_string)
-
-        assert {} == ddiff
-
     @pytest.mark.parametrize("t1, t2, significant_digits, expected_result",
                              [
                                  (10, 10.0, 5, {}),
@@ -1461,6 +1068,18 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
+    def test_ignore_type_in_groups3(self):
+        t1 = {Decimal('10.01'): "carrots"}
+        t2 = {10.01: "carrots"}
+
+        diff1 = DeepDiff(t1, t2)
+
+        diff2 = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
+
+        diff3 = DeepDiff(t1, t2, ignore_type_in_groups=DeepDiff.numbers)
+        assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff1
+        assert {} == diff2 == diff3
+
     def test_ignore_type_in_groups_just_numbers(self):
         t1 = [1, 2, 3, 'a']
         t2 = [1.0, 2.0, 3.3, b'a']
@@ -1480,13 +1099,6 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[2]': {'new_value': 3.3, 'old_value': 3}}}
         assert result == ddiff
 
-    def test_ignore_type_in_groups_numbers_and_strings_when_ignore_order(self):
-        t1 = [1, 2, 3, 'a']
-        t2 = [1.0, 2.0, 3.3, b'a']
-        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
-        result = {'iterable_item_added': {'root[2]': 3.3}, 'iterable_item_removed': {'root[2]': 3}}
-        assert result == ddiff
-
     def test_ignore_type_in_groups_none_and_objects(self):
         t1 = [1, 2, 3, 'a', None]
         t2 = [1.0, 2.0, 3.3, b'a', 'hello']
@@ -1502,14 +1114,6 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[4]': {'new_value': 'now', 'old_value': now}}}
         assert result == ddiff
 
-    def test_ignore_string_type_changes_when_dict_keys_merge_is_not_deterministic(self):
-        t1 = {'a': 10, b'a': 20}
-        t2 = {'a': 11, b'a': 22}
-        ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, ignore_order=True)
-        result = {'values_changed': {"root['a']": {'new_value': 22, 'old_value': 20}}}
-        alternative_result = {'values_changed': {"root['a']": {'new_value': 11, 'old_value': 10}}}
-        assert result == ddiff or alternative_result == ddiff
-
     @pytest.mark.parametrize("t1, t2, significant_digits, result", [
         ([0.1], [Decimal('0.10')], 55,
             {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics with high significant digits.
@@ -1518,7 +1122,7 @@ class TestDeepDiffText:
         ([-Decimal('0.102')], [-Decimal('0.10')], 2, {}),
         ([1], [Decimal('1.00000002')], 3, {}),
     ])
-    def test_ignore_type_in_groups_numbers_when_decimal(self, t1, t2, significant_digits, result):
+    def test_ignore_numeric_type_changes_numbers_when_decimal(self, t1, t2, significant_digits, result):
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, significant_digits=significant_digits)
         assert result == ddiff
 
@@ -1609,16 +1213,21 @@ class TestDeepDiffText:
         assert 'dictionary_item_added' in ddiff, {}
         assert 'dictionary_item_removed' not in ddiff, {}
 
-    def test_skip_exclude_path5(self):
-        exclude_paths = ["root[0]['e']", "root[1]['e']"]
+    def test_skip_path5(self):
+        t1 = [{'cn': 'tuser', 'first_name': 'Test', 'last_name': 'User', 'name': 'Test User', 'email': 'tuser@example.com'}]
+        t2 = [{'name': 'Test User', 'email': 'tuser@example.com'}]
 
-        t1 = [{'a': 1, 'b': 'randomString', 'e': "1111"}]
-        t2 = [{'a': 1, 'b': 'randomString', 'e': "2222"}]
+        diff = DeepDiff(
+            t1,
+            t2,
+            ignore_order=True,
+            exclude_paths={
+                "root[0]['cn']",
+                "root[0]['first_name']",
+                "root[0]['last_name']"
+            })
 
-        ddiff = DeepDiff(t1, t2, exclude_paths=exclude_paths,
-                         ignore_order=True, report_repetition=False)
-        result = {}
-        assert result == ddiff
+        assert not diff
 
     def test_skip_custom_object_path(self):
         t1 = CustomClass(1)
@@ -1651,6 +1260,7 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    # TODO: fix it for python 3.5, 3.6 and pypy3
     def test_skip_regexp(self):
         t1 = [{'a': 1, 'b': 2}, {'c': 4, 'b': 5}]
         t2 = [{'a': 1, 'b': 3}, {'c': 4, 'b': 5}]
@@ -1679,13 +1289,6 @@ class TestDeepDiffText:
         t1 = [{1: "a"}]
         t2 = [{}]
         ddiff = DeepDiff(t1, t2, exclude_types=[str])
-        result = {}
-        assert result == ddiff
-
-    def test_skip_str_type_in_dict_on_list_when_ignored_order(self):
-        t1 = [{1: "a"}]
-        t2 = [{}]
-        ddiff = DeepDiff(t1, t2, exclude_types=[str], ignore_order=True)
         result = {}
         assert result == ddiff
 
@@ -1747,37 +1350,6 @@ class TestDeepDiffText:
 
         assert result == ddiff
 
-    @mock.patch('deepdiff.diff.logger')
-    @mock.patch('deepdiff.diff.DeepHash')
-    def test_diff_when_hash_fails(self, mock_DeepHash, mock_logger):
-        mock_DeepHash.side_effect = Exception('Boom!')
-        t1 = {"blah": {4}, 2: 1337}
-        t2 = {"blah": {4}, 2: 1337}
-        DeepDiff(t1, t2, ignore_order=True)
-        assert mock_logger.error.called
-
-    def test_bool_vs_number(self):
-        t1 = {
-            "A List": [
-                {
-                    "Value One": True,
-                    "Value Two": 1
-                }
-            ],
-        }
-
-        t2 = {
-            "A List": [
-                {
-                    "Value Two": 1,
-                    "Value One": True
-                }
-            ],
-        }
-
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert ddiff == {}
-
     @pytest.mark.parametrize('t1, t2, params, expected_result', [
         (float('nan'), float('nan'), {}, ['values_changed']),
         (float('nan'), float('nan'), {'ignore_nan_inequality': True}, []),
@@ -1786,3 +1358,15 @@ class TestDeepDiffText:
     @pytest.mark.skipif(pypy3, reason="some versions of pypy3 have nan==nan")
     def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
         assert expected_result == list(DeepDiff(t1, t2, **params).keys())
+
+    @pytest.mark.parametrize('ignore_order, ignore_private_variables, expected', [
+        (True, True, {}),
+        (False, True, {}),
+        (True, False, {'values_changed': {"root[0]['schema']['items']['__ref']": {'new_value': 2, 'old_value': 1}}}),
+        (False, False, {'values_changed': {"root[0]['schema']['items']['__ref']": {'new_value': 2, 'old_value': 1}}}),
+    ])
+    def test_private_variables(self, ignore_order, ignore_private_variables, expected):
+        t1 = [{'in': 'body', 'name': 'params', 'description': 'params', 'required': True, 'schema': {'type': 'array', 'items': {'__ref': 1}}}]
+        t2 = [{'in': 'body', 'name': 'params', 'description': 'params', 'required': True, 'schema': {'type': 'array', 'items': {'__ref': 2}}}]
+        diff = DeepDiff(t1, t2, ignore_order=ignore_order, ignore_private_variables=ignore_private_variables)
+        assert expected == diff

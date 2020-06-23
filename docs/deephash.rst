@@ -1,7 +1,7 @@
 :doc:`/index`
 
-DeepHash Reference
-====================
+DeepHash
+========
 
 .. toctree::
    :maxdepth: 3

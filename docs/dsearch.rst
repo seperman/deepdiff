@@ -1,7 +1,9 @@
 :doc:`/index`
 
-DeepSearch Reference
-====================
+.. _deepsearch_label:
+
+DeepSearch
+==========
 
 .. toctree::
    :maxdepth: 3

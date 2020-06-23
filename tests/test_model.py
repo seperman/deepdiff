@@ -5,14 +5,12 @@ from tests import CustomClass, CustomClassMisleadingRepr
 from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
                             SubscriptableIterableRelationship,
                             AttributeRelationship)
-from deepdiff.helper import Verbose
 
 logging.disable(logging.CRITICAL)
 
 
 class WorkingChildRelationship(ChildRelationship):
-    def get_param_from_obj(self, obj):
-        return obj
+    pass
 
 
 class TestDictRelationship:
@@ -51,12 +49,6 @@ class TestDictRelationship:
             param=self.customkey_misleading)
         assert rel.get_param_repr() is None
 
-    def test_get_param_from_dict(self):
-        param = 42
-        rel = DictRelationship(parent=self.d, child=self.d[param], param=param)
-        obj = {10: 10, param: 123}
-        assert rel.get_param_from_obj(obj) == 123
-
 
 class TestListRelationship:
     def setup_class(cls):
@@ -73,12 +65,6 @@ class TestListRelationship:
                                        self.l, self.custom, 2)
         assert rel.get_param_repr() == "[2]"
 
-    def test_get_param_from_obj(self):
-        param = 0
-        rel = SubscriptableIterableRelationship(parent=self.l, child=self.l[param], param=param)
-        obj = ['a', 'b', 'c']
-        assert rel.get_param_from_obj(obj) == 'a'
-
 
 class TestAttributeRelationship:
     def setup_class(cls):
@@ -88,10 +74,6 @@ class TestAttributeRelationship:
         rel = AttributeRelationship(self.custom, 13, "a")
         result = rel.get_param_repr()
         assert result == ".a"
-
-    def test_get_param_from_obj(self):
-        rel = AttributeRelationship(self.custom, 13, "a")
-        assert rel.get_param_from_obj(self.custom) == 13
 
 
 class TestDiffLevel:
@@ -183,17 +165,30 @@ class TestDiffLevel:
         assert path == 'root'
 
     def test_repr_short(self):
-        level = Verbose.level
-        Verbose.level = 0
-        item_repr = repr(self.lowest)
-        Verbose.level = level
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 0
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
         assert item_repr == '<root[1337].a>'
 
     def test_repr_long(self):
-        level = Verbose.level
-        Verbose.level = 1
-        item_repr = repr(self.lowest)
-        Verbose.level = level
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 1
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
+        assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
+
+    def test_repr_very_long(self):
+        level = self.lowest.verbose_level
+        try:
+            self.lowest.verbose_level = 2
+            item_repr = repr(self.lowest)
+        finally:
+            self.lowest.verbose_level = level
         assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
 
     def test_repetition_attribute_and_repr(self):
