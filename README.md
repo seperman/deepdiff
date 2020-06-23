@@ -46,7 +46,7 @@ If you are running into trouble installing Murmur3, please take a look at the [T
 
 DeepDiff gets the difference of 2 objects.
 
-> - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.0.0/diff.html)
 > - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 > - Tutorials can be found on <https://zepworks.com/tags/deepdiff/>
 
@@ -257,7 +257,7 @@ Example:
 ```
 
 
-> - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.0.0/diff.html)
 > - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 
@@ -290,7 +290,7 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 {'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
 ```
 
-> - Please take a look at the [DeepSearch docs](deepdiff/search_doc.rst)
+> - Please take a look at the [DeepSearch docs](https://zepworks.com/deepdiff/5.0.0/dsearch.html)
 > - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 # Deep Hash
@@ -299,7 +299,7 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 DeepHash is designed to give you hash of ANY python object based on its contents even if the object is not considered hashable!
 DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
 
-> - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.0.0/deephash.html)
 > - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 Let's say you have a dictionary object.
@@ -348,7 +348,7 @@ Which you can write as:
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
 
-> - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.0.0/deephash.html)
 > - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 
