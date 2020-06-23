@@ -16,7 +16,7 @@ Tested on Python 3.5+ and PyPy3.
 **NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
 
 
-- [Documentation](http://deepdiff.readthedocs.io/en/latest/)
+- [Documentation](https://zepworks.com/deepdiff/5.0.0/)
 
 
 ## Installation
