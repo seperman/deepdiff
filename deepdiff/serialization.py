@@ -183,9 +183,8 @@ class SerializationMixin:
 
     def pretty(self):
         """
-        The pretty human readable string output for the diff object.
-
-        This is regardless of what view was used to generate the diff.
+        The pretty human readable string output for the diff object
+        regardless of what view was used to generate the diff.
 
         Example:
             >>> t1={1,2,4}

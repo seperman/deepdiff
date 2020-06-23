@@ -3,9 +3,9 @@
 Delta
 =====
 
-DeepDiff Delta is a directed delta that when applied to t1 can yield t2 where delta is the difference of t1 and t2.
+DeepDiff Delta is a directed delta that when applied to t1 can yield t2 where delta is the difference between t1 and t2.
 Delta objects are like git commits but for structured data.
-You can convert the diff results into Delta objects, store the deltas and later apply to other objects.
+You can convert the diff results into Delta objects, store the deltas, and later apply to other objects.
 
 .. note::
     If you plan to generate Delta objects from the DeepDiff result, and ignore_order=True, you need to also set the report_repetition=True.
@@ -188,7 +188,7 @@ For example:
 >>> delta
 <Delta: {'values_changed': {'root[0]': {'new_value': 3}, 'root[2][1]': {'new_value': 8}}}>
 
-Note that we can apply delta to objects different than the original objects there were made from:
+Note that we can apply delta to objects different than the original objects they were made from:
 
 >>> t3 = ["a", 2, [3, "b", "c"]]
 >>> t3 + delta

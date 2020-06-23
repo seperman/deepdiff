@@ -139,7 +139,7 @@ If you are diffing lists of python numbers, you could get performance improvemen
 
 For example lets take a look at the performance of the benchmark_array_no_numpy vs. benchmark_numpy_array in the `DeepDiff-Benchmark repo <https://github.com/seperman/deepdiff-benchmark/blob/master/benchmark.py>`_.
 
-In this specific test, we have 2 lists of numbers that have nothing in common: `mat1 <https://github.com/seperman/deepdiff-benchmark/blob/master/data/mat1.txt>`_ and `mat2 <https://github.com/seperman/deepdiff-benchmark/blob/master/data/mat2.txt>`_
+In this specific test, we have 2 lists of numbers that have nothing in common: `mat1 <https://github.com/seperman/deepdiff-benchmark/blob/master/data/mat1.txt>`_ and `mat2 <https://github.com/seperman/deepdiff-benchmark/blob/master/data/mat2.txt>`_ .
 
 No Cache and No Numpy
 ^^^^^^^^^^^^^^^^^^^^^
