@@ -1,11 +1,12 @@
 # DeepDiff v 5.0.0
 
-<!-- ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat) -->
+![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
-![Doc](https://readthedocs.org/projects/deepdiff/badge/?version=latest)
 ![License](https://img.shields.io/pypi/l/deepdiff.svg?version=latest)
 [![Build Status](https://travis-ci.org/seperman/deepdiff.svg?branch=master)](https://travis-ci.org/seperman/deepdiff)
 [![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
+
+## DeepDiff Overview
 
 - DeepDiff: Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
 - DeepSearch: Search for objects within other objects.
@@ -46,12 +47,12 @@ If you are running into trouble installing Murmur3, please take a look at the [T
 DeepDiff gets the difference of 2 objects.
 
 > - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
-> - The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 > - Tutorials can be found on <https://zepworks.com/tags/deepdiff/>
 
 ## A few Examples
 
-> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://deepdiff.readthedocs.io> for full documentation.
+> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://zepworks.com/deepdiff/5.0.0/> for full documentation.
 
 ### List difference ignoring order or duplicates
 
@@ -257,7 +258,7 @@ Example:
 
 
 > - Please take a look at the [DeepDiff docs](deepdiff/diff_doc.rst)
-> - The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 
 # Deep Search
@@ -290,7 +291,7 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 ```
 
 > - Please take a look at the [DeepSearch docs](deepdiff/search_doc.rst)
-> - The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 # Deep Hash
 (New in v4-0-0)
@@ -299,7 +300,7 @@ DeepHash is designed to give you hash of ANY python object based on its contents
 DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
 
 > - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
-> - The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 Let's say you have a dictionary object.
 
@@ -348,7 +349,7 @@ At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(o
 
 
 > - Please take a look at the [DeepHash docs](deepdiff/deephash_doc.rst)
-> - The full documentation can be found on <https://deepdiff.readthedocs.io>
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.0/>
 
 
 # Using DeepDiff in unit tests
