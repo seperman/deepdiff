@@ -44,6 +44,6 @@ And many thanks to the following people for their contributions to DeepDiff!
 - Michał Karaś (MKaras93) for the pretty view
 - Christian Kothe (chkothe) for the basic support for diffing numpy arrays
 - Timothy (timson) for truncate_datetime
-
+- d0b3rm4n for bugfix to not apply format to non numbers.
 
 Back to :doc:`/index`
