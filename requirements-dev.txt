@@ -10,3 +10,4 @@ pytest-cov==2.8.1
 python-dotenv==0.13.0
 watchdog==0.10.2
 Sphinx==3.1.1
+sphinx-sitemap==2.1.0

@@ -33,6 +33,10 @@ class MyHandler(FileSystemEventHandler):
     def on_any_event(self, event):
         load_dotenv(override=True)
         build_path = os.environ.get('BUILD_PATH', '_build')
+        doc_version = os.environ.get('DOC_VERSION', '')
+        if not build_path.endswith('/'):
+            build_path = build_path + '/'
+        build_path += doc_version
         if event is None:
             print('initial build')
         else:
