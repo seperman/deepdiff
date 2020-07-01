@@ -1,5 +1,6 @@
 DeepDiff Change log
 
+- v5-0-1: Bug fix: Do not apply format to non numbers
 - v5-0-0: Introducing the Delta object, Improving Numpy support, Fixing tuples comparison when ignore_order=True, Dramatically improving the results when ignore_order=True by running in passes, Introducing pretty print view, deep_distance, purge, progress logging, cache and truncate_datetime.
 - v4-3-3: Adds support for datetime.time
 - v4-3-2: Deprecation Warning Enhancement

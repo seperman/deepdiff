@@ -67,7 +67,6 @@ DeepDiff gets the difference of 2 objects.
 ### Report repetitions
 
 This flag ONLY works when ignoring order is enabled.
-Note that this feature is experimental.
 
 ```python
 t1 = [1, 3, 1, 4]
