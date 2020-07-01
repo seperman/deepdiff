@@ -317,7 +317,7 @@ def get_doc(doc_filename):
         with open(os.path.join(current_dir, '../docs/', doc_filename), 'r') as doc_file:
             doc = doc_file.read()
     except Exception:  # pragma: no cover
-        doc = 'Failed to load the docstrings. Please visit: https://github.com/seperman/deepdiff'  # pragma: no cover
+        doc = 'Failed to load the docstrings. Please visit: https://zepworks.com/deepdiff/current/'  # pragma: no cover
     return doc
 
 

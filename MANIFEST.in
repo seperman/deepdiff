@@ -7,6 +7,9 @@ include *.txt
 include *.sh
 include pytest.ini
 include *.py
+recursive-include docs/ *.rst
+recursive-include docs/ *.png
 recursive-include tests *.py
+recursive-include tests *.json
 global-exclude __pycache__
 global-exclude *.py[co]
