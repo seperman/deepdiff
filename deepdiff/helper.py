@@ -340,6 +340,8 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
         with localcontext() as ctx:
             ctx.prec = len(tup.digits) + tup.exponent + significant_digits
             number = number.quantize(Decimal('0.' + '0' * significant_digits))
+    elif not isinstance(number, numbers):
+        return number
     result = (using % significant_digits).format(number)
     # Special case for 0: "-0.00" should compare equal to "0.00"
     if set(result) <= ZERO_DECIMAL_CHARACTERS:

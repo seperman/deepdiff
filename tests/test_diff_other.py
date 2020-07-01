@@ -80,3 +80,15 @@ class TestDiffOther:
         path1 = diff['values_changed'][0].path()
         path2 = diff['values_changed'][0].path()
         assert 'root[0]' == path1 == path2
+
+    def test_bool_str(self):
+        t1 = {'key1': True}
+        t2 = {'key1': 'Yes'}
+        diff = DeepDiff(t1, t2, ignore_type_in_groups=[(bool, str)],
+                        ignore_numeric_type_changes=True)
+        expected = {'values_changed':
+                        {"root['key1']":
+                             {'new_value': 'Yes', 'old_value': True}
+                        }
+                    }
+        assert diff == expected
