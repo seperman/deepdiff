@@ -46,7 +46,7 @@ class MyHandler(FileSystemEventHandler):
             return
         else:
             self.last_modified = datetime.datetime.now()
-        argv = ['-b', 'html', '.', build_path]
+        argv = ['-b', 'html', '-d', '/tmp/sphinx_doctree', '.', build_path]
         ensure_dir(build_path)
         delete_dir_contents(build_path)
         # argv = ['-b', 'html', '-d', f'{build_path}/doctrees', '.', f'{build_path}/html']
