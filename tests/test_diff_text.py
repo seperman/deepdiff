@@ -570,6 +570,33 @@ class TestDeepDiffText:
         result = {'attribute_removed': ['root.y']}
         assert result == ddiff
 
+    def test_custom_class_changes_none_when_ignore_type(self):
+        ddiff = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float)])
+        result = {
+            'type_changes': {
+                "root['a']": {
+                    'old_type': type(None),
+                    'new_type': int,
+                    'old_value': None,
+                    'new_value': 1
+                }
+            }
+        }
+        assert result == ddiff
+
+        ddiff = DeepDiff({'a': 1}, {'a': None}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float)])
+        result = {
+            'type_changes': {
+                "root['a']": {
+                    'old_type': int,
+                    'new_type': type(None),
+                    'old_value': 1,
+                    'new_value': None
+                }
+            }
+        }
+        assert result == ddiff
+
     def test_custom_object_changes_when_ignore_type_in_groups(self):
         class ClassA:
             def __init__(self, x, y):
