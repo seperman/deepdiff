@@ -1139,6 +1139,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if report_type_change:
                 self.__diff_types(level)
                 return
+            # This is an edge case where t1=None and None is in the ignore type group.
+            if level.t1 is None:
+                self.__report_result('values_changed', level)
 
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
             return
