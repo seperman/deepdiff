@@ -3,47 +3,68 @@
 Authors
 =======
 
-DeepDiff Core Developer:
+Authors listed in the order of the contributions:
 
-- Sep Dehpour
+-  `Sep Dehpour (Seperman)`_
+-  `Victor Hahn Castell`_ for the tree view and major contributions:
+-  `nfvs`_ for Travis-CI setup script.
+-  `brbsix`_ for initial Py3 porting.
+-  `WangFenjin`_ for unicode support.
+-  `timoilya`_ for comparing list of sets when ignoring order.
+-  `Bernhard10`_ for significant digits comparison.
+-  `b-jazz`_ for PEP257 cleanup, Standardize on full names, fixing line
+   endings.
+-  `finnhughes`_ for fixing **slots**
+-  `moloney`_ for Unicode vs. Bytes default
+-  `serv-inc`_ for adding help(deepdiff)
+-  `movermeyer`_ for updating docs
+-  `maxrothman`_ for search in inherited class attributes
+-  `maxrothman`_ for search for types/objects
+-  `MartyHub`_ for exclude regex paths
+-  `sreecodeslayer`_ for DeepSearch match_string
+-  Brian Maissy `brianmaissy`_ for weakref fix, enum tests
+-  Bartosz Borowik `boba-2`_ for Exclude types fix when ignoring order
+-  Brian Maissy `brianmaissy <https://github.com/brianmaissy>`__ for
+   fixing classes which inherit from classes with slots didn’t have all
+   of their slots compared
+-  Juan Soler `Soleronline`_ for adding ignore_type_number
+-  `mthaddon`_ for adding timedelta diffing support
+-  `Necrophagos`_ for Hashing of the number 1 vs. True
+-  `gaal-dev`_ for adding exclude_obj_callback
+-  Ivan Piskunov `van-ess0`_ for deprecation warning enhancement.
+-  Michał Karaś `MKaras93`_ for the pretty view
+-  Christian Kothe `chkothe`_ for the basic support for diffing numpy
+   arrays
+-  `Timothy`_ for truncate_datetime
+-  `d0b3rm4n`_ for bugfix to not apply format to non numbers.
+-  `MyrikLD`_ for Bug Fix NoneType in ignore type groups
 
-    - `Github <https://github.com/seperman>`_
-    - `ZepWorks <http://www.zepworks.com>`_
-    - `Articles about Deepdiff <https://zepworks.com/tags/deepdiff/>`_
-
-And many thanks to the following people for their contributions to DeepDiff!
-
-- Victor Hahn Castell for major contributions
-    - `hahncastell.de <http://hahncastell.de>`_
-    - `flexoptix.net <http://www.flexoptix.net>`_
-- nfvs for Travis-CI setup script.
-- brbsix for initial Py3 porting.
-- WangFenjin for Unicode support.
-- timoilya for comparing list of sets when ignoring order.
-- Bernhard10 for significant digits comparison.
-- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- finnhughes for fixing __slots__
-- moloney for Unicode vs. Bytes default
-- serv-inc for adding help(deepdiff)
-- movermeyer for updating docs
-- maxrothman for search in inherited class attributes
-- maxrothman for search for types/objects
-- MartyHub for exclude regex paths
-- sreecodeslayer for DeepSearch match_string
-- Brian Maissy (brianmaissy) for weakref fix, enum tests
-- Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
-- Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
-- Juan Soler (Soleronline) for adding ignore_type_number
-- mthaddon for adding timedelta diffing support
-- Necrophagos for Hashing of the number 1 vs. True
-- Hugo (hugovk) for fixes for Python 3.10 and dropping support for EOL Python 3.4
-- Andrey Gavrilin (gaal-dev) for hashing classes.
-- gaal-dev for adding exclude_obj_callback
-- Ivan Piskunov (van-ess0) for deprecation warning enhancement.
-- Nathaniel Brown (nathanielobrown) Adds support for datetime.time
-- Michał Karaś (MKaras93) for the pretty view
-- Christian Kothe (chkothe) for the basic support for diffing numpy arrays
-- Timothy (timson) for truncate_datetime
-- d0b3rm4n for bugfix to not apply format to non numbers.
+.. _Sep Dehpour (Seperman): http://www.zepworks.com
+.. _Victor Hahn Castell: http://hahncastell.de
+.. _nfvs: https://github.com/nfvs
+.. _brbsix: https://github.com/brbsix
+.. _WangFenjin: https://github.com/WangFenjin
+.. _timoilya: https://github.com/timoilya
+.. _Bernhard10: https://github.com/Bernhard10
+.. _b-jazz: https://github.com/b-jazz
+.. _finnhughes: https://github.com/finnhughes
+.. _moloney: https://github.com/moloney
+.. _serv-inc: https://github.com/serv-inc
+.. _movermeyer: https://github.com/movermeyer
+.. _maxrothman: https://github.com/maxrothman
+.. _MartyHub: https://github.com/MartyHub
+.. _sreecodeslayer: https://github.com/sreecodeslayer
+.. _brianmaissy: https://github.com/
+.. _boba-2: https://github.com/boba-2
+.. _Soleronline: https://github.com/Soleronline
+.. _mthaddon: https://github.com/mthaddon
+.. _Necrophagos: https://github.com/Necrophagos
+.. _gaal-dev: https://github.com/gaal-dev
+.. _van-ess0: https://github.com/van-ess0
+.. _MKaras93: https://github.com/MKaras93
+.. _chkothe: https://github.com/chkothe
+.. _Timothy: https://github.com/timson
+.. _d0b3rm4n: https://github.com/d0b3rm4n
+.. _MyrikLD: https://github.com/MyrikLD
 
 Back to :doc:`/index`

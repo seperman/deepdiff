@@ -443,7 +443,7 @@ Thank you!
 
 # Authors
 
-Authors in order of the contributions:
+Authors listed in the order of the contributions:
 
 - [Sep Dehpour (Seperman)](http://www.zepworks.com)
 - [Victor Hahn Castell](http://hahncastell.de) for the tree view and major contributions:
