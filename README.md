@@ -443,38 +443,34 @@ Thank you!
 
 # Authors
 
-Developer:
+Authors in order of the contributions:
 
-- Seperman (Sep Dehpour)
-    - [Github](https://github.com/seperman)
-    - [Linkedin](http://www.linkedin.com/in/sepehr)
-    - [ZepWorks](http://www.zepworks.com)
-
-And many thanks to the following people for their contributions to DeepDiff!
-
-- Victor Hahn Castell for the tree view and major contributions:
-    - [hahncastell.de](http://hahncastell.de)
-    - [flexoptix.net](http://www.flexoptix.net)
-- nfvs for Travis-CI setup script.
-- brbsix for initial Py3 porting.
-- WangFenjin for unicode support.
-- timoilya for comparing list of sets when ignoring order.
-- Bernhard10 for significant digits comparison.
-- b-jazz for PEP257 cleanup, Standardize on full names, fixing line endings.
-- finnhughes for fixing __slots__
-- moloney for Unicode vs. Bytes default
-- serv-inc for adding help(deepdiff)
-- movermeyer for updating docs
-- maxrothman for search in inherited class attributes
-- maxrothman for search for types/objects
-- MartyHub for exclude regex paths
-- sreecodeslayer for DeepSearch match_string
-- Brian Maissy (brianmaissy) for weakref fix, enum tests
-- Bartosz Borowik (boba-2) for Exclude types fix when ignoring order
-- Brian Maissy (brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
-- Juan Soler (Soleronline) for adding ignore_type_number
-- mthaddon for adding timedelta diffing support
-- Necrophagos for Hashing of the number 1 vs. True
-- gaal-dev for adding exclude_obj_callback
-- Ivan Piskunov (van-ess0) for deprecation warning enhancement.
-- Michał Karaś (MKaras93) for the pretty view
+- [Sep Dehpour (Seperman)](http://www.zepworks.com)
+- [Victor Hahn Castell](http://hahncastell.de) for the tree view and major contributions:
+- [nfvs](https://github.com/nfvs) for Travis-CI setup script.
+- [brbsix](https://github.com/brbsix) for initial Py3 porting.
+- [WangFenjin](https://github.com/WangFenjin) for unicode support.
+- [timoilya](https://github.com/timoilya) for comparing list of sets when ignoring order.
+- [Bernhard10](https://github.com/Bernhard10) for significant digits comparison.
+- [b-jazz](https://github.com/b-jazz) for PEP257 cleanup, Standardize on full names, fixing line endings.
+- [finnhughes](https://github.com/finnhughes) for fixing __slots__
+- [moloney](https://github.com/moloney) for Unicode vs. Bytes default
+- [serv-inc](https://github.com/serv-inc) for adding help(deepdiff)
+- [movermeyer](https://github.com/movermeyer) for updating docs
+- [maxrothman](https://github.com/maxrothman) for search in inherited class attributes
+- [maxrothman](https://github.com/maxrothman) for search for types/objects
+- [MartyHub](https://github.com/MartyHub) for exclude regex paths
+- [sreecodeslayer](https://github.com/sreecodeslayer) for DeepSearch match_string
+- Brian Maissy [brianmaissy](https://github.com/) for weakref fix, enum tests
+- Bartosz Borowik [boba-2](https://github.com/boba-2) for Exclude types fix when ignoring order
+- Brian Maissy [brianmaissy](https://github.com/brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
+- Juan Soler [Soleronline](https://github.com/Soleronline) for adding ignore_type_number
+- [mthaddon](https://github.com/mthaddon) for adding timedelta diffing support
+- [Necrophagos](https://github.com/Necrophagos) for Hashing of the number 1 vs. True
+- [gaal-dev](https://github.com/gaal-dev) for adding exclude_obj_callback
+- Ivan Piskunov [van-ess0](https://github.com/van-ess0) for deprecation warning enhancement.
+- Michał Karaś [MKaras93](https://github.com/MKaras93) for the pretty view
+- Christian Kothe [chkothe](https://github.com/chkothe) for the basic support for diffing numpy arrays
+- [Timothy](https://github.com/timson) for truncate_datetime
+- [d0b3rm4n](https://github.com/d0b3rm4n) for bugfix to not apply format to non numbers.
+- [MyrikLD](https://github.com/MyrikLD) for Bug Fix NoneType in ignore type groups
