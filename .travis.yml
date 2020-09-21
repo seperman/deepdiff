@@ -4,11 +4,26 @@ cache: pip
 matrix:
   include:
     - python: 3.5
+      arch: amd64
     - python: 3.6
+      arch: amd64
     - python: pypy3
+      arch: amd64
     - python: 3.7
+      arch: amd64
     - python: 3.8
-
+      arch: amd64
+    - python: 3.5
+      arch: ppc64le
+    - python: 3.6
+      arch: ppc64le
+    - python: 3.7
+      arch: ppc64le
+    - python: 3.8
+      arch: ppc64le
+      
+before_install:
+  - sudo chown -Rvf $USER:$GROUP ~/.cache/pip/wheels
 install:
   - pip install -r requirements-dev.txt
 
