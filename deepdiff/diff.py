@@ -1000,6 +1000,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
         if self.math_close is True:
+            print("MATH_CLOSE: {}, {}, {}".format(level.t1, level.t2, self.epsilon))
             if not is_close(level.t1, level.t2, abs_tol=self.epsilon):
                 self.__report_result('values_changed', level)
         elif self.significant_digits is None:
