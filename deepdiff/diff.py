@@ -7,6 +7,7 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+from math import isclose as is_close
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
 from itertools import zip_longest
@@ -133,6 +134,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger=logger.info,
                  report_repetition=False,
                  significant_digits=None,
+                 math_close=False,
+                 epsilon=0,
                  truncate_datetime=None,
                  verbose_level=1,
                  view=TEXT_VIEW,
@@ -185,6 +188,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.cache_tuning_sample_size = cache_tuning_sample_size
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+            self.math_close = math_close
+            self.epsilon = epsilon
             self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             if verbose_level in {0, 1, 2}:
@@ -994,7 +999,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
-        if self.significant_digits is None:
+        if self.math_close is True:
+            if not is_close(level.t1, level.t2, abs_tol=self.epsilon):
+                self.__report_result('values_changed', level)
+        elif self.significant_digits is None:
             if level.t1 != level.t2:
                 self.__report_result('values_changed', level)
         else:
