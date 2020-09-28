@@ -298,3 +298,15 @@ def pretty_print_diff(diff):
         type_t2=type_t2,
         val_t1=val_t1,
         val_t2=val_t2)
+
+
+def load_path_content(path):
+    """
+    Loads the content of the file found in the path.
+    It tries to deserialize the content.
+    """
+    with open(path, 'r') as the_file:
+        content = the_file.read()
+    if path.endswith('.json'):
+        content = json.loads(content)
+    return content

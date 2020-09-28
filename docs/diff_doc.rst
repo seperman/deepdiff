@@ -122,7 +122,7 @@ significant_digits : int >= 0, default=None
 truncate_datetime: string, default = None
     :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
 
-verbose_level: int >= 0, default = 1
+verbose_level: 2 >= int >= 0, default = 1
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.
     And verbose level 2 shows the value of the items that are added or removed too.

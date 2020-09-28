@@ -16,11 +16,11 @@ version = '5.0.2'
 def get_reqs(filename):
     with open(filename, "r") as reqs_file:
         reqs = reqs_file.readlines()
-        reqs = list(map(lambda x: x.replace('==', '>='), reqs))
     return reqs
 
 
 reqs = get_reqs("requirements.txt")
+cli_reqs = get_reqs("requirements-cli.txt")
 
 with open('README.md') as file:
     long_description = file.read()
@@ -45,6 +45,7 @@ setup(name='deepdiff',
       python_requires='>=3.5',
       extras_require={
           "murmur": ["mmh3"],
+          "cli": cli_reqs,
       },
       classifiers=[
           "Intended Audience :: Developers",
@@ -58,4 +59,9 @@ setup(name='deepdiff',
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"
       ],
+      entry_points={
+          'console_scripts': [
+              'deepdiff=deepdiff.commands:diff',
+          ],
+      },
       )
