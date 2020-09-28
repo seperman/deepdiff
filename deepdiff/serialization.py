@@ -11,16 +11,16 @@ import ordered_set  # NOQA
 import collections  # NOQA
 try:
     import yaml
-except ImportError:
-    yaml = None
+except ImportError:  # pragma: no cover.
+    yaml = None  # pragma: no cover.
 try:
     import toml
-except ImportError:
-    toml = None
+except ImportError:  # pragma: no cover.
+    toml = None  # pragma: no cover.
 try:
     import clevercsv
-except ImportError:
-    clevercsv = None
+except ImportError:  # pragma: no cover.
+    clevercsv = None  # pragma: no cover.
 from copy import deepcopy
 from collections.abc import Mapping
 from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
@@ -327,13 +327,13 @@ def load_path_content(path, file_type=None):
         with open(path, 'r') as the_file:
             content = json.load(the_file)
     elif file_type in {'yaml', '.yml'}:
-        if yaml is None:
-            raise ImportError('Pyyaml needs to be installed.')
+        if yaml is None:  # pragma: no cover.
+            raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
         with open(path, 'r') as the_file:
             content = yaml.safe_load(the_file)
     elif file_type == 'toml':
-        if toml is None:
-            raise ImportError('Toml needs to be installed.')
+        if toml is None:  # pragma: no cover.
+            raise ImportError('Toml needs to be installed.')  # pragma: no cover.
         with open(path, 'r') as the_file:
             content = toml.load(the_file)
     elif file_type == 'pickle':
@@ -341,8 +341,8 @@ def load_path_content(path, file_type=None):
             content = the_file.read()
             content = pickle_load(content)
     elif file_type in {'csv', 'tsv'}:
-        if clevercsv is None:
-            raise ImportError('CleverCSV needs to be installed.')
+        if clevercsv is None:  # pragma: no cover.
+            raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
         content = clevercsv.wrappers.read_dicts(path)
     else:
         raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.')

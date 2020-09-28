@@ -13,7 +13,7 @@ from deepdiff.serialization import load_path_content
 @click.group()
 def deepdiff_cli():
     """A simple command line tool."""
-    pass
+    pass  # pragma: no cover.
 
 
 # cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
@@ -54,15 +54,12 @@ def diff(
     t2_path = kwargs.pop("t2")
     t1_extension = t1_path.split('.')[-1]
     t2_extension = t2_path.split('.')[-1]
-    try:
-        kwargs['t1'] = load_path_content(t1_path, file_type=t1_extension)
-    except Exception as e:
-        sys.exit(str(f"Error when loading t1: {e}"))
 
-    try:
-        kwargs['t2'] = load_path_content(t2_path, file_type=t2_extension)
-    except Exception as e:
-        sys.exit(str(f"Error when loading t2: {e}"))
+    for name, t_path, t_extension in [('t1', t1_path, t1_extension), ('t2', t2_path, t2_extension)]:
+        try:
+            kwargs[name] = load_path_content(t_path, file_type=t_extension)
+        except Exception as e:
+            sys.exit(str(f"Error when loading {name}: {e}"))
 
     if (t1_extension != t2_extension):
         if t1_extension in {'csv', 'tsv'}:
@@ -72,6 +69,6 @@ def diff(
 
     try:
         diff = DeepDiff(**kwargs)
-    except Exception as e:
-        sys.exit(str(e))
+    except Exception as e:  # pragma: no cover.  No need to test this.
+        sys.exit(str(e))  # pragma: no cover.  No need to test this.
     pprint(diff, indent=2)
