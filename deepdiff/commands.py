@@ -52,15 +52,23 @@ def diff(
     kwargs['progress_logger'] = logger.info if kwargs['progress_logger'] == 'info' else logger.error
     t1_path = kwargs.pop("t1")
     t2_path = kwargs.pop("t2")
+    t1_extension = t1_path.split('.')[-1]
+    t2_extension = t2_path.split('.')[-1]
     try:
-        kwargs['t1'] = load_path_content(t1_path)
+        kwargs['t1'] = load_path_content(t1_path, file_type=t1_extension)
     except Exception as e:
         sys.exit(str(f"Error when loading t1: {e}"))
 
     try:
-        kwargs['t2'] = load_path_content(t2_path)
+        kwargs['t2'] = load_path_content(t2_path, file_type=t2_extension)
     except Exception as e:
         sys.exit(str(f"Error when loading t2: {e}"))
+
+    if (t1_extension != t2_extension):
+        if t1_extension in {'csv', 'tsv'}:
+            kwargs['t1'] = [dict(i) for i in kwargs['t1']]
+        if t2_extension in {'csv', 'tsv'}:
+            kwargs['t2'] = [dict(i) for i in kwargs['t2']]
 
     try:
         diff = DeepDiff(**kwargs)

@@ -308,24 +308,26 @@ def pretty_print_diff(diff):
         val_t2=val_t2)
 
 
-def load_path_content(path):
+def load_path_content(path, file_type=None):
     """
     Loads and deserializes the content of the path.
     """
-    if path.endswith('.json'):
+    if file_type is None:
+        file_type = path.split('.')[-1]
+    if file_type == 'json':
         with open(path, 'r') as the_file:
             content = json.load(the_file)
-    elif path.endswith('.yaml') or path.endswith('.yml'):
+    elif file_type in {'yaml', '.yml'}:
         with open(path, 'r') as the_file:
             content = yaml.safe_load(the_file)
-    elif path.endswith('.toml'):
+    elif file_type == 'toml':
         with open(path, 'r') as the_file:
             content = toml.load(the_file)
-    elif path.endswith('.pickle'):
+    elif file_type == 'pickle':
         with open(path, 'rb') as the_file:
             content = the_file.read()
             content = pickle_load(content)
-    elif path.endswith('.csv') or path.endswith('.tsv'):
+    elif file_type in {'csv', 'tsv'}:
         content = clevercsv.wrappers.read_dicts(path)
     else:
         raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.')
