@@ -1,3 +1,4 @@
 click==7.1.2
-pytoml==0.1.21
 pyyaml==5.3.1
+toml==0.10.1
+clevercsv==0.6.4

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import json
 import sys
 import pytest
@@ -9,7 +10,9 @@ from deepdiff import DeepDiff
 from deepdiff.helper import py3_5, pypy3
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
-    MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff)
+    MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
+    load_path_content)
+from conftest import FIXTURES_DIR
 from ordered_set import OrderedSet
 from tests import PicklableClass
 
@@ -90,6 +93,18 @@ class TestSerialization:
 
         ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
         assert expected == ddiff.to_dict()
+
+    @pytest.mark.parametrize('path1, validate', [
+        ('t1.json', lambda x: x['key1'] == 'value1'),
+        ('t1.yaml', lambda x: x[0][0] == 'name'),
+        ('t1.toml', lambda x: x['servers']['alpha']['ip'] == '10.0.0.1'),
+        ('t1.csv', lambda x: x[0]['last_name'] == 'Nobody'),
+        ('t1.pickle', lambda x: x[1] == 1),
+    ])
+    def test_load_path_content(self, path1, validate):
+        path = os.path.join(FIXTURES_DIR, path1)
+        result = load_path_content(path)
+        assert validate(result)
 
 
 class TestPickling:

@@ -9,6 +9,9 @@ import datetime  # NOQA
 import decimal  # NOQA
 import ordered_set  # NOQA
 import collections  # NOQA
+import yaml
+import toml
+import clevercsv
 from copy import deepcopy
 from collections.abc import Mapping
 from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
@@ -22,7 +25,12 @@ except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
     jsonpickle = None  # pragma: no cover. Json pickle is getting deprecated.
 
 
-MAX_HEADER_LENGTH = 256
+class UnsupportedFormatErr(TypeError):
+    pass
+
+
+CSV_HEADER_MAX_CHUNK_SIZE = 2048  # The chunk needs to be big enough that covers a couple of rows of data.
+
 
 MODULE_NOT_FOUND_MSG = 'DeepDiff Delta did not find {} in your modules. Please make sure it is already imported.'
 FORBIDDEN_MODULE_MSG = "Module '{}' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter"
@@ -302,11 +310,23 @@ def pretty_print_diff(diff):
 
 def load_path_content(path):
     """
-    Loads the content of the file found in the path.
-    It tries to deserialize the content.
+    Loads and deserializes the content of the path.
     """
-    with open(path, 'r') as the_file:
-        content = the_file.read()
     if path.endswith('.json'):
-        content = json.loads(content)
+        with open(path, 'r') as the_file:
+            content = json.load(the_file)
+    elif path.endswith('.yaml') or path.endswith('.yml'):
+        with open(path, 'r') as the_file:
+            content = yaml.safe_load(the_file)
+    elif path.endswith('.toml'):
+        with open(path, 'r') as the_file:
+            content = toml.load(the_file)
+    elif path.endswith('.pickle'):
+        with open(path, 'rb') as the_file:
+            content = the_file.read()
+            content = pickle_load(content)
+    elif path.endswith('.csv') or path.endswith('.tsv'):
+        content = clevercsv.wrappers.read_dicts(path)
+    else:
+        raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.')
     return content
