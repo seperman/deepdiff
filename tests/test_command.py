@@ -13,6 +13,9 @@ class TestCommands:
         ('t1.json', 't2.json', {}, "'dictionary_item_added\': [root[0]"),
         ('t1.json', 't2_json.csv', {}, "'old_value\': \'value2\'"),
         ('t1.csv', 't2.csv', {}, "\'new_value\': \'James\'"),
+        ('t1.toml', 't2.toml', {}, "10.0.0.2"),
+        ('t1.pickle', 't2.pickle', {}, "'new_value': 5, 'old_value': 1"),
+        ('t1.yaml', 't2.yaml', {}, "'new_value': 61, 'old_value': 65"),
     ])
     def test_diff_command(self, t1, t2, kwargs, expected_in_stdout):
         t1 = os.path.join(FIXTURES_DIR, t1)
