@@ -9,9 +9,18 @@ import datetime  # NOQA
 import decimal  # NOQA
 import ordered_set  # NOQA
 import collections  # NOQA
-import yaml
-import toml
-import clevercsv
+try:
+    import yaml
+except ImportError:
+    yaml = None
+try:
+    import toml
+except ImportError:
+    toml = None
+try:
+    import clevercsv
+except ImportError:
+    clevercsv = None
 from copy import deepcopy
 from collections.abc import Mapping
 from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
@@ -318,9 +327,13 @@ def load_path_content(path, file_type=None):
         with open(path, 'r') as the_file:
             content = json.load(the_file)
     elif file_type in {'yaml', '.yml'}:
+        if yaml is None:
+            raise ImportError('Pyyaml needs to be installed.')
         with open(path, 'r') as the_file:
             content = yaml.safe_load(the_file)
     elif file_type == 'toml':
+        if toml is None:
+            raise ImportError('Toml needs to be installed.')
         with open(path, 'r') as the_file:
             content = toml.load(the_file)
     elif file_type == 'pickle':
@@ -328,6 +341,8 @@ def load_path_content(path, file_type=None):
             content = the_file.read()
             content = pickle_load(content)
     elif file_type in {'csv', 'tsv'}:
+        if clevercsv is None:
+            raise ImportError('CleverCSV needs to be installed.')
         content = clevercsv.wrappers.read_dicts(path)
     else:
         raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.')

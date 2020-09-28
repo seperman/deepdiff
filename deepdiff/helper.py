@@ -121,7 +121,6 @@ if py2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
-py3_5 = py_current_version == Decimal('3.5')
 
 strings = (str, bytes)  # which are both basestring
 unicode_type = str

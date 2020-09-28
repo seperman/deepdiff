@@ -3,8 +3,10 @@ import pytest
 from click.testing import CliRunner
 from deepdiff.commands import diff
 from conftest import FIXTURES_DIR
+from deepdiff.helper import pypy3
 
 
+@pytest.mark.skipif(pypy3, reason='clevercsv is not supported in pypy3')
 class TestCommands:
 
     @pytest.mark.parametrize('t1, t2, kwargs, expected_in_stdout', [

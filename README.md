@@ -12,10 +12,11 @@
 - DeepSearch: Search for objects within other objects.
 - DeepHash: Hash any object based on their content.
 
-Tested on Python 3.5+ and PyPy3.
+Tested on Python 3.6+ and PyPy3.
 
 **NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
 
+**NOTE: The last version of DeepDiff to work on Python 3.5 was DeepDiff 5-0-2**
 
 - [Documentation](https://zepworks.com/deepdiff/5.0.2/)
 
