@@ -8,17 +8,17 @@ from deepdiff.diff import (
     CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
     logger
 )
-from deepdiff import Delta
+from deepdiff import Delta, DeepSearch
 from deepdiff.serialization import load_path_content, save_content_to_path
 
 
 @click.group()
-def deepdiff_cli():
+def cli():
     """A simple command line tool."""
     pass  # pragma: no cover.
 
 
-@deepdiff_cli.command()
+@cli.command()
 @click.argument('t1', type=click.Path(exists=True, resolve_path=True))
 @click.argument('t2', type=click.Path(exists=True, resolve_path=True))
 @click.option('--cutoff-distance-for-pairs', required=False, default=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT, type=float, show_default=True)
@@ -90,7 +90,7 @@ def diff(
         pprint(diff, indent=2)
 
 
-@deepdiff_cli.command()
+@cli.command()
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
 @click.argument('delta_path', type=click.Path(exists=True, resolve_path=True))
 @click.option('--backup', '-b', is_flag=True, show_default=True)
@@ -115,3 +115,47 @@ def deeppatch(
         save_content_to_path(result, path, file_type=extension, keep_backup=backup)
     except Exception as e:
         sys.exit(str(f"Error when saving {path}: {e}"))
+
+
+# def get_stdin(ctx, param, value):
+#     """
+#     https://stackoverflow.com/a/45845513/1497443
+#     """
+#     if not value and not click.get_text_stream('stdin').isatty():
+#         return click.get_text_stream('stdin').read().strip()
+#     else:
+#         return value
+
+
+#                  obj,
+#                  item,
+#                  exclude_paths=OrderedSet(),
+#                  exclude_regex_paths=OrderedSet(),
+#                  exclude_types=OrderedSet(),
+#                  verbose_level=1,
+#                  case_sensitive=False,
+#                  match_string=False,
+
+
+@cli.command()
+@click.argument('item', required=True, type=str)
+@click.argument('path', type=click.Path(exists=True, resolve_path=True))
+@click.option('--ignore-case', '-i', is_flag=True, show_default=True)
+@click.option('--exact-match', is_flag=True, show_default=True)
+@click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
+@click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
+@click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
+def deepgrep(item, path, **kwargs):
+    kwargs['case_sensitive'] = not kwargs.pop('ignore_case')
+    kwargs['match_string'] = kwargs.pop('exact_match')
+
+    try:
+        content = load_path_content(path)
+    except Exception as e:
+        sys.exit(str(f"Error when loading {path}: {e}"))
+
+    try:
+        result = DeepSearch(content, item, **kwargs)
+    except Exception as e:
+        sys.exit(str(f"Error when running deep search on {path}: {e}"))
+    pprint(result, indent=2)

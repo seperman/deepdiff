@@ -62,6 +62,7 @@ setup(name='deepdiff',
           'console_scripts': [
               'deepdiff=deepdiff.commands:diff',
               'deeppatch=deepdiff.commands:deeppatch',
+              'deepgrep=deepdiff.commands:deepgrep',
           ],
       },
       )
