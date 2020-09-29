@@ -1,3 +1,4 @@
+import os
 import click
 import sys
 from pprint import pprint
@@ -7,7 +8,8 @@ from deepdiff.diff import (
     CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
     logger
 )
-from deepdiff.serialization import load_path_content
+from deepdiff import Delta
+from deepdiff.serialization import load_path_content, save_content_to_path
 
 
 @click.group()
@@ -15,8 +17,6 @@ def deepdiff_cli():
     """A simple command line tool."""
     pass  # pragma: no cover.
 
-
-# cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
 
 @deepdiff_cli.command()
 @click.argument('t1', type=click.Path(exists=True, resolve_path=True))
@@ -26,6 +26,7 @@ def deepdiff_cli():
 @click.option('--cache-size', required=False, default=0, type=int, show_default=True)
 @click.option('--cache-tuning-sample-size', required=False, default=0, type=int, show_default=True)
 @click.option('--cache-purge-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
+@click.option('--create-patch', is_flag=True, show_default=True)
 @click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--get-deep-distance', is_flag=True, show_default=True)
@@ -50,6 +51,7 @@ def diff(
 ):
     kwargs['ignore_private_variables'] = not kwargs.pop('include_private_variables')
     kwargs['progress_logger'] = logger.info if kwargs['progress_logger'] == 'info' else logger.error
+    create_patch = kwargs.pop('create_patch')
     t1_path = kwargs.pop("t1")
     t2_path = kwargs.pop("t2")
     t1_extension = t1_path.split('.')[-1]
@@ -67,8 +69,49 @@ def diff(
         if t2_extension in {'csv', 'tsv'}:
             kwargs['t2'] = [dict(i) for i in kwargs['t2']]
 
+    if create_patch:
+        # Disabling logging progress since it will leak into stdout
+        kwargs['log_frequency_in_sec'] = 0
+
     try:
         diff = DeepDiff(**kwargs)
     except Exception as e:  # pragma: no cover.  No need to test this.
         sys.exit(str(e))  # pragma: no cover.  No need to test this.
-    pprint(diff, indent=2)
+
+    if create_patch:
+        try:
+            delta = Delta(diff)
+        except Exception as e:
+            sys.exit(f"Error when loading the patch (aka delta): {e}")
+
+        # printing into stdout
+        sys.stdout.buffer.write(delta.dumps())
+    else:
+        pprint(diff, indent=2)
+
+
+@deepdiff_cli.command()
+@click.argument('path', type=click.Path(exists=True, resolve_path=True))
+@click.argument('delta_path', type=click.Path(exists=True, resolve_path=True))
+@click.option('--backup', '-b', is_flag=True, show_default=True)
+def deeppatch(
+    path, delta_path, backup
+):
+    try:
+        delta = Delta(delta_path=delta_path)
+    except Exception as e:
+        sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))
+
+    extension = path.split('.')[-1]
+
+    try:
+        content = load_path_content(path, file_type=extension)
+    except Exception as e:
+        sys.exit(str(f"Error when loading {path}: {e}"))
+
+    result = delta + content
+
+    try:
+        save_content_to_path(result, path, file_type=extension, keep_backup=backup)
+    except Exception as e:
+        sys.exit(str(f"Error when saving {path}: {e}"))

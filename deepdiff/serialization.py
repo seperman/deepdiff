@@ -2,6 +2,7 @@ import json
 import pickle
 import sys
 import io
+import os
 import logging
 import re  # NOQA
 import builtins  # NOQA
@@ -343,7 +344,61 @@ def load_path_content(path, file_type=None):
     elif file_type in {'csv', 'tsv'}:
         if clevercsv is None:  # pragma: no cover.
             raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
-        content = clevercsv.wrappers.read_dicts(path)
+        content = clevercsv.read_dicts(path)
     else:
-        raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.')
+        raise UnsupportedFormatErr(f'Only json, yaml, toml, csv, tsv and pickle are supported.\n'
+                                   f' The {file_type} extension is not known.')
+    return content
+
+
+def save_content_to_path(content, path, file_type=None, keep_backup=True):
+    """
+    Saves and serializes the content of the path.
+    """
+
+    os.rename(path, f"{path}.bak")
+
+    try:
+        _save_content(
+            content=content, path=path,
+            file_type=file_type, keep_backup=keep_backup)
+    except Exception:
+        os.rename(f"{path}.bak", path)
+        raise
+    else:
+        if not keep_backup:
+            os.remove(path)
+
+
+def _save_content(content, path, file_type=None, keep_backup=True):
+    if file_type is None:
+        file_type = path.split('.')[-1]
+    if file_type == 'json':
+        with open(path, 'w') as the_file:
+            content = json.dump(content, the_file)
+    elif file_type in {'yaml', '.yml'}:
+        if yaml is None:  # pragma: no cover.
+            raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
+        with open(path, 'w') as the_file:
+            content = yaml.safe_dump(content, strean=the_file)
+    elif file_type == 'toml':
+        if toml is None:  # pragma: no cover.
+            raise ImportError('Toml needs to be installed.')  # pragma: no cover.
+        with open(path, 'w') as the_file:
+            content = toml.dump(content, the_file)
+    elif file_type == 'pickle':
+        with open(path, 'wb') as the_file:
+            content = pickle_dump(content)
+            the_file.write(content)
+    elif file_type in {'csv', 'tsv'}:
+        if clevercsv is None:  # pragma: no cover.
+            raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
+        with open(path, 'w', newline='') as csvfile:
+            fieldnames = list(content[0].keys())
+            writer = clevercsv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(content)
+    else:
+        raise UnsupportedFormatErr(f'Only json, yaml, toml, csv, tsv and pickle are supported.\n'
+                                   f' The {file_type} extension is not known.')
     return content
