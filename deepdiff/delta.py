@@ -111,7 +111,13 @@ class Delta:
         if self.mutate:
             self.root = other
         else:
-            self.root = deepcopy(other)
+            try:
+                self.root = deepcopy(other)
+            except TypeError as e:
+                if str(e) == "__init__() missing 1 required positional argument: 'toml_offset'":
+                    raise TypeError("Cant make a deepcopy of toml object. This is a known bug. https://github.com/uiri/toml/issues/308") from None
+                else:
+                    raise
         self._do_pre_process()
         self._do_values_changed()
         self._do_set_item_added()

@@ -356,18 +356,19 @@ def save_content_to_path(content, path, file_type=None, keep_backup=True):
     Saves and serializes the content of the path.
     """
 
-    os.rename(path, f"{path}.bak")
+    backup_path = f"{path}.bak"
+    os.rename(path, backup_path)
 
     try:
         _save_content(
             content=content, path=path,
             file_type=file_type, keep_backup=keep_backup)
     except Exception:
-        os.rename(f"{path}.bak", path)
+        os.rename(backup_path, path)
         raise
     else:
         if not keep_backup:
-            os.remove(path)
+            os.remove(backup_path)
 
 
 def _save_content(content, path, file_type=None, keep_backup=True):
@@ -380,7 +381,7 @@ def _save_content(content, path, file_type=None, keep_backup=True):
         if yaml is None:  # pragma: no cover.
             raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
         with open(path, 'w') as the_file:
-            content = yaml.safe_dump(content, strean=the_file)
+            content = yaml.safe_dump(content, stream=the_file)
     elif file_type == 'toml':
         if toml is None:  # pragma: no cover.
             raise ImportError('Toml needs to be installed.')  # pragma: no cover.
