@@ -60,10 +60,7 @@ setup(name='deepdiff',
       ],
       entry_points={
           'console_scripts': [
-              'deepdiff=deepdiff.commands:diff',
-              'deeppatch=deepdiff.commands:deeppatch',
-              'deepgrep=deepdiff.commands:deepgrep',
-              'deepextract=deepdiff.commands:deepextract',
+              'deep=deepdiff.commands:cli',
           ],
       },
       )
