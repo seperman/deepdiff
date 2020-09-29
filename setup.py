@@ -63,6 +63,7 @@ setup(name='deepdiff',
               'deepdiff=deepdiff.commands:diff',
               'deeppatch=deepdiff.commands:deeppatch',
               'deepgrep=deepdiff.commands:deepgrep',
+              'deepextract=deepdiff.commands:deepextract',
           ],
       },
       )

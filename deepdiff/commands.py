@@ -8,7 +8,7 @@ from deepdiff.diff import (
     CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
     logger
 )
-from deepdiff import Delta, DeepSearch
+from deepdiff import Delta, DeepSearch, extract
 from deepdiff.serialization import load_path_content, save_content_to_path
 
 
@@ -156,6 +156,25 @@ def deepgrep(item, path, **kwargs):
 
     try:
         result = DeepSearch(content, item, **kwargs)
+    except Exception as e:
+        sys.exit(str(f"Error when running deep search on {path}: {e}"))
+    pprint(result, indent=2)
+
+
+@cli.command()
+@click.argument('path_inside', required=True, type=str)
+@click.argument('path', type=click.Path(exists=True, resolve_path=True))
+def deepextract(path_inside, path):
+    """
+    Deep Extract
+    """
+    try:
+        content = load_path_content(path)
+    except Exception as e:
+        sys.exit(str(f"Error when loading {path}: {e}"))
+
+    try:
+        result = extract(content, path_inside)
     except Exception as e:
         sys.exit(str(f"Error when running deep search on {path}: {e}"))
     pprint(result, indent=2)
