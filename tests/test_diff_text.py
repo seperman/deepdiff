@@ -584,11 +584,17 @@ class TestDeepDiffText:
         }
         assert result == ddiff1
 
-        ddiff2 = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float, None)])
-        assert {'values_changed': {"root['a']": {'new_value': 1, 'old_value': None}}} == ddiff2
+        ddiff2 = DeepDiff({'a': None}, {'a': '1'}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']": {'new_value': '1', 'old_value': None}}} == ddiff2
 
-        ddiff3 = DeepDiff({'a': 1}, {'a': None}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float, None)])
-        assert {'values_changed': {"root['a']": {'new_value': None, 'old_value': 1}}} == ddiff3
+        ddiff3 = DeepDiff({'a': '1'}, {'a': None}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']": {'new_value': None, 'old_value': '1'}}} == ddiff3
+
+        ddiff4 = DeepDiff({'a': {'b': None}}, {'a': {'b': '1'}}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']['b']": {'new_value': '1', 'old_value': None}}} == ddiff4
+
+        ddiff5 = DeepDiff({'a': {'b': '1'}}, {'a': {'b': None}}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']['b']": {'new_value': None, 'old_value': '1'}}} == ddiff5
 
     def test_custom_object_changes_when_ignore_type_in_groups(self):
         class ClassA:
