@@ -49,6 +49,11 @@ def cli():
 def diff(
     *args, **kwargs
 ):
+    """
+    DeepDiff
+
+    Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+    """
     kwargs['ignore_private_variables'] = not kwargs.pop('include_private_variables')
     kwargs['progress_logger'] = logger.info if kwargs['progress_logger'] == 'info' else logger.error
     create_patch = kwargs.pop('create_patch')
@@ -63,11 +68,11 @@ def diff(
         except Exception as e:
             sys.exit(str(f"Error when loading {name}: {e}"))
 
-    if (t1_extension != t2_extension):
-        if t1_extension in {'csv', 'tsv'}:
-            kwargs['t1'] = [dict(i) for i in kwargs['t1']]
-        if t2_extension in {'csv', 'tsv'}:
-            kwargs['t2'] = [dict(i) for i in kwargs['t2']]
+    # if (t1_extension != t2_extension):
+    if t1_extension in {'csv', 'tsv'}:
+        kwargs['t1'] = [dict(i) for i in kwargs['t1']]
+    if t2_extension in {'csv', 'tsv'}:
+        kwargs['t2'] = [dict(i) for i in kwargs['t2']]
 
     if create_patch:
         # Disabling logging progress since it will leak into stdout
