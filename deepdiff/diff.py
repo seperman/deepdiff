@@ -114,6 +114,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_types=None,
                  exclude_obj_callback=None,
                  get_deep_distance=False,
+                 group_by=None,
                  hasher=None,
                  hashes=None,
                  ignore_order=False,
@@ -149,7 +150,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                "cache_tuning_sample_size, get_deep_distance, cache_purge_level, "
+                "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
                 "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -248,8 +249,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self._parameters = _parameters
         self.deephash_parameters = self.__get_deephash_params()
         self.tree = TreeResult()
-        self.t1 = t1
-        self.t2 = t2
+        if group_by:
+            try:
+                t1 = self.t1 = {row[group_by]: row for row in t1}
+            except KeyError:
+                logger.error("can not group t1 by {}".format(group_by))
+            try:
+                t2 = self.t2 = {row[group_by]: row for row in t2}
+            except KeyError:
+                logger.error("can not group t2 by {}".format(group_by))
+        else:
+            self.t1 = t1
+            self.t2 = t2
 
         try:
             root = DiffLevel(t1, t2, verbose_level=self.verbose_level)

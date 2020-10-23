@@ -346,6 +346,19 @@ def load_path_content(path, file_type=None):
         if clevercsv is None:  # pragma: no cover.
             raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
         content = clevercsv.read_dicts(path)
+
+        # Everything in csv is string but we try to automatically convert any numbers we find
+        for row in content:
+            for key, value in row.items():
+                value = value.strip()
+                for type_ in [int, float, complex]:
+                    try:
+                        value = type_(value)
+                    except Exception:
+                        pass
+                    else:
+                        row[key] = value
+                        break
     else:
         raise UnsupportedFormatErr(f'Only json, yaml, toml, csv, tsv and pickle are supported.\n'
                                    f' The {file_type} extension is not known.')

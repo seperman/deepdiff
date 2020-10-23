@@ -986,6 +986,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     @pytest.mark.parametrize("t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result", [
+        (43.265798602382986, 43.71677762295505, False, 0, "f", {'values_changed': {'root': {'new_value': 43.71677762295505, 'old_value': 43.265798602382986}}}),  # Note that it rounds the number so one becomes 43 and the other one is 44
         (Decimal('2.5'), Decimal('1.5'), False, 0, "f", {}),
         (Decimal('2.5'), Decimal('1.5'), False, 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
         (Decimal('2.5'), Decimal(2.5), False, 3, "f", {}),

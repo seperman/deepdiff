@@ -2,7 +2,7 @@ import os
 import pytest
 from shutil import copyfile
 from click.testing import CliRunner
-from deepdiff.commands import diff, deeppatch
+from deepdiff.commands import diff, patch
 from conftest import FIXTURES_DIR
 from deepdiff.helper import pypy3
 
@@ -59,7 +59,7 @@ class TestCommands:
                 the_file.write(delta_pickled.stdout_bytes)
 
             runner = CliRunner()
-            deeppatched = runner.invoke(deeppatch, [t1_copy_path, delta_path])
+            deeppatched = runner.invoke(patch, [t1_copy_path, delta_path])
             assert deeppatched.exit_code == expected_exit_code
 
             runner = CliRunner()

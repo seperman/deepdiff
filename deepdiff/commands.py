@@ -8,7 +8,7 @@ from deepdiff.diff import (
     CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
     logger
 )
-from deepdiff import Delta, DeepSearch, extract
+from deepdiff import Delta, DeepSearch, extract as deep_extract
 from deepdiff.serialization import load_path_content, save_content_to_path
 
 
@@ -30,6 +30,7 @@ def cli():
 @click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--get-deep-distance', is_flag=True, show_default=True)
+@click.option('--group-by', required=False, type=str, show_default=False, multiple=False)
 @click.option('--ignore-order', is_flag=True, show_default=True)
 @click.option('--ignore-string-type-changes', is_flag=True, show_default=True)
 @click.option('--ignore-numeric-type-changes', is_flag=True, show_default=True)
@@ -99,7 +100,7 @@ def diff(
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
 @click.argument('delta_path', type=click.Path(exists=True, resolve_path=True))
 @click.option('--backup', '-b', is_flag=True, show_default=True)
-def deeppatch(
+def patch(
     path, delta_path, backup
 ):
     try:
@@ -150,7 +151,7 @@ def deeppatch(
 @click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
-def deepgrep(item, path, **kwargs):
+def grep(item, path, **kwargs):
     kwargs['case_sensitive'] = not kwargs.pop('ignore_case')
     kwargs['match_string'] = kwargs.pop('exact_match')
 
@@ -169,7 +170,7 @@ def deepgrep(item, path, **kwargs):
 @cli.command()
 @click.argument('path_inside', required=True, type=str)
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
-def deepextract(path_inside, path):
+def extract(path_inside, path):
     """
     Deep Extract
     """
@@ -179,7 +180,7 @@ def deepextract(path_inside, path):
         sys.exit(str(f"Error when loading {path}: {e}"))
 
     try:
-        result = extract(content, path_inside)
+        result = deep_extract(content, path_inside)
     except Exception as e:
         sys.exit(str(f"Error when running deep search on {path}: {e}"))
     pprint(result, indent=2)
