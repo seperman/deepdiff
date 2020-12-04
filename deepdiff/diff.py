@@ -110,6 +110,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  cache_size=0,
                  cache_tuning_sample_size=0,
                  cache_purge_level=1,
+                 epsilon=0,
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -127,6 +128,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_nan_inequality=False,
                  ignore_private_variables=True,
                  log_frequency_in_sec=0,
+                 math_close=False,
                  max_passes=10000000,
                  max_diffs=None,
                  number_format_notation="f",
@@ -134,8 +136,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger=logger.info,
                  report_repetition=False,
                  significant_digits=None,
-                 math_close=False,
-                 epsilon=0,
                  truncate_datetime=None,
                  verbose_level=1,
                  view=TEXT_VIEW,
@@ -154,6 +154,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
+                "math_close, epsilon, "
                 "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
