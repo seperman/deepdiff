@@ -110,4 +110,4 @@ class TestDiffMath:
             "iterable_item_added": {"root['a'][0]": Decimal("9.710000038146973")}
         }
         assert res == expected
-        assert "math_epsilon will be ignored." in caplog.text
+        # assert "math_epsilon will be ignored." in caplog.text
