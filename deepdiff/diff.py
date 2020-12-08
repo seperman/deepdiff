@@ -7,6 +7,7 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+from math import isclose as is_close
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
 from itertools import zip_longest
@@ -126,6 +127,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_nan_inequality=False,
                  ignore_private_variables=True,
                  log_frequency_in_sec=0,
+                 math_epsilon=None,
                  max_passes=10000000,
                  max_diffs=None,
                  number_format_notation="f",
@@ -151,6 +153,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
+                "math_epsilon, "
                 "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -185,6 +188,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.cache_tuning_sample_size = cache_tuning_sample_size
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+            self.math_epsilon = math_epsilon
+            if self.math_epsilon != None and self.ignore_order:
+                logger.warning("math_epsilon will be ignored. It cannot be used when ignore_order is True.")
             self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             if verbose_level in {0, 1, 2}:
@@ -994,7 +1000,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
-        if self.significant_digits is None:
+        if self.math_epsilon != None:
+            if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
+                self.__report_result('values_changed', level)
+        elif self.significant_digits is None:
             if level.t1 != level.t2:
                 self.__report_result('values_changed', level)
         else:
