@@ -43,10 +43,6 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov-report=xml --cov=deepdiff tests/  --runslow
-    # - name: Coveralls  # This is currently not working with pytest
-    #   uses: coverallsapp/github-action@master
-    #   with:
-    #     github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       if: matrix.python-version == 3.8
