@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-        architecture: ["amd64", "ppc64le"]
+        architecture: ["x64"]
 
     steps:
     - uses: actions/checkout@v2
@@ -38,4 +38,8 @@ jobs:
         flake8 deepdiff --count --exit-zero --max-complexity=26 --max-line-lengt=250 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest --cov=deepdiff tests/  --runslow
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
