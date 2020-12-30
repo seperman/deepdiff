@@ -1,6 +1,10 @@
 name: Unit Tests
 
-on: ["push", "pull_request"]
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
 
 jobs:
   build:
@@ -38,8 +42,16 @@ jobs:
         flake8 deepdiff --count --exit-zero --max-complexity=26 --max-line-lengt=250 --statistics
     - name: Test with pytest
       run: |
-        pytest --cov=deepdiff tests/  --runslow
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
+        pytest --cov-report=xml --cov=deepdiff tests/  --runslow
+    # - name: Coveralls  # This is currently not working with pytest
+    #   uses: coverallsapp/github-action@master
+    #   with:
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      if: matrix.python-version == 3.8
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./coverage.xml
+        env_vars: OS,PYTHON
+        fail_ci_if_error: true
+        path_to_write_report: ./coverage/codecov_report.txt
