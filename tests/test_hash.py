@@ -53,12 +53,12 @@ class TestDeepHash:
     def test_deephash_repr(self):
         obj = "a"
         result = DeepHash(obj)
-        assert "{'a': 92909720888655291083736678792297797326}" == repr(result)
+        assert "{'a': '980410da9522db17c3ab8743541f192a5ab27772a6154dbc7795ee909e653a5c'}" == repr(result)
 
     def test_deephash_values(self):
         obj = "a"
         result = list(DeepHash(obj).values())
-        assert [92909720888655291083736678792297797326] == result
+        assert ['980410da9522db17c3ab8743541f192a5ab27772a6154dbc7795ee909e653a5c'] == result
 
     def test_deephash_keys(self):
         obj = "a"
@@ -68,7 +68,7 @@ class TestDeepHash:
     def test_deephash_items(self):
         obj = "a"
         result = list(DeepHash(obj).items())
-        assert [('a', 92909720888655291083736678792297797326)] == result
+        assert [('a', '980410da9522db17c3ab8743541f192a5ab27772a6154dbc7795ee909e653a5c')] == result
 
     def test_get_hash_by_obj_when_does_not_exist(self):
         a = "a"
@@ -757,26 +757,6 @@ class TestCleaningString:
         assert expected_result == result
 
 
-class TestDeepHashMurmur3:
-    """DeepHash with Murmur3 Hash Tests."""
-
-    def test_prep_str_murmur3_64bit(self):
-        obj = "a"
-        expected_result = {
-            obj: 424475663186367154
-        }
-        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_64bit)
-        assert expected_result == result
-
-    def test_prep_str_murmur3_128bit(self):
-        obj = "a"
-        expected_result = {
-            obj: 119173504597196970070553896747624927922
-        }
-        result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.murmur3_128bit)
-        assert expected_result == result
-
-
 class TestCounts:
 
     @pytest.mark.parametrize('obj, expected_count', [
@@ -809,8 +789,8 @@ class TestCounts:
 class TestOtherHashFuncs:
 
     @pytest.mark.parametrize('items, prefix, expected', [
-        ([[1], [2]], 'pre', 'pre193457943119183791520927887192579877848'),
-        ([[1], [2]], b'pre', 'pre193457943119183791520927887192579877848'),
+        ([[1], [2]], 'pre', 'pre583852d84b3482edf53408b64724a37289d7af458c44bb989a8abbffe24d2d2b'),
+        ([[1], [2]], b'pre', 'pre583852d84b3482edf53408b64724a37289d7af458c44bb989a8abbffe24d2d2b'),
     ])
     def test_combine_hashes_lists(self, items, prefix, expected):
         result = combine_hashes_lists(items, prefix)

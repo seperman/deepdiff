@@ -13,11 +13,6 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
-try:
-    import mmh3
-except ImportError:  # pragma: no cover
-    mmh3 = False  # pragma: no cover
-
 UNPROCESSED_KEY = 'unprocessed'
 MURMUR_SEED = 1203
 
@@ -44,29 +39,7 @@ def sha1hex(obj):
     return sha1(obj).hexdigest()
 
 
-def murmur3_64bit(obj):
-    """
-    Use murmur3_64bit for 64 bit hash by passing this method:
-    hasher=DeepHash.murmur3_64bit
-    """
-    if isinstance(obj, str):
-        obj = obj.encode('utf-8')
-    # This version of murmur3 returns two 64bit integers.
-    return mmh3.hash64(obj, MURMUR_SEED)[0]
-
-
-def murmur3_128bit(obj):
-    """
-    Use murmur3_128bit for bit hash by passing this method:
-    hasher=DeepHash.murmur3_128bit
-    This hasher is the default hasher.
-    """
-    if isinstance(obj, str):
-        obj = obj.encode('utf-8')
-    return mmh3.hash128(obj, MURMUR_SEED)
-
-
-default_hasher = murmur3_128bit if mmh3 else sha256hex
+default_hasher = sha256hex
 
 
 def combine_hashes_lists(items, prefix):
@@ -184,8 +157,6 @@ class DeepHash(Base):
 
     sha256hex = sha256hex
     sha1hex = sha1hex
-    murmur3_64bit = murmur3_64bit
-    murmur3_128bit = murmur3_128bit
 
     def __getitem__(self, obj, extract_index=0):
         return self._getitem(self.hashes, obj, extract_index=extract_index)

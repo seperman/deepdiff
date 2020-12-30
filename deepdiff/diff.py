@@ -189,7 +189,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.math_epsilon = math_epsilon
-            if self.math_epsilon != None and self.ignore_order:
+            if self.math_epsilon is not None and self.ignore_order:
                 logger.warning("math_epsilon will be ignored. It cannot be used when ignore_order is True.")
             self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
@@ -1000,7 +1000,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
-        if self.math_epsilon != None:
+        if self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
                 self.__report_result('values_changed', level)
         elif self.significant_digits is None:
