@@ -7,6 +7,7 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+from copy import deepcopy
 from math import isclose as is_close
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
@@ -255,15 +256,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self._parameters = _parameters
         self.deephash_parameters = self.__get_deephash_params()
         self.tree = TreeResult()
-        if group_by:
-            try:
-                t1 = self.t1 = {row[group_by]: row for row in t1}
-            except KeyError:
-                logger.error("can not group t1 by {}".format(group_by))
-            try:
-                t2 = self.t2 = {row[group_by]: row for row in t2}
-            except KeyError:
-                logger.error("can not group t2 by {}".format(group_by))
+        if group_by and self.is_root:
+            t1 = self._group_iterable_to_dict(t1, group_by, item_name='t1')
+            t2 = self._group_iterable_to_dict(t2, group_by, item_name='t2')
         else:
             self.t1 = t1
             self.t2 = t2
@@ -1214,6 +1209,24 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
+
+    def _group_iterable_to_dict(self, item, group_by, item_name):
+        """
+        Convert a list of dictionaries into a dictionary of dictionaries
+        where the key is the value of the group_by key in each dictionary.
+        """
+        if isinstance(item, Iterable) and not isinstance(item, Mapping):
+            result = {}
+            item_copy = deepcopy(item)
+            for row in item_copy:
+                if isinstance(row, Mapping):
+                    result[row.pop(group_by)] = row
+                else:
+                    logger.error("Unable to group {} by {}".format(item_name, group_by))
+                    return item
+            return result
+        logger.error("Unable to group {} by {}".format(item_name, group_by))
+        return item
 
     def get_stats(self):
         """

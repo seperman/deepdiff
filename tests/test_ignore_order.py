@@ -747,3 +747,35 @@ class TestIgnoreOrder:
         expected = {'values_changed': {'root': {'new_value': 20.0, 'old_value': 1.0}}, 'deep_distance': 0.2714285714285714}
 
         assert expected == diff_with_dist
+
+    def test_ignore_order_and_group_by(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'ate': ['Nothing']},
+            {'id': 'BB', 'name': 'James', 'ate': ['Chips', 'Cheese']},
+            {'id': 'CC', 'name': 'Mike', 'ate': ['Apple']},
+        ]
+
+        t2 = [
+            {'id': 'BB', 'name': 'James', 'ate': ['Chips', 'Brownies', 'Cheese']},
+            {'id': 'AA', 'name': 'Joe', 'ate': ['Nothing']},
+            {'id': 'CC', 'name': 'Mike', 'ate': ['Apple', 'Apple']},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id', ignore_order=False)
+        expected = {
+            'values_changed': {
+                "root['BB']['ate'][1]": {
+                    'new_value': 'Brownies',
+                    'old_value': 'Cheese'
+                }
+            },
+            'iterable_item_added': {
+                "root['CC']['ate'][1]": 'Apple',
+                "root['BB']['ate'][2]": 'Cheese'
+            }
+        }
+        assert expected == diff
+
+        diff2 = DeepDiff(t1, t2, group_by='id', ignore_order=True)
+        expected2 = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies'}}
+        assert expected2 == diff2

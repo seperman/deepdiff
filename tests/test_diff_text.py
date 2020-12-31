@@ -1408,3 +1408,28 @@ class TestDeepDiffText:
         t2 = [{'in': 'body', 'name': 'params', 'description': 'params', 'required': True, 'schema': {'type': 'array', 'items': {'__ref': 2}}}]
         diff = DeepDiff(t1, t2, ignore_order=ignore_order, ignore_private_variables=ignore_private_variables)
         assert expected == diff
+
+    def test_group_by(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {"root[1]['last_name']": {
+            'new_value': 'Brown',
+            'old_value': 'Blue'}}}
+        assert expected == diff
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected_grouped = {'values_changed': {"root['BB']['last_name']": {
+            'new_value': 'Brown',
+            'old_value': 'Blue'}}}
+        assert expected_grouped == diff
