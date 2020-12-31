@@ -52,6 +52,9 @@ exclude_obj_callback: function, default = None
 get_deep_distance: Boolean, default = False
     :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
 
+group_by: String, default=None
+    :ref:`group_by` can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
+
 hasher: default = DeepHash.murmur3_128bit
     Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
     by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
