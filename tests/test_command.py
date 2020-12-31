@@ -75,3 +75,15 @@ class TestCommands:
         assert 0 == diffed.exit_code
         assert 'values_changed' in diffed.output
         assert '\'new_value\': \'Chicken\'' in diffed.output
+
+    def test_command_math_epsilon(self):
+        t1 = os.path.join(FIXTURES_DIR, 'd_t1.yaml')
+        t2 = os.path.join(FIXTURES_DIR, 'd_t2.yaml')
+        runner = CliRunner()
+        diffed = runner.invoke(diff, [t1, t2, '--math-epsilon', '0.1'])
+        assert 0 == diffed.exit_code
+        assert '{}\n' == diffed.output
+
+        diffed2 = runner.invoke(diff, [t1, t2, '--math-epsilon', '0.001'])
+        assert 0 == diffed2.exit_code
+        assert "{'values_changed': {'root[2][2]': {'new_value': 0.289, 'old_value': 0.288}}}\n" == diffed2.output
