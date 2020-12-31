@@ -67,8 +67,8 @@ def diff(
     for name, t_path, t_extension in [('t1', t1_path, t1_extension), ('t2', t2_path, t2_extension)]:
         try:
             kwargs[name] = load_path_content(t_path, file_type=t_extension)
-        except Exception as e:
-            sys.exit(str(f"Error when loading {name}: {e}"))
+        except Exception as e:  # pragma: no cover.
+            sys.exit(str(f"Error when loading {name}: {e}"))  # pragma: no cover.
 
     # if (t1_extension != t2_extension):
     if t1_extension in {'csv', 'tsv'}:
@@ -88,8 +88,8 @@ def diff(
     if create_patch:
         try:
             delta = Delta(diff)
-        except Exception as e:
-            sys.exit(f"Error when loading the patch (aka delta): {e}")
+        except Exception as e:  # pragma: no cover.
+            sys.exit(f"Error when loading the patch (aka delta): {e}")  # pragma: no cover.
 
         # printing into stdout
         sys.stdout.buffer.write(delta.dumps())
@@ -106,22 +106,22 @@ def patch(
 ):
     try:
         delta = Delta(delta_path=delta_path)
-    except Exception as e:
-        sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))  # pragma: no cover.
 
     extension = path.split('.')[-1]
 
     try:
         content = load_path_content(path, file_type=extension)
-    except Exception as e:
-        sys.exit(str(f"Error when loading {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
 
     result = delta + content
 
     try:
         save_content_to_path(result, path, file_type=extension, keep_backup=backup)
-    except Exception as e:
-        sys.exit(str(f"Error when saving {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when saving {path}: {e}"))  # pragma: no cover.
 
 
 @cli.command()
@@ -138,13 +138,13 @@ def grep(item, path, **kwargs):
 
     try:
         content = load_path_content(path)
-    except Exception as e:
-        sys.exit(str(f"Error when loading {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
 
     try:
         result = DeepSearch(content, item, **kwargs)
-    except Exception as e:
-        sys.exit(str(f"Error when running deep search on {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
     pprint(result, indent=2)
 
 
@@ -157,11 +157,11 @@ def extract(path_inside, path):
     """
     try:
         content = load_path_content(path)
-    except Exception as e:
-        sys.exit(str(f"Error when loading {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
 
     try:
         result = deep_extract(content, path_inside)
-    except Exception as e:
-        sys.exit(str(f"Error when running deep search on {path}: {e}"))
+    except Exception as e:  # pragma: no cover.
+        sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
     pprint(result, indent=2)

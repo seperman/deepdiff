@@ -442,6 +442,11 @@ class OrderedSetPlus(OrderedSet):
         del self.map[elem]
         return elem
 
+    def __repr__(self):
+        return str(list(self))
+
+    __str__ = __repr__
+
 
 class RepeatedTimer:
     """

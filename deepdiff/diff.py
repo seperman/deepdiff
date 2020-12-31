@@ -186,6 +186,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_nan_inequality = ignore_nan_inequality
             self.hasher = hasher
             self.cache_tuning_sample_size = cache_tuning_sample_size
+            self.group_by = group_by
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.math_epsilon = math_epsilon
@@ -842,8 +843,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         full_t1_hashtable = self._create_hashtable(level, 't1')
         full_t2_hashtable = self._create_hashtable(level, 't2')
-        t1_hashes = OrderedSet(full_t1_hashtable.keys())
-        t2_hashes = OrderedSet(full_t2_hashtable.keys())
+        t1_hashes = OrderedSetPlus(full_t1_hashtable.keys())
+        t2_hashes = OrderedSetPlus(full_t2_hashtable.keys())
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 

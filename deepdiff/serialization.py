@@ -45,6 +45,7 @@ CSV_HEADER_MAX_CHUNK_SIZE = 2048  # The chunk needs to be big enough that covers
 MODULE_NOT_FOUND_MSG = 'DeepDiff Delta did not find {} in your modules. Please make sure it is already imported.'
 FORBIDDEN_MODULE_MSG = "Module '{}' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter"
 DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT = 'report_repetition must be set to True when ignore_order is True to create the delta object.'
+DELTA_ERROR_WHEN_GROUP_BY = 'Delta can not be made when group_by is used since the structure of data is modified from the original form.'
 
 SAFE_TO_IMPORT = {
     'builtins.range',
@@ -183,6 +184,9 @@ class SerializationMixin:
         was set to be True in the diff object.
 
         """
+        if self.group_by is not None:
+            raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
+
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
         result.remove_empty_keys()
         if report_repetition_required and self.ignore_order and not self.report_repetition:
@@ -346,6 +350,7 @@ def load_path_content(path, file_type=None):
         if clevercsv is None:  # pragma: no cover.
             raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
         content = clevercsv.read_dicts(path)
+        logger.info(f"NOTE: CSV content was empty in {path}")
 
         # Everything in csv is string but we try to automatically convert any numbers we find
         for row in content:
@@ -385,9 +390,7 @@ def save_content_to_path(content, path, file_type=None, keep_backup=True):
             os.remove(backup_path)
 
 
-def _save_content(content, path, file_type=None, keep_backup=True):
-    if file_type is None:
-        file_type = path.split('.')[-1]
+def _save_content(content, path, file_type, keep_backup=True):
     if file_type == 'json':
         with open(path, 'w') as the_file:
             content = json.dump(content, the_file)
@@ -414,6 +417,6 @@ def _save_content(content, path, file_type=None, keep_backup=True):
             writer.writeheader()
             writer.writerows(content)
     else:
-        raise UnsupportedFormatErr(f'Only json, yaml, toml, csv, tsv and pickle are supported.\n'
+        raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.\n'
                                    f' The {file_type} extension is not known.')
     return content

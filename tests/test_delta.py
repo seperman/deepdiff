@@ -12,7 +12,9 @@ from deepdiff.delta import (
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
     FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG, NOT_VALID_NUMPY_TYPE)
-from deepdiff.serialization import DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT
+from deepdiff.serialization import (
+    DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT, DELTA_ERROR_WHEN_GROUP_BY
+)
 
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
@@ -93,6 +95,24 @@ class TestBasicsOfDelta:
         with pytest.raises(ValueError) as excinfo:
             Delta()
         assert DELTA_AT_LEAST_ONE_ARG_NEEDED == str(excinfo.value)
+
+    def test_delta_when_group_by(self):
+
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+
+        with pytest.raises(ValueError) as excinfo:
+            Delta(diff)
+        assert DELTA_ERROR_WHEN_GROUP_BY == str(excinfo.value)
 
     def test_delta_repr(self):
         t1 = [1, 2]
@@ -1021,6 +1041,7 @@ class TestDeltaOther:
             'cache_tuning_sample_size': 500,
             'cache_size': 500,
             'cutoff_intersection_for_pairs': 0.6,
+            'group_by': None,
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}

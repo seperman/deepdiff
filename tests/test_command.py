@@ -2,7 +2,7 @@ import os
 import pytest
 from shutil import copyfile
 from click.testing import CliRunner
-from deepdiff.commands import diff, patch
+from deepdiff.commands import diff, patch, grep, extract
 from conftest import FIXTURES_DIR
 from deepdiff.helper import pypy3
 
@@ -87,3 +87,31 @@ class TestCommands:
         diffed2 = runner.invoke(diff, [t1, t2, '--math-epsilon', '0.001'])
         assert 0 == diffed2.exit_code
         assert "{'values_changed': {'root[2][2]': {'new_value': 0.289, 'old_value': 0.288}}}\n" == diffed2.output
+
+    def test_command_grep(self):
+        path = os.path.join(FIXTURES_DIR, 'd_t1.yaml')
+        runner = CliRunner()
+        diffed = runner.invoke(grep, ['Sammy', path])
+        assert 0 == diffed.exit_code
+        assert "{'matched_values': ['root[2][0]']}\n" == diffed.output
+
+    def test_command_err_grep1(self):
+        path = os.path.join(FIXTURES_DIR, 'd_t1.yaml')
+        runner = CliRunner()
+        diffed = runner.invoke(grep, [path, 'Sammy'])
+        assert "Path 'Sammy' does not exist" in diffed.output
+        assert 2 == diffed.exit_code
+
+    def test_command_err_grep2(self):
+        path = os.path.join(FIXTURES_DIR, 'invalid_yaml.yaml')
+        runner = CliRunner()
+        diffed = runner.invoke(grep, ['invalid', path])
+        assert "mapping keys are not allowed here" in diffed.output
+        assert 1 == diffed.exit_code
+
+    def test_command_extract(self):
+        path = os.path.join(FIXTURES_DIR, 'd_t1.yaml')
+        runner = CliRunner()
+        diffed = runner.invoke(extract, ['root[2][2]', path])
+        assert 0 == diffed.exit_code
+        assert '0.288\n' == diffed.output

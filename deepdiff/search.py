@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import re
 from collections.abc import MutableMapping, Iterable
-from ordered_set import OrderedSet
+from deepdiff.helper import OrderedSetPlus
 import logging
 
 from deepdiff.helper import strings, numbers, add_to_frozen_set, get_doc, dict_
@@ -77,9 +77,9 @@ class DeepSearch(dict):
     def __init__(self,
                  obj,
                  item,
-                 exclude_paths=OrderedSet(),
-                 exclude_regex_paths=OrderedSet(),
-                 exclude_types=OrderedSet(),
+                 exclude_paths=OrderedSetPlus(),
+                 exclude_regex_paths=OrderedSetPlus(),
+                 exclude_types=OrderedSetPlus(),
                  verbose_level=1,
                  case_sensitive=False,
                  match_string=False,
@@ -94,9 +94,9 @@ class DeepSearch(dict):
         self.obj = obj
         self.case_sensitive = case_sensitive if isinstance(item, strings) else True
         item = item if self.case_sensitive else item.lower()
-        self.exclude_paths = OrderedSet(exclude_paths)
+        self.exclude_paths = OrderedSetPlus(exclude_paths)
         self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in exclude_regex_paths]
-        self.exclude_types = OrderedSet(exclude_types)
+        self.exclude_types = OrderedSetPlus(exclude_types)
         self.exclude_types_tuple = tuple(
             exclude_types)  # we need tuple for checking isinstance
         self.verbose_level = verbose_level
@@ -116,7 +116,7 @@ class DeepSearch(dict):
             del self[k]
 
     def __set_or_dict(self):
-        return dict_() if self.verbose_level >= 2 else OrderedSet()
+        return dict_() if self.verbose_level >= 2 else OrderedSetPlus()
 
     def __report(self, report_key, key, value):
         if self.verbose_level >= 2:
@@ -183,7 +183,7 @@ class DeepSearch(dict):
         else:
             parent_text = "%s[%s]"
 
-        obj_keys = OrderedSet(obj.keys())
+        obj_keys = OrderedSetPlus(obj.keys())
 
         for item_key in obj_keys:
             if not print_as_attribute and isinstance(item_key, strings):
