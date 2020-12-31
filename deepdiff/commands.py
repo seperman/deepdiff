@@ -1,5 +1,6 @@
 import click
 import sys
+from decimal import Decimal
 from pprint import pprint
 from deepdiff.diff import (
     DeepDiff,
@@ -28,6 +29,7 @@ def cli():
 @click.option('--create-patch', is_flag=True, show_default=True)
 @click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
+@click.option('--math-epsilon', required=False, type=Decimal, show_default=False)
 @click.option('--get-deep-distance', is_flag=True, show_default=True)
 @click.option('--group-by', required=False, type=str, show_default=False, multiple=False)
 @click.option('--ignore-order', is_flag=True, show_default=True)
@@ -120,26 +122,6 @@ def patch(
         save_content_to_path(result, path, file_type=extension, keep_backup=backup)
     except Exception as e:
         sys.exit(str(f"Error when saving {path}: {e}"))
-
-
-# def get_stdin(ctx, param, value):
-#     """
-#     https://stackoverflow.com/a/45845513/1497443
-#     """
-#     if not value and not click.get_text_stream('stdin').isatty():
-#         return click.get_text_stream('stdin').read().strip()
-#     else:
-#         return value
-
-
-#                  obj,
-#                  item,
-#                  exclude_paths=OrderedSet(),
-#                  exclude_regex_paths=OrderedSet(),
-#                  exclude_types=OrderedSet(),
-#                  verbose_level=1,
-#                  case_sensitive=False,
-#                  match_string=False,
 
 
 @cli.command()

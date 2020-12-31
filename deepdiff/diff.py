@@ -154,8 +154,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
-                "math_epsilon, "
-                "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
+                "math_epsilon, _original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
             self.__dict__.update(_parameters)
@@ -257,11 +256,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self.deephash_parameters = self._get_deephash_params()
         self.tree = TreeResult()
         if group_by and self.is_root:
-            t1 = self._group_iterable_to_dict(t1, group_by, item_name='t1')
-            t2 = self._group_iterable_to_dict(t2, group_by, item_name='t2')
-        else:
-            self.t1 = t1
-            self.t2 = t2
+            try:
+                original_t1 = t1
+                t1 = self._group_iterable_to_dict(t1, group_by, item_name='t1')
+            except (KeyError, ValueError):
+                pass
+            else:
+                try:
+                    t2 = self._group_iterable_to_dict(t2, group_by, item_name='t2')
+                except (KeyError, ValueError):
+                    t1 = original_t1
+
+        self.t1 = t1
+        self.t2 = t2
 
         try:
             root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
@@ -702,6 +709,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def _get_distance_cache_key(added_hash, removed_hash):
         key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
         if isinstance(key1, int):
+            # If the hash function produces integers we convert them to hex values.
+            # This was used when the default hash function was Murmur3 128bit which produces integers.
             key1 = hex(key1).encode('utf-8')
             key2 = hex(key2).encode('utf-8')
         elif isinstance(key1, str):
@@ -1220,13 +1229,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             item_copy = deepcopy(item)
             for row in item_copy:
                 if isinstance(row, Mapping):
-                    result[row.pop(group_by)] = row
+                    try:
+                        key = row.pop(group_by)
+                    except KeyError:
+                        logger.error("Unable to group {} by {}. The key is missing in {}".format(item_name, group_by, row))
+                        raise
+                    result[key] = row
                 else:
-                    logger.error("Unable to group {} by {}".format(item_name, group_by))
-                    return item
+                    msg = "Unable to group {} by {} since the item {} is not a dictionary.".format(item_name, group_by, row)
+                    logger.error(msg)
+                    raise ValueError(msg)
             return result
-        logger.error("Unable to group {} by {}".format(item_name, group_by))
-        return item
+        msg = "Unable to group {} by {}".format(item_name, group_by)
+        logger.error(msg)
+        raise ValueError(msg)
 
     def get_stats(self):
         """

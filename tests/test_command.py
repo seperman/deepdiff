@@ -66,3 +66,12 @@ class TestCommands:
             final_diff = runner.invoke(diff, [t1_copy_path, t2, *args])
             assert final_diff.exit_code == expected_exit_code
             assert final_diff.output == '{}\n'
+
+    def test_command_group_by(self):
+        t1 = os.path.join(FIXTURES_DIR, 'c_t1.csv')
+        t2 = os.path.join(FIXTURES_DIR, 'c_t2.csv')
+        runner = CliRunner()
+        diffed = runner.invoke(diff, [t1, t2, '--group-by', 'id'])
+        assert 0 == diffed.exit_code
+        assert 'values_changed' in diffed.output
+        assert '\'new_value\': \'Chicken\'' in diffed.output

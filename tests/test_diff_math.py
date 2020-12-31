@@ -1,4 +1,3 @@
-import pytest
 from decimal import Decimal
 from deepdiff.diff import DeepDiff
 

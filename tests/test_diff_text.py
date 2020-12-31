@@ -1409,7 +1409,7 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2, ignore_order=ignore_order, ignore_private_variables=ignore_private_variables)
         assert expected == diff
 
-    def test_group_by(self):
+    def test_group_by1(self):
         t1 = [
             {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
             {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
@@ -1433,3 +1433,85 @@ class TestDeepDiffText:
             'new_value': 'Brown',
             'old_value': 'Blue'}}}
         assert expected_grouped == diff
+
+    def test_group_by_key_missing(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {'dictionary_item_added': ["root[2]['id']"]}
+        assert expected == diff
+
+    def test_group_by_not_dict1(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            None,
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {
+            'type_changes': {
+                'root[1]': {
+                    'old_type': None.__class__,
+                    'new_type': dict,
+                    'old_value': None,
+                    'new_value': {
+                        'id': 'BB'
+                    }
+                }
+            },
+        }
+        assert expected == diff
+
+    def test_group_by_not_dict2(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            None,
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {
+            'type_changes': {
+                'root[1]': {
+                    'old_type': dict,
+                    'new_type': None.__class__,
+                    'new_value': None,
+                    'old_value': {
+                        'id': 'BB'
+                    }
+                }
+            },
+        }
+        assert expected == diff
+
+    def test_group_by_not_list_of_dicts(self):
+        t1 = {1: 2}
+
+        t2 = {1: 3}
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {'values_changed': {'root[1]': {'new_value': 3, 'old_value': 2}}}
+        assert expected == diff
