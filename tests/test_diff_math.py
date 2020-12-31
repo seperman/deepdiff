@@ -1,5 +1,5 @@
 from decimal import Decimal
-from deepdiff.diff import DeepDiff
+from deepdiff import DeepDiff
 
 
 class TestDiffMath:

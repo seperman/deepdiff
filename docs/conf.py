@@ -140,6 +140,8 @@ html_theme_options = {
     'github_count': True,
     'font_family': 'Open Sans',
     'canonical_url': 'https://zepworks.com/deepdiff/current/',
+    'page_width': '1024px',
+    'body_max_width': '1024px',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.

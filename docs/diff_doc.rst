@@ -53,7 +53,7 @@ get_deep_distance: Boolean, default = False
     :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
 
 group_by: String, default=None
-    :ref:`group_by` can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
+    :ref:`group_by_label` can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
 
 hasher: default = DeepHash.murmur3_128bit
     Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
@@ -104,6 +104,9 @@ max_passes: Integer, default = 10000000
 
 max_diffs: Integer, default = None
     :ref:`max_diffs_label` defined the maximum number of diffs to run on objects to pin point what exactly is different. This is only used when ignore_order=True
+
+math_epsilon: Decimal, default = None
+    :ref:`math_epsilon_label` uses Python's built in Math.isclose. It defines a tolerance value which is passed to math.isclose(). Any numbers that are within the tolerance will not report as being different. Any numbers outside of that tolerance will show up as different.
 
 number_format_notation : string, default="f"
     :ref:`number_format_notation_label` is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
