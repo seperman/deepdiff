@@ -31,3 +31,5 @@ Authors in order of the contributions:
 - [Timothy](https://github.com/timson) for truncate_datetime
 - [d0b3rm4n](https://github.com/d0b3rm4n) for bugfix to not apply format to non numbers.
 - [MyrikLD](https://github.com/MyrikLD) for Bug Fix NoneType in ignore type groups
+- Stian Jensen [stianjensen](https://github.com/stianjensen) for improving ignoring of NoneType in diff 
+- Florian Klien [flowolf](https://github.com/flowolf) for adding math_epsilon

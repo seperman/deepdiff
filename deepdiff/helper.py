@@ -121,7 +121,6 @@ if py2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
-py3_5 = py_current_version == Decimal('3.5')
 
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
@@ -310,8 +309,8 @@ def type_in_type_group(item, type_group):
 
 def type_is_subclass_of_type_group(item, type_group):
     return isinstance(item, type_group) \
-           or (isinstance(item, type) and issubclass(item, type_group)) \
-           or type_in_type_group(item, type_group)
+        or (isinstance(item, type) and issubclass(item, type_group)) \
+        or type_in_type_group(item, type_group)
 
 
 def get_doc(doc_filename):
@@ -442,6 +441,11 @@ class OrderedSetPlus(OrderedSet):
         del self.items[0]
         del self.map[elem]
         return elem
+
+    def __repr__(self):
+        return str(list(self))
+
+    __str__ = __repr__
 
 
 class RepeatedTimer:

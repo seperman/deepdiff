@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.0.2 documentation!
+DeepDiff 5.2.0 documentation!
 =============================
 
 *****************
@@ -24,6 +24,8 @@ The DeepDiff library includes the following modules:
 - **Delta** Delta of objects that can be applied to other objects. Imagine git commits but for structured data.  :doc:`/delta`
 
 - **Extract** For extracting a path from an object  :doc:`/extract`
+
+- **Commandline** Most of the above functionality is also available via the commandline module  :doc:`/commandline`
 
 *************************
 Supported Python Versions
@@ -98,6 +100,7 @@ References
    deephash
    delta
    extract
+   commandline
    changelog
    authors
 

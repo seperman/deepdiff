@@ -1,0 +1,4 @@
+click==7.1.2
+pyyaml==5.3.1
+toml==0.10.2
+clevercsv==0.6.6

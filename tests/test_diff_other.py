@@ -92,3 +92,7 @@ class TestDiffOther:
                         }
                     }
         assert diff == expected
+
+    def test_get_distance_cache_key(self):
+        result = DeepDiff._get_distance_cache_key(added_hash=5, removed_hash=20)
+        assert b'0x14--0x5dc' == result

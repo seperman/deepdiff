@@ -1,10 +1,10 @@
-# DeepDiff v 5.0.2
+# DeepDiff v 5.2.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
 ![License](https://img.shields.io/pypi/l/deepdiff.svg?version=latest)
-[![Build Status](https://travis-ci.org/seperman/deepdiff.svg?branch=master)](https://travis-ci.org/seperman/deepdiff)
-[![Coverage Status](https://coveralls.io/repos/github/seperman/deepdiff/badge.svg?branch=master)](https://coveralls.io/github/seperman/deepdiff?branch=master)
+[![Build Status](https://github.com/seperman/deepdiff/workflows/Unit%20Tests/badge.svg)](https://github.com/seperman/deepdiff/actions)
+[![codecov](https://codecov.io/gh/seperman/deepdiff/branch/master/graph/badge.svg?token=KkHZ3siA3m)](https://codecov.io/gh/seperman/deepdiff)
 
 ## DeepDiff Overview
 
@@ -12,12 +12,13 @@
 - DeepSearch: Search for objects within other objects.
 - DeepHash: Hash any object based on their content.
 
-Tested on Python 3.5+ and PyPy3.
+Tested on Python 3.6+ and PyPy3.
 
 **NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
 
+**NOTE: The last version of DeepDiff to work on Python 3.5 was DeepDiff 5-0-2**
 
-- [Documentation](https://zepworks.com/deepdiff/5.0.2/)
+- [Documentation](https://zepworks.com/deepdiff/5.2.0/)
 
 
 ## Installation
@@ -46,13 +47,13 @@ If you are running into trouble installing Murmur3, please take a look at the [T
 
 DeepDiff gets the difference of 2 objects.
 
-> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.0.2/diff.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.2/>
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.2.0/diff.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.0/>
 > - Tutorials can be found on <https://zepworks.com/tags/deepdiff/>
 
 ## A few Examples
 
-> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://zepworks.com/deepdiff/5.0.2/> for full documentation.
+> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://zepworks.com/deepdiff/5.2.0/> for full documentation.
 
 ### List difference ignoring order or duplicates
 
@@ -256,8 +257,8 @@ Example:
 ```
 
 
-> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.0.2/diff.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.2/>
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.2.0/diff.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.0/>
 
 
 # Deep Search
@@ -289,8 +290,8 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 {'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
 ```
 
-> - Please take a look at the [DeepSearch docs](https://zepworks.com/deepdiff/5.0.2/dsearch.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.2/>
+> - Please take a look at the [DeepSearch docs](https://zepworks.com/deepdiff/5.2.0/dsearch.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.0/>
 
 # Deep Hash
 (New in v4-0-0)
@@ -298,8 +299,8 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 DeepHash is designed to give you hash of ANY python object based on its contents even if the object is not considered hashable!
 DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
 
-> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.0.2/deephash.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.2/>
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.2.0/deephash.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.0/>
 
 Let's say you have a dictionary object.
 
@@ -347,8 +348,8 @@ Which you can write as:
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
 
-> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.0.2/deephash.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.0.2/>
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.2.0/deephash.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.0/>
 
 
 # Using DeepDiff in unit tests
@@ -435,9 +436,9 @@ git push && git push --tags
 1. Please make your PR against the dev branch
 2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we strive to maintain around 100% test coverage on the code.
 
-Please run `pytest --cov=deepdiff` to see the coverage report.
+Please run `pytest --cov=deepdiff --runslow` to see the coverage report. Note that the `--runslow` flag will run some slow tests too. In most cases you only want to run the fast tests which so you won't add the `--runslow` flag.
 
-Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing`.
+Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing --runslow`.
 
 Thank you!
 

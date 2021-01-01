@@ -7,6 +7,8 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+from copy import deepcopy
+from math import isclose as is_close
 from collections.abc import Mapping, Iterable
 from collections import defaultdict
 from itertools import zip_longest
@@ -114,6 +116,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_types=None,
                  exclude_obj_callback=None,
                  get_deep_distance=False,
+                 group_by=None,
                  hasher=None,
                  hashes=None,
                  ignore_order=False,
@@ -125,6 +128,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_nan_inequality=False,
                  ignore_private_variables=True,
                  log_frequency_in_sec=0,
+                 math_epsilon=None,
                  max_passes=10000000,
                  max_diffs=None,
                  number_format_notation="f",
@@ -149,8 +153,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_diffs, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                "cache_tuning_sample_size, get_deep_distance, cache_purge_level, "
-                "_original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
+                "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
+                "math_epsilon, _original_type, _parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
             self.__dict__.update(_parameters)
@@ -182,8 +186,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_nan_inequality = ignore_nan_inequality
             self.hasher = hasher
             self.cache_tuning_sample_size = cache_tuning_sample_size
+            self.group_by = group_by
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
+            self.math_epsilon = math_epsilon
+            if self.math_epsilon is not None and self.ignore_order:
+                logger.warning("math_epsilon will be ignored. It cannot be used when ignore_order is True.")
             self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             if verbose_level in {0, 1, 2}:
@@ -203,7 +211,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # _Parameters are the clean _parameters to initialize DeepDiff with so we avoid all the above
             # cleaning functionalities when running DeepDiff recursively.
             # However DeepHash has its own set of _parameters that are slightly different than DeepDIff.
-            # DeepDiff _parameters are transformed to DeepHash _parameters via __get_deephash_params method.
+            # DeepDiff _parameters are transformed to DeepHash _parameters via _get_deephash_params method.
             self.progress_logger = progress_logger
             self.cache_size = cache_size
             _parameters = self.__dict__.copy()
@@ -246,8 +254,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 progress_timer = None
 
         self._parameters = _parameters
-        self.deephash_parameters = self.__get_deephash_params()
+        self.deephash_parameters = self._get_deephash_params()
         self.tree = TreeResult()
+        if group_by and self.is_root:
+            try:
+                original_t1 = t1
+                t1 = self._group_iterable_to_dict(t1, group_by, item_name='t1')
+            except (KeyError, ValueError):
+                pass
+            else:
+                try:
+                    t2 = self._group_iterable_to_dict(t2, group_by, item_name='t2')
+                except (KeyError, ValueError):
+                    t1 = original_t1
+
         self.t1 = t1
         self.t2 = t2
 
@@ -256,7 +276,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # _original_type is only used to pass the original type of the data. Currently only used for numpy arrays.
             # The reason is that we convert the numpy array to python list and then later for distance calculations
             # we convert only the the last dimension of it into numpy arrays.
-            self.__diff(root, parents_ids=frozenset({id(t1)}), _original_type=_original_type)
+            self._diff(root, parents_ids=frozenset({id(t1)}), _original_type=_original_type)
 
             if get_deep_distance and view in {TEXT_VIEW, TREE_VIEW}:
                 self.tree['deep_distance'] = self._get_rough_distance()
@@ -281,13 +301,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if cache_purge_level == 2:
                     self.__dict__.clear()
 
-    def __get_deephash_params(self):
+    def _get_deephash_params(self):
         result = {key: self._parameters[key] for key in DEEPHASH_PARAM_KEYS}
         result['ignore_repetition'] = not self.report_repetition
         result['number_to_string_func'] = self.number_to_string
         return result
 
-    def __report_result(self, report_type, level):
+    def _report_result(self, report_type, level):
         """
         Add a detected change to the reference-style result dictionary.
         report_type will be added to level.
@@ -300,12 +320,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         :rtype: None
         """
 
-        if not self.__skip_this(level):
+        if not self._skip_this(level):
             level.report_type = report_type
             self.tree[report_type].add(level)
 
     @staticmethod
-    def __dict_from_slots(object):
+    def _dict_from_slots(object):
         def unmangle(attribute):
             if attribute.startswith('__') and attribute != '__weakref__':
                 return '_{type}{attribute}'.format(
@@ -331,8 +351,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
-    def __diff_obj(self, level, parents_ids=frozenset(),
-                   is_namedtuple=False):
+    def _diff_obj(self, level, parents_ids=frozenset(),
+                  is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
@@ -343,13 +363,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2 = level.t2.__dict__
         except AttributeError:
             try:
-                t1 = self.__dict_from_slots(level.t1)
-                t2 = self.__dict_from_slots(level.t2)
+                t1 = self._dict_from_slots(level.t1)
+                t2 = self._dict_from_slots(level.t2)
             except AttributeError:
-                self.__report_result('unprocessed', level)
+                self._report_result('unprocessed', level)
                 return
 
-        self.__diff_dict(
+        self._diff_dict(
             level,
             parents_ids,
             print_as_attribute=True,
@@ -357,7 +377,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             override_t1=t1,
             override_t2=t2)
 
-    def __skip_this(self, level):
+    def _skip_this(self, level):
         """
         Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
         :rtype: bool
@@ -377,7 +397,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return skip
 
-    def __get_clean_to_keys_mapping(self, keys, level):
+    def _get_clean_to_keys_mapping(self, keys, level):
         """
         Get a dictionary of cleaned value of keys to the keys themselves.
         This is mainly used to transform the keys when the type changes of keys should be ignored.
@@ -403,7 +423,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 result[clean_key] = key
         return result
 
-    def __diff_dict(self,
+    def _diff_dict(self,
                     level,
                     parents_ids=frozenset([]),
                     print_as_attribute=False,
@@ -436,8 +456,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_keys = set(t1.keys())
             t2_keys = set(t2.keys())
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
-            t1_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t1_keys, level=level)
-            t2_clean_to_keys = self.__get_clean_to_keys_mapping(keys=t2_keys, level=level)
+            t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
+            t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
             t1_keys = set(t1_clean_to_keys.keys())
             t2_keys = set(t2_clean_to_keys.keys())
         else:
@@ -449,7 +469,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t_keys_removed = t1_keys - t_keys_intersect
 
         for key in t_keys_added:
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return
 
             key = t2_clean_to_keys[key] if t2_clean_to_keys else key
@@ -458,10 +478,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2[key],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self.__report_result(item_added_key, change_level)
+            self._report_result(item_added_key, change_level)
 
         for key in t_keys_removed:
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
             key = t1_clean_to_keys[key] if t1_clean_to_keys else key
@@ -470,10 +490,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 notpresent,
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self.__report_result(item_removed_key, change_level)
+            self._report_result(item_removed_key, change_level)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
             key1 = t1_clean_to_keys[key] if t1_clean_to_keys else key
@@ -489,12 +509,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2[key2],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self.__diff(next_level, parents_ids_added)
+            self._diff(next_level, parents_ids_added)
 
-    def __diff_set(self, level):
+    def _diff_set(self, level):
         """Difference of sets"""
-        t1_hashtable = self.__create_hashtable(level, 't1')
-        t2_hashtable = self.__create_hashtable(level, 't2')
+        t1_hashtable = self._create_hashtable(level, 't1')
+        t2_hashtable = self._create_hashtable(level, 't2')
 
         t1_hashes = set(t1_hashtable.keys())
         t2_hashes = set(t2_hashtable.keys())
@@ -506,23 +526,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         items_removed = [t1_hashtable[i].item for i in hashes_removed]
 
         for item in items_added:
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
             change_level = level.branch_deeper(
                 notpresent, item, child_relationship_class=SetRelationship)
-            self.__report_result('set_item_added', change_level)
+            self._report_result('set_item_added', change_level)
 
         for item in items_removed:
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
             change_level = level.branch_deeper(
                 item, notpresent, child_relationship_class=SetRelationship)
-            self.__report_result('set_item_removed', change_level)
+            self._report_result('set_item_removed', change_level)
 
     @staticmethod
-    def __iterables_subscriptable(t1, t2):
+    def _iterables_subscriptable(t1, t2):
         try:
             if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
                 return True
@@ -531,16 +551,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         except AttributeError:
             return False
 
-    def __diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
         """Difference of iterables"""
         if self.ignore_order:
-            self.__diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
         else:
-            self.__diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
 
-    def __diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
-        subscriptable = self.__iterables_subscriptable(level.t1, level.t2)
+        subscriptable = self._iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
             child_relationship_class = SubscriptableIterableRelationship
         else:
@@ -550,7 +570,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 zip_longest(
                     level.t1, level.t2, fillvalue=ListItemRemovedOrAdded)):
 
-            if self.__count_diff() is StopIteration:
+            if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
             if y is ListItemRemovedOrAdded:  # item removed completely
@@ -559,7 +579,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     notpresent,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
-                self.__report_result('iterable_item_removed', change_level)
+                self._report_result('iterable_item_removed', change_level)
 
             elif x is ListItemRemovedOrAdded:  # new item added
                 change_level = level.branch_deeper(
@@ -567,7 +587,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     y,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
-                self.__report_result('iterable_item_added', change_level)
+                self._report_result('iterable_item_added', change_level)
 
             else:  # check if item value has changed
                 item_id = id(x)
@@ -581,9 +601,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     y,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
-                self.__diff(next_level, parents_ids_added)
+                self._diff(next_level, parents_ids_added)
 
-    def __diff_str(self, level):
+    def _diff_str(self, level):
         """Compare strings"""
         if self.ignore_string_case:
             level.t1 = level.t1.lower()
@@ -620,19 +640,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if diff:
                     level.additional['diff'] = '\n'.join(diff)
 
-        self.__report_result('values_changed', level)
+        self._report_result('values_changed', level)
 
-    def __diff_tuple(self, level, parents_ids):
+    def _diff_tuple(self, level, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
             level.t1._asdict
         # It must be a normal tuple
         except AttributeError:
-            self.__diff_iterable(level, parents_ids)
+            self._diff_iterable(level, parents_ids)
         # We assume it is a namedtuple then
         else:
-            self.__diff_obj(level, parents_ids, is_namedtuple=True)
+            self._diff_obj(level, parents_ids, is_namedtuple=True)
 
     def _add_hash(self, hashes, item_hash, item, i):
         if item_hash in hashes:
@@ -640,7 +660,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             hashes[item_hash] = IndexedHash(indexes=[i], item=item)
 
-    def __create_hashtable(self, level, t):
+    def _create_hashtable(self, level, t):
         """Create hashtable of {item_hash: (indexes, item)}"""
         obj = getattr(level, t)
 
@@ -687,9 +707,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return local_hashes
 
     @staticmethod
-    def __get_distance_cache_key(added_hash, removed_hash):
+    def _get_distance_cache_key(added_hash, removed_hash):
         key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
         if isinstance(key1, int):
+            # If the hash function produces integers we convert them to hex values.
+            # This was used when the default hash function was Murmur3 128bit which produces integers.
             key1 = hex(key1).encode('utf-8')
             key2 = hex(key2).encode('utf-8')
         elif isinstance(key1, str):
@@ -697,12 +719,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             key2 = key2.encode('utf-8')
         return key1 + b'--' + key2 + b'dc'
 
-    def __get_rough_distance(
+    def _get_rough_distance_of_hashed_objs(
             self, added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type=None):
         # We need the rough distance between the 2 objects to see if they qualify to be pairs or not
         _distance = cache_key = None
         if self._stats[DISTANCE_CACHE_ENABLED]:
-            cache_key = self.__get_distance_cache_key(added_hash, removed_hash)
+            cache_key = self._get_distance_cache_key(added_hash, removed_hash)
             if cache_key in self._distance_cache:
                 self._stats[DISTANCE_CACHE_HIT_COUNT] += 1
                 _distance = self._distance_cache.get(cache_key)
@@ -722,7 +744,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._distance_cache.set(cache_key, value=_distance)
         return _distance
 
-    def __get_most_in_common_pairs_in_iterables(
+    def _get_most_in_common_pairs_in_iterables(
             self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type):
         """
         Get the closest pairs between items that are removed and items that are added.
@@ -778,7 +800,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if pre_calced_distances:
                     _distance = pre_calced_distances["{}--{}".format(added_hash, removed_hash)]
                 else:
-                    _distance = self.__get_rough_distance(
+                    _distance = self._get_rough_distance_of_hashed_objs(
                         added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type)
                 # Left for future debugging
                 # print(f'{Fore.RED}distance of {added_hash_obj.item} and {removed_hash_obj.item}: {_distance}{Style.RESET_ALL}')
@@ -816,13 +838,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._distance_cache.set(cache_key, value=pairs)
         return pairs.copy()
 
-    def __diff_iterable_with_deephash(self, level, parents_ids, _original_type=None):
+    def _diff_iterable_with_deephash(self, level, parents_ids, _original_type=None):
         """Diff of hashable or unhashable iterables. Only used when ignoring the order."""
 
-        full_t1_hashtable = self.__create_hashtable(level, 't1')
-        full_t2_hashtable = self.__create_hashtable(level, 't2')
-        t1_hashes = OrderedSet(full_t1_hashtable.keys())
-        t2_hashes = OrderedSet(full_t2_hashtable.keys())
+        full_t1_hashtable = self._create_hashtable(level, 't1')
+        full_t2_hashtable = self._create_hashtable(level, 't2')
+        t1_hashes = OrderedSetPlus(full_t1_hashtable.keys())
+        t2_hashes = OrderedSetPlus(full_t2_hashtable.keys())
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
@@ -842,7 +864,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if self._stats[PASSES_COUNT] < self.max_passes and get_pairs:
             self._stats[PASSES_COUNT] += 1
-            pairs = self.__get_most_in_common_pairs_in_iterables(
+            pairs = self._get_most_in_common_pairs_in_iterables(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, parents_ids, _original_type)
         elif get_pairs:
             if not self._stats[MAX_PASS_LIMIT_REACHED]:
@@ -877,7 +899,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if self.report_repetition:
             for hash_value in hashes_added:
-                if self.__count_diff() is StopIteration:
+                if self._count_diff() is StopIteration:
                     return  # pragma: no cover. This is already covered for addition (when report_repetition=False).
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
@@ -890,12 +912,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_param=i
                     )
                     if other.item is notpresent:
-                        self.__report_result('iterable_item_added', change_level)
+                        self._report_result('iterable_item_added', change_level)
                     else:
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                        self.__diff(change_level, parents_ids_added)
+                        self._diff(change_level, parents_ids_added)
             for hash_value in hashes_removed:
-                if self.__count_diff() is StopIteration:
+                if self._count_diff() is StopIteration:
                     return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
@@ -906,13 +928,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=SubscriptableIterableRelationship,
                         child_relationship_param=i)
                     if other.item is notpresent:
-                        self.__report_result('iterable_item_removed', change_level)
+                        self._report_result('iterable_item_removed', change_level)
                     else:
                         # I was not able to make a test case for the following 2 lines since the cases end up
                         # getting resolved above in the hashes_added calcs. However I am leaving these 2 lines
                         # in case things change in future.
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
-                        self.__diff(change_level, parents_ids_added)  # pragma: no cover.
+                        self._diff(change_level, parents_ids_added)  # pragma: no cover.
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
@@ -934,12 +956,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         new_repeat=t2_indexes_len,
                         old_indexes=t1_indexes,
                         new_indexes=t2_indexes)
-                    self.__report_result('repetition_change',
+                    self._report_result('repetition_change',
                                          repetition_change_level)
 
         else:
             for hash_value in hashes_added:
-                if self.__count_diff() is StopIteration:
+                if self._count_diff() is StopIteration:
                     return
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
@@ -950,13 +972,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     child_relationship_class=SubscriptableIterableRelationship,
                     child_relationship_param=index)
                 if other.item is notpresent:
-                    self.__report_result('iterable_item_added', change_level)
+                    self._report_result('iterable_item_added', change_level)
                 else:
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                    self.__diff(change_level, parents_ids_added)
+                    self._diff(change_level, parents_ids_added)
 
             for hash_value in hashes_removed:
-                if self.__count_diff() is StopIteration:
+                if self._count_diff() is StopIteration:
                     return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
@@ -967,25 +989,28 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])
                 if other.item is notpresent:
-                    self.__report_result('iterable_item_removed', change_level)
+                    self._report_result('iterable_item_removed', change_level)
                 else:
                     # Just like the case when report_repetition = True, these lines never run currently.
                     # However they will stay here in case things change in future.
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
-                    self.__diff(change_level, parents_ids_added)  # pragma: no cover.
+                    self._diff(change_level, parents_ids_added)  # pragma: no cover.
 
-    def __diff_booleans(self, level):
+    def _diff_booleans(self, level):
         if level.t1 != level.t2:
-            self.__report_result('values_changed', level)
+            self._report_result('values_changed', level)
 
-    def __diff_numbers(self, level):
+    def _diff_numbers(self, level):
         """Diff Numbers"""
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
-        if self.significant_digits is None:
+        if self.math_epsilon is not None:
+            if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
+                self._report_result('values_changed', level)
+        elif self.significant_digits is None:
             if level.t1 != level.t2:
-                self.__report_result('values_changed', level)
+                self._report_result('values_changed', level)
         else:
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
             # data is read from files that were previousely written from python and
@@ -1005,18 +1030,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_s = KEY_TO_VAL_STR.format(t1_type, t1_s)
             t2_s = KEY_TO_VAL_STR.format(t2_type, t2_s)
             if t1_s != t2_s:
-                self.__report_result('values_changed', level)
+                self._report_result('values_changed', level)
 
-    def __diff_datetimes(self, level):
+    def _diff_datetimes(self, level):
         """Diff DateTimes"""
         if self.truncate_datetime:
             level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
             level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
 
         if level.t1 != level.t2:
-            self.__report_result('values_changed', level)
+            self._report_result('values_changed', level)
 
-    def __diff_numpy_array(self, level, parents_ids=frozenset()):
+    def _diff_numpy_array(self, level, parents_ids=frozenset()):
         """Diff numpy arrays"""
         if level.path() not in self._numpy_paths:
             self._numpy_paths[level.path()] = get_type(level.t2).__name__
@@ -1044,19 +1069,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # They will be converted back to Numpy at their final dimension.
             level.t1 = level.t1.tolist()
             level.t2 = level.t2.tolist()
-            self.__diff_iterable(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable(level, parents_ids, _original_type=_original_type)
         else:
             # metadata same -- the difference is in the content
             shape = level.t1.shape
             dimensions = len(shape)
             if dimensions == 1:
-                self.__diff_iterable(level, parents_ids, _original_type=_original_type)
+                self._diff_iterable(level, parents_ids, _original_type=_original_type)
             elif self.ignore_order:
                 # arrays are converted to python lists so that certain features of DeepDiff can apply on them easier.
                 # They will be converted back to Numpy at their final dimension.
                 level.t1 = level.t1.tolist()
                 level.t2 = level.t2.tolist()
-                self.__diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
+                self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
             else:
                 for (t1_path, t1_row), (t2_path, t2_row) in zip(
                         get_numpy_ndarray_rows(level.t1, shape),
@@ -1068,14 +1093,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=NumpyArrayRelationship,
                         child_relationship_param=t1_path)
 
-                    self.__diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type)
+                    self._diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type)
 
-    def __diff_types(self, level):
+    def _diff_types(self, level):
         """Diff types"""
         level.report_type = 'type_changes'
-        self.__report_result('type_changes', level)
+        self._report_result('type_changes', level)
 
-    def __count_diff(self):
+    def _count_diff(self):
         if (self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs):
             if not self._stats[MAX_DIFF_LIMIT_REACHED]:
                 self._stats[MAX_DIFF_LIMIT_REACHED] = True
@@ -1083,14 +1108,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             return StopIteration
         self._stats[DIFF_COUNT] += 1
         if self.cache_size and self.cache_tuning_sample_size:
-            self.__auto_tune_cache()
+            self._auto_tune_cache()
 
-    def __auto_tune_cache(self):
+    def _auto_tune_cache(self):
         take_sample = (self._stats[DIFF_COUNT] % self.cache_tuning_sample_size == 0)
         if self.cache_tuning_sample_size:
             if self._stats[DISTANCE_CACHE_ENABLED]:
                 if take_sample:
-                    self.__auto_off_cache()
+                    self._auto_off_cache()
             # Turn on the cache once in a while
             elif self._stats[DIFF_COUNT] % self._shared_parameters[_ENABLE_CACHE_EVERY_X_DIFF] == 0:
                 self.progress_logger('Re-enabling the distance and level caches.')
@@ -1101,7 +1126,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             for key in (PREVIOUS_DIFF_COUNT, PREVIOUS_DISTANCE_CACHE_HIT_COUNT):
                 self._stats[key] = self._stats[key[9:]]
 
-    def __auto_off_cache(self):
+    def _auto_off_cache(self):
         """
         Auto adjust the cache based on the usage
         """
@@ -1111,7 +1136,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._stats[DISTANCE_CACHE_ENABLED] = False
                 self.progress_logger('Due to minimal cache hits, {} is disabled.'.format('distance cache'))
 
-    def __diff(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff(self, level, parents_ids=frozenset(), _original_type=None):
         """
         The main diff method
 
@@ -1121,13 +1146,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         parents_ids: the ids of all the parent objects in the tree from the current node.
         _original_type: If the objects had an original type that was different than what currently exists in the level.t1 and t2
         """
-        if self.__count_diff() is StopIteration:
+        if self._count_diff() is StopIteration:
             return
 
         if level.t1 is level.t2:
             return
 
-        if self.__skip_this(level):
+        if self._skip_this(level):
             return
 
         if get_type(level.t1) != get_type(level.t2):
@@ -1137,44 +1162,45 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     report_type_change = False
                     break
             if report_type_change:
-                self.__diff_types(level)
+                self._diff_types(level)
                 return
-            # This is an edge case where t1=None and None is in the ignore type group.
-            if level.t1 is None:
-                self.__report_result('values_changed', level)
+            # This is an edge case where t1=None or t2=None and None is in the ignore type group.
+            if level.t1 is None or level.t2 is None:
+                self._report_result('values_changed', level)
+                return
 
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
             return
 
         if isinstance(level.t1, booleans):
-            self.__diff_booleans(level)
+            self._diff_booleans(level)
 
         if isinstance(level.t1, strings):
-            self.__diff_str(level)
+            self._diff_str(level)
 
         elif isinstance(level.t1, times):
-            self.__diff_datetimes(level)
+            self._diff_datetimes(level)
 
         elif isinstance(level.t1, numbers):
-            self.__diff_numbers(level)
+            self._diff_numbers(level)
 
         elif isinstance(level.t1, Mapping):
-            self.__diff_dict(level, parents_ids)
+            self._diff_dict(level, parents_ids)
 
         elif isinstance(level.t1, tuple):
-            self.__diff_tuple(level, parents_ids)
+            self._diff_tuple(level, parents_ids)
 
         elif isinstance(level.t1, (set, frozenset, OrderedSet)):
-            self.__diff_set(level)
+            self._diff_set(level)
 
         elif isinstance(level.t1, np_ndarray):
-            self.__diff_numpy_array(level, parents_ids)
+            self._diff_numpy_array(level, parents_ids)
 
         elif isinstance(level.t1, Iterable):
-            self.__diff_iterable(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable(level, parents_ids, _original_type=_original_type)
 
         else:
-            self.__diff_obj(level, parents_ids)
+            self._diff_obj(level, parents_ids)
 
     def _get_view_results(self, view):
         """
@@ -1193,6 +1219,31 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
+
+    def _group_iterable_to_dict(self, item, group_by, item_name):
+        """
+        Convert a list of dictionaries into a dictionary of dictionaries
+        where the key is the value of the group_by key in each dictionary.
+        """
+        if isinstance(item, Iterable) and not isinstance(item, Mapping):
+            result = {}
+            item_copy = deepcopy(item)
+            for row in item_copy:
+                if isinstance(row, Mapping):
+                    try:
+                        key = row.pop(group_by)
+                    except KeyError:
+                        logger.error("Unable to group {} by {}. The key is missing in {}".format(item_name, group_by, row))
+                        raise
+                    result[key] = row
+                else:
+                    msg = "Unable to group {} by {} since the item {} is not a dictionary.".format(item_name, group_by, row)
+                    logger.error(msg)
+                    raise ValueError(msg)
+            return result
+        msg = "Unable to group {} by {}".format(item_name, group_by)
+        logger.error(msg)
+        raise ValueError(msg)
 
     def get_stats(self):
         """

@@ -13,6 +13,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from sphinx.cmd.build import main as sphinx_main
 
+CACHE_PATH = '/tmp/sphinx_doctree'
+
 
 def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
@@ -46,10 +48,10 @@ class MyHandler(FileSystemEventHandler):
             return
         else:
             self.last_modified = datetime.datetime.now()
-        argv = ['-b', 'html', '-d', '/tmp/sphinx_doctree', '.', build_path]
+        argv = ['-b', 'html', '-d', CACHE_PATH, '.', build_path]
         ensure_dir(build_path)
         delete_dir_contents(build_path)
-        # argv = ['-b', 'html', '-d', f'{build_path}/doctrees', '.', f'{build_path}/html']
+        os.remove('/tmp/sphinx_doctree')  # Disable this for faster build time but it might not properly invalidate the cache
         sphinx_main(argv)
         print('waiting for file changes. Press Ctrl+c to cancel.')
 

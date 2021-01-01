@@ -584,11 +584,17 @@ class TestDeepDiffText:
         }
         assert result == ddiff1
 
-        ddiff2 = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float, None)])
-        assert {'values_changed': {"root['a']": {'new_value': 1, 'old_value': None}}} == ddiff2
+        ddiff2 = DeepDiff({'a': None}, {'a': '1'}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']": {'new_value': '1', 'old_value': None}}} == ddiff2
 
-        ddiff3 = DeepDiff({'a': 1}, {'a': None}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float, None)])
-        assert {'values_changed': {"root['a']": {'new_value': None, 'old_value': 1}}} == ddiff3
+        ddiff3 = DeepDiff({'a': '1'}, {'a': None}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']": {'new_value': None, 'old_value': '1'}}} == ddiff3
+
+        ddiff4 = DeepDiff({'a': {'b': None}}, {'a': {'b': '1'}}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']['b']": {'new_value': '1', 'old_value': None}}} == ddiff4
+
+        ddiff5 = DeepDiff({'a': {'b': '1'}}, {'a': {'b': None}}, ignore_type_subclasses=True, ignore_type_in_groups=[(str, int, float, None)])
+        assert {'values_changed': {"root['a']['b']": {'new_value': None, 'old_value': '1'}}} == ddiff5
 
     def test_custom_object_changes_when_ignore_type_in_groups(self):
         class ClassA:
@@ -980,6 +986,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     @pytest.mark.parametrize("t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result", [
+        (43.265798602382986, 43.71677762295505, False, 0, "f", {'values_changed': {'root': {'new_value': 43.71677762295505, 'old_value': 43.265798602382986}}}),  # Note that it rounds the number so one becomes 43 and the other one is 44
         (Decimal('2.5'), Decimal('1.5'), False, 0, "f", {}),
         (Decimal('2.5'), Decimal('1.5'), False, 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
         (Decimal('2.5'), Decimal(2.5), False, 3, "f", {}),
@@ -1400,4 +1407,111 @@ class TestDeepDiffText:
         t1 = [{'in': 'body', 'name': 'params', 'description': 'params', 'required': True, 'schema': {'type': 'array', 'items': {'__ref': 1}}}]
         t2 = [{'in': 'body', 'name': 'params', 'description': 'params', 'required': True, 'schema': {'type': 'array', 'items': {'__ref': 2}}}]
         diff = DeepDiff(t1, t2, ignore_order=ignore_order, ignore_private_variables=ignore_private_variables)
+        assert expected == diff
+
+    def test_group_by1(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {"root[1]['last_name']": {
+            'new_value': 'Brown',
+            'old_value': 'Blue'}}}
+        assert expected == diff
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected_grouped = {'values_changed': {"root['BB']['last_name']": {
+            'new_value': 'Brown',
+            'old_value': 'Blue'}}}
+        assert expected_grouped == diff
+
+    def test_group_by_key_missing(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {'dictionary_item_added': ["root[2]['id']"]}
+        assert expected == diff
+
+    def test_group_by_not_dict1(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            None,
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {
+            'type_changes': {
+                'root[1]': {
+                    'old_type': None.__class__,
+                    'new_type': dict,
+                    'old_value': None,
+                    'new_value': {
+                        'id': 'BB'
+                    }
+                }
+            },
+        }
+        assert expected == diff
+
+    def test_group_by_not_dict2(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            {'id': 'BB'},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+            None,
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {
+            'type_changes': {
+                'root[1]': {
+                    'old_type': dict,
+                    'new_type': None.__class__,
+                    'new_value': None,
+                    'old_value': {
+                        'id': 'BB'
+                    }
+                }
+            },
+        }
+        assert expected == diff
+
+    def test_group_by_not_list_of_dicts(self):
+        t1 = {1: 2}
+
+        t2 = {1: 3}
+
+        diff = DeepDiff(t1, t2, group_by='id')
+        expected = {'values_changed': {'root[1]': {'new_value': 3, 'old_value': 2}}}
         assert expected == diff

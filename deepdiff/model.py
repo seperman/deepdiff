@@ -91,7 +91,6 @@ class TextResult(ResultDict):
 
     def __init__(self, tree_results=None, verbose_level=1):
         self.verbose_level = verbose_level
-
         # TODO: centralize keys
         self.update({
             "type_changes": dict_(),

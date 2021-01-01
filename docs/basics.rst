@@ -143,5 +143,49 @@ Object attribute added:
     You just need to set view='tree' to get it in tree form.
 
 
+.. _group_by_label:
+
+Group By
+--------
+
+group_by can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
+
+Example:
+    >>> from deepdiff import DeepDiff
+    >>> t1 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+    ... ]
+    >>>
+    >>> t2 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Brown'},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+    ... ]
+    >>>
+    >>> DeepDiff(t1, t2)
+    {'values_changed': {"root[1]['last_name']": {'new_value': 'Brown', 'old_value': 'Blue'}}}
+
+
+Now we use group_by='id':
+    >>> DeepDiff(t1, t2, group_by='id')
+    {'values_changed': {"root['BB']['last_name']": {'new_value': 'Brown', 'old_value': 'Blue'}}}
+
+.. note::
+    group_by actually changes the structure of the t1 and t2. You can see this by using the tree view:
+
+    >>> diff = DeepDiff(t1, t2, group_by='id', view='tree')
+    >>> diff
+    {'values_changed': [<root['BB']['last_name'] t1:'Blue', t2:'Brown'>]}
+    >>> diff['values_changed'][0]
+    <root['BB']['last_name'] t1:'Blue', t2:'Brown'>
+    >>> diff['values_changed'][0].up
+    <root['BB'] t1:{'name': 'Ja...}, t2:{'name': 'Ja...}>
+    >>> diff['values_changed'][0].up.up
+    <root t1:{'AA': {'nam...}, t2:{'AA': {'nam...}>
+    >>> diff['values_changed'][0].up.up.t1
+    {'AA': {'name': 'Joe', 'last_name': 'Nobody'}, 'BB': {'name': 'James', 'last_name': 'Blue'}, 'CC': {'name': 'Mike', 'last_name': 'Apple'}}
+
 
 Back to :doc:`/index`

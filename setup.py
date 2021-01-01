@@ -10,17 +10,17 @@ if sys.version_info.major == 2:  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-version = '5.0.2'
+version = '5.2.0'
 
 
 def get_reqs(filename):
     with open(filename, "r") as reqs_file:
         reqs = reqs_file.readlines()
-        reqs = list(map(lambda x: x.replace('==', '>='), reqs))
     return reqs
 
 
 reqs = get_reqs("requirements.txt")
+cli_reqs = get_reqs("requirements-cli.txt")
 
 with open('README.md') as file:
     long_description = file.read()
@@ -42,20 +42,25 @@ setup(name='deepdiff',
       long_description=long_description,
       long_description_content_type='text/markdown',
       install_requires=reqs,
-      python_requires='>=3.5',
+      python_requires='>=3.6',
       extras_require={
-          "murmur": ["mmh3"],
+          "cli": cli_reqs,
       },
       classifiers=[
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
           "Topic :: Software Development",
-          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",
+          "Programming Language :: Python :: 3.9",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"
       ],
+      entry_points={
+          'console_scripts': [
+              'deep=deepdiff.commands:cli',
+          ],
+      },
       )

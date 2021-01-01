@@ -119,6 +119,29 @@ ignore_nan_inequality: Boolean, default = False
     >>> DeepDiff(float('nan'), float('nan'), ignore_nan_inequality=True)
     {}
 
+.. _math_epsilon_label:
+
+Math Epsilon
+------------
+
+math_epsilon: Decimal, default = None
+    math_epsilon uses Python's built in Math.isclose. It defines a tolerance value which is passed to math.isclose(). Any numbers that are within the tolerance will not report as being different. Any numbers outside of that tolerance will show up as different.
+
+    For example for some sensor data derived and computed values must lie in a certain range. It does not matter that they are off by e.g. 1e-5.
+
+    To check against that the math core module provides the valuable isclose() function. It evaluates the being close of two numbers to each other, with reference to an epsilon (abs_tol). This is superior to the format function, as it evaluates the mathematical representation and not the string representation.
+
+Example:
+    >>> from decimal import Decimal
+    >>> d1 = {"a": Decimal("7.175")}
+    >>> d2 = {"a": Decimal("7.174")}
+    >>> DeepDiff(d1, d2, math_epsilon=0.01)
+    {}
+
+.. note::
+    math_epsilon cannot currently handle the hashing of values, which is done when :ref:`ignore_order_label` is True.
+
+
 Performance Improvement of Numbers diffing
 ------------------------------------------
 

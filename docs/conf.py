@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DeepDiff'
-copyright = '2015-2020, Sep Dehpour'
+copyright = '2015-2021, Sep Dehpour'
 author = 'Sep Dehpour'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -60,9 +60,9 @@ author = 'Sep Dehpour'
 # built documents.
 #
 # The short X.Y version.
-version = '5.0.2'
+version = '5.2.0'
 # The full version, including alpha/beta/rc tags.
-release = '5.0.2'
+release = '5.2.0'
 
 load_dotenv(override=True)
 DOC_VERSION = os.environ.get('DOC_VERSION', version)
@@ -140,6 +140,8 @@ html_theme_options = {
     'github_count': True,
     'font_family': 'Open Sans',
     'canonical_url': 'https://zepworks.com/deepdiff/current/',
+    'page_width': '1024px',
+    'body_max_width': '1024px',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.

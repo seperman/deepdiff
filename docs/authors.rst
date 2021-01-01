@@ -3,7 +3,7 @@
 Authors
 =======
 
-Authors listed in the order of the contributions:
+Thanks to the following people for their contributions:
 
 -  `Sep Dehpour (Seperman)`_
 -  `Victor Hahn Castell`_ for the tree view and major contributions:
@@ -38,6 +38,8 @@ Authors listed in the order of the contributions:
 -  `Timothy`_ for truncate_datetime
 -  `d0b3rm4n`_ for bugfix to not apply format to non numbers.
 -  `MyrikLD`_ for Bug Fix NoneType in ignore type groups
+-  Stian Jensen `stianjensen`_ for improving ignoring of NoneType in diff 
+-  Florian Klien `flowolf`_ for adding math_epsilon
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -66,5 +68,8 @@ Authors listed in the order of the contributions:
 .. _Timothy: https://github.com/timson
 .. _d0b3rm4n: https://github.com/d0b3rm4n
 .. _MyrikLD: https://github.com/MyrikLD
+.. _stianjensen: https://github.com/stianjensen
+.. _flowolf: https://github.com/flowolf
+
 
 Back to :doc:`/index`

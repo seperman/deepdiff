@@ -14,7 +14,7 @@ class TestAnySet:
     def test_anyset_init2(self):
         items = [1, 2, {1}, 4, 4, {1}]
         result = AnySet(items)
-        expected = ({1, 2, 4}, {6008617170096987129613061240357171817: {1}})
+        expected = ({1, 2, 4}, {'e298e5a6cfa50a5b9d2cd4392c6c34a867d325e8de2966a8183c4cdf9a93120d': {1}})
         assert expected == result
 
     def test_anyset_init3_add(self):
@@ -22,7 +22,7 @@ class TestAnySet:
         result = AnySet()
         for item in items:
             result.add(item)
-        expected = ({1, 2, 4}, {6008617170096987129613061240357171817: {1}})
+        expected = ({1, 2, 4}, {'e298e5a6cfa50a5b9d2cd4392c6c34a867d325e8de2966a8183c4cdf9a93120d': {1}})
         assert expected == result
 
     def test_anyset_pop1(self):
