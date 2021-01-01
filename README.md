@@ -27,14 +27,6 @@ Tested on Python 3.6+ and PyPy3.
 
 `pip install deepdiff`
 
-DeepDiff prefers to use Murmur3 for hashing. However you have to manually install Murmur3 by running:
-
-`pip install 'deepdiff[murmur]'`
-
-Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower.
-
-If you are running into trouble installing Murmur3, please take a look at the [Troubleshoot](#troubleshoot) section.
-
 ### Importing
 
 ```python
@@ -399,23 +391,6 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 <http://deepdiff.readthedocs.io/en/latest/>
 
-# Troubleshoot
-
-## Murmur3
-
-`Failed to build mmh3 when installing DeepDiff`
-
-DeepDiff prefers to use Murmur3 for hashing. However you have to manually install murmur3 by running: `pip install mmh3`
-
-On MacOS Mojave some user experience difficulty when installing Murmur3.
-
-The problem can be solved by running:
-
-`xcode-select --install`
-
-And then running
-
-`pip install mmh3`
 
 # ChangeLog
 
@@ -444,34 +419,4 @@ Thank you!
 
 # Authors
 
-Authors listed in the order of the contributions:
-
-- [Sep Dehpour (Seperman)](http://www.zepworks.com)
-- [Victor Hahn Castell](http://hahncastell.de) for the tree view and major contributions:
-- [nfvs](https://github.com/nfvs) for Travis-CI setup script.
-- [brbsix](https://github.com/brbsix) for initial Py3 porting.
-- [WangFenjin](https://github.com/WangFenjin) for unicode support.
-- [timoilya](https://github.com/timoilya) for comparing list of sets when ignoring order.
-- [Bernhard10](https://github.com/Bernhard10) for significant digits comparison.
-- [b-jazz](https://github.com/b-jazz) for PEP257 cleanup, Standardize on full names, fixing line endings.
-- [finnhughes](https://github.com/finnhughes) for fixing __slots__
-- [moloney](https://github.com/moloney) for Unicode vs. Bytes default
-- [serv-inc](https://github.com/serv-inc) for adding help(deepdiff)
-- [movermeyer](https://github.com/movermeyer) for updating docs
-- [maxrothman](https://github.com/maxrothman) for search in inherited class attributes
-- [maxrothman](https://github.com/maxrothman) for search for types/objects
-- [MartyHub](https://github.com/MartyHub) for exclude regex paths
-- [sreecodeslayer](https://github.com/sreecodeslayer) for DeepSearch match_string
-- Brian Maissy [brianmaissy](https://github.com/) for weakref fix, enum tests
-- Bartosz Borowik [boba-2](https://github.com/boba-2) for Exclude types fix when ignoring order
-- Brian Maissy [brianmaissy](https://github.com/brianmaissy) for fixing classes which inherit from classes with slots didn't have all of their slots compared
-- Juan Soler [Soleronline](https://github.com/Soleronline) for adding ignore_type_number
-- [mthaddon](https://github.com/mthaddon) for adding timedelta diffing support
-- [Necrophagos](https://github.com/Necrophagos) for Hashing of the number 1 vs. True
-- [gaal-dev](https://github.com/gaal-dev) for adding exclude_obj_callback
-- Ivan Piskunov [van-ess0](https://github.com/van-ess0) for deprecation warning enhancement.
-- Michał Karaś [MKaras93](https://github.com/MKaras93) for the pretty view
-- Christian Kothe [chkothe](https://github.com/chkothe) for the basic support for diffing numpy arrays
-- [Timothy](https://github.com/timson) for truncate_datetime
-- [d0b3rm4n](https://github.com/d0b3rm4n) for bugfix to not apply format to non numbers.
-- [MyrikLD](https://github.com/MyrikLD) for Bug Fix NoneType in ignore type groups
+Please take a look at the [AUTHORS](AUTHORS.md) file.

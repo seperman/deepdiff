@@ -8,6 +8,10 @@ Troubleshoot
 Murmur3 Installation
 ~~~~~~~~~~~~~~~~~~~~
 
+NOTE: Murmur3 was removed from DeepDiff 5.2.0
+
+If you are running into this issue, you are using an older version of DeepDiff.
+
 `Failed to build mmh3 when installing DeepDiff`
 
 DeepDiff prefers to use Murmur3 for hashing. However you have to manually install murmur3 by running: `pip install mmh3`

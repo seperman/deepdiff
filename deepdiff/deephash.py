@@ -14,7 +14,6 @@ from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
 UNPROCESSED_KEY = 'unprocessed'
-MURMUR_SEED = 1203
 
 RESERVED_DICT_KEYS = {UNPROCESSED_KEY}
 EMPTY_FROZENSET = frozenset()
@@ -47,6 +46,7 @@ def combine_hashes_lists(items, prefix):
     Combines lists of hashes into one hash
     This can be optimized in future.
     It needs to work with both murmur3 hashes (int) and sha256 (str)
+    Although murmur3 is not used anymore.
     """
     if isinstance(prefix, bytes):
         prefix = prefix.decode('utf-8')

@@ -57,8 +57,8 @@ get_deep_distance: Boolean, default = False
 group_by: String, default=None
     :ref:`group_by_label` can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
 
-hasher: default = DeepHash.murmur3_128bit
-    Hash function to be used. If you don't want Murmur3, you can use Python's built-in hash function
+hasher: default = DeepHash.sha256hex
+    Hash function to be used. If you don't want SHA256, you can use your own hash function
     by passing hasher=hash. This is for advanced usage and normally you don't need to modify it.
 
 ignore_order : Boolean, default=False
