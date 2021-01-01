@@ -49,14 +49,7 @@ Install from PyPi::
 
     pip install deepdiff
 
-DeepDiff prefers to use Murmur3 for hashing. However you need to manually install Murmur3 by running::
-
-    pip install 'deepdiff[murmur]'
-
-Otherwise DeepDiff will be using SHA256 for hashing which is a cryptographic hash and is considerably slower for hashing.
-However hashing is not usually the bottleneck when dealing with big objects. Read more about DeepDiff :ref:`optimizations_label`
-
-If you are running into trouble installing Murmur3, please take a look at the :ref:`troubleshoot_label` section.
+Read about DeepDiff optimizations at :ref:`optimizations_label`
 
 
 Importing
