@@ -52,9 +52,12 @@ def diff(
     *args, **kwargs
 ):
     """
-    DeepDiff
+    Deep Diff Commandline
 
-    Deep Difference of dictionaries, iterables, strings and other objects. It will recursively look for all the changes.
+    Deep Difference of content in files.
+    It can read csv, tsv, json, yaml, and toml files.
+
+    T1 and T2 are the path to the files to be compared with each other.
     """
     kwargs['ignore_private_variables'] = not kwargs.pop('include_private_variables')
     kwargs['progress_logger'] = logger.info if kwargs['progress_logger'] == 'info' else logger.error
@@ -101,11 +104,24 @@ def diff(
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
 @click.argument('delta_path', type=click.Path(exists=True, resolve_path=True))
 @click.option('--backup', '-b', is_flag=True, show_default=True)
+@click.option('--raise-errors', is_flag=True, show_default=True)
 def patch(
-    path, delta_path, backup
+    path, delta_path, backup, raise_errors
 ):
+    """
+    Deep Patch Commandline
+
+    Patches a file based on the information in a delta file.
+    The delta file can be created by the deep diff command and
+    passing the --create-patch argument.
+
+    Deep Patch is similar to Linux's patch command.
+    The difference is that it is made for patching data.
+    It can read csv, tsv, json, yaml, and toml files.
+
+    """
     try:
-        delta = Delta(delta_path=delta_path)
+        delta = Delta(delta_path=delta_path, raise_errors=raise_errors)
     except Exception as e:  # pragma: no cover.
         sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))  # pragma: no cover.
 
@@ -133,6 +149,13 @@ def patch(
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
 def grep(item, path, **kwargs):
+    """
+    Deep Grep Commandline
+
+    Grep through the contents of a file and find the path to the item.
+    It can read csv, tsv, json, yaml, and toml files.
+
+    """
     kwargs['case_sensitive'] = not kwargs.pop('ignore_case')
     kwargs['match_string'] = kwargs.pop('exact_match')
 
@@ -153,7 +176,11 @@ def grep(item, path, **kwargs):
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
 def extract(path_inside, path):
     """
-    Deep Extract
+    Deep Extract Commandline
+
+    Extract an item from a file based on the path that is passed.
+    It can read csv, tsv, json, yaml, and toml files.
+
     """
     try:
         content = load_path_content(path)

@@ -25,6 +25,8 @@ The DeepDiff library includes the following modules:
 
 - **Extract** For extracting a path from an object  :doc:`/extract`
 
+- **Commandline** Most of the above functionality is also available via the commandline module  :doc:`/commandline`
+
 *************************
 Supported Python Versions
 *************************
@@ -98,6 +100,7 @@ References
    deephash
    delta
    extract
+   commandline
    changelog
    authors
 
