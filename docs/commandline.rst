@@ -143,7 +143,7 @@ Run `$ deep grep --help` to get the options:
 .. _deep_extract_command:
 
 deep extract command
------------------
+--------------------
 
 Run `$ deep extract --help` to get the options:
 
@@ -173,7 +173,7 @@ Run `$ deep extract --help` to get the options:
 .. _deep_patch_command:
 
 deep patch command
------------------
+------------------
 
 Run `$ deep patch --help` to get the options:
 

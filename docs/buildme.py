@@ -51,7 +51,7 @@ class MyHandler(FileSystemEventHandler):
         argv = ['-b', 'html', '-d', CACHE_PATH, '.', build_path]
         ensure_dir(build_path)
         delete_dir_contents(build_path)
-        os.remove('/tmp/sphinx_doctree')  # Disable this for faster build time but it might not properly invalidate the cache
+        delete_dir_contents('/tmp/sphinx_doctree')  # Disable this for faster build time but it might not properly invalidate the cache
         sphinx_main(argv)
         print('waiting for file changes. Press Ctrl+c to cancel.')
 
