@@ -73,13 +73,27 @@ Note: if you want to use DeepDiff via commandline, make sure to run::
 
 Then you can access the commands via:
 
-- DeepDiff::
+- DeepDiff
+
+.. code:: bash
+
     $ deep diff --help
-- Delta::
+
+- Delta
+
+.. code:: bash
+
     $ deep patch --help
-- grep::
+
+- grep
+
+.. code:: bash
+
     $ deep grep --help
-- extract::
+- extract
+
+.. code:: bash
+
     $ deep extract --help
 
 Supported data types

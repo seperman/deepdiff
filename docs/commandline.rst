@@ -20,7 +20,13 @@ The commands are:
 deep diff command
 -----------------
 
-Run `$ deep diff --help` to get the options:
+Run 
+
+.. code:: bash
+
+  $ deep diff
+
+to get the options:
 
 .. code-block:: bash
 
@@ -101,7 +107,7 @@ what if we assume last names are unique and group by last_name?
 The path is perhaps more readable now: `root['Molotov']['zip']`. It is more clear that the zip code of Molotov has changed.
 
 .. Note::
-    The parameters in the deep diff commandline are a subset of those in :ref:`deepdiff_label` 's Python API.
+    The parameters in the deep diff commandline are a subset of those in :ref:`deepdiff_module_label` 's Python API.
 
 
 .. _deep_grep_command:
@@ -109,7 +115,13 @@ The path is perhaps more readable now: `root['Molotov']['zip']`. It is more clea
 deep grep command
 -----------------
 
-Run `$ deep grep --help` to get the options:
+Run 
+
+.. code:: bash
+
+  $ deep grep
+
+to get the options:
 
 .. code-block:: bash
 
@@ -145,7 +157,13 @@ Run `$ deep grep --help` to get the options:
 deep extract command
 --------------------
 
-Run `$ deep extract --help` to get the options:
+Run
+
+.. code:: bash
+
+  $ deep extract
+
+to get the options:
 
 .. code-block:: bash
 
@@ -175,7 +193,13 @@ Run `$ deep extract --help` to get the options:
 deep patch command
 ------------------
 
-Run `$ deep patch --help` to get the options:
+Run
+
+.. code:: bash
+
+  $ deep patch --help
+
+to get the options:
 
 .. code-block:: bash
 

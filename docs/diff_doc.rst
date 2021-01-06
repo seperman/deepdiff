@@ -1,4 +1,4 @@
-.. _deepdiff_label:
+.. _deepdiff_module_label:
 
 DeepDiff
 ========
