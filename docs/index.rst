@@ -31,7 +31,7 @@ The DeepDiff library includes the following modules:
 Supported Python Versions
 *************************
 
-DeepDiff is rigorously tested against Python 3.5, 3.6, 3.7, 3.8 and Pypy3
+DeepDiff is rigorously tested against Python 3.6, 3.7, 3.8, 3.9 and Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
 
@@ -49,6 +49,10 @@ Install from PyPi::
 
     pip install deepdiff
 
+If you want to use DeepDiff from commandline::
+
+    pip install "deepdiff[cli]"
+
 Read about DeepDiff optimizations at :ref:`optimizations_label`
 
 
@@ -63,6 +67,20 @@ Importing
     >>> from deepdiff import Delta  # For creating delta of objects that can be applied later to other objects.
     >>> from deepdiff import extract  # For extracting a path from an object
 
+
+Note: if you want to use DeepDiff via commandline, make sure to run:: 
+    pip install "deepdiff[cli]"
+
+Then you can access the commands via:
+
+- DeepDiff::
+    $ deep diff --help
+- Delta::
+    $ deep patch --help
+- grep::
+    $ deep grep --help
+- extract::
+    $ deep extract --help
 
 Supported data types
 ~~~~~~~~~~~~~~~~~~~~

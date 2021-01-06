@@ -27,6 +27,10 @@ Tested on Python 3.6+ and PyPy3.
 
 `pip install deepdiff`
 
+If you want to use DeepDiff from commandline:
+
+`pip install "deepdiff[cli]"`
+
 ### Importing
 
 ```python
@@ -35,13 +39,24 @@ Tested on Python 3.6+ and PyPy3.
 >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 ```
 
+Note: if you want to use DeepDiff via commandline, make sure to run `pip install "deepdiff[cli]"`. Then you can access the commands via:
+
+- DeepDiff
+    - `$ deep diff --help`
+- Delta
+    - `$ deep patch --help`
+- grep
+    - `$ deep grep --help`
+- extract
+    - `$ deep extract --help`
+
 # Deep Diff
 
 DeepDiff gets the difference of 2 objects.
 
 > - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.2.1/diff.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.1/>
-> - Tutorials can be found on <https://zepworks.com/tags/deepdiff/>
+> - The full documentation of all modules can be found on <https://zepworks.com/deepdiff/5.2.1/>
+> - Tutorials and posts about DeepDiff can be found on <https://zepworks.com/tags/deepdiff/>
 
 ## A few Examples
 
