@@ -382,7 +382,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
         :rtype: bool
         """
-        print(f"skip? {level.path()}")
         skip = False
         if self.exclude_paths and level.path() in self.exclude_paths:
             skip = True
