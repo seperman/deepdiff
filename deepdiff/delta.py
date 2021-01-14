@@ -512,7 +512,16 @@ class Delta:
         """
         Dump into file object
         """
-        file.write(self.dumps())
+        # Small optimization: Our internal pickle serializer can just take a file object
+        # and directly write to it. However if a user defined serializer is passed
+        # we want to make it compatible with the expectation that self.serializer(self.diff)
+        # will give the user the serialization and then it can be written to
+        # a file object when using the dump(file) function.
+        param_names_of_serializer = set(self.serializer.__code__.co_varnames)
+        if 'file_obj' in param_names_of_serializer:
+            self.serializer(self.diff, file_obj=file)
+        else:
+            file.write(self.dumps())
 
     def dumps(self):
         """

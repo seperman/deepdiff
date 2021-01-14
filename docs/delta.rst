@@ -331,9 +331,21 @@ At the time of writing this document, this list consists of:
 
 If you want to pass any other argument to safe_to_import, you will need to put the full path to the type as it appears in the sys.modules
 
-For example let's say you have a package call mypackage and has a module called mymodule. If you check the sys.modules, the address to this module must be mypackage.mymodule. In order for Delta to be able to serialize this object, first of all it has to be `picklable <https://docs.python.org/3/library/pickle.html#object.__reduce__>`_. Then you can pass:
+For example let's say you have a package call mypackage and has a module called mymodule. If you check the sys.modules, the address to this module must be mypackage.mymodule. In order for Delta to be able to serialize this object via pickle, first of all it has to be `picklable <https://docs.python.org/3/library/pickle.html#object.__reduce__>`_. 
 
->>> delta = Delta(t1, t2, safe_to_import={'mypackage.mymodule'})
+>>> diff = DeepDiff(t1, t2)
+>>> delta = Delta(diff)
+>>> dump = delta.dumps()
+
+The dump at this point is serialized via Pickle and can be written to disc if needed.
+
+Later when you want to load this dump, by default Delta will block you from importing anything that is NOT in deepdiff.serialization.SAFE_TO_IMPORT . In fact it will show you this error message when trying to load this dump:
+
+    deepdiff.serialization.ForbiddenModule: Module 'builtins.type' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter
+
+In order to let Delta know that this specific module is safe to import, you will need to pass it to Delta during loading of this dump:
+
+>>> delta = Delta(dump, safe_to_import={'mypackage.mymodule'})
 
 .. _delta_verify_symmetry_label:
 

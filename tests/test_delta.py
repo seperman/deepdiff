@@ -1268,3 +1268,11 @@ class TestDeltaOther:
             Delta(DeepDiff(t1, t2, ignore_order=True))
 
         assert DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT == str(excinfo.value)
+
+    def test_none_in_delta_object(self):
+        t1 = {"a": None}
+        t2 = {"a": 1}
+
+        dump = Delta(DeepDiff(t1, t2)).dumps()
+        delta = Delta(dump)
+        assert t2 == delta + t1

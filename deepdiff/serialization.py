@@ -39,6 +39,8 @@ class UnsupportedFormatErr(TypeError):
     pass
 
 
+NONE_TYPE = type(None)
+
 CSV_HEADER_MAX_CHUNK_SIZE = 2048  # The chunk needs to be big enough that covers a couple of rows of data.
 
 
@@ -254,10 +256,40 @@ class _RestrictedUnpickler(pickle.Unpickler):
         # Forbid everything else.
         raise ForbiddenModule(FORBIDDEN_MODULE_MSG.format(module_dot_class)) from None
 
+    def persistent_load(self, persistent_id):
+        if persistent_id == "<<NoneType>>":
+            return type(None)
 
-def pickle_dump(obj):
+
+class _RestrictedPickler(pickle.Pickler):
+    def persistent_id(self, obj):
+        if obj is NONE_TYPE:  # NOQA
+            return "<<NoneType>>"
+        return None
+
+
+def pickle_dump(obj, file_obj=None):
+    """
+    **pickle_dump**
+    Dumps the obj into pickled content.
+
+    **Parameters**
+
+    obj : Any python object
+
+    file_obj : (Optional) A file object to dump the contents into
+
+    **Returns**
+
+    If file_obj is passed the return value will be None. It will write the object's pickle contents into the file.
+    However if no file_obj is passed, then it will return the pickle serialization of the obj in the form of bytes.
+    """
+    file_obj_passed = bool(file_obj)
+    file_obj = file_obj or io.BytesIO()
     # We expect at least python 3.5 so protocol 4 is good.
-    return pickle.dumps(obj, protocol=4, fix_imports=False)
+    _RestrictedPickler(file_obj, protocol=4, fix_imports=False).dump(obj)
+    if not file_obj_passed:
+        return file_obj.getvalue()
 
 
 def pickle_load(content, safe_to_import=None):
@@ -406,8 +438,7 @@ def _save_content(content, path, file_type, keep_backup=True):
             content = toml.dump(content, the_file)
     elif file_type == 'pickle':
         with open(path, 'wb') as the_file:
-            content = pickle_dump(content)
-            the_file.write(content)
+            content = pickle_dump(content, file_obj=the_file)
     elif file_type in {'csv', 'tsv'}:
         if clevercsv is None:  # pragma: no cover.
             raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
