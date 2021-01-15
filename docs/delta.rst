@@ -145,6 +145,45 @@ DeepDiff by default uses a restricted Python pickle function to deserialize the 
 
 The user of Delta can decide to switch the serializer and deserializer to their custom ones. The serializer and deserializer parameters can be used exactly for that reason. The best way to come up with your own serializer and deserialier is to take a look at the `pickle_dump and pickle_load functions in the serializer module <https://github.com/seperman/deepdiff/serialization.py>`_
 
+.. _delta_json_deserializer_label:
+
+Json Deserializer for Delta
+```````````````````````````
+
+If all you deal with are Json serializable objects, you can use json for serialization.
+
+>>> from deepdiff import DeepDiff, Delta
+>>> import json
+>>> t1 = {"a": 1}
+>>> t2 = {"a": 2}
+>>>
+>>> diff = DeepDiff(t1, t2)
+>>> delta = Delta(diff, serializer=json.dumps)
+>>> dump = delta.dumps()
+>>> dump
+'{"values_changed": {"root[\'a\']": {"new_value": 2}}}'
+>>> delta_reloaded = Delta(dump, deserializer=json.loads)
+>>> t2 == delta_reloaded + t1
+True
+
+
+.. note::
+
+    Json is very limited and easily you can get to deltas that are not json serializable. You will probably want to extend the Python's Json serializer to support your needs.
+
+    >>> t1 = {"a": 1}
+    >>> t2 = {"a": None}
+    >>> diff = DeepDiff(t1, t2)
+    >>> diff
+    {'type_changes': {"root['a']": {'old_type': <class 'int'>, 'new_type': <class 'NoneType'>, 'old_value': 1, 'new_value': None}}}
+    >>> Delta(diff, serializer=json.dumps)
+    <Delta: {'type_changes': {"root['a']": {'old_type': <class 'int'>, 'new_type': <class 'NoneType'>, 'new_v...}>
+    >>> delta = Delta(diff, serializer=json.dumps)
+    >>> dump = delta.dumps()
+    Traceback (most recent call last):
+      File "lib/python3.8/json/encoder.py", line 179, in default
+        raise TypeError(f'Object of type {o.__class__.__name__} '
+    TypeError: Object of type type is not JSON serializable
 
 .. _delta_serializer_label:
 
@@ -161,6 +200,7 @@ Delta Dump Safety
 Delta by default uses Python's pickle to serialize and deserialize. While the unrestricted use of pickle is not safe as noted in the `pickle's documentation <https://docs.python.org/3/library/pickle.html>`_ , DeepDiff's Delta is written with extra care to `restrict the globals <https://docs.python.org/3/library/pickle.html#restricting-globals>`_ and hence mitigate this security risk.
 
 In fact only a few Python object types are allowed by default. The user of DeepDiff can pass additional types using the :ref:`delta_safe_to_import_label` to allow further object types that need to be allowed.
+
 
 .. _delta_mutate_label:
 
@@ -331,9 +371,27 @@ At the time of writing this document, this list consists of:
 
 If you want to pass any other argument to safe_to_import, you will need to put the full path to the type as it appears in the sys.modules
 
-For example let's say you have a package call mypackage and has a module called mymodule. If you check the sys.modules, the address to this module must be mypackage.mymodule. In order for Delta to be able to serialize this object, first of all it has to be `picklable <https://docs.python.org/3/library/pickle.html#object.__reduce__>`_. Then you can pass:
+For example let's say you have a package call mypackage and has a module called mymodule. If you check the sys.modules, the address to this module must be mypackage.mymodule. In order for Delta to be able to serialize this object via pickle, first of all it has to be `picklable <https://docs.python.org/3/library/pickle.html#object.__reduce__>`_. 
 
->>> delta = Delta(t1, t2, safe_to_import={'mypackage.mymodule'})
+>>> diff = DeepDiff(t1, t2)
+>>> delta = Delta(diff)
+>>> dump = delta.dumps()
+
+The dump at this point is serialized via Pickle and can be written to disc if needed.
+
+Later when you want to load this dump, by default Delta will block you from importing anything that is NOT in deepdiff.serialization.SAFE_TO_IMPORT . In fact it will show you this error message when trying to load this dump:
+
+    deepdiff.serialization.ForbiddenModule: Module 'builtins.type' is forbidden. You need to explicitly pass it by passing a safe_to_import parameter
+
+In order to let Delta know that this specific module is safe to import, you will need to pass it to Delta during loading of this dump:
+
+>>> delta = Delta(dump, safe_to_import={'mypackage.mymodule'})
+
+.. note ::
+
+    If you pass a custom deserializer to Delta, DeepDiff will pass safe_to_import parameter to the custom deserializer if that deserializer takes safe_to_import as a parameter in its definition.
+    For example if you just use json.loads as deserializer, the safe_to_import items won't be passed to it since json.loads does not have such a parameter.
+
 
 .. _delta_verify_symmetry_label:
 

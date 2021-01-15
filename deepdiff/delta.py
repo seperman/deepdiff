@@ -69,6 +69,11 @@ class Delta:
         serializer=pickle_dump,
         verify_symmetry=False,
     ):
+        if 'safe_to_import' not in set(deserializer.__code__.co_varnames):
+            def _deserializer(obj, safe_to_import=None):
+                return deserializer(obj)
+        else:
+            _deserializer = deserializer
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
@@ -76,17 +81,17 @@ class Delta:
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
-                self.diff = deserializer(diff, safe_to_import=safe_to_import)
+                self.diff = _deserializer(diff, safe_to_import=safe_to_import)
         elif delta_path:
             with open(delta_path, 'rb') as the_file:
                 content = the_file.read()
-            self.diff = deserializer(content, safe_to_import=safe_to_import)
+            self.diff = _deserializer(content, safe_to_import=safe_to_import)
         elif delta_file:
             try:
                 content = delta_file.read()
             except UnicodeDecodeError as e:
                 raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
-            self.diff = deserializer(content, safe_to_import=safe_to_import)
+            self.diff = _deserializer(content, safe_to_import=safe_to_import)
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
@@ -512,7 +517,16 @@ class Delta:
         """
         Dump into file object
         """
-        file.write(self.dumps())
+        # Small optimization: Our internal pickle serializer can just take a file object
+        # and directly write to it. However if a user defined serializer is passed
+        # we want to make it compatible with the expectation that self.serializer(self.diff)
+        # will give the user the serialization and then it can be written to
+        # a file object when using the dump(file) function.
+        param_names_of_serializer = set(self.serializer.__code__.co_varnames)
+        if 'file_obj' in param_names_of_serializer:
+            self.serializer(self.diff, file_obj=file)
+        else:
+            file.write(self.dumps())
 
     def dumps(self):
         """

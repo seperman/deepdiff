@@ -5,6 +5,7 @@ Changelog
 
 DeepDiff Changelog
 
+- v5-2-2: Fixed Delta serialization when None type is present.
 - v5-2-0: Removed Murmur3 as the preferred hashing method. Using SHA256 by default now. Added commandline for deepdiff. Added group_by. Added math_epsilon. Improved ignoring of NoneType.
 - v5-0-2: Bug Fix NoneType in ignore type groups https://github.com/seperman/deepdiff/issues/207
 - v5-0-1: Bug fix to not apply format to non numbers.

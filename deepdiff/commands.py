@@ -48,6 +48,7 @@ def cli():
 @click.option('--significant-digits', required=False, default=None, type=int, show_default=True)
 @click.option('--truncate-datetime', required=False, type=click.Choice(['second', 'minute', 'hour', 'day'], case_sensitive=True), show_default=True, default=None)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
+@click.option('--debug', is_flag=True, show_default=False)
 def diff(
     *args, **kwargs
 ):
@@ -59,6 +60,7 @@ def diff(
 
     T1 and T2 are the path to the files to be compared with each other.
     """
+    debug = kwargs.pop('debug')
     kwargs['ignore_private_variables'] = not kwargs.pop('include_private_variables')
     kwargs['progress_logger'] = logger.info if kwargs['progress_logger'] == 'info' else logger.error
     create_patch = kwargs.pop('create_patch')
@@ -71,7 +73,10 @@ def diff(
         try:
             kwargs[name] = load_path_content(t_path, file_type=t_extension)
         except Exception as e:  # pragma: no cover.
-            sys.exit(str(f"Error when loading {name}: {e}"))  # pragma: no cover.
+            if debug:  # pragma: no cover.
+                raise  # pragma: no cover.
+            else:  # pragma: no cover.
+                sys.exit(str(f"Error when loading {name}: {e}"))  # pragma: no cover.
 
     # if (t1_extension != t2_extension):
     if t1_extension in {'csv', 'tsv'}:
@@ -92,7 +97,10 @@ def diff(
         try:
             delta = Delta(diff)
         except Exception as e:  # pragma: no cover.
-            sys.exit(f"Error when loading the patch (aka delta): {e}")  # pragma: no cover.
+            if debug:  # pragma: no cover.
+                raise  # pragma: no cover.
+            else:  # pragma: no cover.
+                sys.exit(f"Error when loading the patch (aka delta): {e}")  # pragma: no cover.
 
         # printing into stdout
         sys.stdout.buffer.write(delta.dumps())
@@ -105,8 +113,9 @@ def diff(
 @click.argument('delta_path', type=click.Path(exists=True, resolve_path=True))
 @click.option('--backup', '-b', is_flag=True, show_default=True)
 @click.option('--raise-errors', is_flag=True, show_default=True)
+@click.option('--debug', is_flag=True, show_default=False)
 def patch(
-    path, delta_path, backup, raise_errors
+    path, delta_path, backup, raise_errors, debug
 ):
     """
     Deep Patch Commandline
@@ -123,7 +132,10 @@ def patch(
     try:
         delta = Delta(delta_path=delta_path, raise_errors=raise_errors)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when loading the patch (aka delta) {delta_path}: {e}"))  # pragma: no cover.
 
     extension = path.split('.')[-1]
 
@@ -137,7 +149,10 @@ def patch(
     try:
         save_content_to_path(result, path, file_type=extension, keep_backup=backup)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when saving {path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when saving {path}: {e}"))  # pragma: no cover.
 
 
 @cli.command()
@@ -148,7 +163,8 @@ def patch(
 @click.option('--exclude-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--exclude-regex-paths', required=False, type=str, show_default=False, multiple=True)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
-def grep(item, path, **kwargs):
+@click.option('--debug', is_flag=True, show_default=False)
+def grep(item, path, debug, **kwargs):
     """
     Deep Grep Commandline
 
@@ -162,19 +178,26 @@ def grep(item, path, **kwargs):
     try:
         content = load_path_content(path)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
 
     try:
         result = DeepSearch(content, item, **kwargs)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
     pprint(result, indent=2)
 
 
 @cli.command()
 @click.argument('path_inside', required=True, type=str)
 @click.argument('path', type=click.Path(exists=True, resolve_path=True))
-def extract(path_inside, path):
+@click.option('--debug', is_flag=True, show_default=False)
+def extract(path_inside, path, debug):
     """
     Deep Extract Commandline
 
@@ -185,10 +208,16 @@ def extract(path_inside, path):
     try:
         content = load_path_content(path)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when loading {path}: {e}"))  # pragma: no cover.
 
     try:
         result = deep_extract(content, path_inside)
     except Exception as e:  # pragma: no cover.
-        sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
+        if debug:  # pragma: no cover.
+            raise  # pragma: no cover.
+        else:  # pragma: no cover.
+            sys.exit(str(f"Error when running deep search on {path}: {e}"))  # pragma: no cover.
     pprint(result, indent=2)
