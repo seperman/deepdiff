@@ -1,5 +1,7 @@
 import pytest
 import os
+import io
+import json
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
@@ -1276,3 +1278,20 @@ class TestDeltaOther:
         dump = Delta(DeepDiff(t1, t2)).dumps()
         delta = Delta(dump)
         assert t2 == delta + t1
+
+    def test_delta_with_json_serializer(self):
+        t1 = {"a": 1}
+        t2 = {"a": 2}
+
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, serializer=json.dumps)
+        dump = delta.dumps()
+        delta_reloaded = Delta(dump, deserializer=json.loads)
+        assert t2 == delta_reloaded + t1
+
+        the_file = io.StringIO()
+        delta.dump(the_file)
+        the_file.seek(0)
+
+        delta_reloaded_again = Delta(delta_file=the_file, deserializer=json.loads)
+        assert t2 == delta_reloaded_again + t1

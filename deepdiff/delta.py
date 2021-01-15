@@ -69,6 +69,11 @@ class Delta:
         serializer=pickle_dump,
         verify_symmetry=False,
     ):
+        if 'safe_to_import' not in set(deserializer.__code__.co_varnames):
+            def _deserializer(obj, safe_to_import=None):
+                return deserializer(obj)
+        else:
+            _deserializer = deserializer
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
@@ -76,17 +81,17 @@ class Delta:
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
-                self.diff = deserializer(diff, safe_to_import=safe_to_import)
+                self.diff = _deserializer(diff, safe_to_import=safe_to_import)
         elif delta_path:
             with open(delta_path, 'rb') as the_file:
                 content = the_file.read()
-            self.diff = deserializer(content, safe_to_import=safe_to_import)
+            self.diff = _deserializer(content, safe_to_import=safe_to_import)
         elif delta_file:
             try:
                 content = delta_file.read()
             except UnicodeDecodeError as e:
                 raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
-            self.diff = deserializer(content, safe_to_import=safe_to_import)
+            self.diff = _deserializer(content, safe_to_import=safe_to_import)
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
