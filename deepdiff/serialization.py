@@ -364,7 +364,7 @@ def load_path_content(path, file_type=None):
     if file_type == 'json':
         with open(path, 'r') as the_file:
             content = json.load(the_file)
-    elif file_type in {'yaml', '.yml'}:
+    elif file_type in {'yaml', 'yml'}:
         if yaml is None:  # pragma: no cover.
             raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
         with open(path, 'r') as the_file:
@@ -426,7 +426,7 @@ def _save_content(content, path, file_type, keep_backup=True):
     if file_type == 'json':
         with open(path, 'w') as the_file:
             content = json.dump(content, the_file)
-    elif file_type in {'yaml', '.yml'}:
+    elif file_type in {'yaml', 'yml'}:
         if yaml is None:  # pragma: no cover.
             raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
         with open(path, 'w') as the_file:
