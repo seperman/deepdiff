@@ -116,7 +116,7 @@ class SerializationMixin:
         else:
             logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
-    def to_json(self, default_mapping=None):
+    def to_json(self, default_mapping=None, **kwargs):
         """
         Dump json of the text view.
         **Parameters**
@@ -126,6 +126,8 @@ class SerializationMixin:
         by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
         If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
         conversion through this dictionary.
+
+        kwargs: Any other kwargs you pass will be passed on to Python's json.dumps()
 
         **Example**
 
@@ -147,7 +149,7 @@ class SerializationMixin:
             '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
         dic = self.to_dict(view_override=TEXT_VIEW)
-        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping))
+        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping), **kwargs)
 
     def to_dict(self, view_override=None):
         """
