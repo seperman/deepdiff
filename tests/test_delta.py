@@ -335,6 +335,41 @@ class TestBasicsOfDelta:
         delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
         assert t1 + delta2 == t2
 
+    def test_delta_dict_items_added_retain_order(self):
+        t1 = {
+            6: 6
+        }
+
+        t2 = {
+            6: 6,
+            7: 7,
+            3: 3,
+            5: 5,
+            2: 2,
+            4: 4
+        }
+
+        expected_delta_dict = {
+            'dictionary_item_added': {
+                'root[7]': 7,
+                'root[3]': 3,
+                'root[5]': 5,
+                'root[2]': 2,
+                'root[4]': 4
+            }
+        }
+
+        diff = DeepDiff(t1, t2)
+        delta_dict = diff._to_delta_dict()
+        assert expected_delta_dict == delta_dict
+        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+
+        result = t1 + delta
+        assert result == t2
+
+        assert list(result.keys()) == [6, 7, 3, 5, 2, 4]
+        assert list(result.keys()) == list(t2.keys())
+
 
 picklalbe_obj_without_item = PicklableClass(11)
 del picklalbe_obj_without_item.item

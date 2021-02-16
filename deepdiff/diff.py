@@ -450,16 +450,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             rel_class = DictRelationship
 
         if self.ignore_private_variables:
-            t1_keys = {key for key in t1 if not(isinstance(key, str) and key.startswith('__'))}
-            t2_keys = {key for key in t2 if not(isinstance(key, str) and key.startswith('__'))}
+            t1_keys = OrderedSet([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
+            t2_keys = OrderedSet([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
         else:
-            t1_keys = set(t1.keys())
-            t2_keys = set(t2.keys())
+            t1_keys = OrderedSet(t1.keys())
+            t2_keys = OrderedSet(t2.keys())
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
-            t1_keys = set(t1_clean_to_keys.keys())
-            t2_keys = set(t2_clean_to_keys.keys())
+            t1_keys = OrderedSet(t1_clean_to_keys.keys())
+            t2_keys = OrderedSet(t2_clean_to_keys.keys())
         else:
             t1_clean_to_keys = t2_clean_to_keys = None
 
