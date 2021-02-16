@@ -223,7 +223,6 @@ class DeepSearch(dict):
                           parent="root",
                           parents_ids=frozenset()):
         """Search iterables except dictionaries, sets and strings."""
-
         for i, thing in enumerate(obj):
             new_parent = "{}[{}]".format(parent, i)
             if self.__skip_this(thing, parent=new_parent):
@@ -271,7 +270,7 @@ class DeepSearch(dict):
 
     def __search(self, obj, item, parent="root", parents_ids=frozenset()):
         """The main search method"""
-
+        # import pytest; pytest.set_trace()
         if self.__skip_this(item, parent):
             return
 
@@ -299,7 +298,7 @@ class DeepSearch(dict):
                 self.warning_num += 1
             self.__search_iterable(obj, item, parent, parents_ids)
 
-        elif isinstance(obj, Iterable):
+        elif isinstance(obj, Iterable) and not isinstance(obj, strings):
             self.__search_iterable(obj, item, parent, parents_ids)
 
         else:

@@ -29,6 +29,18 @@ class TestDeepSearch:
         result = {"matched_values": {'root[1]'}}
         assert DeepSearch(obj, item, verbose_level=1) == result
 
+    def test_number_in_list2(self):
+        obj = ["a", "10", 10, 20]
+        item = 10
+        result = {"matched_values": {'root[2]'}}
+        assert DeepSearch(obj, item, verbose_level=1) == result
+
+    def test_number_in_list3(self):
+        obj = ["a", "10", 10, 20]
+        item = "10"
+        result = {"matched_values": {'root[1]'}}
+        assert DeepSearch(obj, item, verbose_level=1) == result
+
     def test_string_in_root(self):
         obj = "long string somewhere"
         result = {"matched_values": {'root'}}
@@ -334,3 +346,22 @@ class TestGrep:
         }
         ds = obj | grep(item)
         assert ds == {'matched_values': {"root['ingredients'][3]"}}
+
+    def test_grep_dict_in_dict(self):
+        obj = {
+            "x": {
+                "y": [
+                    "aaaaaa\u0142 bbbbb"
+                ]
+            },
+            "z": "z",
+        }
+        item = {"z": "z"}
+        result = obj | grep(item)
+        assert {} == result
+
+    def test_grep_with_non_utf8_chars(self):
+        obj = "aaaaaa\u0142 bbbbb"
+        item = {"z": "z"}
+        result = obj | grep(item)
+        assert {} == result

@@ -40,6 +40,8 @@ Thanks to the following people for their contributions:
 -  `MyrikLD`_ for Bug Fix NoneType in ignore type groups
 -  Stian Jensen `stianjensen`_ for improving ignoring of NoneType in diff 
 -  Florian Klien `flowolf`_ for adding math_epsilon
+-  Tim Klein `timjklein36`_ for retaining the order of multiple dictionary items added via Delta
+-  Wilhelm Schürmann `wbsch`_ for fixing the typo with yml files.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -70,6 +72,8 @@ Thanks to the following people for their contributions:
 .. _MyrikLD: https://github.com/MyrikLD
 .. _stianjensen: https://github.com/stianjensen
 .. _flowolf: https://github.com/flowolf
+.. _timjklein36: https://github.com/timjklein36
+.. _wbsch: https://github.com/wbsch
 
 
 Back to :doc:`/index`
