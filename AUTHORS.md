@@ -33,3 +33,5 @@ Authors in order of the contributions:
 - [MyrikLD](https://github.com/MyrikLD) for Bug Fix NoneType in ignore type groups
 - Stian Jensen [stianjensen](https://github.com/stianjensen) for improving ignoring of NoneType in diff 
 - Florian Klien [flowolf](https://github.com/flowolf) for adding math_epsilon
+- Tim Klein [timjklein36](https://github.com/timjklein36) for retaining the order of multiple dictionary items added via Delta.
+- Wilhelm Schürmann[wbsch](https://github.com/wbsch) for fixing the typo with yml files.
