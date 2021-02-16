@@ -34,14 +34,46 @@ Example:
 To Json
 -------
 
+Dump json of the text view.
+
 In order to do safe json serialization, use the to_json() method.
 
-Example:
+**Parameters**
+
+default_mapping : dictionary(optional), a dictionary of mapping of different types to json types.
+
+by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
+If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
+conversion through this dictionary.
+
+kwargs: Any other kwargs you pass will be passed on to Python's json.dumps()
+
+
+Example 1 Serialize custom objects:
+    >>> class A:
+    ...     pass
+    ...
+    >>> class B:
+    ...     pass
+    ...
+    >>> t1 = A()
+    >>> t2 = B()
+    >>> ddiff = DeepDiff(t1, t2)
+    >>> ddiff.to_json()
+    TypeError: We do not know how to convert <__main__.A object at 0x10648> of type <class '__main__.A'> for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.
+
+    >>> default_mapping = {A: lambda x: 'obj A', B: lambda x: 'obj B'}
+    >>> ddiff.to_json(default_mapping=default_mapping)
+    '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
+
+
+Example 2:
     >>> t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
     >>> t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
     >>> ddiff = DeepDiff(t1, t2, view='tree')
     >>> ddiff.to_json()
     '{"type_changes": {"root[4][\'b\']": {"old_type": "list", "new_type": "str", "old_value": [1, 2, 3], "new_value": "world\\n\\n\\nEnd"}}}'
+
 
 .. _to_json_pickle_label:
 
