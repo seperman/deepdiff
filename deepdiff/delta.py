@@ -267,16 +267,23 @@ class Delta:
     def _do_dictionary_item_added(self):
         dictionary_item_added = self.diff.get('dictionary_item_added')
         if dictionary_item_added:
-            self._do_item_added(dictionary_item_added)
+            self._do_item_added(dictionary_item_added, sort=False)
 
     def _do_attribute_added(self):
         attribute_added = self.diff.get('attribute_added')
         if attribute_added:
             self._do_item_added(attribute_added)
 
-    def _do_item_added(self, items):
-        # sorting the items by their path so that the items with smaller index are applied first.
-        for path, new_value in sorted(items.items(), key=lambda x: x[0]):
+    def _do_item_added(self, items, sort=True):
+        if sort:
+            # sorting items by their path so that the items with smaller index
+            # are applied first (unless `sort` is `False` so that order of
+            # added items is retained, e.g. for dicts).
+            items = sorted(items.items(), key=lambda x: x[0])
+        else:
+            items = items.items()
+
+        for path, new_value in items:
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
