@@ -135,7 +135,7 @@ class DeepSearch(dict):
         if obj == item:
             found = True
             # We report the match but also continue inside the match to see if there are
-            # furthur matches inside the `looped` object.
+            # further matches inside the `looped` object.
             self.__report(report_key='matched_values', key=parent, value=obj)
 
         try:
@@ -205,7 +205,7 @@ class DeepSearch(dict):
 
             str_item = str(item)
             if (self.match_string and str_item == new_parent_cased) or\
-               (not self.match_string and str_item in new_parent_cased):
+               (not self.match_string and re.search(str_item, new_parent_cased)):
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -233,7 +233,9 @@ class DeepSearch(dict):
             else:
                 thing_cased = thing.lower()
 
-            if thing_cased == item:
+            if thing_cased == item or \
+                    (isinstance(thing_cased, str) and isinstance(item, str) and \
+                     re.search(item, thing_cased)):
                 self.__report(
                     report_key='matched_values', key=new_parent, value=thing)
             else:
@@ -248,7 +250,8 @@ class DeepSearch(dict):
         """Compare strings"""
         obj_text = obj if self.case_sensitive else obj.lower()
 
-        if (self.match_string and item == obj_text) or (not self.match_string and item in obj_text):
+        if (self.match_string and item == obj_text) or \
+            (not self.match_string and re.search(item, obj_text)):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
