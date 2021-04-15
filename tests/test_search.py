@@ -336,23 +336,29 @@ class TestDeepSearch:
         result = {'matched_values': {'root.a'}}
         assert DeepSearch(obj, item, verbose_level=1) == result
 
+    def test_dont_use_regex_by_default(self):
+        obj = "long string somewhere"
+        item = "some.*"
+        result = {}
+        assert DeepSearch(obj, item, verbose_level=1) == result
+
     def test_regex_in_string(self):
         obj = "long string somewhere"
         item = "some.*"
         result = {"matched_values": {"root"}}
-        assert DeepSearch(obj, item, verbose_level=1) == result
+        assert DeepSearch(obj, item, verbose_level=1, use_regexp=True) == result
 
     def test_regex_in_string_in_tuple(self):
         obj = ("long", "string", 0, "somewhere")
         item = "some.*"
         result = {"matched_values": {"root[3]"}}
-        assert DeepSearch(obj, item, verbose_level=1) == result
+        assert DeepSearch(obj, item, verbose_level=1, use_regexp=True) == result
 
     def test_regex_in_string_in_list(self):
         obj = ["long", "string", 0, "somewhere"]
         item = "some.*"
         result = {"matched_values": {"root[3]"}}
-        assert DeepSearch(obj, item, verbose_level=1) == result
+        assert DeepSearch(obj, item, verbose_level=1, use_regexp=True) == result
 
     def test_regex_in_string_in_dictionary(self):
         obj = {"long": "somewhere", "string": 2, 0: 0, "somewhere": "around"}
@@ -361,7 +367,7 @@ class TestDeepSearch:
             "matched_values": {"root['long']"},
         }
         item = "some.*"
-        ds = DeepSearch(obj, item, verbose_level=1)
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True)
         assert ds == result
 
     def test_regex_in_string_in_dictionary_in_list_verbose(self):
@@ -377,21 +383,21 @@ class TestDeepSearch:
             },
         }
         item = "some.*"
-        ds = DeepSearch(obj, item, verbose_level=2)
+        ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert ds == result
 
     def test_regex_in_custom_object(self):
         obj = CustomClass("here, something", "somewhere")
         result = {"matched_values": {"root.b"}}
         item = "somew.*"
-        ds = DeepSearch(obj, item, verbose_level=1)
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True)
         assert ds == result
 
     def test_regex_in_custom_object_in_dictionary_verbose(self):
         obj = {1: CustomClass("here, something", "somewhere out there")}
         result = {"matched_values": {"root[1].b": "somewhere out there"}}
         item = "somew.*"
-        ds = DeepSearch(obj, item, verbose_level=2)
+        ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert ds == result
 
     def test_regex_in_named_tuples_verbose(self):
@@ -400,7 +406,7 @@ class TestDeepSearch:
         Point = namedtuple("Point", ["x", "somewhere_good"])
         obj = Point(x="my keys are somewhere", somewhere_good=22)
         item = "some.*"
-        ds = DeepSearch(obj, item, verbose_level=2)
+        ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         result = {
             "matched_values": {"root.x": "my keys are somewhere"},
             "matched_paths": {"root.somewhere_good": 22},
@@ -411,7 +417,7 @@ class TestDeepSearch:
         obj = {"long", "string", 0, "somewhere"}
         # result = {"matched_values": {'root[3]': "somewhere"}}
         item = "some.*"
-        ds = DeepSearch(obj, item, verbose_level=2)
+        ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert list(ds["matched_values"].values())[0] == "somewhere"
 
 class TestGrep:

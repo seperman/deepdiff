@@ -40,6 +40,8 @@ class DeepSearch(dict):
         If True, the value of the object or its children have to exactly match the item.
         If False, the value of the item can be a part of the value of the object or its children
 
+    use_regexp: Boolean, default = False
+
     **Returns**
 
         A DeepSearch object that has the matched paths and matched values.
@@ -83,6 +85,7 @@ class DeepSearch(dict):
                  verbose_level=1,
                  case_sensitive=False,
                  match_string=False,
+                 use_regexp=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -104,6 +107,9 @@ class DeepSearch(dict):
             matched_paths=self.__set_or_dict(),
             matched_values=self.__set_or_dict(),
             unprocessed=[])
+        self.use_regexp = use_regexp
+        if self.use_regexp:
+            self.search_regexp = re.compile(item)
 
         # Cases where user wants to match exact string item
         self.match_string = match_string
@@ -205,7 +211,8 @@ class DeepSearch(dict):
 
             str_item = str(item)
             if (self.match_string and str_item == new_parent_cased) or\
-               (not self.match_string and re.search(str_item, new_parent_cased)):
+               (not self.match_string and str_item in new_parent_cased) or\
+               (self.use_regexp and self.search_regexp.search(new_parent_cased)):
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -235,7 +242,7 @@ class DeepSearch(dict):
 
             if thing_cased == item or \
                     (isinstance(thing_cased, str) and isinstance(item, str) and \
-                     re.search(item, thing_cased)):
+                    self.use_regexp and self.search_regexp.search(thing_cased)):
                 self.__report(
                     report_key='matched_values', key=new_parent, value=thing)
             else:
@@ -251,7 +258,8 @@ class DeepSearch(dict):
         obj_text = obj if self.case_sensitive else obj.lower()
 
         if (self.match_string and item == obj_text) or \
-            (not self.match_string and re.search(item, obj_text)):
+            (not self.match_string and item in obj_text) or \
+            (self.use_regexp and self.search_regexp.search(obj_text)):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
