@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.2.3 documentation!
+DeepDiff 5.3.0 documentation!
 =============================
 
 *****************
@@ -34,6 +34,23 @@ Supported Python Versions
 DeepDiff is rigorously tested against Python 3.6, 3.7, 3.8, 3.9 and Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
+
+***********
+What is New
+***********
+
+Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
+
+
+.. code:: python
+
+    >>> from deepdiff import grep
+    >>> from pprint import pprint
+    >>> obj = ["something here", {"long": "somewhere", "someone": 2, 0: 0, "somewhere": "around"}]
+    >>> ds = obj | grep("some.*", use_regexp=True)
+    { 'matched_paths': ["root[1]['someone']", "root[1]['somewhere']"],
+      'matched_values': ['root[0]', "root[1]['long']"]}
+
 
 *********
 Tutorials
