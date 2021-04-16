@@ -348,6 +348,12 @@ class TestDeepSearch:
         result = {"matched_values": {"root"}}
         assert DeepSearch(obj, item, verbose_level=1, use_regexp=True) == result
 
+    def test_regex_does_not_match_the_regex_string_itself(self):
+        obj = ["We like python", "but not (?:p|t)ython"]
+        item = "(?:p|t)ython"
+        result = {'matched_values': ['root[0]']}
+        assert DeepSearch(obj, item, verbose_level=1, use_regexp=True) == result
+
     def test_regex_in_string_in_tuple(self):
         obj = ("long", "string", 0, "somewhere")
         item = "some.*"
@@ -415,10 +421,10 @@ class TestDeepSearch:
 
     def test_regex_in_string_in_set_verbose(self):
         obj = {"long", "string", 0, "somewhere"}
-        # result = {"matched_values": {'root[3]': "somewhere"}}
         item = "some.*"
         ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert list(ds["matched_values"].values())[0] == "somewhere"
+
 
 class TestGrep:
 
@@ -448,3 +454,9 @@ class TestGrep:
         item = {"z": "z"}
         result = obj | grep(item)
         assert {} == result
+
+    def test_grep_regex_in_string_in_tuple(self):
+        obj = ("long", "string", 0, "somewhere")
+        item = "some.*"
+        result = {"matched_values": {"root[3]"}}
+        assert obj | grep(item, verbose_level=1, use_regexp=True) == result
