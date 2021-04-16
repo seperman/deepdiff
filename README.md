@@ -22,7 +22,7 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
-Deepdiff 5.2.4 comes with regular expressions in the DeepSearch and grep modules:
+Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
 
 ```python
 >>> from deepdiff import grep
