@@ -20,6 +20,18 @@ Tested on Python 3.6+ and PyPy3.
 
 - [Documentation](https://zepworks.com/deepdiff/5.2.3/)
 
+## What is new?
+
+Deepdiff 5.2.4 comes with regular expressions in the DeepSearch and grep modules:
+
+```python
+>>> from deepdiff import grep
+>>> from pprint import pprint
+>>> obj = ["something here", {"long": "somewhere", "someone": 2, 0: 0, "somewhere": "around"}]
+>>> ds = obj | grep("some.*", use_regexp=True)
+{ 'matched_paths': ["root[1]['someone']", "root[1]['somewhere']"],
+  'matched_values': ['root[0]', "root[1]['long']"]}
+```
 
 ## Installation
 
