@@ -266,7 +266,7 @@ class DeepSearch(dict):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
-        if item == obj:
+        if item == obj or (self.use_regexp and item.search(str(obj))):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_tuple(self, obj, item, parent, parents_ids):

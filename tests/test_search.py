@@ -425,6 +425,12 @@ class TestDeepSearch:
         ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert list(ds["matched_values"].values())[0] == "somewhere"
 
+    def test_regex_in_int_in_dictionary(self):
+        obj = {"long": "somewhere", "num": 232, 0: 0, "somewhere": "around"}
+        item = "2.*"
+        result = {"matched_values": {"root['num']"}}
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True)
+        assert ds == result
 
 class TestGrep:
 
