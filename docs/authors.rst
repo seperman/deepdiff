@@ -42,6 +42,8 @@ Thanks to the following people for their contributions:
 -  Florian Klien `flowolf`_ for adding math_epsilon
 -  Tim Klein `timjklein36`_ for retaining the order of multiple dictionary items added via Delta
 -  Wilhelm Schürmann `wbsch`_ for fixing the typo with yml files.
+-  `lyz_code`_ for adding support for regular expressions in DeepSearch.
+
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -74,6 +76,7 @@ Thanks to the following people for their contributions:
 .. _flowolf: https://github.com/flowolf
 .. _timjklein36: https://github.com/timjklein36
 .. _wbsch: https://github.com/wbsch
+.. _lyz_code: https://github.com/lyz-code
 
 
 Back to :doc:`/index`

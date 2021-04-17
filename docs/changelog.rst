@@ -5,6 +5,7 @@ Changelog
 
 DeepDiff Changelog
 
+- v5-3-0: add support for regular expressions in DeepSearch
 - v5-2-3: Retaining the order of multiple dictionary items added via Delta. Fixed the typo with yml files in deep cli. Fixing Grep RecursionError where using non UTF-8 character. Allowing kwargs to be passed to to_json method.
 - v5-2-2: Fixed Delta serialization when None type is present.
 - v5-2-0: Removed Murmur3 as the preferred hashing method. Using SHA256 by default now. Added commandline for deepdiff. Added group_by. Added math_epsilon. Improved ignoring of NoneType.

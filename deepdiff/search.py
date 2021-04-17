@@ -4,7 +4,9 @@ from collections.abc import MutableMapping, Iterable
 from deepdiff.helper import OrderedSetPlus
 import logging
 
-from deepdiff.helper import strings, numbers, add_to_frozen_set, get_doc, dict_
+from deepdiff.helper import (
+    strings, numbers, add_to_frozen_set, get_doc, dict_, RE_COMPILED_TYPE
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,8 @@ class DeepSearch(dict):
     match_string: Boolean, default = False
         If True, the value of the object or its children have to exactly match the item.
         If False, the value of the item can be a part of the value of the object or its children
+
+    use_regexp: Boolean, default = False
 
     **Returns**
 
@@ -83,6 +87,7 @@ class DeepSearch(dict):
                  verbose_level=1,
                  case_sensitive=False,
                  match_string=False,
+                 use_regexp=False,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -104,6 +109,9 @@ class DeepSearch(dict):
             matched_paths=self.__set_or_dict(),
             matched_values=self.__set_or_dict(),
             unprocessed=[])
+        self.use_regexp = use_regexp
+        if self.use_regexp:
+            item = re.compile(item)
 
         # Cases where user wants to match exact string item
         self.match_string = match_string
@@ -205,7 +213,8 @@ class DeepSearch(dict):
 
             str_item = str(item)
             if (self.match_string and str_item == new_parent_cased) or\
-               (not self.match_string and re.search(str_item, new_parent_cased)):
+               (not self.match_string and str_item in new_parent_cased) or\
+               (self.use_regexp and item.search(new_parent_cased)):
                 self.__report(
                     report_key='matched_paths',
                     key=new_parent,
@@ -233,9 +242,7 @@ class DeepSearch(dict):
             else:
                 thing_cased = thing.lower()
 
-            if thing_cased == item or \
-                    (isinstance(thing_cased, str) and isinstance(item, str) and \
-                     re.search(item, thing_cased)):
+            if not self.use_regexp and thing_cased == item:
                 self.__report(
                     report_key='matched_values', key=new_parent, value=thing)
             else:
@@ -250,8 +257,12 @@ class DeepSearch(dict):
         """Compare strings"""
         obj_text = obj if self.case_sensitive else obj.lower()
 
-        if (self.match_string and item == obj_text) or \
-            (not self.match_string and re.search(item, obj_text)):
+        is_matched = False
+        if self.use_regexp:
+            is_matched = item.search(obj_text)
+        elif (self.match_string and item == obj_text) or (not self.match_string and item in obj_text):
+            is_matched = True
+        if is_matched:
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
@@ -273,11 +284,10 @@ class DeepSearch(dict):
 
     def __search(self, obj, item, parent="root", parents_ids=frozenset()):
         """The main search method"""
-        # import pytest; pytest.set_trace()
         if self.__skip_this(item, parent):
             return
 
-        elif isinstance(obj, strings) and isinstance(item, strings):
+        elif isinstance(obj, strings) and isinstance(item, (strings, RE_COMPILED_TYPE)):
             self.__search_str(obj, item, parent)
 
         elif isinstance(obj, strings) and isinstance(item, numbers):

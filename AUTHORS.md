@@ -35,3 +35,4 @@ Authors in order of the contributions:
 - Florian Klien [flowolf](https://github.com/flowolf) for adding math_epsilon
 - Tim Klein [timjklein36](https://github.com/timjklein36) for retaining the order of multiple dictionary items added via Delta.
 - Wilhelm Schürmann[wbsch](https://github.com/wbsch) for fixing the typo with yml files.
+- [lyz-code](https://github.com/lyz-code) for adding support for regular expressions in DeepSearch.

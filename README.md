@@ -1,4 +1,4 @@
-# DeepDiff v 5.2.3
+# DeepDiff v 5.3.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -18,8 +18,20 @@ Tested on Python 3.6+ and PyPy3.
 
 **NOTE: The last version of DeepDiff to work on Python 3.5 was DeepDiff 5-0-2**
 
-- [Documentation](https://zepworks.com/deepdiff/5.2.3/)
+- [Documentation](https://zepworks.com/deepdiff/5.3.0/)
 
+## What is new?
+
+Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
+
+```python
+>>> from deepdiff import grep
+>>> from pprint import pprint
+>>> obj = ["something here", {"long": "somewhere", "someone": 2, 0: 0, "somewhere": "around"}]
+>>> ds = obj | grep("some.*", use_regexp=True)
+{ 'matched_paths': ["root[1]['someone']", "root[1]['somewhere']"],
+  'matched_values': ['root[0]', "root[1]['long']"]}
+```
 
 ## Installation
 
@@ -54,13 +66,13 @@ Note: if you want to use DeepDiff via commandline, make sure to run `pip install
 
 DeepDiff gets the difference of 2 objects.
 
-> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.2.3/diff.html)
-> - The full documentation of all modules can be found on <https://zepworks.com/deepdiff/5.2.3/>
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.3.0/diff.html)
+> - The full documentation of all modules can be found on <https://zepworks.com/deepdiff/5.3.0/>
 > - Tutorials and posts about DeepDiff can be found on <https://zepworks.com/tags/deepdiff/>
 
 ## A few Examples
 
-> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://zepworks.com/deepdiff/5.2.3/> for full documentation.
+> Note: This is just a brief overview of what DeepDiff can do. Please visit <https://zepworks.com/deepdiff/5.3.0/> for full documentation.
 
 ### List difference ignoring order or duplicates
 
@@ -264,8 +276,8 @@ Example:
 ```
 
 
-> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.2.3/diff.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.3/>
+> - Please take a look at the [DeepDiff docs](https://zepworks.com/deepdiff/5.3.0/diff.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.3.0/>
 
 
 # Deep Search
@@ -297,8 +309,8 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 {'matched_paths': {"root['somewhere']": 'around'}, 'matched_values': {"root['long']": 'somewhere'}}
 ```
 
-> - Please take a look at the [DeepSearch docs](https://zepworks.com/deepdiff/5.2.3/dsearch.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.3/>
+> - Please take a look at the [DeepSearch docs](https://zepworks.com/deepdiff/5.3.0/dsearch.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.3.0/>
 
 # Deep Hash
 (New in v4-0-0)
@@ -306,8 +318,8 @@ And you can pass all the same kwargs as DeepSearch to grep too:
 DeepHash is designed to give you hash of ANY python object based on its contents even if the object is not considered hashable!
 DeepHash is supposed to be deterministic in order to make sure 2 objects that contain the same data, produce the same hash.
 
-> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.2.3/deephash.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.3/>
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.3.0/deephash.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.3.0/>
 
 Let's say you have a dictionary object.
 
@@ -355,8 +367,8 @@ Which you can write as:
 At first it might seem weird why DeepHash(obj)[obj] but remember that DeepHash(obj) is a dictionary of hashes of all other objects that obj contains too.
 
 
-> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.2.3/deephash.html)
-> - The full documentation can be found on <https://zepworks.com/deepdiff/5.2.3/>
+> - Please take a look at the [DeepHash docs](https://zepworks.com/deepdiff/5.3.0/deephash.html)
+> - The full documentation can be found on <https://zepworks.com/deepdiff/5.3.0/>
 
 
 # Using DeepDiff in unit tests

@@ -22,3 +22,9 @@ Search in nested data for string
     { 'matched_paths': {"root[1]['somewhere']": 'around'},
       'matched_values': { 'root[0]': 'something somewhere',
                           "root[1]['long']": 'somewhere'}}
+
+You can also use regular expressions
+    >>> obj = ["something here", {"long": "somewhere", "someone": 2, 0: 0, "somewhere": "around"}]
+    >>> ds = obj | grep("some.*", use_regexp=True)
+    { 'matched_paths': ["root[1]['someone']", "root[1]['somewhere']"],
+      'matched_values': ['root[0]', "root[1]['long']"]}
