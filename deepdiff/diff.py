@@ -588,12 +588,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         try:
             matches = []
             y_matched = set()
+            y_index_matched = set()
             for i, x in enumerate(level.t1):
                 x_found = False
                 for j, y in enumerate(level.t2):
 
-                    if(self.iterable_compare_func(x, y)):
-                        y_matched.add(id(y))
+                    if(j in y_index_matched):
+                        # This ensures a one-to-one relationship of matches from t1 to t2.
+                        # If y this index in t2 has already been matched to another x
+                        # it cannot have another match, so just continue.
+                        continue
+
+                    if(self.iterable_compare_func(x, y, level)):
+                        deep_hash = DeepHash(y,
+                                             hashes=self.hashes,
+                                             apply_hash=True,
+                                             **self.deephash_parameters,
+                                             )
+                        y_index_matched.add(j)
+                        y_matched.add(deep_hash[y])
                         matches.append(((i, j), (x, y)))
                         x_found = True
                         break
@@ -601,7 +614,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if(not x_found):
                     matches.append(((i, -1), (x, ListItemRemovedOrAdded)))
             for j, y in enumerate(level.t2):
-                if(id(y) not in y_matched):
+
+                deep_hash = DeepHash(y,
+                                     hashes=self.hashes,
+                                     apply_hash=True,
+                                     **self.deephash_parameters,
+                                     )
+                if(deep_hash[y] not in y_matched):
                     matches.append(((-1, j), (ListItemRemovedOrAdded, y)))
             return matches
         except CannotCompare:
@@ -616,53 +635,51 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             child_relationship_class = NonSubscriptableIterableRelationship
 
-
-
         for (i, j), (x, y) in self._get_matching_pairs(level):
-                if self._count_diff() is StopIteration:
-                    return  # pragma: no cover. This is already covered for addition.
+            if self._count_diff() is StopIteration:
+                return  # pragma: no cover. This is already covered for addition.
 
-                if y is ListItemRemovedOrAdded:  # item removed completely
+            if y is ListItemRemovedOrAdded:  # item removed completely
+                change_level = level.branch_deeper(
+                    x,
+                    notpresent,
+                    child_relationship_class=child_relationship_class,
+                    child_relationship_param=i)
+                self._report_result('iterable_item_removed', change_level)
+
+            elif x is ListItemRemovedOrAdded:  # new item added
+                change_level = level.branch_deeper(
+                    notpresent,
+                    y,
+                    child_relationship_class=child_relationship_class,
+                    child_relationship_param=j)
+                self._report_result('iterable_item_added', change_level)
+
+            else:  # check if item value has changed
+
+                if (i != j):
+                    # Item moved
                     change_level = level.branch_deeper(
-                        x,
-                        notpresent,
-                        child_relationship_class=child_relationship_class,
-                        child_relationship_param=i)
-                    self._report_result('iterable_item_removed', change_level)
-
-                elif x is ListItemRemovedOrAdded:  # new item added
-                    change_level = level.branch_deeper(
-                        notpresent,
-                        y,
-                        child_relationship_class=child_relationship_class,
-                        child_relationship_param=j)
-                    self._report_result('iterable_item_added', change_level)
-
-                else:  # check if item value has changed
-
-                    if (i != j):
-                        # Item moved
-                        change_level = level.branch_deeper(
-                            x,
-                            y,
-                            child_relationship_class=child_relationship_class,
-                            child_relationship_param=i,
-                            child_relationship_param2=j
-                        )
-                        self._report_result('iterable_item_moved', change_level)
-
-                    item_id = id(x)
-                    if parents_ids and item_id in parents_ids:
-                        continue
-                    parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-
-                    # Go one level deeper
-                    next_level = level.branch_deeper(
                         x,
                         y,
                         child_relationship_class=child_relationship_class,
-                        child_relationship_param=i)
-                    self._diff(next_level, parents_ids_added)
+                        child_relationship_param=i,
+                        child_relationship_param2=j
+                    )
+                    self._report_result('iterable_item_moved', change_level)
+
+                item_id = id(x)
+                if parents_ids and item_id in parents_ids:
+                    continue
+                parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+
+                # Go one level deeper
+                next_level = level.branch_deeper(
+                    x,
+                    y,
+                    child_relationship_class=child_relationship_class,
+                    child_relationship_param=i)
+                self._diff(next_level, parents_ids_added)
 
     def _diff_str(self, level):
         """Compare strings"""
