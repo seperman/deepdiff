@@ -43,9 +43,10 @@ class DeepSearch(dict):
         If False, the value of the item can be a part of the value of the object or its children
 
     use_regexp: Boolean, default = False
-    strict_checking: Boolean, default = False
-        If True, it won't check the type of the object to match, so '1234' will match
-            the int 1234.
+
+    strict_checking: Boolean, default = True
+        If True, it will check the type of the object to match, so when searching for '1234',
+        it will NOT match the int 1234. Currently this only affects the numeric values searching.
 
     **Returns**
 
@@ -114,8 +115,13 @@ class DeepSearch(dict):
             matched_values=self.__set_or_dict(),
             unprocessed=[])
         self.use_regexp = use_regexp
+        if not strict_checking and isinstance(item, numbers):
+            item = str(item)
         if self.use_regexp:
-            item = re.compile(item)
+            try:
+                item = re.compile(item)
+            except TypeError as e:
+                raise TypeError(f"The passed item of {item} is not usable for regex: {e}") from None
         self.strict_checking = strict_checking
 
         # Cases where user wants to match exact string item
@@ -272,9 +278,13 @@ class DeepSearch(dict):
 
     def __search_numbers(self, obj, item, parent):
         if (
-            item == obj
-            or (not self.strict_checking and item == str(obj))
-            or (not self.strict_checking and self.use_regexp and item.search(str(obj)))
+            item == obj or (
+                not self.strict_checking and (
+                    item == str(obj) or (
+                        self.use_regexp and item.search(str(obj))
+                    )
+                )
+            )
         ):
             self.__report(report_key='matched_values', key=parent, value=obj)
 

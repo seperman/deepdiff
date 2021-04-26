@@ -1,5 +1,6 @@
 # DeepDiff Change log
 
+- v5-4-0: adding strict_checking for numbers in DeepSearch
 - v5-3-0: add support for regular expressions in DeepSearch
 - v5-2-3: Retaining the order of multiple dictionary items added via Delta. Fixed the typo with yml files in deep cli. Fixing Grep RecursionError where using non UTF-8 character. Allowing kwargs to be passed to to_json method.
 - v5-2-2: Fixed Delta serialization when None type is present.

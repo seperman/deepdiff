@@ -452,6 +452,21 @@ class TestDeepSearch:
         ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True, strict_checking=False)
         assert ds == result
 
+    def test_int_cant_become_regex(self):
+        obj = {"long": "somewhere", "num": "1123456", 0: 0, "somewhere": "around"}
+        item = CustomClass(a=10)
+        with pytest.raises(TypeError) as exp:
+            DeepSearch(obj, item, verbose_level=1, use_regexp=True, strict_checking=False)
+        assert str(exp.value).startswith("The passed item of (10, None) is not usable for regex")
+
+    def test_searching_for_int_in_dictionary_when_strict_false(self):
+        obj = {"long": "somewhere", "num": "1234", 0: 0, "somewhere": "around"}
+        item = 1234
+        result = {"matched_values": {"root['num']"}}
+        ds = DeepSearch(obj, item, verbose_level=1, strict_checking=False)
+        assert ds == result
+
+
 class TestGrep:
 
     def test_grep_dict(self):
