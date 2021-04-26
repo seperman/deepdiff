@@ -41,6 +41,12 @@ class TestDeepSearch:
         result = {"matched_values": {'root[1]'}}
         assert DeepSearch(obj, item, verbose_level=1) == result
 
+    def test_number_in_list_strict_false(self):
+        obj = ["a", "10", 10, 20]
+        item = "20"
+        result = {"matched_values": {'root[3]'}}
+        assert DeepSearch(obj, item, verbose_level=1, strict_checking=False) == result
+
     def test_string_in_root(self):
         obj = "long string somewhere"
         result = {"matched_values": {'root'}}
@@ -425,6 +431,26 @@ class TestDeepSearch:
         ds = DeepSearch(obj, item, verbose_level=2, use_regexp=True)
         assert list(ds["matched_values"].values())[0] == "somewhere"
 
+    def test_regex_in_int_in_dictionary_with_strict_checking(self):
+        obj = {"long": "somewhere", "num": 232, 0: 0, "somewhere": "around"}
+        item = "2.*"
+        result = {}
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True)
+        assert ds == result
+
+    def test_regex_in_int_in_dictionary(self):
+        obj = {"long": "somewhere", "num": 232, 0: 0, "somewhere": "around"}
+        item = "2.*"
+        result = {"matched_values": {"root['num']"}}
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True, strict_checking=False)
+        assert ds == result
+
+    def test_regex_in_int_in_dictionary_returns_partial_match(self):
+        obj = {"long": "somewhere", "num": 1123456, 0: 0, "somewhere": "around"}
+        item = "1234"
+        result = {"matched_values": {"root['num']"}}
+        ds = DeepSearch(obj, item, verbose_level=1, use_regexp=True, strict_checking=False)
+        assert ds == result
 
 class TestGrep:
 

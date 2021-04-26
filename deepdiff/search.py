@@ -43,6 +43,9 @@ class DeepSearch(dict):
         If False, the value of the item can be a part of the value of the object or its children
 
     use_regexp: Boolean, default = False
+    strict_checking: Boolean, default = False
+        If True, it won't check the type of the object to match, so '1234' will match
+            the int 1234.
 
     **Returns**
 
@@ -88,6 +91,7 @@ class DeepSearch(dict):
                  case_sensitive=False,
                  match_string=False,
                  use_regexp=False,
+                 strict_checking=True,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -112,6 +116,7 @@ class DeepSearch(dict):
         self.use_regexp = use_regexp
         if self.use_regexp:
             item = re.compile(item)
+        self.strict_checking = strict_checking
 
         # Cases where user wants to match exact string item
         self.match_string = match_string
@@ -266,7 +271,11 @@ class DeepSearch(dict):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
-        if item == obj:
+        if (
+            item == obj
+            or (not self.strict_checking and item == str(obj))
+            or (not self.strict_checking and self.use_regexp and item.search(str(obj)))
+        ):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_tuple(self, obj, item, parent, parents_ids):
