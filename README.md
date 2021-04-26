@@ -421,7 +421,7 @@ And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 # ChangeLog
 
-Please take a look at the [changelog](changelog.md) file.
+Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 
 # Releases
 
