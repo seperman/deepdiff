@@ -1,0 +1,50 @@
+{
+  "Cars": [
+    {
+      "id": "1",
+      "make": "Toyota",
+      "model": "Camry",
+      "dealers": [
+        {
+          "id": 103,
+          "address": "103 Fake St",
+          "quantity": 50
+        },
+        {
+          "id": 105,
+          "address": "105 Fake St",
+          "quantity": 20
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "make": "Toyota",
+      "model": "Highlander",
+      "dealers": [
+        {
+          "id": 123,
+          "address": "123 Fake St",
+          "quantity": 50
+        },
+        {
+          "id": 125,
+          "address": "125 Fake St",
+          "quantity": 20
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "make": "Toyota",
+      "model": "4Runner",
+      "model_numbers": [1, 2, 4]
+    },
+    {
+      "id": "4",
+      "make": "Toyota",
+      "model": "supra",
+      "production": false
+    }
+  ]
+}

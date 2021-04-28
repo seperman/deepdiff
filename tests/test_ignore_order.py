@@ -1,7 +1,7 @@
 import pytest
 from unittest import mock
-from deepdiff.helper import number_to_string
-from deepdiff import DeepDiff
+from deepdiff.helper import number_to_string, CannotCompare
+from deepdiff import DeepDiff, Delta
 from decimal import Decimal
 from deepdiff.deephash import sha256hex
 from tests import CustomClass2
@@ -779,3 +779,4 @@ class TestIgnoreOrder:
         diff2 = DeepDiff(t1, t2, group_by='id', ignore_order=True)
         expected2 = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies'}}
         assert expected2 == diff2
+
