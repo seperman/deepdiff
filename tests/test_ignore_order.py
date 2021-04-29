@@ -811,7 +811,7 @@ class TestIgnoreOrder:
             },
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1)
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
         expected = {
             'values_changed': {
                 "root[2]['id']": {
@@ -841,6 +841,6 @@ class TestIgnoreOrder:
             }
         }
 
-        ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1)
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func)
         assert expected2 == ddiff2
         assert ddiff != ddiff2

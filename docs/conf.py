@@ -132,7 +132,7 @@ html_theme_options = {
     'extra_nav_links': {
         'Zepworks': 'https://zepworks.com', 'Github': 'https://github.com/seperman/deepdiff'},
     'show_relbars': True,
-    'github_repo': 'deepdiff',
+    # 'github_repo': 'deepdiff',
     'anchor': '#DDD',
     'touch_icon': 'logo.svg',
     'github_button': True,
