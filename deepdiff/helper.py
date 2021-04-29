@@ -190,6 +190,13 @@ class NotPresent:  # pragma: no cover
     __str__ = __repr__
 
 
+class CannotCompare(Exception):
+    """
+    Exception when two items cannot be compared in the compare function.
+    """
+    pass
+
+
 unprocessed = Unprocessed()
 skipped = Skipped()
 not_hashed = NotHashed()

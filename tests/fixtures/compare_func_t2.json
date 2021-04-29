@@ -1,0 +1,49 @@
+{
+  "Cars": [
+    {
+      "id": "7",
+      "make": "Toyota",
+      "model": "8Runner"
+    },
+    {
+      "id": "3",
+      "make": "Toyota",
+      "model": "4Runner",
+      "model_numbers": [1, 2, 3, 4]
+    },
+    {
+      "id": "1",
+      "make": "Toyota",
+      "model": "Camry",
+      "dealers": [
+        {
+          "id": 105,
+          "address": "105 Fake St",
+          "quantity": 50
+        },
+        {
+          "id": 200,
+          "address": "200 Fake St",
+          "quantity": 10
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "make": "Toyota",
+      "model": "Supra",
+      "dealers": [
+        {
+          "id": 123,
+          "address": "123 Fake St",
+          "quantity": 50
+        },
+        {
+          "id": 125,
+          "address": "125 Fake St",
+          "quantity": 20
+        }
+      ]
+    }
+  ]
+}

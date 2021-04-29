@@ -52,7 +52,7 @@ You can traverse through the tree elements!
 
     +---------------------------------------------------------------+
     |                                                               |
-    |    parent(t1)              parent node            parent(t2)  |
+    |    parent(t1)              parent node            parent(t2)  |----level
     |      +                          ^                     +       |
     +------|--------------------------|---------------------|-------+
            |                      |   | up                  |
@@ -61,14 +61,14 @@ You can traverse through the tree elements!
            |                 down |   |                     |
     +------|----------------------|-------------------------|-------+
     |      v                      v                         v       |
-    |    child(t1)              child node               child(t2)  |
+    |    child(t1)              child node               child(t2)  |----level
     |                                                               |
     +---------------------------------------------------------------+
 
 
-:up: Move up to the parent node
-:down: Move down to the child node
-:path(): Get the path to the current node
+:up: Move up to the parent node aka parent level
+:down: Move down to the child node aka child level
+:path(): Get the path to the current node in string representation, path(output_format='list') gives you the path in list representation.
 :t1: The first item in the current node that is being diffed
 :t2: The second item in the current node that is being diffed
 :additional: Additional information about the node i.e. repetition
@@ -125,8 +125,10 @@ List difference (Tree View)
     >>> parent = removed.up
     >>> parent
     <root[4]['b'] t1:[1, 2, 3, 4], t2:[1, 2]>
-    >>> parent.path()
+    >>> parent.path()  # gives you the string representation of the path
     "root[4]['b']"
+    >>> parent.path(output_format='list')  # gives you the list of keys and attributes that make up the path
+    [4, 'b']
     >>> parent.t1
     [1, 2, 3, 4]
     >>> parent.t2
@@ -158,6 +160,8 @@ List difference 2  (Tree View)
     <root[4] t1:{'a': 'hello...}, t2:{'a': 'hello...}>
     >>> added.up.up.path()
     'root[4]'
+    >>> added.up.up.path(output_format='list')  # gives you the list of keys and attributes that make up the path
+    [4]
     >>> added.up.up.down
     <root[4]['b'] t1:[1, 2, 3], t2:[1, 3, 2, 3]>
     >>>

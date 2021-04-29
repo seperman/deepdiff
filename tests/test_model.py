@@ -146,6 +146,10 @@ class TestDiffLevel:
         # Provides textual path all the way through
         assert self.lowest.path("self.t1") == "self.t1[1337].a"
 
+    def test_path_output_list(self):
+        # Provides textual path all the way through
+        assert self.lowest.path(output_format="list") == [1337, 'a']
+
     def test_change_of_path_root(self):
         assert self.lowest.path("root") == "root[1337].a"
         assert self.lowest.path("") == "[1337].a"
@@ -163,6 +167,7 @@ class TestDiffLevel:
         down = up.down = DiffLevel(child_t1, child_t2)
         path = down.path()
         assert path == 'root'
+        assert down.path(output_format='list') == []
 
     def test_repr_short(self):
         level = self.lowest.verbose_level

@@ -91,6 +91,10 @@ ignore_nan_inequality: Boolean, default = False
     :ref:`ignore_nan_inequality_label`
     Whether to ignore float('nan') inequality in Python.
 
+iterable_compare_func:
+    :ref:`iterable_compare_func_label`:
+    There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. It function takes two parameters and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.
+
 ignore_private_variables: Boolean, default = True
     :ref:`ignore_private_variables_label`
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
@@ -115,7 +119,6 @@ number_format_notation : string, default="f"
 
 number_to_string_func : function, default=None
     :ref:`number_to_string_func_label` is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
-
 
 progress_logger: log function, default = logger.info
     :ref:`progress_logger_label` defines what logging function to use specifically for progress reporting. This function is only used when progress logging is enabled which happens by setting log_frequency_in_sec to anything above zero.

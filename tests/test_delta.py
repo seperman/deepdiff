@@ -5,7 +5,7 @@ import json
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
-from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW
+from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     ELEM_NOT_FOUND_TO_ADD_MSG,
@@ -1330,3 +1330,86 @@ class TestDeltaOther:
 
         delta_reloaded_again = Delta(delta_file=the_file, deserializer=json.loads)
         assert t2 == delta_reloaded_again + t1
+
+
+class TestDeltaCompareFunc:
+
+    @staticmethod
+    def compare_func(x, y, level):
+        if (not isinstance(x, dict) or not isinstance(y, dict)):
+            raise CannotCompare
+        if(level.path() == "root['path2']"):
+            if (x["ID"] == y["ID"]):
+                return True
+            return False
+
+        if("id" in x and "id" in y):
+            if (x["id"] == y["id"]):
+                return True
+            return False
+
+        raise CannotCompare
+
+    def test_compare_func1(self, compare_func_t1, compare_func_t2, compare_func_result1):
+
+        ddiff = DeepDiff(
+            compare_func_t1, compare_func_t2,
+            iterable_compare_func=self.compare_func, verbose_level=1)
+        assert compare_func_result1 == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = compare_func_t1 + delta
+        assert compare_func_t2 == recreated_t2
+
+    def test_compare_func_with_duplicates_removed(self):
+        t1 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
+        t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
+        expected = {
+            'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}},
+            'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}},
+            'iterable_item_moved': {
+                'root[0]': {'new_path': 'root[2]', 'value': {'id': 1, 'val': 3}},
+                'root[3]': {'new_path': 'root[0]', 'value': {'id': 3, 'val': 3}}
+            }
+        }
+        assert expected == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = t1 + delta
+        assert t2 == recreated_t2
+
+    def test_compare_func_with_duplicates_added(self):
+        t1 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
+        t2 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
+        expected = {
+            'values_changed': {"root[2]['val']": {'new_value': 1, 'old_value': 3}},
+            'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}},
+            'iterable_item_moved': {
+                'root[2]': {'new_path': 'root[0]', 'value': {'id': 1, 'val': 1}},
+                'root[0]': {'new_path': 'root[3]', 'value': {'id': 3, 'val': 3}}
+            }
+        }
+        assert expected == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = t1 + delta
+        assert t2 == recreated_t2
+
+    def test_compare_func_swap(self):
+        t1 = [{'id': 1, 'val': 1}, {'id': 1, 'val': 3}]
+        t2 = [{'id': 1, 'val': 3}, {'id': 1, 'val': 1}]
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
+        expected = {'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}, "root[1]['val']": {'new_value': 1, 'old_value': 3}}}
+        assert expected == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = t1 + delta
+        assert t2 == recreated_t2
+
+    def test_compare_func_path_specific(self):
+        t1 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 4, 'val': 3}, {'ID': 3, 'val': 1}, ], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
+        t2 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 3, 'val': 1}, {'ID': 4, 'val': 3}], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
+        expected = {'iterable_item_moved': {"root['path2'][0]": {'new_path': "root['path2'][1]", 'value': {'ID': 4, 'val': 3}},"root['path2'][1]": {'new_path': "root['path2'][0]", 'value': {'ID': 3, 'val': 1}}}}
+        assert expected == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = t1 + delta
+        assert t2 == recreated_t2

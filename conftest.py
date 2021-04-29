@@ -62,3 +62,21 @@ def nested_b_t2():
 def nested_b_result():
     with open(os.path.join(FIXTURES_DIR, 'nested_b_result.json')) as the_file:
         return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def compare_func_t1():
+    with open(os.path.join(FIXTURES_DIR, 'compare_func_t1.json')) as the_file:
+        return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def compare_func_t2():
+    with open(os.path.join(FIXTURES_DIR, 'compare_func_t2.json')) as the_file:
+        return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def compare_func_result1():
+    with open(os.path.join(FIXTURES_DIR, 'compare_func_result1.json')) as the_file:
+        return json.load(the_file)

@@ -260,9 +260,14 @@ class Delta:
                                         value=obj, action=parent_to_obj_action)
 
     def _do_iterable_item_added(self):
-        iterable_item_added = self.diff.get('iterable_item_added')
+        iterable_item_added = self.diff.get('iterable_item_added', {})
+        iterable_item_moved = self.diff.get('iterable_item_moved')
+        if iterable_item_moved:
+            added_dict = {v["new_path"]: v["value"] for k, v in iterable_item_moved.items()}
+            iterable_item_added.update(added_dict)
+
         if iterable_item_added:
-            self._do_item_added(iterable_item_added)
+            self._do_item_added(iterable_item_added, insert=True)
 
     def _do_dictionary_item_added(self):
         dictionary_item_added = self.diff.get('dictionary_item_added')
@@ -274,7 +279,7 @@ class Delta:
         if attribute_added:
             self._do_item_added(attribute_added)
 
-    def _do_item_added(self, items, sort=True):
+    def _do_item_added(self, items, sort=True, insert=False):
         if sort:
             # sorting items by their path so that the items with smaller index
             # are applied first (unless `sort` is `False` so that order of
@@ -289,6 +294,11 @@ class Delta:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
             else:
                 continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
+
+            # Insert is only true for iterables, make sure it is a valid index.
+            if(insert and elem < len(obj)):
+                obj.insert(elem, None)
+
             self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
                                 obj, elements, path, elem, action, new_value)
 
@@ -397,7 +407,14 @@ class Delta:
             self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_iterable_item_removed(self):
-        iterable_item_removed = self.diff.get('iterable_item_removed')
+        iterable_item_removed = self.diff.get('iterable_item_removed', {})
+
+        iterable_item_moved = self.diff.get('iterable_item_moved')
+        if iterable_item_moved:
+            # These will get added back during items_added
+            removed_dict = {k: v["value"] for k, v in iterable_item_moved.items()}
+            iterable_item_removed.update(removed_dict)
+
         if iterable_item_removed:
             self._do_item_removed(iterable_item_removed)
 

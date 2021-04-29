@@ -44,6 +44,10 @@ class DeepSearch(dict):
 
     use_regexp: Boolean, default = False
 
+    strict_checking: Boolean, default = True
+        If True, it will check the type of the object to match, so when searching for '1234',
+        it will NOT match the int 1234. Currently this only affects the numeric values searching.
+
     **Returns**
 
         A DeepSearch object that has the matched paths and matched values.
@@ -88,6 +92,7 @@ class DeepSearch(dict):
                  case_sensitive=False,
                  match_string=False,
                  use_regexp=False,
+                 strict_checking=True,
                  **kwargs):
         if kwargs:
             raise ValueError((
@@ -110,8 +115,14 @@ class DeepSearch(dict):
             matched_values=self.__set_or_dict(),
             unprocessed=[])
         self.use_regexp = use_regexp
+        if not strict_checking and isinstance(item, numbers):
+            item = str(item)
         if self.use_regexp:
-            item = re.compile(item)
+            try:
+                item = re.compile(item)
+            except TypeError as e:
+                raise TypeError(f"The passed item of {item} is not usable for regex: {e}") from None
+        self.strict_checking = strict_checking
 
         # Cases where user wants to match exact string item
         self.match_string = match_string
@@ -266,7 +277,15 @@ class DeepSearch(dict):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_numbers(self, obj, item, parent):
-        if item == obj:
+        if (
+            item == obj or (
+                not self.strict_checking and (
+                    item == str(obj) or (
+                        self.use_regexp and item.search(str(obj))
+                    )
+                )
+            )
+        ):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
     def __search_tuple(self, obj, item, parent, parents_ids):

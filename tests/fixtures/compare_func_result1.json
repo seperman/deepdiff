@@ -1,0 +1,59 @@
+{
+  "dictionary_item_added": [
+    "root['Cars'][3]['dealers']"
+  ],
+  "dictionary_item_removed": [
+    "root['Cars'][3]['production']"
+  ],
+  "values_changed": {
+    "root['Cars'][0]['dealers'][1]['quantity']": {
+      "new_value": 50,
+      "old_value": 20
+    },
+    "root['Cars'][2]['model_numbers'][2]": {
+      "new_value": 3,
+      "old_value": 4
+    },
+    "root['Cars'][3]['model']": {
+      "new_value": "Supra",
+      "old_value": "supra"
+    }
+  },
+  "iterable_item_added": {
+    "root['Cars'][0]['dealers'][1]": {
+      "id": 200,
+      "address": "200 Fake St",
+      "quantity": 10
+    },
+    "root['Cars'][2]['model_numbers'][3]": 4,
+    "root['Cars'][0]": {
+      "id": "7",
+      "make": "Toyota",
+      "model": "8Runner"
+    }
+  },
+  "iterable_item_removed": {
+    "root['Cars'][0]['dealers'][0]": {
+      "id": 103,
+      "address": "103 Fake St",
+      "quantity": 50
+    },
+    "root['Cars'][1]": {
+      "id": "2",
+      "make": "Toyota",
+      "model": "Highlander",
+      "dealers": [
+        {
+          "id": 123,
+          "address": "123 Fake St",
+          "quantity": 50
+        },
+        {
+          "id": 125,
+          "address": "125 Fake St",
+          "quantity": 20
+        }
+      ]
+    }
+  }
+}

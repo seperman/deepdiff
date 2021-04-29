@@ -60,9 +60,9 @@ author = 'Sep Dehpour'
 # built documents.
 #
 # The short X.Y version.
-version = '5.3.0'
+version = '5.5.0'
 # The full version, including alpha/beta/rc tags.
-release = '5.3.0'
+release = '5.5.0'
 
 load_dotenv(override=True)
 DOC_VERSION = os.environ.get('DOC_VERSION', version)
@@ -132,7 +132,7 @@ html_theme_options = {
     'extra_nav_links': {
         'Zepworks': 'https://zepworks.com', 'Github': 'https://github.com/seperman/deepdiff'},
     'show_relbars': True,
-    'github_repo': 'deepdiff',
+    # 'github_repo': 'deepdiff',
     'anchor': '#DDD',
     'touch_icon': 'logo.svg',
     'github_button': True,
