@@ -850,6 +850,10 @@ class TestCompareFuncIgnoreOrder:
         assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2
 
+        ddiff3 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func, view='tree')
+        assert 1 == ddiff3['iterable_item_removed'][0].t1
+        assert 1 == ddiff3['iterable_item_added'][0].t2
+
     def test_ignore_order_with_compare_func_can_throw_cannot_compare(self):
         t1 = [
             {1},
