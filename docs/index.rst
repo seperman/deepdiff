@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.4.0 documentation!
+DeepDiff 5.5.0 documentation!
 =============================
 
 *****************
@@ -64,10 +64,10 @@ DeepDiff 5.5.0
     [4, 'b', 2]
 
 
-Deepdiff 5.4.0
+Deepdiff 5.5.0
 --------------
 
-Deepdiff 5.4.0 comes with regular expressions in the DeepSearch and grep modules:
+Deepdiff 5.5.0 comes with regular expressions in the DeepSearch and grep modules:
 
 
 .. code:: python
