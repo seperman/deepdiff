@@ -783,28 +783,6 @@ class TestIgnoreOrder:
 
 class TestCompareFuncIgnoreOrder:
 
-    EXPECTED = {
-        'values_changed': {
-            "root[2]['id']": {
-                'new_value': 2,
-                'old_value': 3
-            },
-            "root[1]['id']": {
-                'new_value': 3,
-                'old_value': 2
-            }
-        }
-    }
-
-    EXPECTED_WITH_COMPARE_FUNC = {
-        'iterable_item_added': {
-            "root[2]['value'][2]": 1
-        },
-        'iterable_item_removed': {
-            "root[1]['value'][2]": 1
-        }
-    }
-
     def test_ignore_order_with_compare_func_to_guide_comparison(self):
         t1 = [
             {
@@ -836,9 +814,31 @@ class TestCompareFuncIgnoreOrder:
             },
         ]
 
+        expected = {
+            'values_changed': {
+                "root[2]['id']": {
+                    'new_value': 2,
+                    'old_value': 3
+                },
+                "root[1]['id']": {
+                    'new_value': 3,
+                    'old_value': 2
+                }
+            }
+        }
+
+        expected_with_compare_func = {
+            'iterable_item_added': {
+                "root[2]['value'][2]": 1
+            },
+            'iterable_item_removed': {
+                "root[1]['value'][2]": 1
+            }
+        }
+
         ddiff = DeepDiff(t1, t2, ignore_order=True)
 
-        assert self.EXPECTED == ddiff
+        assert expected == ddiff
 
         def compare_func(x, y, level=None):
             try:
@@ -847,12 +847,12 @@ class TestCompareFuncIgnoreOrder:
                 raise CannotCompare() from None
 
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func)
-        assert self.EXPECTED_WITH_COMPARE_FUNC == ddiff2
+        assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2
 
     def test_ignore_order_with_compare_func_can_throw_cannot_compare(self):
         t1 = [
-            {},
+            {1},
             {
                 'id': 2,
                 'value': [7, 8, 1]
@@ -875,8 +875,45 @@ class TestCompareFuncIgnoreOrder:
             {},
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        assert self.EXPECTED == ddiff
+        expected = {
+            'type_changes': {
+                'root[0]': {
+                    'old_type': set,
+                    'new_type': dict,
+                    'old_value': {1},
+                    'new_value': {}
+                }
+            },
+            'values_changed': {
+                "root[2]['id']": {
+                    'new_value': 2,
+                    'old_value': 3
+                },
+                "root[1]['id']": {
+                    'new_value': 3,
+                    'old_value': 2
+                }
+            }
+        }
+        expected_with_compare_func = {
+            'type_changes': {
+                'root[0]': {
+                    'old_type': set,
+                    'new_type': dict,
+                    'old_value': {1},
+                    'new_value': {}
+                }
+            },
+            'iterable_item_added': {
+                "root[2]['value'][2]": 1
+            },
+            'iterable_item_removed': {
+                "root[1]['value'][2]": 1
+            }
+        }
+
+        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order=True)
+        assert expected == ddiff
 
         def compare_func(x, y, level=None):
             try:
@@ -884,6 +921,6 @@ class TestCompareFuncIgnoreOrder:
             except Exception:
                 raise CannotCompare() from None
 
-        ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func)
-        assert self.EXPECTED_WITH_COMPARE_FUNC == ddiff2
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, iterable_compare_func=compare_func)
+        assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2

@@ -879,9 +879,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if id(removed_hash_obj.item) in parents_ids:
                     continue
 
+                _distance = None
                 if pre_calced_distances:
-                    _distance = pre_calced_distances["{}--{}".format(added_hash, removed_hash)]
-                else:
+                    _distance = pre_calced_distances.get("{}--{}".format(added_hash, removed_hash))
+                if _distance is None:
                     _distance = self._get_rough_distance_of_hashed_objs(
                         added_hash, removed_hash, added_hash_obj, removed_hash_obj, _original_type)
                 # Left for future debugging
