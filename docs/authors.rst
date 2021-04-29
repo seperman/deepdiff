@@ -43,6 +43,7 @@ Thanks to the following people for their contributions:
 -  Tim Klein `timjklein36`_ for retaining the order of multiple dictionary items added via Delta
 -  Wilhelm Schürmann `wbsch`_ for fixing the typo with yml files.
 -  `lyz_code`_ for adding support for regular expressions in DeepSearch and strict_checking feature in DeepSearch.
+-  `dtorres_sf`_ for adding the option for custom compare function
 
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
@@ -77,6 +78,7 @@ Thanks to the following people for their contributions:
 .. _timjklein36: https://github.com/timjklein36
 .. _wbsch: https://github.com/wbsch
 .. _lyz_code: https://github.com/lyz-code
+.. _dtorres_sf: https://github.com/dtorres-sf
 
 
 Back to :doc:`/index`

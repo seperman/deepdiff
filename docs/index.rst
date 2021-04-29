@@ -39,15 +39,51 @@ NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version t
 What is New
 ***********
 
-DeepDiff 5.5.0
---------------
+New In DeepDiff 5.5.0
+---------------------
 
-1. New option called `iterable_compare_func` that takes a function pointer to compare two items. It function takes two parameters and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order.
-2. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
+1. New option called `iterable_compare_func` that takes a function pointer to compare two items. It function takes two parameters and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
 
+    >>> from deepdiff import DeepDiff
+    >>> from deepdiff.helper import CannotCompare
+    >>>
+    >>> t1 = [
+    ...     {
+    ...         'id': 2,
+    ...         'value': [7, 8, 1]
+    ...     },
+    ...     {
+    ...         'id': 3,
+    ...         'value': [7, 8],
+    ...     },
+    ... ]
+    >>>
+    >>> t2 = [
+    ...     {
+    ...         'id': 2,
+    ...         'value': [7, 8]
+    ...     },
+    ...     {
+    ...         'id': 3,
+    ...         'value': [7, 8, 1],
+    ...     },
+    ... ]
+    >>>
+    >>> DeepDiff(t1, t2)
+    {'values_changed': {"root[0]['id']": {'new_value': 2, 'old_value': 1}, "root[0]['value'][0]": {'new_value': 7, 'old_value': 1}, "root[1]['id']": {'new_value': 3, 'old_value': 2}, "root[2]['id']": {'new_value': 1, 'old_value': 3}, "root[2]['value'][0]": {'new_value': 1, 'old_value': 7}}, 'iterable_item_added': {"root[0]['value'][1]": 8}, 'iterable_item_removed': {"root[2]['value'][1]": 8}}
 
+Now let's use the custom compare function to guide DeepDiff in what to compare with what:
 
-3. You can get the path() of item in the tree view in the list format instead of string representation by passing path(output_format='list')
+    >>> def compare_func(x, y, level=None):
+    ...     try:
+    ...         return x['id'] == y['id']
+    ...     except Exception:
+    ...         raise CannotCompare() from None
+    ...
+    >>> DeepDiff(t1, t2, iterable_compare_func=compare_func)
+    {'iterable_item_added': {"root[2]['value'][2]": 1}, 'iterable_item_removed': {"root[1]['value'][2]": 1}}
+
+2. You can get the path() of item in the tree view in the list format instead of string representation by passing path(output_format='list')
 
 .. code:: python
 
@@ -64,10 +100,10 @@ DeepDiff 5.5.0
     [4, 'b', 2]
 
 
-Deepdiff 5.5.0
---------------
+New In Deepdiff 5.3.0
+---------------------
 
-Deepdiff 5.5.0 comes with regular expressions in the DeepSearch and grep modules:
+Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
 
 
 .. code:: python
@@ -173,6 +209,7 @@ References
    commandline
    changelog
    authors
+   support
 
 
 Indices and tables
