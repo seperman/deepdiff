@@ -2,7 +2,8 @@ import datetime
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
-    cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq, dict_)
+    cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq, dict_,
+    CannotCompare)
 from collections.abc import Mapping, Iterable
 
 
@@ -31,6 +32,7 @@ class DistanceMixin:
 
         _distance = get_numeric_types_distance(
             self.t1, self.t2, max_=self.cutoff_distance_for_pairs)
+
         if _distance is not not_found:
             return _distance
 
@@ -71,6 +73,26 @@ class DistanceMixin:
             apply_hash=True,
             **self.deephash_parameters,
         )
+
+    def _precalculate_distance_by_custom_compare_func(
+            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
+
+        pre_calced_distances = dict_()
+        for added_hash in hashes_added:
+            for removed_hash in hashes_removed:
+                try:
+                    is_close_distance = self.iterable_compare_func(t2_hashtable[added_hash].item, t1_hashtable[removed_hash].item)
+                except CannotCompare:
+                    pass
+                else:
+                    if is_close_distance:
+                        # an arbitrary small distance if math_epsilon is not defined
+                        distance = self.math_epsilon or 0.000001
+                    else:
+                        distance = 1
+                    pre_calced_distances["{}--{}".format(added_hash, removed_hash)] = distance
+
+        return pre_calced_distances
 
     def _precalculate_numpy_arrays_distance(
             self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):

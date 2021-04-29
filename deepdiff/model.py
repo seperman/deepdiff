@@ -193,7 +193,7 @@ class TextResult(ResultDict):
     def _from_tree_iterable_item_moved(self, tree):
         if 'iterable_item_moved' in tree:
             for change in tree['iterable_item_moved']:
-                the_changed = {'new_path': change.path(use_t2=True), 'new_value': change.t2}
+                the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
                 self['iterable_item_moved'][change.path(
                     force=FORCE_DEFAULT)] = the_changed
 
@@ -584,7 +584,7 @@ class DiffLevel:
     def _format_result(root, result):
         return None if result is None else "{}{}".format(root, result)
 
-    def path(self, root="root", force=None, get_parent_too=False, use_t2=False):
+    def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str'):
         """
         A python syntax string describing how to descend to this level, assuming the top level object is called root.
         Returns None if the path is not representable as a string.
@@ -594,6 +594,9 @@ class DiffLevel:
         Note: We will follow the left side of the comparison branch, i.e. using the t1's to build the path.
         Using t1 or t2 should make no difference at all, except for the last step of a child-added/removed relationship.
         If it does in any other case, your comparison path is corrupt.
+
+        **Parameters**
+
         :param root: The result string shall start with this var name
         :param force: Bends the meaning of "no string representation".
                       If None:
@@ -604,9 +607,12 @@ class DiffLevel:
                       If 'fake':
                         Will try to produce an output optimized for readability.
                         This will pretend all iterables are subscriptable, for example.
+        :param output_format: The format of the output. The options are 'str' which is the default and produces a
+                              string representation of the path or 'list' to produce a list of keys and attributes
+                              that produce the path.
         """
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
-        cache_key = "{}{}{}".format(force, get_parent_too, use_t2)
+        cache_key = "{}{}{}{}".format(force, get_parent_too, use_t2, output_format)
         if cache_key in self._path:
             cached = self._path[cache_key]
             if get_parent_too:
@@ -615,7 +621,11 @@ class DiffLevel:
             else:
                 return self._format_result(root, cached)
 
-        result = parent = param = ""
+        if output_format == 'str':
+            result = parent = param = ""
+        else:
+            result = []
+
         level = self.all_up  # start at the root
 
         # traverse all levels of this relationship
@@ -631,25 +641,31 @@ class DiffLevel:
                 break
 
             # Build path for this level
-            item = next_rel.get_param_repr(force)
-            if item:
-                parent = result
-                param = next_rel.param
-                result += item
-            else:
-                # it seems this path is not representable as a string
-                result = None
-                break
+            if output_format == 'str':
+                item = next_rel.get_param_repr(force)
+                if item:
+                    parent = result
+                    param = next_rel.param
+                    result += item
+                else:
+                    # it seems this path is not representable as a string
+                    result = None
+                    break
+            elif output_format == 'list':
+                result.append(next_rel.param)
 
             # Prepare processing next level
             level = level.down
 
-        if get_parent_too:
-            self._path[cache_key] = (parent, param, result)
-            output = (self._format_result(root, parent), param, self._format_result(root, result))
+        if output_format == 'str':
+            if get_parent_too:
+                self._path[cache_key] = (parent, param, result)
+                output = (self._format_result(root, parent), param, self._format_result(root, result))
+            else:
+                self._path[cache_key] = result
+                output = self._format_result(root, result)
         else:
-            self._path[cache_key] = result
-            output = self._format_result(root, result)
+            output = result
         return output
 
     def create_deeper(self,

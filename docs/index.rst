@@ -39,6 +39,34 @@ NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version t
 What is New
 ***********
 
+DeepDiff 5.4.0
+--------------
+
+1. New option called `iterable_compare_func` that takes a function pointer to compare two items. It function takes two parameters and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order.
+2. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
+
+
+
+3. You can get the path() of item in the tree view in the list format instead of string representation by passing path(output_format='list')
+
+.. code:: python
+
+    >>> from deepdiff import DeepDiff
+    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
+    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
+    >>> ddiff = DeepDiff(t1, t2, view='tree')
+    >>> ddiff
+    {'iterable_item_removed': [<root[4]['b'][2] t1:3, t2:not present>, <root[4]['b'][3] t1:4, t2:not present>]}
+    >>> removed = ddiff['iterable_item_removed'][0]
+    >>> removed.path()
+    "root[4]['b'][2]"
+    >>> removed.path(output_format='list')
+    [4, 'b', 2]
+
+
+Deepdiff 5.3.0
+--------------
+
 Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
 
 

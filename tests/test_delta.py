@@ -1362,7 +1362,14 @@ class TestDeltaCompareFunc:
         t1 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
         t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
-        expected = {'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}}, 'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}}, 'iterable_item_moved': {'root[0]': {'new_path': 'root[2]', 'new_value': {'id': 1, 'val': 3}}, 'root[3]': {'new_path': 'root[0]', 'new_value': {'id': 3, 'val': 3}}}}
+        expected = {
+            'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}},
+            'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}},
+            'iterable_item_moved': {
+                'root[0]': {'new_path': 'root[2]', 'value': {'id': 1, 'val': 3}},
+                'root[3]': {'new_path': 'root[0]', 'value': {'id': 3, 'val': 3}}
+            }
+        }
         assert expected == ddiff
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
@@ -1372,7 +1379,14 @@ class TestDeltaCompareFunc:
         t1 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
         t2 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
-        expected = {'values_changed': {"root[2]['val']": {'new_value': 1, 'old_value': 3}}, 'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}}, 'iterable_item_moved': {'root[2]': {'new_path': 'root[0]', 'new_value': {'id': 1, 'val': 1}}, 'root[0]': {'new_path': 'root[3]', 'new_value': {'id': 3, 'val': 3}}}}
+        expected = {
+            'values_changed': {"root[2]['val']": {'new_value': 1, 'old_value': 3}},
+            'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}},
+            'iterable_item_moved': {
+                'root[2]': {'new_path': 'root[0]', 'value': {'id': 1, 'val': 1}},
+                'root[0]': {'new_path': 'root[3]', 'value': {'id': 3, 'val': 3}}
+            }
+        }
         assert expected == ddiff
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
@@ -1392,7 +1406,7 @@ class TestDeltaCompareFunc:
         t1 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 4, 'val': 3}, {'ID': 3, 'val': 1}, ], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
         t2 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 3, 'val': 1}, {'ID': 4, 'val': 3}], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
-        expected = {'iterable_item_moved': {"root['path2'][0]": {'new_path': "root['path2'][1]", 'new_value': {'ID': 4, 'val': 3}},"root['path2'][1]": {'new_path': "root['path2'][0]", 'new_value': {'ID': 3, 'val': 1}}}}
+        expected = {'iterable_item_moved': {"root['path2'][0]": {'new_path': "root['path2'][1]", 'value': {'ID': 4, 'val': 3}},"root['path2'][1]": {'new_path': "root['path2'][0]", 'value': {'ID': 3, 'val': 1}}}}
         assert expected == ddiff
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta

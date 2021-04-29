@@ -263,7 +263,7 @@ class Delta:
         iterable_item_added = self.diff.get('iterable_item_added', {})
         iterable_item_moved = self.diff.get('iterable_item_moved')
         if iterable_item_moved:
-            added_dict = {v["new_path"]: v["new_value"] for k, v in iterable_item_moved.items()}
+            added_dict = {v["new_path"]: v["value"] for k, v in iterable_item_moved.items()}
             iterable_item_added.update(added_dict)
 
         if iterable_item_added:
@@ -412,12 +412,11 @@ class Delta:
         iterable_item_moved = self.diff.get('iterable_item_moved')
         if iterable_item_moved:
             # These will get added back during items_added
-            removed_dict = {k: v["new_value"] for k, v in iterable_item_moved.items()}
+            removed_dict = {k: v["value"] for k, v in iterable_item_moved.items()}
             iterable_item_removed.update(removed_dict)
 
         if iterable_item_removed:
             self._do_item_removed(iterable_item_removed)
-
 
     def _do_dictionary_item_removed(self):
         dictionary_item_removed = self.diff.get('dictionary_item_removed')

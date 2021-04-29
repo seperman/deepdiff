@@ -626,7 +626,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         except CannotCompare:
             return self._compare_in_order(level)
 
-
     def _diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self._iterables_subscriptable(level.t1, level.t2)
@@ -816,6 +815,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 _shared_parameters=self._shared_parameters,
                 view=DELTA_VIEW,
                 _original_type=_original_type,
+                iterable_compare_func=self.iterable_compare_func,
             )
             _distance = diff._get_rough_distance()
             if cache_key and self._stats[DISTANCE_CACHE_ENABLED]:
@@ -864,6 +864,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # was explicitly passed or a homogeneous array is detected.
             # Numpy is needed for this optimization.
             pre_calced_distances = self._precalculate_numpy_arrays_distance(
+                hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
+
+        if hashes_added and hashes_removed and self.iterable_compare_func and len(hashes_added) > 1 and len(hashes_removed) > 1:
+            pre_calced_distances = self._precalculate_distance_by_custom_compare_func(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
 
         for added_hash in hashes_added:
