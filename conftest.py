@@ -77,6 +77,6 @@ def compare_func_t2():
 
 
 @pytest.fixture(scope='class')
-def compare_func_result():
-    with open(os.path.join(FIXTURES_DIR, 'compare_func_result.json')) as the_file:
+def compare_func_result1():
+    with open(os.path.join(FIXTURES_DIR, 'compare_func_result1.json')) as the_file:
         return json.load(the_file)

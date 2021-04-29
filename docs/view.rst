@@ -52,7 +52,7 @@ You can traverse through the tree elements!
 
     +---------------------------------------------------------------+
     |                                                               |
-    |    parent(t1)              parent node            parent(t2)  |
+    |    parent(t1)              parent node            parent(t2)  |----level
     |      +                          ^                     +       |
     +------|--------------------------|---------------------|-------+
            |                      |   | up                  |
@@ -61,13 +61,13 @@ You can traverse through the tree elements!
            |                 down |   |                     |
     +------|----------------------|-------------------------|-------+
     |      v                      v                         v       |
-    |    child(t1)              child node               child(t2)  |
+    |    child(t1)              child node               child(t2)  |----level
     |                                                               |
     +---------------------------------------------------------------+
 
 
-:up: Move up to the parent node
-:down: Move down to the child node
+:up: Move up to the parent node aka parent level
+:down: Move down to the child node aka child level
 :path(): Get the path to the current node in string representation, path(output_format='list') gives you the path in list representation.
 :t1: The first item in the current node that is being diffed
 :t2: The second item in the current node that is being diffed

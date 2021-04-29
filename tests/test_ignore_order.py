@@ -780,6 +780,31 @@ class TestIgnoreOrder:
         expected2 = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies'}}
         assert expected2 == diff2
 
+
+class TestCompareFuncIgnoreOrder:
+
+    EXPECTED = {
+        'values_changed': {
+            "root[2]['id']": {
+                'new_value': 2,
+                'old_value': 3
+            },
+            "root[1]['id']": {
+                'new_value': 3,
+                'old_value': 2
+            }
+        }
+    }
+
+    EXPECTED_WITH_COMPARE_FUNC = {
+        'iterable_item_added': {
+            "root[2]['value'][2]": 1
+        },
+        'iterable_item_removed': {
+            "root[1]['value'][2]": 1
+        }
+    }
+
     def test_ignore_order_with_compare_func_to_guide_comparison(self):
         t1 = [
             {
@@ -812,19 +837,8 @@ class TestIgnoreOrder:
         ]
 
         ddiff = DeepDiff(t1, t2, ignore_order=True)
-        expected = {
-            'values_changed': {
-                "root[2]['id']": {
-                    'new_value': 2,
-                    'old_value': 3
-                },
-                "root[1]['id']": {
-                    'new_value': 3,
-                    'old_value': 2
-                }
-            }
-        }
-        assert expected == ddiff
+
+        assert self.EXPECTED == ddiff
 
         def compare_func(x, y, level=None):
             try:
@@ -832,15 +846,44 @@ class TestIgnoreOrder:
             except Exception:
                 raise CannotCompare() from None
 
-        expected2 = {
-            'iterable_item_added': {
-                "root[2]['value'][2]": 1
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func)
+        assert self.EXPECTED_WITH_COMPARE_FUNC == ddiff2
+        assert ddiff != ddiff2
+
+    def test_ignore_order_with_compare_func_can_throw_cannot_compare(self):
+        t1 = [
+            {},
+            {
+                'id': 2,
+                'value': [7, 8, 1]
             },
-            'iterable_item_removed': {
-                "root[1]['value'][2]": 1
-            }
-        }
+            {
+                'id': 3,
+                'value': [7, 8],
+            },
+        ]
+
+        t2 = [
+            {
+                'id': 2,
+                'value': [7, 8]
+            },
+            {
+                'id': 3,
+                'value': [7, 8, 1],
+            },
+            {},
+        ]
+
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        assert self.EXPECTED == ddiff
+
+        def compare_func(x, y, level=None):
+            try:
+                return x['id'] == y['id']
+            except Exception:
+                raise CannotCompare() from None
 
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, iterable_compare_func=compare_func)
-        assert expected2 == ddiff2
+        assert self.EXPECTED_WITH_COMPARE_FUNC == ddiff2
         assert ddiff != ddiff2

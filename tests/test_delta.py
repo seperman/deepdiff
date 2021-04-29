@@ -1350,10 +1350,12 @@ class TestDeltaCompareFunc:
 
         raise CannotCompare
 
-    def test_pass(self, compare_func_t1, compare_func_t2, compare_func_result):
+    def test_compare_func1(self, compare_func_t1, compare_func_t2, compare_func_result1):
 
-        ddiff = DeepDiff(compare_func_t1, compare_func_t2, iterable_compare_func=self.compare_func)
-        assert compare_func_result == ddiff
+        ddiff = DeepDiff(
+            compare_func_t1, compare_func_t2,
+            iterable_compare_func=self.compare_func, verbose_level=1)
+        assert compare_func_result1 == ddiff
         delta = Delta(ddiff)
         recreated_t2 = compare_func_t1 + delta
         assert compare_func_t2 == recreated_t2
@@ -1361,7 +1363,7 @@ class TestDeltaCompareFunc:
     def test_compare_func_with_duplicates_removed(self):
         t1 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
         t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
-        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
             'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}},
             'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}},
@@ -1378,7 +1380,7 @@ class TestDeltaCompareFunc:
     def test_compare_func_with_duplicates_added(self):
         t1 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
         t2 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
-        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
             'values_changed': {"root[2]['val']": {'new_value': 1, 'old_value': 3}},
             'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}},
@@ -1395,7 +1397,7 @@ class TestDeltaCompareFunc:
     def test_compare_func_swap(self):
         t1 = [{'id': 1, 'val': 1}, {'id': 1, 'val': 3}]
         t2 = [{'id': 1, 'val': 3}, {'id': 1, 'val': 1}]
-        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}, "root[1]['val']": {'new_value': 1, 'old_value': 3}}}
         assert expected == ddiff
         delta = Delta(ddiff)
@@ -1405,7 +1407,7 @@ class TestDeltaCompareFunc:
     def test_compare_func_path_specific(self):
         t1 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 4, 'val': 3}, {'ID': 3, 'val': 1}, ], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
         t2 = {"path1": [{'id': 1, 'val': 1}, {'id': 2, 'val': 3}], "path2": [{'ID': 3, 'val': 1}, {'ID': 4, 'val': 3}], "path3": [{'no_id': 5, 'val': 1}, {'no_id': 6, 'val': 3}]}
-        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func)
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {'iterable_item_moved': {"root['path2'][0]": {'new_path': "root['path2'][1]", 'value': {'ID': 4, 'val': 3}},"root['path2'][1]": {'new_path': "root['path2'][0]", 'value': {'ID': 3, 'val': 1}}}}
         assert expected == ddiff
         delta = Delta(ddiff)
