@@ -93,7 +93,7 @@ ignore_nan_inequality: Boolean, default = False
 
 iterable_compare_func:
     :ref:`iterable_compare_func_label`:
-    There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. It function takes two parameters and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.
+    There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. The function takes three parameters (t1, t2, level) and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.
 
 ignore_private_variables: Boolean, default = True
     :ref:`ignore_private_variables_label`
