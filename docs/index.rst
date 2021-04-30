@@ -42,7 +42,7 @@ What is New
 New In DeepDiff 5.5.0
 ---------------------
 
-1. New option called `iterable_compare_func` that takes a function pointer to compare two items. It function takes two parameters and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
+1. New option called `iterable_compare_func` that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
 
     >>> from deepdiff import DeepDiff
     >>> from deepdiff.helper import CannotCompare
