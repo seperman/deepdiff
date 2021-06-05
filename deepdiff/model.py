@@ -182,7 +182,7 @@ class TextResult(ResultDict):
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
-        if 'values_changed' in tree:
+        if 'values_changed' in tree and self.verbose_level > 0:
             for change in tree['values_changed']:
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
                 self['values_changed'][change.path(
