@@ -928,3 +928,88 @@ class TestCompareFuncIgnoreOrder:
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, iterable_compare_func=compare_func)
         assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2
+
+
+class TestDynamicIgnoreOrder:
+    def test_ignore_order_func(self):
+        t1 = {
+            "order_matters": [
+                {1},
+                {
+                    'id': 2,
+                    'value': [7, 8, 1]
+                },
+                {
+                    'id': 3,
+                    'value': [7, 8],
+                },
+            ],
+            "order_does_not_matter": [
+                {1},
+                {
+                    'id': 2,
+                    'value': [7, 8, 1]
+                },
+                {
+                    'id': 3,
+                    'value': [7, 8],
+                },
+            ]
+        }
+
+        t2 = {
+            "order_matters": [
+                {
+                    'id': 2,
+                    'value': [7, 8]
+                },
+                {
+                    'id': 3,
+                    'value': [7, 8, 1],
+                },
+                {},
+            ],
+            "order_does_not_matter": [
+                {
+                    'id': 2,
+                    'value': [7, 8]
+                },
+                {
+                    'id': 3,
+                    'value': [7, 8, 1],
+                },
+                {},
+            ]
+        }
+
+        def ignore_order_func(level):
+            return "order_does_not_matter" in level.path()
+
+        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order_func=ignore_order_func)
+
+        expected = {
+            'type_changes': {
+                "root['order_matters'][0]": {
+                    'old_type': set,
+                    'new_type': dict,
+                    'old_value': {1},
+                    'new_value': {'id': 2, 'value': [7, 8]}
+                },
+                "root['order_does_not_matter'][0]": {
+                    'old_type': set,
+                    'new_type': dict,
+                    'old_value': {1},
+                    'new_value': {}
+                }
+            },
+            'dictionary_item_removed': [
+                "root['order_matters'][2]['id']",
+                "root['order_matters'][2]['value']"
+            ],
+            'values_changed': {
+                "root['order_matters'][1]['id']": {'new_value': 3, 'old_value': 2},
+                "root['order_does_not_matter'][2]['id']": {'new_value': 2, 'old_value': 3},
+                "root['order_does_not_matter'][1]['id']": {'new_value': 3, 'old_value': 2}
+            }
+        }
+        assert expected == ddiff

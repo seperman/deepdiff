@@ -119,6 +119,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  hasher=None,
                  hashes=None,
                  ignore_order=False,
+                 ignore_order_func=None,
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
@@ -147,19 +148,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         super().__init__()
         if kwargs:
             raise ValueError((
-                                 "The following parameter(s) are not valid: %s\n"
-                                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
-                                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
-                                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
-                                 "view, hasher, hashes, max_passes, max_diffs, "
-                                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
-                                 "math_epsilon, iterable_compare_func, _original_type, "
-                                 "custom_operators, "
-                                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
+                "The following parameter(s) are not valid: %s\n"
+                "The valid parameters are ignore_order, report_repetition, significant_digits, "
+                "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
+                "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
+                "view, hasher, hashes, max_passes, max_diffs, "
+                "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
+                "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
+                "math_epsilon, iterable_compare_func, _original_type, "
+                "ignore_order_func, custom_operators, "
+                "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
+            # compatibility
+            if "ignore_order_func" not in _parameters:
+                _parameters["ignore_order_func"] = lambda *_args, **_kwargs: _parameters["ignore_order_func"]
+
             if "custom_operators" not in _parameters:
                 _parameters["custom_operators"] = []
 
@@ -167,6 +172,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
+
+            if ignore_order_func is not None:
+                self.ignore_order_func = ignore_order_func
+            else:
+                self.ignore_order_func = lambda *_args, **_kwargs: ignore_order
+
             ignore_type_in_groups = ignore_type_in_groups or []
             if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
                 ignore_numeric_type_changes = True
@@ -579,7 +590,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
         """Difference of iterables"""
-        if self.ignore_order:
+        if self.ignore_order_func(level):
             self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
         else:
             self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
@@ -1156,7 +1167,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # which means numpy module needs to be available. So np can't be None.
             raise ImportError(CANT_FIND_NUMPY_MSG)  # pragma: no cover
 
-        if not self.ignore_order:
+        if not self.ignore_order_func(level):
             # fast checks
             if self.significant_digits is None:
                 if np.array_equal(level.t1, level.t2):
@@ -1182,7 +1193,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             dimensions = len(shape)
             if dimensions == 1:
                 self._diff_iterable(level, parents_ids, _original_type=_original_type)
-            elif self.ignore_order:
+            elif self.ignore_order_func(level):
                 # arrays are converted to python lists so that certain features of DeepDiff can apply on them easier.
                 # They will be converted back to Numpy at their final dimension.
                 level.t1 = level.t1.tolist()
