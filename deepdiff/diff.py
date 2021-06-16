@@ -28,13 +28,12 @@ from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship)
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FILED)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
 
 logger = logging.getLogger(__name__)
-
 
 MAX_PASSES_REACHED_MSG = (
     'DeepDiff has reached the max number of passes of {}. '
@@ -140,6 +139,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  verbose_level=1,
                  view=TEXT_VIEW,
                  iterable_compare_func=None,
+                 custom_operators=None,
                  _original_type=None,
                  _parameters=None,
                  _shared_parameters=None,
@@ -147,20 +147,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         super().__init__()
         if kwargs:
             raise ValueError((
-                "The following parameter(s) are not valid: %s\n"
-                "The valid parameters are ignore_order, report_repetition, significant_digits, "
-                "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
-                "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, max_diffs, "
-                "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
-                "math_epsilon, iterable_compare_func, _original_type, "
-                "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
+                                 "The following parameter(s) are not valid: %s\n"
+                                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
+                                 "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
+                                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
+                                 "view, hasher, hashes, max_passes, max_diffs, "
+                                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
+                                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
+                                 "math_epsilon, iterable_compare_func, _original_type, "
+                                 "custom_operators, "
+                                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
+            if "custom_operators" not in _parameters:
+                _parameters["custom_operators"] = []
+
             self.__dict__.update(_parameters)
         else:
+            self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
             ignore_type_in_groups = ignore_type_in_groups or []
             if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
@@ -325,6 +330,24 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if not self._skip_this(level):
             level.report_type = report_type
+            self.tree[report_type].add(level)
+
+    def custom_report_result(self, report_type, level, extra_info=None):
+        """
+        Add a detected change to the reference-style result dictionary.
+        report_type will be added to level.
+        (We'll create the text-style report from there later.)
+        :param report_type: A well defined string key describing the type of change.
+                            Examples: "set_item_added", "values_changed"
+        :param parent: A DiffLevel object describing the objects in question in their
+                       before-change and after-change object structure.
+        :param extra_info: A dict that describe this result
+        :rtype: None
+        """
+
+        if not self._skip_this(level):
+            level.report_type = report_type
+            level.additional[CUSTOM_FILED] = extra_info
             self.tree[report_type].add(level)
 
     @staticmethod
@@ -1219,6 +1242,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._stats[DISTANCE_CACHE_ENABLED] = False
                 self.progress_logger('Due to minimal cache hits, {} is disabled.'.format('distance cache'))
 
+    def _use_custom_operator(self, level):
+        """
+
+        """
+        used = False
+
+        for operator in self.custom_operators:
+            if operator.match(level):
+                prevent_default = operator.diff(level, self)
+                used = True if prevent_default is None else prevent_default
+
+        return used
+
     def _diff(self, level, parents_ids=frozenset(), _original_type=None):
         """
         The main diff method
@@ -1253,6 +1289,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 return
 
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
+            return
+
+        if self._use_custom_operator(level):
             return
 
         if isinstance(level.t1, booleans):
