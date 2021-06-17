@@ -102,3 +102,39 @@ class TestOperators:
             }
         }
         assert expected == ddiff
+
+    def test_custom_operators_should_not_equal(self):
+        t1 = {
+            "id": 5,
+            "expect_change_pos": 10,
+            "expect_change_neg": 10,
+        }
+
+        t2 = {
+            "id": 5,
+            "expect_change_pos": 100,
+            "expect_change_neg": 10,
+        }
+
+        class ExpectChangeOperator:
+            def __init__(self, path_regex):
+                self.path_regex = path_regex
+
+            def match(self, level):
+                print(level.path(), re.search(re.compile(self.path_regex), level.path()))
+                return re.search(re.compile(self.path_regex), level.path()) is not None
+
+            def diff(self, level, diff_instance):
+                print(level)
+                if level.t1 == level.t2:
+                    diff_instance.custom_report_result('unexpected:still', level, {
+                        "old": level.t1,
+                        "new": level.t2
+                    })
+
+                return True
+
+        ddiff = DeepDiff(t1, t2, custom_operators=[
+            ExpectChangeOperator("root\\['expect_change.*'\\]")
+        ])
+        print(ddiff)

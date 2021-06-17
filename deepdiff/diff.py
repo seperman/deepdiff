@@ -1279,6 +1279,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if self._count_diff() is StopIteration:
             return
 
+        if self._use_custom_operator(level):
+            return
+
         if level.t1 is level.t2:
             return
 
@@ -1300,9 +1303,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 return
 
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
-            return
-
-        if self._use_custom_operator(level):
             return
 
         if isinstance(level.t1, booleans):
