@@ -137,4 +137,5 @@ class TestOperators:
         ddiff = DeepDiff(t1, t2, custom_operators=[
             ExpectChangeOperator("root\\['expect_change.*'\\]")
         ])
-        print(ddiff)
+
+        assert ddiff == {'unexpected:still': {"root['expect_change_neg']": {'old': 10, 'new': 10}}}
