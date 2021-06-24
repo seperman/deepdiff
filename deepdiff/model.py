@@ -24,7 +24,7 @@ REPORT_KEYS = {
     "repetition_change",
 }
 
-CUSTOM_FILED = "__internal:custom:extra_info"
+CUSTOM_FIELD = "__internal:custom:extra_info"
 
 
 class DoesNotExist(Exception):
@@ -239,8 +239,9 @@ class TextResult(ResultDict):
         if 'repetition_change' in tree:
             for change in tree['repetition_change']:
                 path = change.path(force=FORCE_DEFAULT)
-                self['repetition_change'][path] = RemapDict(change.additional[
-                                                                'repetition'])
+                self['repetition_change'][path] = RemapDict(
+                    change.additional['repetition']
+                )
                 self['repetition_change'][path]['value'] = change.t1
 
     def _from_tree_deep_distance(self, tree):
@@ -253,16 +254,17 @@ class TextResult(ResultDict):
                 if not isinstance(_level_list, PrettyOrderedSet):
                     continue
 
-                if len(_level_list) == 0:
-                    continue
+                # if len(_level_list) == 0:
+                #     continue
+                #
+                # if not isinstance(_level_list[0], DiffLevel):
+                #     continue
 
-                if not isinstance(_level_list[0], DiffLevel):
-                    continue
-
+                # _level_list is a list of DiffLevel
                 _custom_dict = {}
                 for _level in _level_list:
                     _custom_dict[_level.path(
-                        force=FORCE_DEFAULT)] = _level.additional.get(CUSTOM_FILED, {})
+                        force=FORCE_DEFAULT)] = _level.additional.get(CUSTOM_FIELD, {})
                 self[k] = _custom_dict
 
 

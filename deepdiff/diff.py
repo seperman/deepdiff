@@ -28,7 +28,7 @@ from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship, CUSTOM_FILED)
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
@@ -161,22 +161,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
-            # compatibility
-            if "ignore_order_func" not in _parameters:
-                _parameters["ignore_order_func"] = lambda *_args, **_kwargs: _parameters["ignore_order_func"]
-
-            if "custom_operators" not in _parameters:
-                _parameters["custom_operators"] = []
-
             self.__dict__.update(_parameters)
         else:
             self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
 
-            if ignore_order_func is not None:
-                self.ignore_order_func = ignore_order_func
-            else:
-                self.ignore_order_func = lambda *_args, **_kwargs: ignore_order
+            self.ignore_order_func = ignore_order_func or (lambda *_args, **_kwargs: ignore_order)
 
             ignore_type_in_groups = ignore_type_in_groups or []
             if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
@@ -358,7 +348,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if not self._skip_this(level):
             level.report_type = report_type
-            level.additional[CUSTOM_FILED] = extra_info
+            level.additional[CUSTOM_FIELD] = extra_info
             self.tree[report_type].add(level)
 
     @staticmethod
