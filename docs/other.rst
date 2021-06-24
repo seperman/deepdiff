@@ -122,8 +122,67 @@ For example you could use the level object to further determine if the 2 objects
 
     The level parameter of the iterable_compare_func is only used when ignore_order=False which is the default value for ignore_order.
 
+.. _custom_operators_label:
+
+Custom Operators
+---------------------
+
+Whether two objects are different or not are largely depend on the context. For example, apple and banana are the same
+if you are considering whether the
+
+*custom_operators* is for the job.
+
+To define an custom operator, you just need to inherit a *BaseOperator* and
+    * implement method
+        * diff(level: DiffLevel, instance: DeepDiff) -> boolean
+    * to do custom diff logic with full access to DeepDiff instance
+        * you can use instance.custom_report_result to record info
+        * to return a boolean value to determine whether the process
+          should quit or continue with default behavior
 
 
+An operator that mapping L2:distance as diff criteria
+    >>> from deepdiff import DeepDiff
+    >>> from deepdiff.operator import BaseOperator
+    >>>
+    >>> t1 = {
+    ...     "coordinates": [
+    ...         {"x": 5, "y": 5},
+    ...         {"x": 8, "y": 8}
+    ...     ]
+    ... }
+    ...
+    >>> t2 = {
+    ...     "coordinates": [
+    ...         {"x": 6, "y": 6},
+    ...         {"x": 88, "y": 88}
+    ...     ]
+    ... }
+    ...
+    >>> class L2DistanceDifferWithPreventDefault(BaseOperator):
+    ...     def __init__(self, distance_threshold):
+    ...         self.distance_threshold = distance_threshold
+    ...
+    ...     def _l2_distance(self, c1, c2):
+    ...         return math.sqrt(
+    ...             (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
+    ...         )
+    ...     # you can also override match method
+    ...     # def match(self, level):
+    ...     #    return True
+    ...
+    ...     def diff(self, level, diff_instance):
+    ...         l2_distance = self._l2_distance(level.t1, level.t2)
+    ...         if l2_distance > self.distance_threshold:
+    ...             diff_instance.custom_report_result('distance_too_far', level, {
+    ...                 "l2_distance": l2_distance
+    ...             })
+    ...         #
+    ...         return True
+    ...
+    >>> DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(1)])
+    {'distance_too_far':  {"root['coordinates'][0]": {'l2_distance': 1.4142135623730951},
+                          "root['coordinates'][1]": {'l2_distance': 113.13708498984761}}}
 
 
 Back to :doc:`/index`

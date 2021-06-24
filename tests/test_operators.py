@@ -2,6 +2,7 @@ import math
 import re
 
 from deepdiff import DeepDiff
+from deepdiff.operator import BaseOperator
 
 
 class TestOperators:
@@ -20,17 +21,15 @@ class TestOperators:
             ]
         }
 
-        class L2DistanceDifferWithPreventDefault:
-            def __init__(self, distance_threshold):
+        class L2DistanceDifferWithPreventDefault(BaseOperator):
+            def __init__(self, path_regex: str, distance_threshold: float):
+                super().__init__(path_regex)
                 self.distance_threshold = distance_threshold
 
             def _l2_distance(self, c1, c2):
                 return math.sqrt(
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
-
-            def match(self, level):
-                return re.search(r"^root\['coordinates'\]\[\d+\]$", level.path()) is not None
 
             def diff(self, level, diff_instance):
                 l2_distance = self._l2_distance(level.t1, level.t2)
@@ -41,7 +40,10 @@ class TestOperators:
                 #
                 return True
 
-        ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(1)])
+        ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(
+            "^root\\['coordinates'\\]\\[\\d+\\]$",
+            1
+        )])
 
         expected = {
             'distance_too_far': {
@@ -66,18 +68,15 @@ class TestOperators:
             ]
         }
 
-        class L2DistanceDifferWithPreventDefault:
-            def __init__(self, distance_threshold):
+        class L2DistanceDifferWithPreventDefault(BaseOperator):
+            def __init__(self, path_regex, distance_threshold):
+                super().__init__(path_regex)
                 self.distance_threshold = distance_threshold
 
             def _l2_distance(self, c1, c2):
                 return math.sqrt(
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
-
-            def match(self, level):
-                print(level.path())
-                return re.search(r"^root\['coordinates'\]\[\d+\]$", level.path()) is not None
 
             def diff(self, level, diff_instance):
                 l2_distance = self._l2_distance(level.t1, level.t2)
@@ -88,7 +87,11 @@ class TestOperators:
                 #
                 return False
 
-        ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(1)])
+        ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(
+            "^root\\['coordinates'\\]\\[\\d+\\]$",
+            1
+        )
+        ])
         expected = {
             'values_changed': {
                 "root['coordinates'][0]['x']": {'new_value': 6, 'old_value': 5},
@@ -116,16 +119,11 @@ class TestOperators:
             "expect_change_neg": 10,
         }
 
-        class ExpectChangeOperator:
+        class ExpectChangeOperator(BaseOperator):
             def __init__(self, path_regex):
-                self.path_regex = path_regex
-
-            def match(self, level):
-                print(level.path(), re.search(re.compile(self.path_regex), level.path()))
-                return re.search(re.compile(self.path_regex), level.path()) is not None
+                super().__init__(path_regex)
 
             def diff(self, level, diff_instance):
-                print(level)
                 if level.t1 == level.t2:
                     diff_instance.custom_report_result('unexpected:still', level, {
                         "old": level.t1,
