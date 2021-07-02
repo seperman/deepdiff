@@ -65,7 +65,7 @@ numpy_numbers = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
     np_float32, np_float64, np_float_, np_complex64,
-    np_complex128, np_complex_, )
+    np_complex128, np_complex_,)
 
 numpy_dtypes = set(numpy_numbers)
 numpy_dtypes.add(np_bool_)
@@ -111,7 +111,6 @@ if DICT_IS_SORTED:
     dict_ = dict
 else:
     dict_ = OrderedDictPlus  # pragma: no cover. Only used in pypy3 and py3.5
-
 
 if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover
@@ -184,6 +183,7 @@ class NotPresent:  # pragma: no cover
     in the future.
     We previously used None for this but this caused problem when users actually added and removed None. Srsly guys? :D
     """
+
     def __repr__(self):
         return 'not present'  # pragma: no cover
 
@@ -201,7 +201,6 @@ unprocessed = Unprocessed()
 skipped = Skipped()
 not_hashed = NotHashed()
 notpresent = NotPresent()
-
 
 # Disabling remapping from old to new keys since the mapping is deprecated.
 RemapDict = dict_
@@ -316,8 +315,8 @@ def type_in_type_group(item, type_group):
 
 def type_is_subclass_of_type_group(item, type_group):
     return isinstance(item, type_group) \
-        or (isinstance(item, type) and issubclass(item, type_group)) \
-        or type_in_type_group(item, type_group)
+           or (isinstance(item, type) and issubclass(item, type_group)) \
+           or type_in_type_group(item, type_group)
 
 
 def get_doc(doc_filename):
@@ -425,7 +424,6 @@ class _NotFound:
 
 
 not_found = _NotFound()
-
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)
 
@@ -583,7 +581,7 @@ def get_homogeneous_numpy_compatible_type_of_seq(seq):
     iseq = iter(seq)
     first_type = type(next(iseq))
     if first_type in {int, float, Decimal}:
-        type_ = first_type if all((type(x) is first_type) for x in iseq ) else False
+        type_ = first_type if all((type(x) is first_type) for x in iseq) else False
         return PYTHON_TYPE_TO_NUMPY_TYPE.get(type_, False)
     else:
         return False

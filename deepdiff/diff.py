@@ -28,13 +28,12 @@ from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship)
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
 
 logger = logging.getLogger(__name__)
-
 
 MAX_PASSES_REACHED_MSG = (
     'DeepDiff has reached the max number of passes of {}. '
@@ -120,6 +119,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  hasher=None,
                  hashes=None,
                  ignore_order=False,
+                 ignore_order_func=None,
                  ignore_type_in_groups=None,
                  ignore_string_type_changes=False,
                  ignore_numeric_type_changes=False,
@@ -140,6 +140,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  verbose_level=1,
                  view=TEXT_VIEW,
                  iterable_compare_func=None,
+                 custom_operators=None,
                  _original_type=None,
                  _parameters=None,
                  _shared_parameters=None,
@@ -156,12 +157,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
                 "math_epsilon, iterable_compare_func, _original_type, "
+                "ignore_order_func, custom_operators, "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
             self.__dict__.update(_parameters)
         else:
+            self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
+
+            self.ignore_order_func = ignore_order_func or (lambda *_args, **_kwargs: ignore_order)
+
             ignore_type_in_groups = ignore_type_in_groups or []
             if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
                 ignore_numeric_type_changes = True
@@ -325,6 +331,24 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if not self._skip_this(level):
             level.report_type = report_type
+            self.tree[report_type].add(level)
+
+    def custom_report_result(self, report_type, level, extra_info=None):
+        """
+        Add a detected change to the reference-style result dictionary.
+        report_type will be added to level.
+        (We'll create the text-style report from there later.)
+        :param report_type: A well defined string key describing the type of change.
+                            Examples: "set_item_added", "values_changed"
+        :param parent: A DiffLevel object describing the objects in question in their
+                       before-change and after-change object structure.
+        :param extra_info: A dict that describe this result
+        :rtype: None
+        """
+
+        if not self._skip_this(level):
+            level.report_type = report_type
+            level.additional[CUSTOM_FIELD] = extra_info
             self.tree[report_type].add(level)
 
     @staticmethod
@@ -556,7 +580,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
         """Difference of iterables"""
-        if self.ignore_order:
+        if self.ignore_order_func(level):
             self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
         else:
             self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
@@ -1133,7 +1157,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # which means numpy module needs to be available. So np can't be None.
             raise ImportError(CANT_FIND_NUMPY_MSG)  # pragma: no cover
 
-        if not self.ignore_order:
+        if not self.ignore_order_func(level):
             # fast checks
             if self.significant_digits is None:
                 if np.array_equal(level.t1, level.t2):
@@ -1159,7 +1183,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             dimensions = len(shape)
             if dimensions == 1:
                 self._diff_iterable(level, parents_ids, _original_type=_original_type)
-            elif self.ignore_order:
+            elif self.ignore_order_func(level):
                 # arrays are converted to python lists so that certain features of DeepDiff can apply on them easier.
                 # They will be converted back to Numpy at their final dimension.
                 level.t1 = level.t1.tolist()
@@ -1219,6 +1243,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._stats[DISTANCE_CACHE_ENABLED] = False
                 self.progress_logger('Due to minimal cache hits, {} is disabled.'.format('distance cache'))
 
+    def _use_custom_operator(self, level):
+        """
+
+        """
+        used = False
+
+        for operator in self.custom_operators:
+            if operator.match(level):
+                prevent_default = operator.diff(level, self)
+                used = True if prevent_default is None else prevent_default
+
+        return used
+
     def _diff(self, level, parents_ids=frozenset(), _original_type=None):
         """
         The main diff method
@@ -1230,6 +1267,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         _original_type: If the objects had an original type that was different than what currently exists in the level.t1 and t2
         """
         if self._count_diff() is StopIteration:
+            return
+
+        if self._use_custom_operator(level):
             return
 
         if level.t1 is level.t2:

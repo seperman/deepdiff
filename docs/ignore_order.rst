@@ -34,6 +34,21 @@ List difference ignoring order or duplicates: (with the same dictionaries as abo
     >>> print (ddiff)
     {}
 
+.. _ignore_order_func_label:
+
+Dynamic Ignore Order
+--------------------
+
+Sometimes single *ignore_order* parameter is not enough to do a diff job,
+you can use *ignore_order_func* to determine whether the order of certain paths should be ignored
+
+List difference ignoring order with *ignore_order_func*
+    >>> t1 = {"set": [1,2,3], "list": [1,2,3]}
+    >>> t2 = {"set": [3,2,1], "list": [3,2,1]}
+    >>> ddiff = DeepDiff(t1, t2, ignore_order_func=lambda level: "set" in level.path())
+    >>> print (ddiff)
+    { 'values_changed': { "root['list'][0]": {'new_value': 3, 'old_value': 1},
+                          "root['list'][2]": {'new_value': 1, 'old_value': 3}}}
 
 .. _report_repetition_label:
 
@@ -78,7 +93,7 @@ You can control the maximum number of passes that can be run via the max_passes 
 Max Passes Example
     >>> from pprint import pprint
     >>> from deepdiff import DeepDiff
-    >>> 
+    >>>
     >>> t1 = [
     ...     {
     ...         'key3': [[[[[1, 2, 4, 5]]]]],
@@ -89,7 +104,7 @@ Max Passes Example
     ...         'key6': 'val6',
     ...     },
     ... ]
-    >>> 
+    >>>
     >>> t2 = [
     ...     {
     ...         'key5': 'CHANGE',
@@ -100,12 +115,12 @@ Max Passes Example
     ...         'key4': [7, 8],
     ...     },
     ... ]
-    >>> 
+    >>>
     >>> for max_passes in (1, 2, 62, 65):
     ...     diff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2)
     ...     print('-\n----- Max Passes = {} -----'.format(max_passes))
     ...     pprint(diff)
-    ... 
+    ...
     DeepDiff has reached the max number of passes of 1. You can possibly get more accurate results by increasing the max_passes parameter.
     -
     ----- Max Passes = 1 -----
@@ -227,7 +242,7 @@ Iterable Compare Func
 
 New in DeepDiff 5.5.0
 
-There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a `iterable_compare_func` that takes a function pointer to compare two items. It function takes two parameters and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two.
+There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a `iterable_compare_func` that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two.
 
 
 For example take the following objects:

@@ -24,6 +24,8 @@ REPORT_KEYS = {
     "repetition_change",
 }
 
+CUSTOM_FIELD = "__internal:custom:extra_info"
+
 
 class DoesNotExist(Exception):
     pass
@@ -47,6 +49,7 @@ class PrettyOrderedSet(OrderedSet):
     From the perspective of the users of the library, they are dealing with lists.
     Behind the scene, we have ordered sets.
     """
+
     def __repr__(self):
         return '[{}]'.format(", ".join(map(str, self)))
 
@@ -85,9 +88,13 @@ class TreeResult(ResultDict):
         if 'iterable_item_added' in self and not self['iterable_item_added']:
             del self['iterable_item_added']
 
+    def __getitem__(self, item):
+        if item not in self:
+            self[item] = PrettyOrderedSet()
+        return self.get(item)
+
 
 class TextResult(ResultDict):
-
     ADD_QUOTES_TO_STRINGS = True
 
     def __init__(self, tree_results=None, verbose_level=1):
@@ -135,6 +142,7 @@ class TextResult(ResultDict):
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
         self._from_tree_deep_distance(tree)
+        self._from_tree_custom_results(tree)
 
     def _from_tree_default(self, tree, report_type):
         if report_type in tree:
@@ -231,17 +239,36 @@ class TextResult(ResultDict):
         if 'repetition_change' in tree:
             for change in tree['repetition_change']:
                 path = change.path(force=FORCE_DEFAULT)
-                self['repetition_change'][path] = RemapDict(change.additional[
-                    'repetition'])
+                self['repetition_change'][path] = RemapDict(
+                    change.additional['repetition']
+                )
                 self['repetition_change'][path]['value'] = change.t1
 
     def _from_tree_deep_distance(self, tree):
         if 'deep_distance' in tree:
             self['deep_distance'] = tree['deep_distance']
 
+    def _from_tree_custom_results(self, tree):
+        for k, _level_list in tree.items():
+            if k not in REPORT_KEYS:
+                if not isinstance(_level_list, PrettyOrderedSet):
+                    continue
+
+                # if len(_level_list) == 0:
+                #     continue
+                #
+                # if not isinstance(_level_list[0], DiffLevel):
+                #     continue
+
+                # _level_list is a list of DiffLevel
+                _custom_dict = {}
+                for _level in _level_list:
+                    _custom_dict[_level.path(
+                        force=FORCE_DEFAULT)] = _level.additional.get(CUSTOM_FIELD, {})
+                self[k] = _custom_dict
+
 
 class DeltaResult(TextResult):
-
     ADD_QUOTES_TO_STRINGS = False
 
     def __init__(self, tree_results=None, ignore_order=None):

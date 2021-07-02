@@ -406,18 +406,18 @@ Example in DeepDiff for the same operation:
 {'type_changes': {"root['a']['b']['c']": {'old_type': <type 'str'>, 'new_value': 42, 'old_value': 'foo', 'new_type': <type 'int'>}}}
 ```
 
-# Pycon 2016
-
-I was honored to give a talk about how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
-
-[Diff It To Dig It Video](https://www.youtube.com/watch?v=J5r99eJIxF4)
-And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
-
 
 # Documentation
 
-<http://deepdiff.readthedocs.io/en/latest/>
+<https://zepworks.com/deepdiff/current/>
 
+
+# Pycon 2016
+
+I was honored to give a talk about the basics of how DeepDiff does what it does at Pycon 2016. Please check out the video and let me know what you think:
+
+[Diff It To Dig It Video](https://www.youtube.com/watch?v=J5r99eJIxF4)
+And here is more info: <http://zepworks.com/blog/diff-it-to-digg-it/>
 
 # ChangeLog
 
