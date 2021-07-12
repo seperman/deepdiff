@@ -22,6 +22,7 @@ REPORT_KEYS = {
     "set_item_removed",
     "set_item_added",
     "repetition_change",
+    "custom",
 }
 
 

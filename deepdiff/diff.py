@@ -140,6 +140,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  verbose_level=1,
                  view=TEXT_VIEW,
                  iterable_compare_func=None,
+                 custom_comparison=None,
                  _original_type=None,
                  _parameters=None,
                  _shared_parameters=None,
@@ -204,6 +205,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if cache_purge_level not in {0, 1, 2}:
                 raise ValueError(PURGE_LEVEL_RANGE_MSG)
             self.view = view
+            self.custom_comparison = custom_comparison
             # Setting up the cache for dynamic programming. One dictionary per instance of root of DeepDiff running.
             self.max_passes = max_passes
             self.max_diffs = max_diffs
@@ -1282,6 +1284,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type)
 
+        elif self.custom_comparison and any([isinstance(level.t1, typ) for typ in list(self.custom_comparison.keys())]):
+            for typ, comparison_fun in self.custom_comparison.items():
+                if comparison_fun(level.t1, level.t2):
+                    return
+                else:
+                    self._report_result('custom', level)
         else:
             self._diff_obj(level, parents_ids)
 
