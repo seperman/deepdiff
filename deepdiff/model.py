@@ -107,7 +107,8 @@ class TextResult(ResultDict):
             "attribute_removed": self.__set_or_dict(),
             "set_item_removed": PrettyOrderedSet(),
             "set_item_added": PrettyOrderedSet(),
-            "repetition_change": dict_()
+            "repetition_change": dict_(),
+            "custom": dict_()
         })
 
         if tree_results:
@@ -136,6 +137,7 @@ class TextResult(ResultDict):
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
         self._from_tree_deep_distance(tree)
+        self._from_tree_default(tree, 'custom')
 
     def _from_tree_default(self, tree, report_type):
         if report_type in tree:

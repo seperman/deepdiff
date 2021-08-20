@@ -338,6 +338,7 @@ PRETTY_FORM_TEXTS = {
     "set_item_added": "Item root[{val_t2}] added to set.",
     "set_item_removed": "Item root[{val_t1}] removed from set.",
     "repetition_change": "Repetition change for item {diff_path}.",
+    "custom": "Custom comparison function reported differences."
 }
 
 
