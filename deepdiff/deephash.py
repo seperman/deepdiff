@@ -13,9 +13,8 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
-UNPROCESSED_KEY = 'unprocessed'
+UNPROCESSED_KEY = object()
 
-RESERVED_DICT_KEYS = {UNPROCESSED_KEY}
 EMPTY_FROZENSET = frozenset()
 
 INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
@@ -185,7 +184,7 @@ class DeepHash(Base):
             except KeyError:
                 raise KeyError(HASH_LOOKUP_ERR_MSG.format(obj)) from None
 
-        if isinstance(obj, strings) and obj in RESERVED_DICT_KEYS:
+        if obj is UNPROCESSED_KEY:
             extract_index = None
 
         return result_n_count if extract_index is None else result_n_count[extract_index]
@@ -229,7 +228,7 @@ class DeepHash(Base):
         """
         result = dict_()
         for key, value in self.hashes.items():
-            if key in RESERVED_DICT_KEYS:
+            if key is UNPROCESSED_KEY:
                 result[key] = value
             else:
                 result[key] = value[extract_index]
