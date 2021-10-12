@@ -134,7 +134,7 @@ class TestDeepHash:
         t1 = Bad()
 
         result = DeepHash(t1)
-        expected_result = {t1: unprocessed, 'unprocessed': [t1]}
+        expected_result = {t1: unprocessed, UNPROCESSED_KEY: [t1]}
         assert expected_result == result
 
     def test_built_in_hash_not_sensitive_to_bytecode_vs_unicode(self):
@@ -407,7 +407,7 @@ class TestDeepHashPrep:
         t1 = Bad()
 
         result = DeepHashPrep(t1)
-        expected_result = {t1: unprocessed, 'unprocessed': [t1]}
+        expected_result = {t1: unprocessed, UNPROCESSED_KEY: [t1]}
         assert expected_result == result
 
     class Burrito:
