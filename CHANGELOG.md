@@ -1,5 +1,6 @@
 # DeepDiff Change log
 
+- v5-6-0: Adding custom operators, and ignore_order_func. Bugfix: verbose_level==0 should disable values_changes. Bugfix: unprocessed key error.
 - v5-5-0: adding iterable_compare_func for DeepDiff, adding output_format of list for path() in tree view.
 - v5-4-0: adding strict_checking for numbers in DeepSearch.
 - v5-3-0: add support for regular expressions in DeepSearch.

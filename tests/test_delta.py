@@ -1079,6 +1079,8 @@ class TestDeltaOther:
             'cache_size': 500,
             'cutoff_intersection_for_pairs': 0.6,
             'group_by': None,
+            'ignore_order_func': lambda *args, **kwargs: True,
+            'custom_operators': []
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}
@@ -1330,6 +1332,29 @@ class TestDeltaOther:
 
         delta_reloaded_again = Delta(delta_file=the_file, deserializer=json.loads)
         assert t2 == delta_reloaded_again + t1
+
+    def test_brackets_in_keys(self):
+        """
+        Delta calculation not correct when bracket in Json key
+        https://github.com/seperman/deepdiff/issues/265
+        """
+        t1 = "{ \
+            \"test\": \"test1\" \
+        }"
+
+        t2 = "{ \
+            \"test\": \"test1\", \
+            \"test2 [uuu]\": \"test2\" \
+        }"
+
+        json1 = json.loads(t1)
+        json2 = json.loads(t2)
+
+        ddiff = DeepDiff(json1, json2)
+        delta = Delta(ddiff)
+
+        original_json2 = delta + json1
+        assert json2 == original_json2
 
 
 class TestDeltaCompareFunc:

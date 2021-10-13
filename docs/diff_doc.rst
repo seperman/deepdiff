@@ -3,7 +3,6 @@
 DeepDiff
 ========
 
-
 Deep Difference of dictionaries, iterables, strings and almost any other object.
 It will recursively look for all the changes.
 
@@ -33,6 +32,9 @@ cache_purge_level: int, 0, 1, or 2. default=1
 
 cache_tuning_sample_size : int >= 0, default = 0
     :ref:`cache_tuning_sample_size_label` This is an experimental feature. It works hands in hands with the :ref:`cache_size_label`. When cache_tuning_sample_size is set to anything above zero, it will sample the cache usage with the passed sample size and decide whether to use the cache or not. And will turn it back on occasionally during the diffing process. This option can be useful if you are not sure if you need any cache or not. However you will gain much better performance with keeping this parameter zero and running your diff with different cache sizes and benchmarking to find the optimal cache size.
+
+custom_operators : BaseOperator subclasses, default = None
+    :ref:`custom_operators_label` if you are considering whether they are fruits or not. In that case, you can pass a *custom_operators* for the job.
 
 exclude_paths: list, default = None
     :ref:`exclude_paths_label`
@@ -66,6 +68,9 @@ ignore_order : Boolean, default=False
     Normally ignore_order does not report duplicates and repetition changes.
     In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
+ignore_order_func : Function, default=None
+    :ref:`ignore_order_func_label` Sometimes single *ignore_order* parameter is not enough to do a diff job,
+    you can use *ignore_order_func* to determine whether the order of certain paths should be ignored
 
 ignore_string_type_changes: Boolean, default = False
     :ref:`ignore_string_type_changes_label`

@@ -10,7 +10,7 @@ if sys.version_info.major == 2:  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-version = '5.5.0'
+version = '5.6.0'
 
 
 def get_reqs(filename):
@@ -54,6 +54,7 @@ setup(name='deepdiff',
           "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: 3.9",
+          "Programming Language :: Python :: 3.10",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"

@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.5.0 documentation!
+DeepDiff 5.6.0 documentation!
 =============================
 
 *****************
@@ -31,7 +31,7 @@ The DeepDiff library includes the following modules:
 Supported Python Versions
 *************************
 
-DeepDiff is rigorously tested against Python 3.6, 3.7, 3.8, 3.9 and Pypy3
+DeepDiff is rigorously tested against Python 3.6 up to 3.10 and Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
 
@@ -39,81 +39,57 @@ NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version t
 What is New
 ***********
 
-New In DeepDiff 5.5.0
+New In DeepDiff 5-6-0
 ---------------------
 
-1. New option called `iterable_compare_func` that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.
+**Create custom operators!**
 
     >>> from deepdiff import DeepDiff
-    >>> from deepdiff.helper import CannotCompare
-    >>>
-    >>> t1 = [
-    ...     {
-    ...         'id': 2,
-    ...         'value': [7, 8, 1]
-    ...     },
-    ...     {
-    ...         'id': 3,
-    ...         'value': [7, 8],
-    ...     },
-    ... ]
-    >>>
-    >>> t2 = [
-    ...     {
-    ...         'id': 2,
-    ...         'value': [7, 8]
-    ...     },
-    ...     {
-    ...         'id': 3,
-    ...         'value': [7, 8, 1],
-    ...     },
-    ... ]
-    >>>
-    >>> DeepDiff(t1, t2)
-    {'values_changed': {"root[0]['id']": {'new_value': 2, 'old_value': 1}, "root[0]['value'][0]": {'new_value': 7, 'old_value': 1}, "root[1]['id']": {'new_value': 3, 'old_value': 2}, "root[2]['id']": {'new_value': 1, 'old_value': 3}, "root[2]['value'][0]": {'new_value': 1, 'old_value': 7}}, 'iterable_item_added': {"root[0]['value'][1]": 8}, 'iterable_item_removed': {"root[2]['value'][1]": 8}}
-
-Now let's use the custom compare function to guide DeepDiff in what to compare with what:
-
-    >>> def compare_func(x, y, level=None):
-    ...     try:
-    ...         return x['id'] == y['id']
-    ...     except Exception:
-    ...         raise CannotCompare() from None
+    >>> from deepdiff.operator import BaseOperator
+    >>> class CustomClass:
+    ...     def __init__(self, d: dict, l: list):
+    ...         self.dict = d
+    ...         self.dict['list'] = l
     ...
-    >>> DeepDiff(t1, t2, iterable_compare_func=compare_func)
-    {'iterable_item_added': {"root[2]['value'][2]": 1}, 'iterable_item_removed': {"root[1]['value'][2]": 1}}
+    >>>
+    >>> custom1 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3])
+    >>> custom2 = CustomClass(d=dict(c=3, d=4), l=[1, 2, 3, 2])
+    >>> custom3 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3, 4])
+    >>>
+    >>>
+    >>> class ListMatchOperator(BaseOperator):
+    ...     def give_up_diffing(self, level, diff_instance):
+    ...         if set(level.t1.dict['list']) == set(level.t2.dict['list']):
+    ...             return True
+    ...
+    >>>
+    >>> DeepDiff(custom1, custom2, custom_operators=[
+    ...     ListMatchOperator(types=[CustomClass])
+    ... ])
+    {}
+    >>>
+    >>>
+    >>> DeepDiff(custom2, custom3, custom_operators=[
+    ...     ListMatchOperator(types=[CustomClass])
+    ... ])
+    {'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
+    >>>
 
-2. You can get the path() of item in the tree view in the list format instead of string representation by passing path(output_format='list')
 
-.. code:: python
+**Dynamic ignore order function**
+
+Ignoring order when certain word in the path
 
     >>> from deepdiff import DeepDiff
-    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
-    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
-    >>> ddiff = DeepDiff(t1, t2, view='tree')
-    >>> ddiff
-    {'iterable_item_removed': [<root[4]['b'][2] t1:3, t2:not present>, <root[4]['b'][3] t1:4, t2:not present>]}
-    >>> removed = ddiff['iterable_item_removed'][0]
-    >>> removed.path()
-    "root[4]['b'][2]"
-    >>> removed.path(output_format='list')
-    [4, 'b', 2]
-
-
-New In Deepdiff 5.3.0
----------------------
-
-Deepdiff 5.3.0 comes with regular expressions in the DeepSearch and grep modules:
-
-
-.. code:: python
-
-    >>> from deepdiff import grep
-    >>> from pprint import pprint
-    >>> obj = ["something here", {"long": "somewhere", "someone": 2, 0: 0, "somewhere": "around"}]
-    >>> ds = obj | grep("some.*", use_regexp=True)
-    { 'matched_paths': ["root[1]['someone']", "root[1]['somewhere']"],
-      'matched_values': ['root[0]', "root[1]['long']"]}
+    >>> t1 = {'a': [1, 2], 'b': [3, 4]}
+    >>> t2 = {'a': [2, 1], 'b': [4, 3]}
+    >>> DeepDiff(t1, t2, ignore_order=True)
+    {}
+    >>> def ignore_order_func(level):
+    ...     return 'a' in level.path()
+    ...
+    >>> DeepDiff(t1, t2, ignore_order=True, ignore_order_func=ignore_order_func)
+    {'values_changed': {"root['b'][0]": {'new_value': 4, 'old_value': 3}, "root['b'][1]": {'new_value': 3, 'old_value': 4}}}
 
 
 *********
@@ -209,6 +185,7 @@ References
    commandline
    changelog
    authors
+   faq
    support
 
 

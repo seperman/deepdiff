@@ -25,6 +25,9 @@ def test_path_to_elements(path, expected):
     ({1: [{'2': 'b'}, 3], 2: {4, 5}},
      "root[1][0]['2']",
      'b'),
+    ({'test [a]': 'b'},
+     "root['test [a]']",
+     'b'),
 ])
 def test_get_item(obj, path, expected):
     result = extract(obj, path)

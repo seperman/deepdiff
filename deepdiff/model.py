@@ -1,9 +1,12 @@
+import logging
 from collections.abc import Mapping
 from copy import copy
 from ordered_set import OrderedSet
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_)
+
+logger = logging.getLogger(__name__)
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -23,6 +26,8 @@ REPORT_KEYS = {
     "set_item_added",
     "repetition_change",
 }
+
+CUSTOM_FIELD = "__internal:custom:extra_info"
 
 
 class DoesNotExist(Exception):
@@ -47,6 +52,7 @@ class PrettyOrderedSet(OrderedSet):
     From the perspective of the users of the library, they are dealing with lists.
     Behind the scene, we have ordered sets.
     """
+
     def __repr__(self):
         return '[{}]'.format(", ".join(map(str, self)))
 
@@ -85,9 +91,13 @@ class TreeResult(ResultDict):
         if 'iterable_item_added' in self and not self['iterable_item_added']:
             del self['iterable_item_added']
 
+    def __getitem__(self, item):
+        if item not in self:
+            self[item] = PrettyOrderedSet()
+        return self.get(item)
+
 
 class TextResult(ResultDict):
-
     ADD_QUOTES_TO_STRINGS = True
 
     def __init__(self, tree_results=None, verbose_level=1):
@@ -135,6 +145,7 @@ class TextResult(ResultDict):
         self._from_tree_set_item_added(tree)
         self._from_tree_repetition_change(tree)
         self._from_tree_deep_distance(tree)
+        self._from_tree_custom_results(tree)
 
     def _from_tree_default(self, tree, report_type):
         if report_type in tree:
@@ -182,7 +193,7 @@ class TextResult(ResultDict):
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
-        if 'values_changed' in tree:
+        if 'values_changed' in tree and self.verbose_level > 0:
             for change in tree['values_changed']:
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
                 self['values_changed'][change.path(
@@ -231,17 +242,36 @@ class TextResult(ResultDict):
         if 'repetition_change' in tree:
             for change in tree['repetition_change']:
                 path = change.path(force=FORCE_DEFAULT)
-                self['repetition_change'][path] = RemapDict(change.additional[
-                    'repetition'])
+                self['repetition_change'][path] = RemapDict(
+                    change.additional['repetition']
+                )
                 self['repetition_change'][path]['value'] = change.t1
 
     def _from_tree_deep_distance(self, tree):
         if 'deep_distance' in tree:
             self['deep_distance'] = tree['deep_distance']
 
+    def _from_tree_custom_results(self, tree):
+        for k, _level_list in tree.items():
+            if k not in REPORT_KEYS:
+                if not isinstance(_level_list, PrettyOrderedSet):
+                    continue
+
+                # if len(_level_list) == 0:
+                #     continue
+                #
+                # if not isinstance(_level_list[0], DiffLevel):
+                #     continue
+
+                # _level_list is a list of DiffLevel
+                _custom_dict = {}
+                for _level in _level_list:
+                    _custom_dict[_level.path(
+                        force=FORCE_DEFAULT)] = _level.additional.get(CUSTOM_FIELD, {})
+                self[k] = _custom_dict
+
 
 class DeltaResult(TextResult):
-
     ADD_QUOTES_TO_STRINGS = False
 
     def __init__(self, tree_results=None, ignore_order=None):
@@ -830,7 +860,11 @@ class ChildRelationship:
                 resurrected = literal_eval_extended(candidate)
                 # Note: This will miss string-representable custom objects.
                 # However, the only alternative I can currently think of is using eval() which is inherently dangerous.
-            except (SyntaxError, ValueError):
+            except (SyntaxError, ValueError) as err:
+                logger.error(
+                    f'stringify_param was not able to get a proper repr for "{param}". '
+                    "This object will be reported as None. Add instructions for this object to DeepDiff's "
+                    f"helper.literal_eval_extended to make it work properly: {err}")
                 result = None
             else:
                 result = candidate if resurrected == param else None
