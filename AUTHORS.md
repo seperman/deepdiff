@@ -36,4 +36,8 @@ Authors in order of the contributions:
 - Tim Klein [timjklein36](https://github.com/timjklein36) for retaining the order of multiple dictionary items added via Delta.
 - Wilhelm Schürmann[wbsch](https://github.com/wbsch) for fixing the typo with yml files.
 - [lyz-code](https://github.com/lyz-code) for adding support for regular expressions in DeepSearch and strict_checking feature in DeepSearch.
-- [dtorres-sf](https://github.com/dtorres-sf)for adding the option for custom compare function
+- [dtorres-sf](https://github.com/dtorres-sf) for adding the option for custom compare function
+- Tony Wang [Tony-Wang](https://github.com/Tony-Wang) for bugfix: verbose_level==0 should disable values_changes.
+- Sun Ao [eggachecat](https://github.com/eggachecat) for adding custom operators.
+- Sun Ao [eggachecat](https://github.com/eggachecat) for adding ignore_order_func.
+- [SlavaSkvortsov](https://github.com/SlavaSkvortsov) for fixing unprocessed key error.

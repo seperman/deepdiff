@@ -31,7 +31,7 @@ The DeepDiff library includes the following modules:
 Supported Python Versions
 *************************
 
-DeepDiff is rigorously tested against Python 3.6, 3.7, 3.8, 3.9 and Pypy3
+DeepDiff is rigorously tested against Python 3.6 up to 3.10 and Pypy3
 
 NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
 
@@ -39,7 +39,46 @@ NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version t
 What is New
 ***********
 
-New In DeepDiff 5.6.0
+## What is new?
+
+New In DeepDiff 5-6-0
+---------------------
+
+Create custom operators!
+
+    >>> from deepdiff import DeepDiff
+    >>> from deepdiff.operator import BaseOperator
+    >>> class CustomClass:
+    ...     def __init__(self, d: dict, l: list):
+    ...         self.dict = d
+    ...         self.dict['list'] = l
+    ...
+    >>>
+    >>> custom1 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3])
+    >>> custom2 = CustomClass(d=dict(c=3, d=4), l=[1, 2, 3, 2])
+    >>> custom3 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3, 4])
+    >>>
+    >>>
+    >>> class ListMatchOperator(BaseOperator):
+    ...     def give_up_diffing(self, level, diff_instance):
+    ...         if set(level.t1.dict['list']) == set(level.t2.dict['list']):
+    ...             return True
+    ...
+    >>>
+    >>> DeepDiff(custom1, custom2, custom_operators=[
+    ...     ListMatchOperator(types=[CustomClass])
+    ... ])
+    {}
+    >>>
+    >>>
+    >>> DeepDiff(custom2, custom3, custom_operators=[
+    ...     ListMatchOperator(types=[CustomClass])
+    ... ])
+    {'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
+    >>>
+
+
+New In DeepDiff 5-5-0
 ---------------------
 
 1. New option called `iterable_compare_func` that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return `True` if it is a match, `False` if it is not a match or raise `CannotCompare` if it is unable to compare the two. If `CannotCompare` is raised then it will revert back to comparing in order. If `iterable_compare_func` is not provided or set to None the behavior defaults to comparing items in order. A new report item called `iterable_item_moved` this will only ever be added if there is a custom compare function.

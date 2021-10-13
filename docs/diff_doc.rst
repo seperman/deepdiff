@@ -68,6 +68,9 @@ ignore_order : Boolean, default=False
     Normally ignore_order does not report duplicates and repetition changes.
     In order to report repetitions, set report_repetition=True in addition to ignore_order=True
 
+ignore_order_func : Function, default=None
+    :ref:`ignore_order_func_label` Sometimes single *ignore_order* parameter is not enough to do a diff job,
+    you can use *ignore_order_func* to determine whether the order of certain paths should be ignored
 
 ignore_string_type_changes: Boolean, default = False
     :ref:`ignore_string_type_changes_label`

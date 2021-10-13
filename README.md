@@ -22,7 +22,44 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
-Deepdiff 5.6.0 comes with regular expressions in the DeepSearch and grep modules:
+DeepDiff 5-6-0 allows you to pass custom operators.
+
+```python
+>>> from deepdiff import DeepDiff
+>>> from deepdiff.operator import BaseOperator
+>>> class CustomClass:
+...     def __init__(self, d: dict, l: list):
+...         self.dict = d
+...         self.dict['list'] = l
+...
+>>>
+>>> custom1 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3])
+>>> custom2 = CustomClass(d=dict(c=3, d=4), l=[1, 2, 3, 2])
+>>> custom3 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3, 4])
+>>>
+>>>
+>>> class ListMatchOperator(BaseOperator):
+...     def give_up_diffing(self, level, diff_instance):
+...         if set(level.t1.dict['list']) == set(level.t2.dict['list']):
+...             return True
+...
+>>>
+>>> DeepDiff(custom1, custom2, custom_operators=[
+...     ListMatchOperator(types=[CustomClass])
+... ])
+{}
+>>>
+>>>
+>>> DeepDiff(custom2, custom3, custom_operators=[
+...     ListMatchOperator(types=[CustomClass])
+... ])
+{'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
+>>>
+
+```
+
+
+Deepdiff 5-5-0 comes with regular expressions in the DeepSearch and grep modules:
 
 ```python
 >>> from deepdiff import grep
