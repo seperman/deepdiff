@@ -46,7 +46,12 @@ Authors in order of the timeline of their contributions:
 -  Wilhelm Schürmann\ `wbsch`_ for fixing the typo with yml files.
 -  `lyz-code`_ for adding support for regular expressions in DeepSearch
    and strict_checking feature in DeepSearch.
--  `dtorres-sf`_ for addin
+-  `dtorres-sf`_ for adding the option for custom compare function
+-  Tony Wang `Tony-Wang`_ for bugfix: verbose_level==0 should disable
+   values_changes.
+-  Sun Ao `eggachecat`_ for adding custom operators.
+-  Sun Ao `eggachecat`_ for adding ignore_order_func.
+-  `SlavaSkvortsov`_ for fixing unprocessed key error.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -81,6 +86,9 @@ Authors in order of the timeline of their contributions:
 .. _wbsch: https://github.com/wbsch
 .. _lyz-code: https://github.com/lyz-code
 .. _dtorres-sf: https://github.com/dtorres-sf
+.. _Tony-Wang: https://github.com/Tony-Wang
+.. _eggachecat: https://github.com/eggachecat
+.. _SlavaSkvortsov: https://github.com/SlavaSkvortsov
 
 Thank you for contributing to DeepDiff!
 
