@@ -10,7 +10,7 @@ if sys.version_info.major == 2:  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-version = '5.5.0'
+version = '5.6.0'
 
 
 def get_reqs(filename):
