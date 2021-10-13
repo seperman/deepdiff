@@ -3,7 +3,6 @@ from deepdiff.helper import convert_item_or_items_into_compiled_regexes_else_non
 
 
 class BaseOperator:
-    __operator_name__ = "__base__"
 
     def __init__(self, regex_paths=None, types=None):
         if regex_paths:

@@ -152,7 +152,10 @@ To define an custom operator, you just need to inherit a *BaseOperator* and
 
 In fact you don't even have to subclass the base operator.
 
-This is all that is expected from the operator: 
+This is all that is expected from the operator, a match function that takes the level and a give_up_diffing function that takes the level and diff_instance.
+
+
+.. code-block:: python
 
     def _use_custom_operator(self, level):
         """
@@ -171,7 +174,6 @@ This is all that is expected from the operator:
                     return True
 
         return False
-
 
 
 **Example 1: An operator that mapping L2:distance as diff criteria and reports the distance**
@@ -251,7 +253,7 @@ This is all that is expected from the operator:
     {'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
     >>>
 
-**Example 3: Only diff certain path's**
+**Example 3: Only diff certain paths**
 
     >>> from deepdiff import DeepDiff
     >>> class MyOperator:
