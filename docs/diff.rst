@@ -24,7 +24,6 @@ DeepDiff
    optimizations
    stats
    custom
-   faq
    troubleshoot
 
 Back to :doc:`/index`
