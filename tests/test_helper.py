@@ -77,6 +77,8 @@ class TestHelper:
     @pytest.mark.parametrize('item, expected', [
         ('10', 10),
         ("Decimal('10.1')", Decimal('10.1')),
+        ("datetime.datetime(2021, 10, 13, 4, 54, 48, 959835)", datetime.datetime(2021, 10, 13, 4, 54, 48, 959835)),
+        ("datetime.date(2021, 10, 13)", datetime.date(2021, 10, 13)),
     ])
     def test_literal_eval_extended(self, item, expected):
         result = literal_eval_extended(item)

@@ -1,9 +1,12 @@
+import logging
 from collections.abc import Mapping
 from copy import copy
 from ordered_set import OrderedSet
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_)
+
+logger = logging.getLogger(__name__)
 
 FORCE_DEFAULT = 'fake'
 UP_DOWN = {'up': 'down', 'down': 'up'}
@@ -857,7 +860,11 @@ class ChildRelationship:
                 resurrected = literal_eval_extended(candidate)
                 # Note: This will miss string-representable custom objects.
                 # However, the only alternative I can currently think of is using eval() which is inherently dangerous.
-            except (SyntaxError, ValueError):
+            except (SyntaxError, ValueError) as err:
+                logger.error(
+                    f'stringify_param was not able to get a proper repr for "{param}". '
+                    "This object will be reported as None. Add instructions for this object to DeepDiff's "
+                    f"helper.literal_eval_extended to make it work properly: {err}")
                 result = None
             else:
                 result = candidate if resurrected == param else None

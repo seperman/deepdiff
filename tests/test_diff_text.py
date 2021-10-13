@@ -1515,3 +1515,13 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2, group_by='id')
         expected = {'values_changed': {'root[1]': {'new_value': 3, 'old_value': 2}}}
         assert expected == diff
+
+    def test_datetime_in_key(self):
+
+        now = datetime.datetime.utcnow()
+        t1 = {now: 1, now + datetime.timedelta(1): 4}
+        t2 = {now: 2, now + datetime.timedelta(1): 4}
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {f'root[{repr(now)}]': {'new_value': 2, 'old_value': 1}}}
+
+        assert expected == diff

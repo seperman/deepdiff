@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import datetime
 import logging
 import pytest
 from tests import CustomClass, CustomClassMisleadingRepr

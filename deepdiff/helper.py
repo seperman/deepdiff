@@ -491,8 +491,26 @@ class RepeatedTimer:
         return duration
 
 
+def _eval_decimal(params):
+    return Decimal(params)
+
+
+def _eval_datetime(params):
+    params = f'({params})'
+    params = literal_eval(params)
+    return datetime.datetime(*params)
+
+
+def _eval_date(params):
+    params = f'({params})'
+    params = literal_eval(params)
+    return datetime.date(*params)
+
+
 LITERAL_EVAL_PRE_PROCESS = [
-    ('Decimal(', ')', Decimal),
+    ('Decimal(', ')', _eval_decimal),
+    ('datetime.datetime(', ')', _eval_datetime),
+    ('datetime.date(', ')', _eval_date),
 ]
 
 
@@ -506,8 +524,8 @@ def literal_eval_extended(item):
         for begin, end, func in LITERAL_EVAL_PRE_PROCESS:
             if item.startswith(begin) and item.endswith(end):
                 # Extracting and removing extra quotes so for example "Decimal('10.1')" becomes "'10.1'" and then '10.1'
-                item2 = item[len(begin): -len(end)].strip('\'\"')
-                return func(item2)
+                params = item[len(begin): -len(end)].strip('\'\"')
+                return func(params)
         raise
 
 
