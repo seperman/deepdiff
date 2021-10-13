@@ -133,6 +133,10 @@ if you are considering whether they are fruits or not.
 
 In that case, you can pass a *custom_operators* for the job.
 
+In fact, custom operators give you a lot of power. In the following examples we explore use cases from making DeepDiff
+report the L2 Distance of items, to only include certain paths in diffing all the way to making DeepDiff stop diffing
+as soon as the first diff is reported.
+
 To define an custom operator, you just need to inherit a *BaseOperator* and
 
     * implement a give_up_diffing method
@@ -143,8 +147,31 @@ To define an custom operator, you just need to inherit a *BaseOperator* and
           to report any diff. If you decide not to report anything, and this
           function returns True, then the objects are basically skipped in the results.
 
-    * pass regex_paths and types that will be used to decide if the objects are matched.
-      one the objects are matched, then the give_up_diffing will be run to compare them.
+    * pass regex_paths and types that will be used to decide if the objects are matched to the init method.
+      once the objects are matched, then the give_up_diffing will be run to compare them.
+
+In fact you don't even have to subclass the base operator.
+
+This is all that is expected from the operator: 
+
+    def _use_custom_operator(self, level):
+        """
+        For each level we check all custom operators.
+        If any one of them was a match for the level, we run the diff of the operator.
+        If the operator returned True, the operator must have decided these objects should not
+        be compared anymore. It might have already reported their results.
+        In that case the report will appear in the final results of this diff.
+        Otherwise basically the 2 objects in the level are being omitted from the results.
+        """
+
+        for operator in self.custom_operators:
+            if operator.match(level):
+                prevent_default = operator.give_up_diffing(level=level, diff_instance=self)
+                if prevent_default:
+                    return True
+
+        return False
+
 
 
 **Example 1: An operator that mapping L2:distance as diff criteria and reports the distance**
@@ -223,6 +250,46 @@ To define an custom operator, you just need to inherit a *BaseOperator* and
     ... ])
     {'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
     >>>
+
+**Example 3: Only diff certain path's**
+
+    >>> from deepdiff import DeepDiff
+    >>> class MyOperator:
+    ...     def __init__(self, include_paths):
+    ...         self.include_paths = include_paths
+    ...     def match(self, level) -> bool:
+    ...         return True
+    ...     def give_up_diffing(self, level, diff_instance) -> bool:
+    ...         return level.path() not in self.include_paths
+    ...
+    >>>
+    >>> t1 = {'a': [10, 11], 'b': [20, 21], 'c': [30, 31]}
+    >>> t2 = {'a': [10, 22], 'b': [20, 33], 'c': [30, 44]}
+    >>>
+    >>> DeepDiff(t1, t2, custom_operators=[
+    ...     MyOperator(include_paths="root['a'][1]")
+    ... ])
+    {'values_changed': {"root['a'][1]": {'new_value': 22, 'old_value': 11}}}
+
+**Example 4: Give up further diffing once the first diff is found**
+
+Sometimes all you care about is that there is a difference between 2 objects and not all the details of what exactly is different.
+In that case you may want to stop diffing as soon as the first diff is found.
+
+    >>> from deepdiff import DeepDiff
+    >>> class MyOperator:
+    ...     def match(self, level) -> bool:
+    ...         return True
+    ...     def give_up_diffing(self, level, diff_instance) -> bool:
+    ...         return any(diff_instance.tree.values())
+    ...
+    >>> t1 = [[1, 2], [3, 4], [5, 6]]
+    >>> t2 = [[1, 3], [3, 5], [5, 7]]
+    >>>
+    >>> DeepDiff(t1, t2, custom_operators=[
+    ...     MyOperator()
+    ... ])
+    {'values_changed': {'root[0][1]': {'new_value': 3, 'old_value': 2}}}
 
 
 Back to :doc:`/index`

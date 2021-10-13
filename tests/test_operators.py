@@ -174,3 +174,46 @@ class TestOperators:
             'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
 
         assert expected == ddiff2
+
+    def test_include_only_certain_path(self):
+
+        class MyOperator:
+
+            def __init__(self, include_paths):
+                self.include_paths = include_paths
+
+            def match(self, level) -> bool:
+                return True
+
+            def give_up_diffing(self, level, diff_instance) -> bool:
+                return level.path() not in self.include_paths
+
+        t1 = {'a': [10, 11], 'b': [20, 21], 'c': [30, 31]}
+        t2 = {'a': [10, 22], 'b': [20, 33], 'c': [30, 44]}
+
+        ddiff = DeepDiff(t1, t2, custom_operators=[
+            MyOperator(include_paths="root['a'][1]")
+        ])
+
+        expected = {'values_changed': {"root['a'][1]": {'new_value': 22, 'old_value': 11}}}
+        assert expected == ddiff
+
+    def test_give_up_diffing_on_first_diff(self):
+
+        class MyOperator:
+
+            def match(self, level) -> bool:
+                return True
+
+            def give_up_diffing(self, level, diff_instance) -> bool:
+                return any(diff_instance.tree.values())
+
+        t1 = [[1, 2], [3, 4], [5, 6]]
+        t2 = [[1, 3], [3, 5], [5, 7]]
+
+        ddiff = DeepDiff(t1, t2, custom_operators=[
+            MyOperator()
+        ])
+
+        expected = {'values_changed': {'root[0][1]': {'new_value': 3, 'old_value': 2}}}
+        assert expected == ddiff

@@ -1253,15 +1253,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Otherwise basically the 2 objects in the level are being omitted from the results.
         """
 
-        # used = False
-
-        # for operator in self.custom_operators:
-        #     if operator.match(level):
-        #         prevent_default = operator.diff(level, self)
-        #         used = True if prevent_default is None else prevent_default
-
-        # return used
-
         for operator in self.custom_operators:
             if operator.match(level):
                 prevent_default = operator.give_up_diffing(level=level, diff_instance=self)
