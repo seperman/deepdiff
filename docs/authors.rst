@@ -3,7 +3,7 @@
 Authors
 =======
 
-Thanks to the following people for their contributions:
+Authors in order of the timeline of their contributions:
 
 -  `Sep Dehpour (Seperman)`_
 -  `Victor Hahn Castell`_ for the tree view and major contributions:
@@ -38,13 +38,15 @@ Thanks to the following people for their contributions:
 -  `Timothy`_ for truncate_datetime
 -  `d0b3rm4n`_ for bugfix to not apply format to non numbers.
 -  `MyrikLD`_ for Bug Fix NoneType in ignore type groups
--  Stian Jensen `stianjensen`_ for improving ignoring of NoneType in diff 
+-  Stian Jensen `stianjensen`_ for improving ignoring of NoneType in
+   diff
 -  Florian Klien `flowolf`_ for adding math_epsilon
--  Tim Klein `timjklein36`_ for retaining the order of multiple dictionary items added via Delta
--  Wilhelm Schürmann `wbsch`_ for fixing the typo with yml files.
--  `lyz_code`_ for adding support for regular expressions in DeepSearch and strict_checking feature in DeepSearch.
--  `dtorres_sf`_ for adding the option for custom compare function
-
+-  Tim Klein `timjklein36`_ for retaining the order of multiple
+   dictionary items added via Delta.
+-  Wilhelm Schürmann\ `wbsch`_ for fixing the typo with yml files.
+-  `lyz-code`_ for adding support for regular expressions in DeepSearch
+   and strict_checking feature in DeepSearch.
+-  `dtorres-sf`_ for addin
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -77,8 +79,9 @@ Thanks to the following people for their contributions:
 .. _flowolf: https://github.com/flowolf
 .. _timjklein36: https://github.com/timjklein36
 .. _wbsch: https://github.com/wbsch
-.. _lyz_code: https://github.com/lyz-code
-.. _dtorres_sf: https://github.com/dtorres-sf
+.. _lyz-code: https://github.com/lyz-code
+.. _dtorres-sf: https://github.com/dtorres-sf
 
+Thank you for contributing to DeepDiff!
 
 Back to :doc:`/index`

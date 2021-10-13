@@ -1,6 +1,6 @@
-Authors:
+# Authors
 
-Authors in order of the contributions:
+Authors in order of the timeline of their contributions:
 
 - [Sep Dehpour (Seperman)](http://www.zepworks.com)
 - [Victor Hahn Castell](http://hahncastell.de) for the tree view and major contributions:
