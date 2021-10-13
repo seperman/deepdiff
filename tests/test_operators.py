@@ -1,6 +1,6 @@
 import math
-import re
 
+from typing import List
 from deepdiff import DeepDiff
 from deepdiff.operator import BaseOperator
 
@@ -22,8 +22,8 @@ class TestOperators:
         }
 
         class L2DistanceDifferWithPreventDefault(BaseOperator):
-            def __init__(self, path_regex: str, distance_threshold: float):
-                super().__init__(path_regex)
+            def __init__(self, regex_paths: List[str], distance_threshold: float):
+                super().__init__(regex_paths)
                 self.distance_threshold = distance_threshold
 
             def _l2_distance(self, c1, c2):
@@ -31,17 +31,16 @@ class TestOperators:
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
 
-            def diff(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance):
                 l2_distance = self._l2_distance(level.t1, level.t2)
                 if l2_distance > self.distance_threshold:
                     diff_instance.custom_report_result('distance_too_far', level, {
                         "l2_distance": l2_distance
                     })
-                #
                 return True
 
         ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(
-            "^root\\['coordinates'\\]\\[\\d+\\]$",
+            ["^root\\['coordinates'\\]\\[\\d+\\]$"],
             1
         )])
 
@@ -69,8 +68,8 @@ class TestOperators:
         }
 
         class L2DistanceDifferWithPreventDefault(BaseOperator):
-            def __init__(self, path_regex, distance_threshold):
-                super().__init__(path_regex)
+            def __init__(self, regex_paths, distance_threshold):
+                super().__init__(regex_paths)
                 self.distance_threshold = distance_threshold
 
             def _l2_distance(self, c1, c2):
@@ -78,7 +77,7 @@ class TestOperators:
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
 
-            def diff(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance):
                 l2_distance = self._l2_distance(level.t1, level.t2)
                 if l2_distance > self.distance_threshold:
                     diff_instance.custom_report_result('distance_too_far', level, {
@@ -88,7 +87,7 @@ class TestOperators:
                 return False
 
         ddiff = DeepDiff(t1, t2, custom_operators=[L2DistanceDifferWithPreventDefault(
-            "^root\\['coordinates'\\]\\[\\d+\\]$",
+            ["^root\\['coordinates'\\]\\[\\d+\\]$"],
             1
         )
         ])
@@ -120,10 +119,10 @@ class TestOperators:
         }
 
         class ExpectChangeOperator(BaseOperator):
-            def __init__(self, path_regex):
-                super().__init__(path_regex)
+            def __init__(self, regex_paths):
+                super().__init__(regex_paths)
 
-            def diff(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance):
                 if level.t1 == level.t2:
                     diff_instance.custom_report_result('unexpected:still', level, {
                         "old": level.t1,
@@ -133,7 +132,45 @@ class TestOperators:
                 return True
 
         ddiff = DeepDiff(t1, t2, custom_operators=[
-            ExpectChangeOperator("root\\['expect_change.*'\\]")
+            ExpectChangeOperator(regex_paths=["root\\['expect_change.*'\\]"])
         ])
 
         assert ddiff == {'unexpected:still': {"root['expect_change_neg']": {'old': 10, 'new': 10}}}
+
+    def test_custom_operator2(self):
+
+        class CustomClass:
+
+            def __init__(self, d: dict, l: list):
+                self.dict = d
+                self.dict['list'] = l
+
+            def __repr__(self):
+                return "Class list is " + str(self.dict['list'])
+
+        custom1 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3])
+        custom2 = CustomClass(d=dict(c=3, d=4), l=[1, 2, 3, 2])
+        custom3 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3, 4])
+
+        class ListMatchOperator(BaseOperator):
+
+            def give_up_diffing(self, level, diff_instance):
+                if set(level.t1.dict['list']) == set(level.t2.dict['list']):
+                    return True
+
+        ddiff = DeepDiff(custom1, custom2, custom_operators=[
+            ListMatchOperator(types=[CustomClass])
+        ])
+
+        assert {} == ddiff
+
+        ddiff2 = DeepDiff(custom2, custom3, custom_operators=[
+            ListMatchOperator(types=[CustomClass])
+        ])
+
+        expected = {
+            'dictionary_item_added': ["root.dict['a']", "root.dict['b']"],
+            'dictionary_item_removed': ["root.dict['c']", "root.dict['d']"],
+            'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
+
+        assert expected == ddiff2

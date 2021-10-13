@@ -19,6 +19,8 @@ class RootCanNotBeModified(ValueError):
 
 def _add_to_elements(elements, elem, inside):
     # Ignore private items
+    if not elem:
+        return
     if not elem.startswith('__'):
         try:
             elem = literal_eval(elem)
@@ -49,14 +51,31 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     inside = False
     prev_char = None
     path = path[4:]  # removing "root from the beginning"
+    brackets = []
+    inside_quotes = False
     for char in path:
         if prev_char == '\\':
+            elem += char
+        elif char in {'"', "'"}:
+            elem += char
+            inside_quotes = not inside_quotes
+            if not inside_quotes:
+                _add_to_elements(elements, elem, inside)
+                elem = ''
+        elif inside_quotes:
             elem += char
         elif char == '[':
             if inside == '.':
                 _add_to_elements(elements, elem, inside)
-            inside = '['
-            elem = ''
+                inside = '['
+                elem = ''
+            # we are already inside. The bracket is a part of the word.
+            elif inside == '[':
+                elem += char
+            else:
+                inside = '['
+                brackets.append('[')
+                elem = ''
         elif char == '.':
             if inside == '[':
                 elem += char
@@ -67,9 +86,14 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
                 inside = '.'
                 elem = ''
         elif char == ']':
-            _add_to_elements(elements, elem, inside)
-            elem = ''
-            inside = False
+            if brackets and brackets[-1] == '[':
+                brackets.pop()
+            if brackets:
+                elem += char
+            else:
+                _add_to_elements(elements, elem, inside)
+                elem = ''
+                inside = False
         else:
             elem += char
         prev_char = char

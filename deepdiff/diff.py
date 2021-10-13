@@ -1245,16 +1245,30 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _use_custom_operator(self, level):
         """
-
+        For each level we check all custom operators.
+        If any one of them was a match for the level, we run the diff of the operator.
+        If the operator returned True, the operator must have decided these objects should not
+        be compared anymore. It might have already reported their results.
+        In that case the report will appear in the final results of this diff.
+        Otherwise basically the 2 objects in the level are being omitted from the results.
         """
-        used = False
+
+        # used = False
+
+        # for operator in self.custom_operators:
+        #     if operator.match(level):
+        #         prevent_default = operator.diff(level, self)
+        #         used = True if prevent_default is None else prevent_default
+
+        # return used
 
         for operator in self.custom_operators:
             if operator.match(level):
-                prevent_default = operator.diff(level, self)
-                used = True if prevent_default is None else prevent_default
+                prevent_default = operator.give_up_diffing(level=level, diff_instance=self)
+                if prevent_default:
+                    return True
 
-        return used
+        return False
 
     def _diff(self, level, parents_ids=frozenset(), _original_type=None):
         """

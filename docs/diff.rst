@@ -23,7 +23,8 @@ DeepDiff
    serialization
    optimizations
    stats
-   other
+   custom
+   faq
    troubleshoot
 
 Back to :doc:`/index`
