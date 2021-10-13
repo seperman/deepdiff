@@ -1,14 +1,15 @@
+wheel==0.37.0
 -r requirements.txt
 -r requirements-cli.txt
 bump2version==1.0.1
-jsonpickle==1.4.2
-coverage==5.3.1
-ipdb==0.13.4
-numpy==1.19.4
-pytest==6.2.1
-pytest-cov==2.10.1
-python-dotenv==0.15.0
-watchdog==1.0.2
-Sphinx==3.4.1
+jsonpickle==2.0.0
+coverage==6.0.2
+ipdb==0.13.9
+numpy==1.21.2
+pytest==6.2.5
+pytest-cov==3.0.0
+python-dotenv==0.19.1
+watchdog==2.1.6
+Sphinx==4.2.0
 sphinx-sitemap==2.2.0
-flake8==3.8.4
+flake8==4.0.1
