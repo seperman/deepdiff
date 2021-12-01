@@ -2,6 +2,7 @@ import sys
 import re
 import os
 import datetime
+import uuid
 import logging
 import warnings
 import time
@@ -126,6 +127,7 @@ unicode_type = str
 bytes_type = bytes
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
+uuids = (uuid.UUID)
 times = (datetime.datetime, datetime.time)
 numbers = only_numbers + datetimes
 booleans = (bool, np_bool_)
