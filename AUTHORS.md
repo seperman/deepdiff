@@ -41,3 +41,4 @@ Authors in order of the timeline of their contributions:
 - Sun Ao [eggachecat](https://github.com/eggachecat) for adding custom operators.
 - Sun Ao [eggachecat](https://github.com/eggachecat) for adding ignore_order_func.
 - [SlavaSkvortsov](https://github.com/SlavaSkvortsov) for fixing unprocessed key error.
+- [havardthom](https://github.com/havardthom) for adding UUID support.
