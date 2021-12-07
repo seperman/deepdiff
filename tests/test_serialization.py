@@ -188,7 +188,9 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{2: 2, 4: 4}, {2: 2, 4: 4, 5: 5}, 'root[5]'],
+                                 [{2: 2, 4: 4}, {2: 2, 4: 4, 5: 5}, 'root[5] (5)'],
+                                 [{"foo": "bar", "foo1": "bar1"}, {"foo": "bar", "foo1": "bar1", "foo2": "bar2"},
+                                  'root[\'foo2\'] ("bar2")']
                              ])
     def test_pretty_print_diff_dictionary_item_added(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -197,7 +199,9 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [{2: 2, 4: 4}, {2: 2}, 'root[4]'],
+                                 [{2: 2, 4: 4}, {2: 2}, 'root[4] (4)'],
+                                 [{"foo": "bar", "foo1": "bar1"}, {"foo": "bar"},
+                                  'root[\'foo1\'] ("bar1")']
                              ])
     def test_pretty_print_diff_dictionary_item_removed(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -216,7 +220,8 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [[1, 2, 3], [1, 2, 3, 4], 'root[3]'],
+                                 [[1, 2, 3], [1, 2, 3, 4], 'root[3] (4)'],
+                                 [["foo", "bar"], ["foo", "bar", "barbar"], 'root[2] ("barbar")']
                              ])
     def test_pretty_print_diff_iterable_item_added(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -225,7 +230,8 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
-                                 [[1, 2, 3], [1, 2], 'root[2]'],
+                                 [[1, 2, 3], [1, 2], 'root[2] (3)'],
+                                 [["foo", "bar", "barbar"], ["foo", "bar"], 'root[2] ("barbar")']
                              ])
     def test_pretty_print_diff_iterable_item_removed(self, t1, t2, item_path):
         ddiff = DeepDiff(t1, t2, view='tree')
@@ -239,7 +245,7 @@ class TestDeepDiffPretty:
 
         ddiff = DeepDiff(t1, t2, view='tree')
         result = pretty_print_diff(ddiff.tree['attribute_added'].items[0])
-        assert result == 'Attribute root.two added.'
+        assert result == 'Attribute root.two (2) added.'
 
     def test_pretty_print_diff_attribute_removed(self):
         t1 = self.testing_class()
@@ -248,7 +254,8 @@ class TestDeepDiffPretty:
 
         ddiff = DeepDiff(t1, t2, view='tree')
         result = pretty_print_diff(ddiff.tree['attribute_removed'].items[0])
-        assert result == 'Attribute root.two removed.'
+
+        assert result == 'Attribute root.two (2) removed.'
 
     @pytest.mark.parametrize('t1, t2, item_path',
                              [
@@ -283,8 +290,8 @@ class TestDeepDiffPretty:
         ddiff = DeepDiff(t1, t2, view='tree')
         result = ddiff.pretty()
         expected = (
-            'Item root[5] added to dictionary.'
-            '\nItem root[3] removed from dictionary.'
+            'Item root[5] (5) added to dictionary.'
+            '\nItem root[3] (3) removed from dictionary.'
             '\nType of root[2] changed from int to str and value changed from 2 to "b".'
             '\nValue of root[4] changed from 4 to 5.'
         )
