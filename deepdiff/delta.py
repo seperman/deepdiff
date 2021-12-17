@@ -279,12 +279,19 @@ class Delta:
         if attribute_added:
             self._do_item_added(attribute_added)
 
+    @staticmethod
+    def _sort_key_for_item_added(path_and_value):
+        elements = _path_to_elements(path_and_value[0])
+        # Example elements: [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
+        # We only care about the values in the elements not how to get the values.
+        return [i[0] for i in elements] 
+
     def _do_item_added(self, items, sort=True, insert=False):
         if sort:
             # sorting items by their path so that the items with smaller index
             # are applied first (unless `sort` is `False` so that order of
             # added items is retained, e.g. for dicts).
-            items = sorted(items.items(), key=lambda x: x[0])
+            items = sorted(items.items(), key=self._sort_key_for_item_added)
         else:
             items = items.items()
 
@@ -392,7 +399,7 @@ class Delta:
         """
         # Sorting the iterable_item_removed in reverse order based on the paths.
         # So that we delete a bigger index before a smaller index
-        for path, expected_old_value in sorted(items.items(), key=lambda x: x[0], reverse=True):
+        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details

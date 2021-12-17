@@ -1,7 +1,6 @@
 import logging
 from ast import literal_eval
-
-# TODO: it needs python3.6+ since dictionaries are ordered.
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +32,7 @@ def _add_to_elements(elements, elem, inside):
 DEFAULT_FIRST_ELEMENT = ('root', GETATTR)
 
 
+@lru_cache(maxsize=100000)
 def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     """
     Given a path, it extracts the elements that form the path and their relevant most likely retrieval action.
