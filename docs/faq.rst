@@ -5,7 +5,7 @@ F.A.Q
 
 
 Q: DeepDiff report is not precise when ignore_order=True
------------------------------------------------------
+--------------------------------------------------------
 
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint
@@ -58,7 +58,7 @@ Bump up these 2 parameters to 1 and you get what you want:
 
 
 Q: TypeError: Object of type type is not JSON serializable
--------------------------------------------------------
+----------------------------------------------------------
 
 I'm trying to serialize the DeepDiff results into json and I'm getting the TypeError.
 

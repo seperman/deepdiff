@@ -2,6 +2,7 @@
 import datetime
 import pytest
 import logging
+import uuid
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3
@@ -156,6 +157,74 @@ class TestDeepDiffText:
         }
         assert DeepDiff(t1, t2) == expected_result
         assert DeepDiff(t1, t3) == {}
+
+    def test_diffs_uuid1(self):
+        t1 = uuid.uuid1()
+        t2 = uuid.uuid1()
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert result == ddiff
+        ddiff = DeepDiff(t1, t1)
+        result = {}
+        assert result == ddiff
+
+    def test_diffs_uuid3(self):
+        t1 = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
+        t2 = uuid.uuid3(uuid.NAMESPACE_DNS, 'stackoverflow.com')
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert result == ddiff
+        ddiff = DeepDiff(t1, t1)
+        result = {}
+        assert result == ddiff
+
+    def test_diffs_uuid4(self):
+        t1 = uuid.uuid4()
+        t2 = uuid.uuid4()
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert result == ddiff
+        ddiff = DeepDiff(t1, t1)
+        result = {}
+        assert result == ddiff
+
+    def test_diffs_uuid5(self):
+        t1 = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+        t2 = uuid.uuid5(uuid.NAMESPACE_DNS, 'stackoverflow.com')
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root': {
+                    'new_value': t2,
+                    'old_value': t1
+                }
+            }
+        }
+        assert result == ddiff
+        ddiff = DeepDiff(t1, t1)
+        result = {}
+        assert result == ddiff
 
     def test_string_difference(self):
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world"}}

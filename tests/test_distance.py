@@ -187,7 +187,7 @@ class TestDeepDistance:
 
     @pytest.mark.parametrize('num1, num2, max_, expected', [
         (10.0, 10, 1, 0),
-        (Decimal('10.1'), Decimal('10.2'), 1, Decimal('0.004926108374384236453201970443')),
+        (Decimal('10.1'), Decimal('10.2'), 1, 0.004926108374384236453201970443),
         (Decimal(10), Decimal(-10), 1, 1),
         (2, 3, 1, 0.2),
         (10, -10, .1, .1),

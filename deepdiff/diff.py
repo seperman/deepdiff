@@ -13,7 +13,7 @@ from collections.abc import Mapping, Iterable
 from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
-from deepdiff.helper import (strings, bytes_type, numbers, times, ListItemRemovedOrAdded, notpresent,
+from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
@@ -1148,6 +1148,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if level.t1 != level.t2:
             self._report_result('values_changed', level)
 
+    def _diff_uuids(self, level):
+        """Diff UUIDs"""
+        if level.t1.int != level.t2.int:
+            self._report_result('values_changed', level)
+
     def _diff_numpy_array(self, level, parents_ids=frozenset()):
         """Diff numpy arrays"""
         if level.path() not in self._numpy_paths:
@@ -1308,6 +1313,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         elif isinstance(level.t1, times):
             self._diff_datetimes(level)
+
+        elif isinstance(level.t1, uuids):
+            self._diff_uuids(level)
 
         elif isinstance(level.t1, numbers):
             self._diff_numbers(level)

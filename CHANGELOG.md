@@ -1,5 +1,9 @@
 # DeepDiff Change log
 
+- v5-7-0:
+    - https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
+    - https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
+    - Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman 
 - v5-6-0: Adding custom operators, and ignore_order_func. Bugfix: verbose_level==0 should disable values_changes. Bugfix: unprocessed key error.
 - v5-5-0: adding iterable_compare_func for DeepDiff, adding output_format of list for path() in tree view.
 - v5-4-0: adding strict_checking for numbers in DeepSearch.

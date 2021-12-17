@@ -197,7 +197,8 @@ class TestBasicsOfDelta:
         delta = Delta(diff, log_errors=False)
         assert delta + t1 == t1
 
-        expected_msg = ELEM_NOT_FOUND_TO_ADD_MSG.format(20, 'root[20]')
+        # since we sort the keys by the path elements, root[3] is gonna be processed before root[20]
+        expected_msg = ELEM_NOT_FOUND_TO_ADD_MSG.format(3, 'root[3]')
 
         delta2 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=False)
         with pytest.raises(ValueError) as excinfo:
@@ -587,6 +588,20 @@ DELTA_CASES = {
         'deepdiff_kwargs': {},
         'to_delta_kwargs': {},
         'expected_delta_dict': {'values_changed': {"root[4]['b']": {'new_value': 'world!\nGoodbye!\n1\n2\nEnd'}}}
+    },
+    'delta_case17_numbers_and_letters': {
+        't1': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        't2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 'a', 'b', 'c'],
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'iterable_item_added': {'root[9]': 'a', 'root[10]': 'b', 'root[11]': 'c'}}
+    },
+    'delta_case18_numbers_and_letters': {
+        't1': [0, 1, 2, 3, 4, 5, 6, 7, 8, 'a', 'b', 'c'],
+        't2': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'iterable_item_removed': {'root[9]': 'a', 'root[10]': 'b', 'root[11]': 'c'}}
     },
 }
 
