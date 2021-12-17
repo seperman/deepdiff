@@ -52,6 +52,9 @@ Authors in order of the timeline of their contributions:
 -  Sun Ao `eggachecat`_ for adding custom operators.
 -  Sun Ao `eggachecat`_ for adding ignore_order_func.
 -  `SlavaSkvortsov`_ for fixing unprocessed key error.
+-  Håvard Thom `havardthom`_ for adding UUID support.
+-  Dhanvantari Tilak `Dhanvantari`_ for Bug-Fix:
+   ``TypeError in _get_numbers_distance() when ignore_order = True``.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -89,6 +92,8 @@ Authors in order of the timeline of their contributions:
 .. _Tony-Wang: https://github.com/Tony-Wang
 .. _eggachecat: https://github.com/eggachecat
 .. _SlavaSkvortsov: https://github.com/SlavaSkvortsov
+.. _havardthom: https://github.com/havardthom
+.. _Dhanvantari: https://github.com/Dhanvantari
 
 Thank you for contributing to DeepDiff!
 
