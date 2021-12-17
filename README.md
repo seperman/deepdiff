@@ -14,13 +14,16 @@
 
 Tested on Python 3.6+ and PyPy3.
 
-**NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to support Python 2**
-
-**NOTE: The last version of DeepDiff to work on Python 3.5 was DeepDiff 5-0-2**
-
-- [Documentation](https://zepworks.com/deepdiff/5.7.0/)
+- **[Documentation](https://zepworks.com/deepdiff/5.7.0/)**
 
 ## What is new?
+
+DeepDiff 5-7-0 includes bug fixes and improvements:
+
+- https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
+- https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
+- Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman 
+
 
 DeepDiff 5-6-0 allows you to pass custom operators.
 

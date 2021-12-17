@@ -27,17 +27,16 @@ The DeepDiff library includes the following modules:
 
 - **Commandline** Most of the above functionality is also available via the commandline module  :doc:`/commandline`
 
-*************************
-Supported Python Versions
-*************************
-
-DeepDiff is rigorously tested against Python 3.6 up to 3.10 and Pypy3
-
-NOTE: Python 2 is not supported any more. DeepDiff v3.3.0 was the last version to supprt Python 2.
-
 ***********
 What is New
 ***********
+
+New In DeepDiff 5-7-0
+---------------------
+
+- https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
+- https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
+- Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman
 
 New In DeepDiff 5-6-0
 ---------------------
