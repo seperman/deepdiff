@@ -194,9 +194,9 @@ def _get_numbers_distance(num1, num2, max_=1):
     """
     if num1 == num2:
         return 0
-    if isinstance(num1, float):
+    if not isinstance(num1, float):
         num1 = float(num1)
-    if isinstance(num2, float):
+    if not isinstance(num2, float):
         num2 = float(num2)
     # Since we have a default cutoff of 0.3 distance when
     # getting the pairs of items during the ingore_order=True
