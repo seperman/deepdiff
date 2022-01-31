@@ -68,7 +68,10 @@ def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_str
     """
     original_type = obj.__class__.__name__
     if isinstance(obj, bytes):
-        obj = obj.decode('utf-8')
+        try:
+            obj = obj.decode('utf-8')
+        except UnicodeDecodeError:
+            return obj
     if not ignore_string_type_changes:
         obj = KEY_TO_VAL_STR.format(original_type, obj)
     if ignore_string_case:
