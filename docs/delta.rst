@@ -365,7 +365,6 @@ At the time of writing this document, this list consists of:
  'datetime.time',
  'datetime.timedelta',
  'decimal.Decimal',
- 'deepdiff.helper.OrderedDictPlus',
  'ordered_set.OrderedSet',
  're.Pattern'}
 

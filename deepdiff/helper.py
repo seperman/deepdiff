@@ -86,32 +86,9 @@ py2 = py_major_version == 2
 py3 = py_major_version == 3
 py4 = py_major_version == 4
 
-MINIMUM_PY_DICT_TYPE_SORTED = Decimal('3.6')
-DICT_IS_SORTED = py_current_version >= MINIMUM_PY_DICT_TYPE_SORTED
 
-
-class OrderedDictPlus(OrderedDict):
-    """
-    This class is only used when a python version is used where
-    the built-in dictionary is not ordered.
-    """
-
-    def __repr__(self):  # pragma: no cover. Only used in pypy3 and py3.5
-        return str(dict(self))  # pragma: no cover. Only used in pypy3 and py3.5
-
-    __str__ = __repr__
-
-    def copy(self):  # pragma: no cover. Only used in pypy3 and py3.5
-        result = OrderedDictPlus()  # pragma: no cover. Only used in pypy3 and py3.5
-        for k, v in self.items():  # pragma: no cover. Only used in pypy3 and py3.5
-            result[k] = v  # pragma: no cover. Only used in pypy3 and py3.5
-        return result  # pragma: no cover. Only used in pypy3 and py3.5
-
-
-if DICT_IS_SORTED:
-    dict_ = dict
-else:
-    dict_ = OrderedDictPlus  # pragma: no cover. Only used in pypy3 and py3.5
+# we used to use OrderedDictPlus when dictionaries in Python were not ordered.
+dict_ = dict
 
 if py4:
     logger.warning('Python 4 is not supported yet. Switching logic to Python 3.')  # pragma: no cover

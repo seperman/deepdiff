@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import OrderedDictPlus, py_current_version
+from deepdiff.helper import py_current_version
 
 
 class TestCache:
@@ -23,7 +23,7 @@ class TestCache:
         }
         assert expected_stats == stats
         assert nested_a_result == diff
-        diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False, ignore_type_in_groups=[(dict, OrderedDictPlus)])
+        diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff
 
     @pytest.mark.slow
@@ -53,7 +53,7 @@ class TestCache:
             }
         assert expected_stats == stats
         assert nested_a_result == diff
-        diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False, ignore_type_in_groups=[(dict, OrderedDictPlus)])
+        diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff
 
     def test_cache_deeply_nested_b(self, nested_b_t1, nested_b_t2, nested_b_result):
@@ -73,7 +73,7 @@ class TestCache:
         assert expected_stats == stats
         assert nested_b_result == diff
 
-        diff_of_diff = DeepDiff(nested_b_result, diff.to_dict(), ignore_order=False, ignore_type_in_groups=[(dict, OrderedDictPlus)])
+        diff_of_diff = DeepDiff(nested_b_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff
 
     def test_cache_1D_array_of_numbers_that_do_not_overlap(self):

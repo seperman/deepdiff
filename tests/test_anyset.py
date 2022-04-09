@@ -1,6 +1,4 @@
-import pytest
 from deepdiff.anyset import AnySet
-from deepdiff.helper import DICT_IS_SORTED
 
 
 class TestAnySet:
@@ -34,7 +32,6 @@ class TestAnySet:
             assert item in items
             assert len(result) == result_len - 1
 
-    @pytest.mark.skipif(not DICT_IS_SORTED, reason='python 3.6 is needed for this test to run.')
     def test_iter_anyset(self):
         items = [1, 2, {1}, 4, 4, {1}, {3: 3}]
         obj = AnySet(items)

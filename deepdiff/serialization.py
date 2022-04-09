@@ -72,7 +72,6 @@ SAFE_TO_IMPORT = {
     'ordered_set.OrderedSet',
     'collections.namedtuple',
     'collections.OrderedDict',
-    'deepdiff.helper.OrderedDictPlus',
     're.Pattern',
 }
 
