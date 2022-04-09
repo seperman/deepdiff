@@ -43,7 +43,7 @@ exclude_obj_callback
 
 
 encodings: List, default = None
-    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results.
+    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results. Example: encodings=["utf-8", "latin-1"]
 
 
 hashes: dictionary, default = empty dictionary

@@ -37,7 +37,7 @@ custom_operators : BaseOperator subclasses, default = None
     :ref:`custom_operators_label` if you are considering whether they are fruits or not. In that case, you can pass a *custom_operators* for the job.
 
 encodings: List, default = None
-    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results.
+    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results. Example: encodings=["utf-8", "latin-1"]
 
 exclude_paths: list, default = None
     :ref:`exclude_paths_label`
