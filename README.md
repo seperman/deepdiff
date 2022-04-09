@@ -485,7 +485,7 @@ git push && git push --tags
 1. Please make your PR against the dev branch
 2. Please make sure that your PR has tests. Since DeepDiff is used in many sensitive data driven projects, we strive to maintain around 100% test coverage on the code.
 
-Please run `pytest --cov=deepdiff --runslow` to see the coverage report. Note that the `--runslow` flag will run some slow tests too. In most cases you only want to run the fast tests which so you won't add the `--runslow` flag.
+Please run `pytest --cov=deepdiff --runslow` to see the coverage report. Note that the `--runslow` flag will run some slow tests too. In most cases you only want to run the fast tests which so you wont add the `--runslow` flag.
 
 Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing --runslow`.
 

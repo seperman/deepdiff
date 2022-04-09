@@ -827,8 +827,77 @@ DELTA_IGNORE_ORDER_CASES = {
         },
         'expected_t1_plus_delta': [[1, 2, 3, 4], [4, 1, 1, 1]],
     },
+    'delta_ignore_order_case9': {
+        't1': [{
+            "path": ["interface1", "ipv1"]
+        }, {
+            "path": ["interface2", "ipv2"]
+        }, {
+            "path": ["interface3", "ipv3"]
+        }, {
+            "path": [{
+                "test0": "interface4.0",
+                "test0.0": "ipv4.0"
+            }, {
+                "test1": "interface4.1",
+                "test1.1": "ipv4.1"
+            }]
+        }, {
+            "path": ["interface5", "ipv5"]
+        }],
+        't2': [{
+            "path": ["interface1", "ipv1"]
+        }, {
+            "path": ["interface3", "ipv3"]
+        }, {
+            "path": [{
+                "test0": "interface4.0",
+                "test0.0": "ipv4.0"
+            }, {
+                "test2": "interface4.2",
+                "test2.2": "ipv4.0"
+            }, {
+                "test1": "interface4.1",
+                "test1.1": "ipv4.1"
+            }]
+        }, {
+            "path": ["interface6", "ipv6"]
+        }, {
+            "path": ["interface5", "ipv5"]
+        }],
+        'deepdiff_kwargs': {
+            'ignore_order': True,
+            'report_repetition': True
+        },
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+            'iterable_items_added_at_indexes': {
+                "root[3]['path']": {
+                    1: {
+                        'test2': 'interface4.2',
+                        'test2.2': 'ipv4.0'
+                    }
+                },
+                'root': {
+                    3: {
+                        'path': [
+                            'interface6', 'ipv6'
+                        ]
+                    }
+                }
+            },
+            'iterable_items_removed_at_indexes': {
+                'root': {
+                    1: {
+                        'path': ['interface2', 'ipv2']
+                    }
+                }
+            }
+        },
+        'expected_t1_plus_delta':
+        't2',
+    },
 }
-
 
 DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(
     't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta', DELTA_IGNORE_ORDER_CASES)
@@ -838,15 +907,16 @@ class TestIgnoreOrderDelta:
 
     @pytest.mark.parametrize(**DELTA_IGNORE_ORDER_CASES_PARAMS)
     def test_ignore_order_delta_cases(
-            self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta):
+            self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta, request):
+        test_name = request.node.callspec.id
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
-        assert expected_delta_dict == delta_dict
+        assert expected_delta_dict == delta_dict, f"test_ignore_order_delta_cases {test_name} failed"
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
         t1_plus_delta = t1 + delta
-        assert t1_plus_delta == expected_t1_plus_delta
-        assert t1 + delta == t1_plus_delta  # asserting that delta is not mutated once it is applied.
+        assert t1_plus_delta == expected_t1_plus_delta, f"test_ignore_order_delta_cases {test_name} failed: diff = {DeepDiff(t1_plus_delta, expected_t1_plus_delta, ignore_order=True)}"
+        assert t1 + delta == t1_plus_delta, f"test_ignore_order_delta_cases {test_name} 'asserting that delta is not mutated once it is applied' failed"
 
 
 DELTA_NUMPY_TEST_CASES = {

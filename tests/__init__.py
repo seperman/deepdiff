@@ -4,6 +4,13 @@ def parameterize_cases(argnames, cases):
 
     argnames: a comma separated string of arguments that the test expects.
     cases: a dictionary of test cases.
+
+    argnames_list = [i.strip() for i in argnames.split(',')]
+    ids = list(cases.keys())
+    argvalues = [tuple(test_name if k == 'test_name' else i[k - 1] for k in argnames_list) for test_name, i in cases.items()]
+    return {'argnames': argnames, 'argvalues': argvalues, 'ids': ids}
+
+
     """
     argnames_list = [i.strip() for i in argnames.split(',')]
     argvalues = [tuple(i[k] for k in argnames_list) for i in cases.values()]
