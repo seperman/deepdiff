@@ -62,13 +62,38 @@ class BoolObj(Enum):
     FALSE = 0
 
 
-def prepare_string_for_hashing(obj, ignore_string_type_changes=False, ignore_string_case=False):
+def prepare_string_for_hashing(
+        obj,
+        ignore_string_type_changes=False,
+        ignore_string_case=False,
+        encodings=None,
+        ignore_encoding_errors=False,
+):
     """
     Clean type conversions
     """
     original_type = obj.__class__.__name__
+    # https://docs.python.org/3/library/codecs.html#codecs.decode
+    errors_mode = 'ignore' if ignore_encoding_errors else 'strict'
     if isinstance(obj, bytes):
-        obj = obj.decode('utf-8')
+        err = None
+        encodings = ['utf-8'] if encodings is None else encodings
+        encoded = False
+        for encoding in encodings:
+            try:
+                obj = obj.decode('utf-8', errors=errors_mode)
+                encoded = True
+                break
+            except UnicodeDecodeError as er:
+                err = er
+        if not encoded:
+            raise UnicodeDecodeError(
+                err.encoding,
+                err.object,
+                err.start,
+                err.end,
+                f"{err.reason}. Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...']"
+            ) from None
     if not ignore_string_type_changes:
         obj = KEY_TO_VAL_STR.format(original_type, obj)
     if ignore_string_case:
@@ -104,6 +129,8 @@ class DeepHash(Base):
                  number_to_string_func=None,
                  ignore_private_variables=True,
                  parent="root",
+                 encodings=None,
+                 ignore_encoding_errors=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -112,7 +139,8 @@ class DeepHash(Base):
                  "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func, ignore_private_variables, parent") % ', '.join(kwargs.keys()))
+                 "number_to_string_func, ignore_private_variables, parent "
+                 "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
             self.hashes = hashes
         elif isinstance(hashes, DeepHash):
@@ -146,6 +174,8 @@ class DeepHash(Base):
         self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.number_to_string = number_to_string_func or number_to_string
         self.ignore_private_variables = ignore_private_variables
+        self.encodings = encodings
+        self.ignore_encoding_errors = ignore_encoding_errors
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
@@ -420,8 +450,12 @@ class DeepHash(Base):
 
         elif isinstance(obj, strings):
             result = prepare_string_for_hashing(
-                obj, ignore_string_type_changes=self.ignore_string_type_changes,
-                ignore_string_case=self.ignore_string_case)
+                obj,
+                ignore_string_type_changes=self.ignore_string_type_changes,
+                ignore_string_case=self.ignore_string_case,
+                encodings=self.encodings,
+                ignore_encoding_errors=self.ignore_encoding_errors,
+            )
 
         elif isinstance(obj, times):
             result = self._prep_datetime(obj)

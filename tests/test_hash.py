@@ -795,3 +795,20 @@ class TestOtherHashFuncs:
     def test_combine_hashes_lists(self, items, prefix, expected):
         result = combine_hashes_lists(items, prefix)
         assert expected == result
+
+    @pytest.mark.parametrize('test_num, encodings, ignore_encoding_errors, expected_result', [
+        (1, None, False, UnicodeDecodeError),
+        (2, ['utf-8'], False, UnicodeDecodeError),
+        (3, ['utf-8'], True, {b'\xc3(': '640da73f0d9b268a0a7ae884d77063d1193f43a651352f9032d99a8fe1705546'}),
+    ])
+    def test_encodings(self, test_num, encodings, ignore_encoding_errors, expected_result):
+        if UnicodeDecodeError == expected_result:
+            with pytest.raises(expected_result) as exc_info:
+                DeepHash(b'\xc3\x28', encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
+            expected_message = (
+                "'utf-8' codec can't decode byte 0xc3 in position 0: invalid continuation byte. "
+                "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...']")
+            assert expected_message == str(exc_info.value), f"test_encodings test #{test_num} failed."
+        else:
+            result = DeepHash(b'\xc3\x28', encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
+            assert expected_result == result, f"test_encodings test #{test_num} failed."
