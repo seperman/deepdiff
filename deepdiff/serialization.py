@@ -325,19 +325,32 @@ def pickle_load(content, safe_to_import=None):
     return _RestrictedUnpickler(io.BytesIO(content), safe_to_import=safe_to_import).load()
 
 
-PRETTY_FORM_TEXTS = {
-    "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
-    "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
-    "dictionary_item_added": "Item {diff_path} added to dictionary.",
-    "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
-    "iterable_item_added": "Item {diff_path} added to iterable.",
-    "iterable_item_removed": "Item {diff_path} removed from iterable.",
-    "attribute_added": "Attribute {diff_path} added.",
-    "attribute_removed": "Attribute {diff_path} removed.",
-    "set_item_added": "Item root[{val_t2}] added to set.",
-    "set_item_removed": "Item root[{val_t1}] removed from set.",
-    "repetition_change": "Repetition change for item {diff_path}.",
-}
+def _get_pretty_form_text(verbose_level):
+    pretty_form_texts = {
+        "type_changes": "Type of {diff_path} changed from {type_t1} to {type_t2} and value changed from {val_t1} to {val_t2}.",
+        "values_changed": "Value of {diff_path} changed from {val_t1} to {val_t2}.",
+        "dictionary_item_added": "Item {diff_path} added to dictionary.",
+        "dictionary_item_removed": "Item {diff_path} removed from dictionary.",
+        "iterable_item_added": "Item {diff_path} added to iterable.",
+        "iterable_item_removed": "Item {diff_path} removed from iterable.",
+        "attribute_added": "Attribute {diff_path} added.",
+        "attribute_removed": "Attribute {diff_path} removed.",
+        "set_item_added": "Item root[{val_t2}] added to set.",
+        "set_item_removed": "Item root[{val_t1}] removed from set.",
+        "repetition_change": "Repetition change for item {diff_path}.",
+    }
+    if verbose_level == 2:
+        pretty_form_texts.update(
+            {
+                "dictionary_item_added": "Item {diff_path} ({val_t2}) added to dictionary.",
+                "dictionary_item_removed": "Item {diff_path} ({val_t1}) removed from dictionary.",
+                "iterable_item_added": "Item {diff_path} ({val_t2}) added to iterable.",
+                "iterable_item_removed": "Item {diff_path} ({val_t1}) removed from iterable.",
+                "attribute_added": "Attribute {diff_path} ({val_t2}) added.",
+                "attribute_removed": "Attribute {diff_path} ({val_t1}) removed.",
+            }
+        )
+    return pretty_form_texts
 
 
 def pretty_print_diff(diff):
@@ -348,7 +361,7 @@ def pretty_print_diff(diff):
     val_t2 = '"{}"'.format(str(diff.t2)) if type_t2 == "str" else str(diff.t2)
 
     diff_path = diff.path(root='root')
-    return PRETTY_FORM_TEXTS.get(diff.report_type, "").format(
+    return _get_pretty_form_text(diff.verbose_level).get(diff.report_type, "").format(
         diff_path=diff_path,
         type_t1=type_t1,
         type_t2=type_t2,
