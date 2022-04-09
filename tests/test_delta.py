@@ -1165,7 +1165,9 @@ class TestDeltaOther:
             'cutoff_intersection_for_pairs': 0.6,
             'group_by': None,
             'ignore_order_func': lambda *args, **kwargs: True,
-            'custom_operators': []
+            'custom_operators': [],
+            'encodings': None,
+            'ignore_encoding_errors': False,
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}

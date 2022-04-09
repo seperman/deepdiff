@@ -86,11 +86,14 @@ class TestDiffOther:
         t2 = {'key1': 'Yes'}
         diff = DeepDiff(t1, t2, ignore_type_in_groups=[(bool, str)],
                         ignore_numeric_type_changes=True)
-        expected = {'values_changed':
-                        {"root['key1']":
-                             {'new_value': 'Yes', 'old_value': True}
-                        }
-                    }
+        expected = {
+            'values_changed': {
+                "root['key1']": {
+                    'new_value': 'Yes',
+                    'old_value': True
+                }
+            }
+        }
         assert diff == expected
 
     def test_get_distance_cache_key(self):

@@ -81,18 +81,28 @@ def prepare_string_for_hashing(
         encoded = False
         for encoding in encodings:
             try:
-                obj = obj.decode('utf-8', errors=errors_mode)
+                obj = obj.decode(encoding, errors=errors_mode)
                 encoded = True
                 break
             except UnicodeDecodeError as er:
                 err = er
         if not encoded:
+            obj_decoded = obj.decode('utf-8', errors='ignore')
+            start = min(err.start - 10, 0)
+            start_prefix = ''
+            if start > 0:
+                start_prefix = '...'
+            end = err.end + 10
+            end_suffix = '...'
+            if end >= len(obj):
+                end = len(obj)
+                end_suffix = ''
             raise UnicodeDecodeError(
                 err.encoding,
                 err.object,
                 err.start,
                 err.end,
-                f"{err.reason}. Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...']"
+                f"{err.reason} in '{start_prefix}{obj_decoded[start:end]}{end_suffix}'. Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...']."
             ) from None
     if not ignore_string_type_changes:
         obj = KEY_TO_VAL_STR.format(original_type, obj)

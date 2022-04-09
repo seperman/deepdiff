@@ -36,6 +36,9 @@ cache_tuning_sample_size : int >= 0, default = 0
 custom_operators : BaseOperator subclasses, default = None
     :ref:`custom_operators_label` if you are considering whether they are fruits or not. In that case, you can pass a *custom_operators* for the job.
 
+encodings: List, default = None
+    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results.
+
 exclude_paths: list, default = None
     :ref:`exclude_paths_label`
     List of paths to exclude from the report. If only one item, you can path it as a string.
@@ -96,13 +99,20 @@ ignore_nan_inequality: Boolean, default = False
     :ref:`ignore_nan_inequality_label`
     Whether to ignore float('nan') inequality in Python.
 
-iterable_compare_func:
-    :ref:`iterable_compare_func_label`:
-    There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.
 
 ignore_private_variables: Boolean, default = True
     :ref:`ignore_private_variables_label`
     Whether to exclude the private variables in the calculations or not. It only affects variables that start with double underscores (__).
+
+
+ignore_encoding_errors: Boolean, default = False
+    If you want to get away with UnicodeDecodeError without passing explicit character encodings, set this option to True. If you want to make sure the encoding is done properly, keep this as False and instead pass an explicit list of character encodings to be considered via the encodings parameter.
+
+
+iterable_compare_func:
+    :ref:`iterable_compare_func_label`:
+    There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.
+
 
 log_frequency_in_sec: Integer, default = 0
     :ref:`log_frequency_in_sec_label`

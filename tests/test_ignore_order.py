@@ -1013,3 +1013,29 @@ class TestDynamicIgnoreOrder:
             }
         }
         assert expected == ddiff
+
+    EXPECTED_MESSAGE1 = (
+        "'utf-8' codec can't decode byte 0xc3 in position 0: Can not produce a hash for root: invalid continuation byte in '('. "
+        "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
+
+    EXPECTED_MESSAGE2 = (
+        "'utf-8' codec can't decode byte 0xbc in position 0: Can not produce a hash for root: invalid start byte in 'p of flo...'. "
+        "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
+
+    @pytest.mark.parametrize('test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message', [
+        (1, b'\xc3\x28', None, False, UnicodeDecodeError, EXPECTED_MESSAGE1),
+        (2, b'\xc3\x28', ['utf-8'], False, UnicodeDecodeError, EXPECTED_MESSAGE1),
+        (3, b'\xc3\x28', ['utf-8'], True, {'values_changed': {'root[0]': {'new_value': b'\xc3(', 'old_value': b'foo'}}}, None),
+        (4, b"\xbc cup of flour", ['utf-8'], False, UnicodeDecodeError, EXPECTED_MESSAGE2),
+        (5, b"\xbc cup of flour", ['utf-8'], True, {'values_changed': {'root[0]': {'new_value': b'\xbc cup of flour', 'old_value': b'foo'}}}, None),
+        (6, b"\xbc cup of flour", ['utf-8', 'latin-1'], False, {'values_changed': {'root[0]': {'new_value': b'\xbc cup of flour', 'old_value': b'foo'}}}, None),
+    ])
+    @mock.patch('deepdiff.diff.logger')
+    def test_diff_encodings(self, mock_logger, test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message):
+        if UnicodeDecodeError == expected_result:
+            with pytest.raises(expected_result) as exc_info:
+                DeepDiff([b'foo'], [item], encodings=encodings, ignore_encoding_errors=ignore_encoding_errors, ignore_order=True)
+            assert expected_message == str(exc_info.value), f"test_diff_encodings test #{test_num} failed."
+        else:
+            result = DeepDiff([b'foo'], [item], encodings=encodings, ignore_encoding_errors=ignore_encoding_errors, ignore_order=True)
+            assert expected_result == result, f"test_diff_encodings test #{test_num} failed."
