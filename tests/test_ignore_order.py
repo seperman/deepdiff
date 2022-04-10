@@ -1,4 +1,5 @@
 import pytest
+import re
 from unittest import mock
 from deepdiff.helper import number_to_string, CannotCompare
 from deepdiff import DeepDiff
@@ -1014,6 +1015,9 @@ class TestDynamicIgnoreOrder:
         }
         assert expected == ddiff
 
+
+class TestDecodingErrorIgnoreOrder:
+
     EXPECTED_MESSAGE1 = (
         "'utf-8' codec can't decode byte 0xc3 in position 0: Can not produce a hash for root: invalid continuation byte in '('. "
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
@@ -1039,3 +1043,18 @@ class TestDynamicIgnoreOrder:
         else:
             result = DeepDiff([b'foo'], [item], encodings=encodings, ignore_encoding_errors=ignore_encoding_errors, ignore_order=True)
             assert expected_result == result, f"test_diff_encodings test #{test_num} failed."
+
+
+class TestErrorMessagesWhenIgnoreOrder:
+
+    @mock.patch('deepdiff.diff.logger')
+    def test_error_messages_when_ignore_order(self, mock_logger):
+        t1 = {'x': 0, 'y': [0, 'a', 'b', 'c']}
+        t2 = {'x': 1, 'y': [1, 'c', 'b', 'a']}
+
+        exclude = [re.compile(r"\['x'\]"), re.compile(r"\['y'\]\[0\]")]
+
+        result = DeepDiff(t1, t2, ignore_order=True, exclude_regex_paths=exclude)
+        assert {} == result
+
+        assert not mock_logger.error.called

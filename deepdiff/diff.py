@@ -787,7 +787,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                                      apply_hash=True,
                                      **self.deephash_parameters,
                                      )
-                item_hash = deep_hash[item]
             except UnicodeDecodeError as err:
                 err.reason = f"Can not produce a hash for {level.path()}: {err.reason}"
                 raise
@@ -796,12 +795,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                              "Not counting this object.\n %s" %
                              (level.path(), e))
             else:
-                if item_hash is unprocessed:  # pragma: no cover
-                    logger.warning("Item %s was not processed while hashing "
-                                   "thus not counting this object." %
-                                   level.path())
+                try:
+                    item_hash = deep_hash[item]
+                except KeyError:
+                    pass
                 else:
-                    self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
+                    if item_hash is unprocessed:  # pragma: no cover
+                        logger.warning("Item %s was not processed while hashing "
+                                       "thus not counting this object." %
+                                       level.path())
+                    else:
+                        self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
 
         # Also we hash the iterables themselves too so that we can later create cache keys from those hashes.
         try:
