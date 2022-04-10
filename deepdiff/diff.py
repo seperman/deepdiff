@@ -94,7 +94,10 @@ DEEPHASH_PARAM_KEYS = (
     'ignore_type_subclasses',
     'ignore_string_case',
     'exclude_obj_callback',
-    'ignore_private_variables',)
+    'ignore_private_variables',
+    'encodings',
+    'ignore_encoding_errors',
+)
 
 
 class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
@@ -105,32 +108,36 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def __init__(self,
                  t1,
                  t2,
-                 cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
-                 cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
+                 cache_purge_level=1,
                  cache_size=0,
                  cache_tuning_sample_size=0,
-                 cache_purge_level=1,
+                 custom_operators=None,
+                 cutoff_distance_for_pairs=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
+                 cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
+                 encodings=None,
+                 exclude_obj_callback=None,
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
-                 exclude_obj_callback=None,
                  get_deep_distance=False,
                  group_by=None,
                  hasher=None,
                  hashes=None,
+                 ignore_encoding_errors=False,
+                 ignore_nan_inequality=False,
+                 ignore_numeric_type_changes=False,
                  ignore_order=False,
                  ignore_order_func=None,
-                 ignore_type_in_groups=None,
-                 ignore_string_type_changes=False,
-                 ignore_numeric_type_changes=False,
-                 ignore_type_subclasses=False,
-                 ignore_string_case=False,
-                 ignore_nan_inequality=False,
                  ignore_private_variables=True,
+                 ignore_string_case=False,
+                 ignore_string_type_changes=False,
+                 ignore_type_in_groups=None,
+                 ignore_type_subclasses=False,
+                 iterable_compare_func=None,
                  log_frequency_in_sec=0,
                  math_epsilon=None,
-                 max_passes=10000000,
                  max_diffs=None,
+                 max_passes=10000000,
                  number_format_notation="f",
                  number_to_string_func=None,
                  progress_logger=logger.info,
@@ -139,8 +146,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  truncate_datetime=None,
                  verbose_level=1,
                  view=TEXT_VIEW,
-                 iterable_compare_func=None,
-                 custom_operators=None,
                  _original_type=None,
                  _parameters=None,
                  _shared_parameters=None,
@@ -157,7 +162,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
                 "math_epsilon, iterable_compare_func, _original_type, "
-                "ignore_order_func, custom_operators, "
+                "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -196,6 +201,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.hasher = hasher
             self.cache_tuning_sample_size = cache_tuning_sample_size
             self.group_by = group_by
+            self.encodings = encodings
+            self.ignore_encoding_errors = ignore_encoding_errors
 
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.math_epsilon = math_epsilon
@@ -734,7 +741,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             return
 
         if do_diff:
-            if '\n' in t1_str or '\n' in t2_str:
+            if '\n' in t1_str or isinstance(t2_str, str) and '\n' in t2_str:
                 diff = difflib.unified_diff(
                     t1_str.splitlines(), t2_str.splitlines(), lineterm='')
                 diff = list(diff)
@@ -780,18 +787,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                                      apply_hash=True,
                                      **self.deephash_parameters,
                                      )
-                item_hash = deep_hash[item]
+            except UnicodeDecodeError as err:
+                err.reason = f"Can not produce a hash for {level.path()}: {err.reason}"
+                raise
             except Exception as e:  # pragma: no cover
                 logger.error("Can not produce a hash for %s."
                              "Not counting this object.\n %s" %
                              (level.path(), e))
             else:
-                if item_hash is unprocessed:  # pragma: no cover
-                    logger.warning("Item %s was not processed while hashing "
-                                   "thus not counting this object." %
-                                   level.path())
+                try:
+                    item_hash = deep_hash[item]
+                except KeyError:
+                    pass
                 else:
-                    self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
+                    if item_hash is unprocessed:  # pragma: no cover
+                        logger.warning("Item %s was not processed while hashing "
+                                       "thus not counting this object." %
+                                       level.path())
+                    else:
+                        self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
 
         # Also we hash the iterables themselves too so that we can later create cache keys from those hashes.
         try:

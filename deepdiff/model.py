@@ -719,7 +719,7 @@ class DiffLevel:
         """
         level = self.all_down
         result = DiffLevel(
-            new_t1, new_t2, down=None, up=level, report_type=report_type)
+            new_t1, new_t2, down=None, up=level, report_type=report_type, verbose_level=self.verbose_level)
         level.down = result
         level.auto_generate_child_rel(
             klass=child_relationship_class, param=child_relationship_param, param2=child_relationship_param2)

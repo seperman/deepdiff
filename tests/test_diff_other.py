@@ -81,17 +81,41 @@ class TestDiffOther:
         path2 = diff['values_changed'][0].path()
         assert 'root[0]' == path1 == path2
 
-    def test_bool_str(self):
+    def test_bool_str1(self):
         t1 = {'key1': True}
         t2 = {'key1': 'Yes'}
         diff = DeepDiff(t1, t2, ignore_type_in_groups=[(bool, str)],
                         ignore_numeric_type_changes=True)
-        expected = {'values_changed':
-                        {"root['key1']":
-                             {'new_value': 'Yes', 'old_value': True}
-                        }
-                    }
+        expected = {
+            'values_changed': {
+                "root['key1']": {
+                    'new_value': 'Yes',
+                    'old_value': True
+                }
+            }
+        }
         assert diff == expected
+
+    def test_bool_str2(self):
+        t1 = {"default": True}
+        t2 = {"default": "true"}
+
+        diff = DeepDiff(
+            t1,
+            t2,
+            ignore_type_in_groups=[(bool, str)],
+            ignore_string_type_changes=True)
+        expected = {'values_changed': {"root['default']": {'new_value': 'true',
+                    'old_value': True}}}
+        assert diff == expected
+
+        diff2 = DeepDiff(
+            t2,
+            t1,
+            ignore_type_in_groups=[(bool, str)],
+            ignore_string_type_changes=True)
+        expected2 = {'values_changed': {"root['default']": {'new_value': True, 'old_value': 'true'}}}
+        assert diff2 == expected2
 
     def test_get_distance_cache_key(self):
         result = DeepDiff._get_distance_cache_key(added_hash=5, removed_hash=20)

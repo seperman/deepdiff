@@ -795,3 +795,28 @@ class TestOtherHashFuncs:
     def test_combine_hashes_lists(self, items, prefix, expected):
         result = combine_hashes_lists(items, prefix)
         assert expected == result
+
+    EXPECTED_MESSAGE1 = (
+        "'utf-8' codec can't decode byte 0xc3 in position 0: invalid continuation byte in '('. "
+        "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
+
+    EXPECTED_MESSAGE2 = (
+        "'utf-8' codec can't decode byte 0xbc in position 0: invalid start byte in 'p of flo...'. "
+        "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
+
+    @pytest.mark.parametrize('test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message', [
+        (1, b'\xc3\x28', None, False, UnicodeDecodeError, EXPECTED_MESSAGE1),
+        (2, b'\xc3\x28', ['utf-8'], False, UnicodeDecodeError, EXPECTED_MESSAGE1),
+        (3, b'\xc3\x28', ['utf-8'], True, {b'\xc3(': '640da73f0d9b268a0a7ae884d77063d1193f43a651352f9032d99a8fe1705546'}, None),
+        (4, b"\xbc cup of flour", ['utf-8'], False, UnicodeDecodeError, EXPECTED_MESSAGE2),
+        (5, b"\xbc cup of flour", ['utf-8'], True, {b'\xbc cup of flour': '86ac12eb5e35db88cf93baca1d62098023b2d93d634e75fb4e37657e514f3d51'}, None),
+        (6, b"\xbc cup of flour", ['utf-8', 'latin-1'], False, {b'\xbc cup of flour': 'cfc354ae2232a8983bf59b2004f44fcb4036f57df1d08b9cde9950adea3f8d3e'}, None),
+    ])
+    def test_encodings(self, test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message):
+        if UnicodeDecodeError == expected_result:
+            with pytest.raises(expected_result) as exc_info:
+                DeepHash(item, encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
+            assert expected_message == str(exc_info.value), f"test_encodings test #{test_num} failed."
+        else:
+            result = DeepHash(item, encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
+            assert expected_result == result, f"test_encodings test #{test_num} failed."
