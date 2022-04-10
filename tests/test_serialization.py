@@ -118,7 +118,7 @@ class TestPickling:
 
     def test_serialize(self):
         obj = [1, 2, 3, None, {10: 11E2}, frozenset(['a', 'c']), OrderedSet([2, 1]),
-               datetime.datetime.utcnow(), datetime.time(11), Decimal('11.2'), 123.11]
+               datetime.datetime(2022, 4, 10, 0, 40, 41, 357857), datetime.time(11), Decimal('11.2'), 123.11]
         serialized = pickle_dump(obj)
         loaded = pickle_load(serialized)
         assert obj == loaded

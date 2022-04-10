@@ -1214,7 +1214,7 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_ignore_type_in_groups_str_and_datetime(self):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime(2022, 4, 10, 0, 40, 41, 357857)
         t1 = [1, 2, 3, 'a', now]
         t2 = [1, 2, 3, 'a', 'now']
         ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(str, bytes, datetime.datetime)])
@@ -1587,7 +1587,7 @@ class TestDeepDiffText:
 
     def test_datetime_in_key(self):
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime(2022, 4, 10, 0, 40, 41, 357857)
         t1 = {now: 1, now + datetime.timedelta(1): 4}
         t2 = {now: 2, now + datetime.timedelta(1): 4}
         diff = DeepDiff(t1, t2)

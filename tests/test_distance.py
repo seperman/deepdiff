@@ -209,7 +209,7 @@ class TestDeepDistance:
 
     @pytest.mark.parametrize('num1, num2, max_, expected', [
         (10, -10.1, .3, 0.3),
-        (datetime.datetime.utcnow(), datetime.datetime.utcnow() + datetime.timedelta(days=100), 1, 0.002707370659621624),
+        (datetime.datetime(2022, 4, 10, 0, 40, 41, 357857), datetime.datetime(2022, 4, 10, 0, 40, 41, 357857) + datetime.timedelta(days=100), 1, 0.002707370659621624),
         (1589703146.9556487, 1001589703146.9557, 1, 0.9968306702929068),
         (datetime.time(10, 11), datetime.time(12, 11), .5, 0.0447093889716),
         (datetime.timedelta(days=2), datetime.timedelta(12, 11), .5, 0.35714415626180646),
