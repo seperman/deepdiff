@@ -741,7 +741,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             return
 
         if do_diff:
-            if '\n' in t1_str or '\n' in t2_str:
+            if '\n' in t1_str or isinstance(t2_str, str) and '\n' in t2_str:
                 diff = difflib.unified_diff(
                     t1_str.splitlines(), t2_str.splitlines(), lineterm='')
                 diff = list(diff)
