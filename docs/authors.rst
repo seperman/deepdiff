@@ -55,6 +55,7 @@ Authors in order of the timeline of their contributions:
 -  Håvard Thom `havardthom`_ for adding UUID support.
 -  Dhanvantari Tilak `Dhanvantari`_ for Bug-Fix:
    ``TypeError in _get_numbers_distance() when ignore_order = True``.
+-  Yael Mintz `yaelmi3`_ for detailed pretty print when verbose_level=2.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -94,6 +95,8 @@ Authors in order of the timeline of their contributions:
 .. _SlavaSkvortsov: https://github.com/SlavaSkvortsov
 .. _havardthom: https://github.com/havardthom
 .. _Dhanvantari: https://github.com/Dhanvantari
+.. _yaelmi3: https://github.com/yaelmi3
+
 
 Thank you for contributing to DeepDiff!
 

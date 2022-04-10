@@ -43,3 +43,4 @@ Authors in order of the timeline of their contributions:
 - [SlavaSkvortsov](https://github.com/SlavaSkvortsov) for fixing unprocessed key error.
 - Håvard Thom [havardthom](https://github.com/havardthom) for adding UUID support.
 - Dhanvantari Tilak [Dhanvantari](https://github.com/Dhanvantari) for Bug-Fix: `TypeError in _get_numbers_distance() when ignore_order = True`.
+- Yael Mintz [yaelmi3](https://github.com/yaelmi3) for detailed pretty print when verbose_level=2.

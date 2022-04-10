@@ -14,16 +14,17 @@ DeepDiff
    :maxdepth: 3
 
    basics
-   view
+   custom
+   deep_distance
+   exclude_paths
    ignore_order
    ignore_types_or_values
-   exclude_paths
-   deep_distance
    numbers
-   serialization
    optimizations
+   other
+   serialization
    stats
-   custom
    troubleshoot
+   view
 
 Back to :doc:`/index`

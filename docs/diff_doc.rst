@@ -37,7 +37,7 @@ custom_operators : BaseOperator subclasses, default = None
     :ref:`custom_operators_label` if you are considering whether they are fruits or not. In that case, you can pass a *custom_operators* for the job.
 
 encodings: List, default = None
-    Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out ignore_encoding_errors if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results. Example: encodings=["utf-8", "latin-1"]
+    :ref:`encodings_label` Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out :ref:`ignore_encoding_errors_label` if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results. Example: encodings=["utf-8", "latin-1"]
 
 exclude_paths: list, default = None
     :ref:`exclude_paths_label`
@@ -106,7 +106,7 @@ ignore_private_variables: Boolean, default = True
 
 
 ignore_encoding_errors: Boolean, default = False
-    If you want to get away with UnicodeDecodeError without passing explicit character encodings, set this option to True. If you want to make sure the encoding is done properly, keep this as False and instead pass an explicit list of character encodings to be considered via the encodings parameter.
+    :ref:`ignore_encoding_errors_label` If you want to get away with UnicodeDecodeError without passing explicit character encodings, set this option to True. If you want to make sure the encoding is done properly, keep this as False and instead pass an explicit list of character encodings to be considered via the :ref:`encodings_label` parameter.
 
 
 iterable_compare_func:

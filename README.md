@@ -18,66 +18,21 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
+DeepDiff 5-8-0 includes bug fixes and improvements:
+
+- Fixed the bug with delta randomly not producing the same results when `ignore_order=True` (https://github.com/seperman/deepdiff/issues/277)
+- Display detailed pretty when verbose by [Yael Mintz](https://github.com/yaelmi3)
+- Allow ordered-set version 4.1.x by [Tal Amuyal](https://github.com/TalAmuyal)
+- Removing extra logging when key is not found in DeepHash (https://github.com/seperman/deepdiff/issues/293)
+- Fixed error when comparing non-utf8 byte strings with ignore_order=True(https://github.com/seperman/deepdiff/issues/292)
+- Fixed Tests fail after 2022-05-14 (https://github.com/seperman/deepdiff/issues/255)
+- Fixed [TypeError is thrown when comparing bool and str](https://github.com/seperman/deepdiff/issues/275)
+
 DeepDiff 5-7-0 includes bug fixes and improvements:
 
 - https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
 - https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
 - Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman 
-
-
-DeepDiff 5-6-0 allows you to pass custom operators.
-
-```python
->>> from deepdiff import DeepDiff
->>> from deepdiff.operator import BaseOperator
->>> class CustomClass:
-...     def __init__(self, d: dict, l: list):
-...         self.dict = d
-...         self.dict['list'] = l
-...
->>>
->>> custom1 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3])
->>> custom2 = CustomClass(d=dict(c=3, d=4), l=[1, 2, 3, 2])
->>> custom3 = CustomClass(d=dict(a=1, b=2), l=[1, 2, 3, 4])
->>>
->>>
->>> class ListMatchOperator(BaseOperator):
-...     def give_up_diffing(self, level, diff_instance):
-...         if set(level.t1.dict['list']) == set(level.t2.dict['list']):
-...             return True
-...
->>>
->>> DeepDiff(custom1, custom2, custom_operators=[
-...     ListMatchOperator(types=[CustomClass])
-... ])
-{}
->>>
->>>
->>> DeepDiff(custom2, custom3, custom_operators=[
-...     ListMatchOperator(types=[CustomClass])
-... ])
-{'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
->>>
-
-```
-
-**New in 5-6-0: Dynamic ignore order function**
-
-Ignoring order when certain word in the path
-
-```python
->>> from deepdiff import DeepDiff
->>> t1 = {'a': [1, 2], 'b': [3, 4]}
->>> t2 = {'a': [2, 1], 'b': [4, 3]}
->>> DeepDiff(t1, t2, ignore_order=True)
-{}
->>> def ignore_order_func(level):
-...     return 'a' in level.path()
-...
->>> DeepDiff(t1, t2, ignore_order=True, ignore_order_func=ignore_order_func)
-{'values_changed': {"root['b'][0]": {'new_value': 4, 'old_value': 3}, "root['b'][1]": {'new_value': 3, 'old_value': 4}}}
-
-```
 
 
 ## Installation
