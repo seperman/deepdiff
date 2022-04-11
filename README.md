@@ -28,13 +28,6 @@ DeepDiff 5-8-0 includes bug fixes and improvements:
 - Fixed Tests fail after 2022-05-14 (https://github.com/seperman/deepdiff/issues/255)
 - Fixed [TypeError is thrown when comparing bool and str](https://github.com/seperman/deepdiff/issues/275)
 
-DeepDiff 5-7-0 includes bug fixes and improvements:
-
-- https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
-- https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
-- Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman 
-
-
 ## Installation
 
 ### Install from PyPi:
@@ -445,6 +438,16 @@ Please run `pytest --cov=deepdiff --runslow` to see the coverage report. Note th
 Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing --runslow`.
 
 Thank you!
+
+# Citing
+
+How to cite this library (APA style):
+
+    Dehpour, S. (2022). DeepDiff (Version 5.8.0) [Software]. Available from https://github.com/seperman/deepdiff.
+
+How to cite this library (Chicago style):
+
+    Dehpour, Sep. 2022. DeepDiff (version 5.8.0).
 
 # Authors
 
