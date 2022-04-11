@@ -2,6 +2,7 @@ import pytest
 import os
 import io
 import json
+import sys
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
@@ -1054,7 +1055,7 @@ DELTA_NUMPY_TEST_CASES = {
                 'root[5]': 10
             },
             '_numpy_paths': {
-                'root': 'int64'
+                'root': np.where((sys.maxsize > 2**32), 'int64', 'int32')
             }
         },
         'expected_result': 't2'
