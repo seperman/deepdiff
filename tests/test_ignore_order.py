@@ -788,6 +788,41 @@ class TestIgnoreOrder:
         expected = {'values_changed': {"root['1']['codes'][2]": {'new_value': '4', 'old_value': '3'}}}
         assert expected == diff
 
+    def test_ignore_order_and_group_by3(self):
+        t1 = [{
+            'id':
+            '5ec52e',
+            'products': [{
+                'lineNumber': 1,
+                'productPrice': '2.39',
+                'productQuantity': 2
+            }, {
+                'lineNumber': 2,
+                'productPrice': '4.44',
+                'productQuantity': 1
+            }],
+        }]
+
+        t2 = [{
+            'id':
+            '5ec52e',
+            'products': [
+                {
+                    'lineNumber': 2,
+                    'productPrice': '4.44',
+                    'productQuantity': 1
+                },
+                {
+                    'lineNumber': 1,
+                    'productPrice': '2.39',
+                    'productQuantity': 2
+                },
+            ],
+        }]
+
+        diff = DeepDiff(t1, t2, group_by='id', ignore_order=True)
+        assert {} == diff
+
 
 class TestCompareFuncIgnoreOrder:
 
