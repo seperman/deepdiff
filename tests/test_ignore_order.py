@@ -749,7 +749,7 @@ class TestIgnoreOrder:
 
         assert expected == diff_with_dist
 
-    def test_ignore_order_and_group_by(self):
+    def test_ignore_order_and_group_by1(self):
         t1 = [
             {'id': 'AA', 'name': 'Joe', 'ate': ['Nothing']},
             {'id': 'BB', 'name': 'James', 'ate': ['Chips', 'Cheese']},
@@ -780,6 +780,13 @@ class TestIgnoreOrder:
         diff2 = DeepDiff(t1, t2, group_by='id', ignore_order=True)
         expected2 = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies'}}
         assert expected2 == diff2
+
+    def test_ignore_order_and_group_by2(self):
+        t1_data = [{'id': '1', 'codes': ['1', '2', '3']}]
+        t2_data = [{'id': '1', 'codes': ['1', '2', '4']}]
+        diff = DeepDiff(t1_data, t2_data, group_by='id', ignore_order=True)
+        expected = {'values_changed': {"root['1']['codes'][2]": {'new_value': '4', 'old_value': '3'}}}
+        assert expected == diff
 
 
 class TestCompareFuncIgnoreOrder:

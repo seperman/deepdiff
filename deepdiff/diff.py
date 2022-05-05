@@ -231,6 +231,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.progress_logger = progress_logger
             self.cache_size = cache_size
             _parameters = self.__dict__.copy()
+            _parameters['group_by'] = None  # overwriting since these parameters will be passed on to other passes.
 
         # Non-Root
         if _shared_parameters:
