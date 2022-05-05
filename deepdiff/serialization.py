@@ -187,7 +187,7 @@ class SerializationMixin:
         was set to be True in the diff object.
 
         """
-        if self.group_by is not None:
+        if self.is_root and self.group_by is not None:
             raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
 
         result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
