@@ -1617,8 +1617,43 @@ class TestDeepDiffText:
                 A._thing += 1
                 return A._thing
 
+            @property
+            def __thing2(self):
+                A._thing += 1
+                return A._thing
+
         diff = DeepDiff(A(1), A(1))
-        expected = {'values_changed': {'root._thing': {'new_value': 1, 'old_value': 0},
-                    'root.thing': {'new_value': 2, 'old_value': 1}}}
+        expected = {
+            'values_changed': {
+                'root._thing': {
+                    'new_value': 1,
+                    'old_value': 0
+                },
+                'root.thing': {
+                    'new_value': 2,
+                    'old_value': 1
+                }
+            }
+        }
 
         assert expected == diff
+
+        diff2 = DeepDiff(A(1), A(1), ignore_private_variables=False)
+        expected2 = {
+            'values_changed': {
+                'root._A__thing2': {
+                    'new_value': 5,
+                    'old_value': 3
+                },
+                'root._thing': {
+                    'new_value': 5,
+                    'old_value': 3
+                },
+                'root.thing': {
+                    'new_value': 6,
+                    'old_value': 4
+                }
+            }
+        }
+
+        assert expected2 == diff2

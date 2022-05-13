@@ -394,8 +394,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
             else:
-                t1 = detailed__dict__(level.t1)
-                t2 = detailed__dict__(level.t2)
+                t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
+                t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
         except AttributeError:
             try:
                 t1 = self._dict_from_slots(level.t1)

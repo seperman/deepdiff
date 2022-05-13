@@ -591,10 +591,11 @@ def detailed__dict__(obj, ignore_private_variables=True):
     This is used so we retrieve object properties too.
     """
     result = obj.__dict__.copy()  # A shallow copy
+    private_var_prefix = f"_{obj.__class__.__name__}__"  # The semi private variables in Python get this prefix
     for key in dir(obj):
         if key not in result and (
                 not ignore_private_variables or (
-                    ignore_private_variables and not key.startswith('__')
+                    ignore_private_variables and not key.startswith('__') and not key.startswith(private_var_prefix)
                 )
         ):
             value = getattr(obj, key)
