@@ -582,3 +582,22 @@ def get_homogeneous_numpy_compatible_type_of_seq(seq):
         return PYTHON_TYPE_TO_NUMPY_TYPE.get(type_, False)
     else:
         return False
+
+
+def detailed__dict__(obj, ignore_private_variables=True):
+    """
+    Get the detailed dictionary of an object.
+
+    This is used so we retrieve object properties too.
+    """
+    result = obj.__dict__.copy()  # A shallow copy
+    for key in dir(obj):
+        if key not in result and (
+                not ignore_private_variables or (
+                    ignore_private_variables and not key.startswith('__')
+                )
+        ):
+            value = getattr(obj, key)
+            if not callable(value):
+                result[key] = value
+    return result

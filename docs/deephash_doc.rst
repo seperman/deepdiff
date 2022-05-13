@@ -149,6 +149,12 @@ truncate_datetime: string, default = None
     If your object is nested, it will build hashes of all the objects it contains too.
 
 
+.. note::
+    DeepHash output is not like conventional hash functions. It is a dictionary of object IDs to their hashes. This happens because DeepHash calculates the hash of the object and any other objects found within the object in a recursive manner. If you only need the hash of the object you are passing, all you need to do is to do:
+
+    >>> DeepHash(obj)[obj]
+
+
 **Examples**
 
 Let's say you have a dictionary object.

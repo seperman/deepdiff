@@ -3,6 +3,7 @@ import datetime
 import pytest
 import logging
 import uuid
+import numpy as np
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3
@@ -569,7 +570,15 @@ class TestDeepDiffText:
                 'root._value_': {
                     'old_value': 1,
                     'new_value': 2
-                }
+                },
+                'root.name': {
+                    'old_value': 'A',
+                    'new_value': 'B'
+                },
+                'root.value': {
+                    'old_value': 1,
+                    'new_value': 2
+                },
             }
         }
         assert ddiff == result
@@ -1592,5 +1601,24 @@ class TestDeepDiffText:
         t2 = {now: 2, now + datetime.timedelta(1): 4}
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {f'root[{repr(now)}]': {'new_value': 2, 'old_value': 1}}}
+
+        assert expected == diff
+
+    def test_property_values(self):
+
+        class A:
+            _thing = 0
+
+            def __init__(self, a):
+                self.a = a
+
+            @property
+            def thing(self):
+                A._thing += 1
+                return A._thing
+
+        diff = DeepDiff(A(1), A(1))
+        expected = {'values_changed': {'root._thing': {'new_value': 1, 'old_value': 0},
+                    'root.thing': {'new_value': 2, 'old_value': 1}}}
 
         assert expected == diff
