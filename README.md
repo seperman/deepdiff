@@ -18,6 +18,12 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
+DeepDiff 5-8-1 includes bug fixes:
+- Fixed test suite for 32bit systems (https://github.com/seperman/deepdiff/issues/302) by [Louis-Philippe Véronneau](https://github.com/baldurmen)
+- Fixed the issue when using `ignore_order=True` and `group_by` simultaneously
+- Added the support for diffing object properties (`@property`) (https://github.com/seperman/deepdiff/issues/312)
+- Better support of diffing private variables
+
 DeepDiff 5-8-0 includes bug fixes and improvements:
 
 - Fixed the bug with delta randomly not producing the same results when `ignore_order=True` (https://github.com/seperman/deepdiff/issues/277)
