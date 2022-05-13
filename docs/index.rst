@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.8.0 documentation!
+DeepDiff 5.8.1 documentation!
 =============================
 
 *****************
@@ -31,6 +31,19 @@ The DeepDiff library includes the following modules:
 What is New
 ***********
 
+New In DeepDiff 5-8-1
+---------------------
+
+DeepDiff 5-8-1 includes bug fixes: - Fixed test suite for 32bit systems
+(https://github.com/seperman/deepdiff/issues/302) by `Louis-Philippe
+Véronneau`_ - Fixed the issue when using ``ignore_order=True`` and
+``group_by`` simultaneously - Added the support for diffing object
+properties (``@property``)
+(https://github.com/seperman/deepdiff/issues/312) - Better support of
+diffing private variables
+
+.. _Louis-Philippe Véronneau: https://github.com/baldurmen
+
 New In DeepDiff 5-8-0
 ---------------------
 
@@ -44,13 +57,6 @@ DeepDiff 5-8-0 includes bug fixes and improvements:
 - Fixed Tests fail after 2022-05-14
 - Fixed TypeError is thrown when comparing bool and str
 
-
-New In DeepDiff 5-7-0
----------------------
-
-- https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError in _get_numbers_distance() when ignore_order = True by @Dhanvantari
-- https://github.com/seperman/deepdiff/pull/280 Add support for UUIDs by @havardthom
-- Major bug in delta when it comes to iterable items added or removed is investigated by @uwefladrich and resolved by @seperman
 
 *********
 Tutorials

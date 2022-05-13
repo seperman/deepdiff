@@ -60,9 +60,9 @@ author = 'Sep Dehpour'
 # built documents.
 #
 # The short X.Y version.
-version = '5.8.0'
+version = '5.8.1'
 # The full version, including alpha/beta/rc tags.
-release = '5.8.0'
+release = '5.8.1'
 
 load_dotenv(override=True)
 DOC_VERSION = os.environ.get('DOC_VERSION', version)

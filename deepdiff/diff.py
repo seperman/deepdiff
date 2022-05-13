@@ -20,7 +20,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW,
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__,
                              np, get_truncate_datetime, dict_, CannotCompare)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
@@ -231,6 +231,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.progress_logger = progress_logger
             self.cache_size = cache_size
             _parameters = self.__dict__.copy()
+            _parameters['group_by'] = None  # overwriting since these parameters will be passed on to other passes.
 
         # Non-Root
         if _shared_parameters:
@@ -393,8 +394,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
             else:
-                t1 = level.t1.__dict__
-                t2 = level.t2.__dict__
+                t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
+                t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
         except AttributeError:
             try:
                 t1 = self._dict_from_slots(level.t1)

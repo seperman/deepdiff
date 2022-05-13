@@ -749,7 +749,7 @@ class TestIgnoreOrder:
 
         assert expected == diff_with_dist
 
-    def test_ignore_order_and_group_by(self):
+    def test_ignore_order_and_group_by1(self):
         t1 = [
             {'id': 'AA', 'name': 'Joe', 'ate': ['Nothing']},
             {'id': 'BB', 'name': 'James', 'ate': ['Chips', 'Cheese']},
@@ -780,6 +780,109 @@ class TestIgnoreOrder:
         diff2 = DeepDiff(t1, t2, group_by='id', ignore_order=True)
         expected2 = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies'}}
         assert expected2 == diff2
+
+    def test_ignore_order_and_group_by2(self):
+        t1_data = [{'id': '1', 'codes': ['1', '2', '3']}]
+        t2_data = [{'id': '1', 'codes': ['1', '2', '4']}]
+        diff = DeepDiff(t1_data, t2_data, group_by='id', ignore_order=True)
+        expected = {'values_changed': {"root['1']['codes'][2]": {'new_value': '4', 'old_value': '3'}}}
+        assert expected == diff
+
+    def test_ignore_order_and_group_by3(self):
+        t1 = [{
+            'id':
+            '5ec52e',
+            'products': [{
+                'lineNumber': 1,
+                'productPrice': '2.39',
+                'productQuantity': 2
+            }, {
+                'lineNumber': 2,
+                'productPrice': '4.44',
+                'productQuantity': 1
+            }],
+        }]
+
+        t2 = [{
+            'id':
+            '5ec52e',
+            'products': [
+                {
+                    'lineNumber': 2,
+                    'productPrice': '4.44',
+                    'productQuantity': 1
+                },
+                {
+                    'lineNumber': 1,
+                    'productPrice': '2.39',
+                    'productQuantity': 2
+                },
+            ],
+        }]
+
+        diff = DeepDiff(t1, t2, group_by='id', ignore_order=True)
+        assert {} == diff
+
+    def test_ignore_order_and_group_by4(self):
+        t1 = [
+            {
+                "id": "1",
+                "field_01": {
+                    "subfield_01": {
+                        "subfield_02": {"subfield_03": "1"},
+                    }
+                },
+            },
+            {"id": "2", "field_01": ["1", "2", "3"]},
+            {"id": "3", "field_01": ["1", "2", "3"]},
+        ]
+        t2 = [
+            {
+                "id": "1",
+                "field_01": {
+                    "subfield_01": {
+                        "subfield_02": {"subfield_03": "2"},
+                    }
+                },
+            },
+            {"id": "2", "field_01": ["4", "5", "6"]},
+            {"id": "3", "field_01": ["7", "8", "9"]},
+        ]
+        diff = DeepDiff(t1, t2, group_by='id', ignore_order=True)
+        expected = {
+            'values_changed': {
+                "root['1']['field_01']['subfield_01']['subfield_02']['subfield_03']": {
+                    'new_value': '2',
+                    'old_value': '1'
+                },
+                "root['2']['field_01'][1]": {
+                    'new_value': '5',
+                    'old_value': '2'
+                },
+                "root['3']['field_01'][2]": {
+                    'new_value': '9',
+                    'old_value': '3'
+                },
+                "root['2']['field_01'][0]": {
+                    'new_value': '4',
+                    'old_value': '1'
+                },
+                "root['3']['field_01'][1]": {
+                    'new_value': '8',
+                    'old_value': '2'
+                },
+                "root['3']['field_01'][0]": {
+                    'new_value': '7',
+                    'old_value': '1'
+                },
+                "root['2']['field_01'][2]": {
+                    'new_value': '6',
+                    'old_value': '3'
+                }
+            }
+        }
+
+        assert expected == diff
 
 
 class TestCompareFuncIgnoreOrder:
