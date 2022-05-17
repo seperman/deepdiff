@@ -18,6 +18,9 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
+DeepDiff 5-8-2
+Fixing dependency for Py3.6
+
 DeepDiff 5-8-1 includes bug fixes:
 - Fixed test suite for 32bit systems (https://github.com/seperman/deepdiff/issues/302) by [Louis-Philippe Véronneau](https://github.com/baldurmen)
 - Fixed the issue when using `ignore_order=True` and `group_by` simultaneously
