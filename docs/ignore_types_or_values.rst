@@ -272,6 +272,18 @@ exclude_obj_callback: function, default = None
     >>> DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback)
     {}
 
+exclude_obj_callback_strict: function, default = None
+    A function works the same way as exclude_obj_callback, but excludes elements from the result only if the function returns True for both elements
+
+    >>> def exclude_obj_callback_strict(obj, path):
+    ...         return True if isinstance(obj, int) and obj > 10 else False
+    ...
+    >>> t1 = {"x": 10, "y": "b", "z": "c"}
+    >>> t2 = {"x": 12, "y": "b", "z": "c"}
+    >>> DeepDiff(t1, t2, exclude_obj_callback=exclude_obj_callback_strict)
+    {}
+    >>> DeepDiff(t1, t2, exclude_obj_callback_strict=exclude_obj_callback_strict)
+    {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
 
 .. _truncate_datetime_label:
 
