@@ -1151,6 +1151,7 @@ class TestDeltaOther:
             'ignore_type_subclasses': False,
             'ignore_string_case': False,
             'exclude_obj_callback': None,
+            'exclude_obj_callback_strict': None,
             'ignore_private_variables': True,
             'ignore_nan_inequality': False,
             'hasher': None,

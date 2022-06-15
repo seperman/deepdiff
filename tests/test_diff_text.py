@@ -1394,6 +1394,16 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_skip_exclude_obj_callback_strict(self):
+        def exclude_obj_callback_strict(obj, path):
+            return True if isinstance(obj, int) and obj > 10 else False
+
+        t1 = {"x": 10, "y": "b", "z": "c"}
+        t2 = {"x": 12, "y": "b", "z": "c"}
+        ddiff = DeepDiff(t1, t2, exclude_obj_callback_strict=exclude_obj_callback_strict)
+        result = {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
+        assert result == ddiff
+
     def test_skip_str_type_in_dictionary(self):
         t1 = {1: {2: "a"}}
         t2 = {1: {}}
