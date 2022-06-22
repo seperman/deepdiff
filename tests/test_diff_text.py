@@ -581,7 +581,10 @@ class TestDeepDiffText:
                 },
             }
         }
-        assert ddiff == result
+        result311 = dict(result)
+        result311['values_changed'] = dict(result['values_changed'])
+        result311['values_changed']['root._sort_order_'] = {'new_value': 1, 'old_value': 0}
+        assert ddiff in (result, result311)
 
     def test_custom_objects_change(self):
         t1 = CustomClass(1)

@@ -266,7 +266,8 @@ class TestDeepHashPrep:
             A = 1
             B = 2
 
-        assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}'
+        expecteds = (r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}', r'objMyEnum:{str:_name_:str:A;str:_sort_order_:int:0;str:_value_:int:1}')
+        assert DeepHashPrep(MyEnum.A)[MyEnum.A] in expecteds
         assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
