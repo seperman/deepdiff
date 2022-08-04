@@ -1478,7 +1478,7 @@ class TestDeltaCompareFunc:
         t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
-            'values_changed': {"root[0]['val']": {'new_value': 3, 'old_value': 1}},
+            'values_changed': {"root[2]['val']": {'new_value': 3, 'old_value': 1}},
             'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}},
             'iterable_item_moved': {
                 'root[0]': {'new_path': 'root[2]', 'value': {'id': 1, 'val': 3}},
@@ -1495,7 +1495,7 @@ class TestDeltaCompareFunc:
         t2 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
-            'values_changed': {"root[2]['val']": {'new_value': 1, 'old_value': 3}},
+            'values_changed': {"root[0]['val']": {'new_value': 1, 'old_value': 3}},
             'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}},
             'iterable_item_moved': {
                 'root[2]': {'new_path': 'root[0]', 'value': {'id': 1, 'val': 1}},
@@ -1523,6 +1523,75 @@ class TestDeltaCompareFunc:
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {'iterable_item_moved': {"root['path2'][0]": {'new_path': "root['path2'][1]", 'value': {'ID': 4, 'val': 3}},"root['path2'][1]": {'new_path': "root['path2'][0]", 'value': {'ID': 3, 'val': 1}}}}
         assert expected == ddiff
+        delta = Delta(ddiff)
+        recreated_t2 = t1 + delta
+        assert t2 == recreated_t2
+
+    def test_compare_func_nested_changes(self):
+        t1 = {
+            "TestTable": [
+                {
+                    "id": "022fb580-800e-11ea-a361-39b3dada34b5",
+                    "name": "Max",
+                    "NestedTable": [
+                        {
+                            "id": "022fb580-800e-11ea-a361-39b3dada34a6",
+                            "NestedField": "Test Field"
+                        }
+                    ]
+                },
+                {
+                    "id": "022fb580-800e-11ea-a361-12354656532",
+                    "name": "Bob",
+                    "NestedTable": [
+                        {
+                            "id": "022fb580-800e-11ea-a361-39b3dada34c7",
+                            "NestedField": "Test Field 2"
+                        },
+                    ]
+                },
+            ]
+        }
+        t2 = {"TestTable": [
+            {
+                "id": "022fb580-800e-11ea-a361-12354656532",
+                "name": "Bob (Changed Name)",
+                "NestedTable": [
+                    {
+                        "id": "022fb580-800e-11ea-a361-39b3dada34c7",
+                        "NestedField": "Test Field 2 (Changed Nested Field)"
+                    },
+                    {
+                        "id": "new id",
+                        "NestedField": "Test Field 3"
+                    },
+                    {
+                        "id": "newer id",
+                        "NestedField": "Test Field 4"
+                    },
+                ]
+            },
+            {
+                "id": "adding_some_random_id",
+                "name": "New Name",
+                "NestedTable": [
+                    {
+                        "id": "random_nested_id_added",
+                        "NestedField": "New Nested Field"
+                    },
+                    {
+                        "id": "random_nested_id_added2",
+                        "NestedField": "New Nested Field2"
+                    },
+                    {
+                        "id": "random_nested_id_added3",
+                        "NestedField": "New Nested Field43"
+                    },
+                ]
+            }
+        ]}
+
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
         assert t2 == recreated_t2
