@@ -3,7 +3,7 @@ import datetime
 import pytest
 import logging
 import uuid
-import numpy as np
+from enum import Enum
 from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3
@@ -550,7 +550,6 @@ class TestDeepDiffText:
         assert result == ddiff
 
     def test_enums(self):
-        from enum import Enum
 
         class MyEnum(Enum):
             A = 1
@@ -563,14 +562,6 @@ class TestDeepDiffText:
         ddiff = DeepDiff(MyEnum.A, MyEnum.B)
         result = {
             'values_changed': {
-                'root._name_': {
-                    'old_value': 'A',
-                    'new_value': 'B'
-                },
-                'root._value_': {
-                    'old_value': 1,
-                    'new_value': 2
-                },
                 'root.name': {
                     'old_value': 'A',
                     'new_value': 'B'

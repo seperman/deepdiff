@@ -7,6 +7,7 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
 from collections.abc import Mapping, Iterable
@@ -21,7 +22,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__,
-                             np, get_truncate_datetime, dict_, CannotCompare)
+                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_IGNORE_KEYS)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -388,8 +389,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
-    def _diff_obj(self, level, parents_ids=frozenset(),
-                  is_namedtuple=False):
+    def _diff_enum(self, level, parents_ids=frozenset()):
+        t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
+        t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
+
+        self._diff_dict(
+            level,
+            parents_ids,
+            print_as_attribute=True,
+            override=True,
+            override_t1=t1,
+            override_t2=t2)
+
+    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
@@ -1355,6 +1367,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type)
+
+        elif isinstance(level.t1, Enum):
+            self._diff_enum(level, parents_ids)
 
         else:
             self._diff_obj(level, parents_ids)

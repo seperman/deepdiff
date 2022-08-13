@@ -2,13 +2,20 @@
 import pytest
 import datetime
 import numpy as np
+from enum import Enum
 from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
     cartesian_product_of_shape, literal_eval_extended,
     not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
-    get_truncate_datetime, datetime_normalize
+    get_truncate_datetime, datetime_normalize,
+    detailed__dict__, ENUM_IGNORE_KEYS,
 )
+
+
+class MyEnum(Enum):
+    A = 1
+    B = 2
 
 
 class TestHelper:
@@ -140,3 +147,14 @@ class TestHelper:
     def test_datetime_normalize(self, truncate_datetime, obj, expected):
         result = datetime_normalize(truncate_datetime, obj)
         assert expected == result
+
+    @pytest.mark.parametrize('obj, ignore_keys, expected', [
+        (
+            MyEnum.A,
+            ENUM_IGNORE_KEYS,
+            {'__objclass__': MyEnum, 'name': 'A', 'value': 1},
+        )
+    ])
+    def test_detailed__dict__(self, obj, ignore_keys, expected):
+        result = detailed__dict__(obj, ignore_private_variables=True, ignore_keys=ignore_keys)
+        assert expected == result, f"test_detailed__dict__ failed for {obj}"
