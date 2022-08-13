@@ -495,7 +495,7 @@ LITERAL_EVAL_PRE_PROCESS = [
 
 def literal_eval_extended(item):
     """
-    An extend version of literal_eval
+    An extended version of literal_eval
     """
     try:
         return literal_eval(item)
