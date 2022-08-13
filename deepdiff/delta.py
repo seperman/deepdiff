@@ -263,12 +263,20 @@ class Delta:
     def _do_iterable_item_added(self):
         iterable_item_added = self.diff.get('iterable_item_added', {})
         iterable_item_moved = self.diff.get('iterable_item_moved')
+
+        # First we need to create a placeholder for moved items.
+        # This will then get replaced below after we go through added items.
+        # Without this items can get double added because moved store the new_value and does not need item_added replayed
         if iterable_item_moved:
-            added_dict = {v["new_path"]: v["value"] for k, v in iterable_item_moved.items()}
+            added_dict = {v["new_path"]: None for k, v in iterable_item_moved.items()}
             iterable_item_added.update(added_dict)
 
         if iterable_item_added:
             self._do_item_added(iterable_item_added, insert=True)
+
+        if iterable_item_moved:
+            added_dict = {v["new_path"]: v["value"] for k, v in iterable_item_moved.items()}
+            self._do_item_added(added_dict, insert=False)
 
     def _do_dictionary_item_added(self):
         dictionary_item_added = self.diff.get('dictionary_item_added')
