@@ -116,6 +116,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  cutoff_intersection_for_pairs=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
                  encodings=None,
                  exclude_obj_callback=None,
+                 exclude_obj_callback_strict=None,
                  exclude_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -194,6 +195,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
             self.ignore_string_case = ignore_string_case
             self.exclude_obj_callback = exclude_obj_callback
+            self.exclude_obj_callback_strict = exclude_obj_callback_strict
             self.number_to_string = number_to_string_func or number_to_string
             self.iterable_compare_func = iterable_compare_func
             self.ignore_private_variables = ignore_private_variables
@@ -428,6 +430,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             skip = True
         elif self.exclude_obj_callback and \
                 (self.exclude_obj_callback(level.t1, level.path()) or self.exclude_obj_callback(level.t2, level.path())):
+            skip = True
+        elif self.exclude_obj_callback_strict and \
+                (self.exclude_obj_callback_strict(level.t1, level.path()) and
+                 self.exclude_obj_callback_strict(level.t2, level.path())):
             skip = True
 
         return skip
