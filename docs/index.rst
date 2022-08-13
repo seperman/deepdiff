@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 5.8.1 documentation!
+DeepDiff 5.8.2 documentation!
 =============================
 
 *****************
@@ -30,6 +30,11 @@ The DeepDiff library includes the following modules:
 ***********
 What is New
 ***********
+
+DeepDiff 5-8-2
+--------------
+
+Fixing dependency for Py3.6
 
 New In DeepDiff 5-8-1
 ---------------------
