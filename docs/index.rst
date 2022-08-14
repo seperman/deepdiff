@@ -31,37 +31,18 @@ The DeepDiff library includes the following modules:
 What is New
 ***********
 
-DeepDiff 5-8-2
+DeepDiff 6-0-0
 --------------
+-  :ref:`exclude_obj_callback_strict_label`
+   parameter is added to DeepDiff by Mikhail Khviyuzov
+   `mskhviyu <https://github.com/mskhviyu>`__.
+-  A fix for diffing using ``iterable_compare_func`` with nested objects
+   by `dtorres-sf <https://github.com/dtorres-sf>`__ who originally
+   contributed this feature.
+-  Temporarily we are publishing DeepDiff under ``DeepDiff6`` on pypi
+   until further notice.
 
-Fixing dependency for Py3.6
-
-New In DeepDiff 5-8-1
----------------------
-
-DeepDiff 5-8-1 includes bug fixes: - Fixed test suite for 32bit systems
-(https://github.com/seperman/deepdiff/issues/302) by `Louis-Philippe
-Véronneau`_ - Fixed the issue when using ``ignore_order=True`` and
-``group_by`` simultaneously - Added the support for diffing object
-properties (``@property``)
-(https://github.com/seperman/deepdiff/issues/312) - Better support of
-diffing private variables
-
-.. _Louis-Philippe Véronneau: https://github.com/baldurmen
-
-New In DeepDiff 5-8-0
----------------------
-
-DeepDiff 5-8-0 includes bug fixes and improvements:
-
-- Fixed the bug with delta randomly not producing the same results when `ignore_order=True`
-- Display detailed pretty when verbose
-- Allow ordered-set version 4.1.x
-- Removing extra logging when key is not found in DeepHash
-- Fixed error when comparing non-utf8 byte strings with ignore_order=True
-- Fixed Tests fail after 2022-05-14
-- Fixed TypeError is thrown when comparing bool and str
-
+Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDiff 5 releases.
 
 *********
 Tutorials
@@ -83,8 +64,9 @@ If you want to use DeepDiff from commandline::
 
 Read about DeepDiff optimizations at :ref:`optimizations_label`
 
-Note: prior to DeepDiff 6, we used pip install deepdiff to install DeepDiff::
-    DeepDiff 6 is being published with a different package name on Pypi temporarily until further notice.
+.. note:: Prior to DeepDiff 6, it was published under DeepDiff name on pypi.
+
+    DeepDiff 6 is being published under DeepDiff6 package name on Pypi temporarily until further notice.
 
 
 Importing
@@ -99,7 +81,7 @@ Importing
     >>> from deepdiff import extract  # For extracting a path from an object
 
 
-Note: if you want to use DeepDiff via commandline, make sure to run:: 
+.. note:: if you want to use DeepDiff via commandline, make sure to run:: 
     pip install "deepdiff6[cli]"
 
 Then you can access the commands via:

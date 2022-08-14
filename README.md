@@ -18,24 +18,13 @@ Tested on Python 3.6+ and PyPy3.
 
 ## What is new?
 
-DeepDiff 5-8-2
-Fixing dependency for Py3.6
+DeepDiff 6-0-0
 
-DeepDiff 5-8-1 includes bug fixes:
-- Fixed test suite for 32bit systems (https://github.com/seperman/deepdiff/issues/302) by [Louis-Philippe Véronneau](https://github.com/baldurmen)
-- Fixed the issue when using `ignore_order=True` and `group_by` simultaneously
-- Added the support for diffing object properties (`@property`) (https://github.com/seperman/deepdiff/issues/312)
-- Better support of diffing private variables
+- [Exclude obj callback strict](https://github.com/seperman/deepdiff/pull/320/files) parameter is added to DeepDiff by Mikhail Khviyuzov [mskhviyu](https://github.com/mskhviyu).
+- A fix for diffing using `iterable_compare_func` with nested objects by [dtorres-sf](https://github.com/dtorres-sf) who originally contributed this feature.
+- Temporarily we are publishing DeepDiff under `DeepDiff6` on pypi until further notice.
 
-DeepDiff 5-8-0 includes bug fixes and improvements:
-
-- Fixed the bug with delta randomly not producing the same results when `ignore_order=True` (https://github.com/seperman/deepdiff/issues/277)
-- Display detailed pretty when verbose by [Yael Mintz](https://github.com/yaelmi3)
-- Allow ordered-set version 4.1.x by [Tal Amuyal](https://github.com/TalAmuyal)
-- Removing extra logging when key is not found in DeepHash (https://github.com/seperman/deepdiff/issues/293)
-- Fixed error when comparing non-utf8 byte strings with ignore_order=True(https://github.com/seperman/deepdiff/issues/292)
-- Fixed Tests fail after 2022-05-14 (https://github.com/seperman/deepdiff/issues/255)
-- Fixed [TypeError is thrown when comparing bool and str](https://github.com/seperman/deepdiff/issues/275)
+Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDiff 5 releases.
 
 ## Installation
 
@@ -47,7 +36,10 @@ If you want to use DeepDiff from commandline:
 
 `pip install "deepdiff6[cli]"`
 
-> Note: prior to DeepDiff 6, we used `pip install deepdiff` to install DeepDiff. DeepDiff 6 is being published with a different package name on Pypi temporarily until further notice.
+
+> Note: Prior to DeepDiff 6, it was published under DeepDiff name on pypi.
+> DeepDiff 6 is being published under DeepDiff6 package name on Pypi temporarily until further notice.
+
 
 ### Importing
 

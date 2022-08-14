@@ -56,6 +56,10 @@ exclude_obj_callback: function, default = None
     A function that takes the object and its path and returns a Boolean. If True is returned, the object is excluded from the results, otherwise it is included.
     This is to give the user a higher level of control than one can achieve via exclude_paths, exclude_regex_paths or other means.
 
+exclude_obj_callback_strict: function, default = None
+    :ref:`exclude_obj_callback_strict_label`
+    A function that works the same way as exclude_obj_callback, but excludes elements from the result only if the function returns True for both elements
+
 get_deep_distance: Boolean, default = False
     :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
 
