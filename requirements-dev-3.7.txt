@@ -3,13 +3,7 @@ wheel==0.37.0
 -r requirements-cli.txt
 bump2version==1.0.1
 jsonpickle==2.2.0
-coverage==6.4.3
 ipdb==0.13.9
 numpy==1.21.6
 pytest==7.1.2
-pytest-cov==3.0.0
 python-dotenv==0.20.0
-watchdog==2.1.9
-Sphinx==5.1.1
-sphinx-sitemap==2.2.0
-flake8==5.0.4
