@@ -8,8 +8,9 @@ from functools import partial
 from enum import Enum
 from deepdiff import DeepHash
 from deepdiff.deephash import (
-    prepare_string_for_hashing, unprocessed, UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
-from deepdiff.helper import pypy3, get_id, number_to_string, np
+    prepare_string_for_hashing, unprocessed,
+    UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
+from deepdiff.helper import pypy3, get_id, number_to_string, np, py_major_version, py_minor_version
 from tests import CustomClass2
 
 logging.disable(logging.CRITICAL)
@@ -261,12 +262,15 @@ class TestDeepHashPrep:
             }
             assert expected_result == result
 
-    def test_enum(self):
+    def test_hash_enum(self):
         class MyEnum(Enum):
             A = 1
             B = 2
 
-        assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}'
+        if (py_major_version, py_minor_version) >= (3, 11):
+            assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_sort_order_:int:0;str:_value_:int:1}'
+        else:
+            assert DeepHashPrep(MyEnum.A)[MyEnum.A] == r'objMyEnum:{str:_name_:str:A;str:_value_:int:1}'
         assert DeepHashPrep(MyEnum.A) == DeepHashPrep(MyEnum(1))
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.name)
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
