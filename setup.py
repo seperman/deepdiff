@@ -26,7 +26,7 @@ with open('README.md') as file:
     long_description = file.read()
 
 
-setup(name='deepdiff',
+setup(name='deepdiff6',
       version=version,
       description='Deep Difference and Search of any Python object/data.',
       url='https://github.com/seperman/deepdiff',
@@ -34,7 +34,7 @@ setup(name='deepdiff',
       author='Seperman',
       author_email='sep@zepworks.com',
       license='MIT',
-      packages=['deepdiff6'],
+      packages=['deepdiff'],
       zip_safe=True,
       test_suite="tests",
       include_package_data=True,
