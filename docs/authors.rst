@@ -56,6 +56,8 @@ Authors in order of the timeline of their contributions:
 -  Dhanvantari Tilak `Dhanvantari`_ for Bug-Fix:
    ``TypeError in _get_numbers_distance() when ignore_order = True``.
 -  Yael Mintz `yaelmi3`_ for detailed pretty print when verbose_level=2.
+-  Mikhail Khviyuzov `mskhviyu`_ for Exclude obj callback strict.
+-  `dtorres-sf`_ for the fix for diffing using iterable_compare_func with nested objects.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
@@ -96,7 +98,7 @@ Authors in order of the timeline of their contributions:
 .. _havardthom: https://github.com/havardthom
 .. _Dhanvantari: https://github.com/Dhanvantari
 .. _yaelmi3: https://github.com/yaelmi3
-
+.. _mskhviyu: https://github.com/mskhviyu
 
 Thank you for contributing to DeepDiff!
 
