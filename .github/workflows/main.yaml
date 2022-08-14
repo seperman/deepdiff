@@ -34,10 +34,10 @@ jobs:
           ${{ runner.os }}-
     - name: Install dependencies py3.7
       if: matrix.python-version == 3.7
-      run: pip install -r requirements-dev.txt
+      run: pip install -r requirements-dev-3.7.txt
     - name: Install dependencies
       if: matrix.python-version != 3.7
-      run: pip install -r requirements-dev-3.7.txt
+      run: pip install -r requirements-dev.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
