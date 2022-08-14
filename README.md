@@ -41,11 +41,13 @@ DeepDiff 5-8-0 includes bug fixes and improvements:
 
 ### Install from PyPi:
 
-`pip install deepdiff`
+`pip install deepdiff6`
 
 If you want to use DeepDiff from commandline:
 
-`pip install "deepdiff[cli]"`
+`pip install "deepdiff6[cli]"`
+
+> Note: prior to DeepDiff 6, we used `pip install deepdiff` to install DeepDiff. DeepDiff 6 is being published with a different package name on Pypi temporarily until further notice.
 
 ### Importing
 
@@ -55,7 +57,7 @@ If you want to use DeepDiff from commandline:
 >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 ```
 
-Note: if you want to use DeepDiff via commandline, make sure to run `pip install "deepdiff[cli]"`. Then you can access the commands via:
+Note: if you want to use DeepDiff via commandline, make sure to run `pip install "deepdiff6[cli]"`. Then you can access the commands via:
 
 - DeepDiff
     - `$ deep diff --help`
