@@ -357,8 +357,8 @@ class TestDeepHashPrep:
         assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
 
     @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
-        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.00,float:1.0'),
-        (100000, 100021, 3, "e", 'int:1.000e+05'),
+        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.0,float:1.0'),
+        (100000, 100021, 3, "e", 'int:1.000e+5'),
     ])
     def test_similar_significant_hash(self, t1, t2, significant_digits,
                                       number_format_notation, result):
