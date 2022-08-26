@@ -41,6 +41,7 @@ except ImportError:  # pragma: no cover. The case without Numpy is tested locall
     np_complex64 = np_type  # pragma: no cover.
     np_complex128 = np_type  # pragma: no cover.
     np_complex_ = np_type  # pragma: no cover.
+    np_complexfloating = np_type  # pragma: no cover.
 else:
     np_array_factory = np.array
     np_ndarray = np.ndarray
@@ -61,12 +62,17 @@ else:
     np_complex64 = np.complex64
     np_complex128 = np.complex128
     np_complex_ = np.complex_
+    np_complexfloating = np.complexfloating
 
 numpy_numbers = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
     np_float32, np_float64, np_float_, np_complex64,
     np_complex128, np_complex_,)
+
+numpy_complex_numbers = (
+    np_complexfloating, np_complex64, np_complex128, np_complex_,
+)
 
 numpy_dtypes = set(numpy_numbers)
 numpy_dtypes.add(np_bool_)
@@ -102,6 +108,7 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
+only_complex_number = (complex,) + numpy_complex_numbers
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
 uuids = (uuid.UUID)
@@ -114,8 +121,6 @@ IndexedHash = namedtuple('IndexedHash', 'indexes item')
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 ID_PREFIX = '!>*id'
-
-ZERO_DECIMAL_CHARACTERS = set("-0.")
 
 KEY_TO_VAL_STR = "{}:{}"
 
@@ -321,20 +326,51 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
         using = number_formatting[number_format_notation]
     except KeyError:
         raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
-    if isinstance(number, Decimal):
-        tup = number.as_tuple()
-        with localcontext() as ctx:
-            ctx.prec = len(tup.digits) + tup.exponent + significant_digits
-            number = number.quantize(Decimal('0.' + '0' * significant_digits))
-    elif not isinstance(number, numbers):
+    
+    if not isinstance(number, numbers):
         return number
+    elif isinstance(number, Decimal):
+        with localcontext() as ctx:
+            # Precision = number of integer digits + significant_digits
+            # Using number//1 to get the integer part of the number
+            ctx.prec = len(str(abs(number // 1))) + significant_digits
+            number = number.quantize(Decimal('0.' + '0' * significant_digits))
+    elif isinstance(number, only_complex_number):
+        # Case for complex numbers.
+        number = number.__class__(
+            "{real}+{imag}j".format(
+                real=number_to_string(
+                    number=number.real,
+                    significant_digits=significant_digits,
+                    number_format_notation=number_format_notation
+                ),
+                imag=number_to_string(
+                    number=number.imag,
+                    significant_digits=significant_digits,
+                    number_format_notation=number_format_notation
+                )
+            )
+        )
+    else:
+        number = round(number=number, ndigits=significant_digits)
+
+        if significant_digits == 0:
+            number = int(number)
+
+    if number == 0.0:
+        # Special case for 0: "-0.xx" should compare equal to "0.xx"
+        number = abs(number)
+
+    # Cast number to string
     result = (using % significant_digits).format(number)
-    # Special case for 0: "-0.00" should compare equal to "0.00"
-    if set(result) <= ZERO_DECIMAL_CHARACTERS:
-        result = "0.00"
     # https://bugs.python.org/issue36622
-    if number_format_notation == 'e' and isinstance(number, float):
-        result = result.replace('+0', '+')
+    if number_format_notation == 'e':
+        # Removing leading 0 for exponential part.
+        result = re.sub(
+            pattern=r'(?<=e(\+|\-))0(?=\d)+',
+            repl=r'',
+            string=result
+        )
     return result
 
 
