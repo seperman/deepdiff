@@ -9,7 +9,7 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
-                             get_truncate_datetime, dict_)
+                             get_truncate_datetime, dict_, add_root_to_paths)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -123,6 +123,7 @@ class DeepHash(Base):
                  hashes=None,
                  exclude_types=None,
                  exclude_paths=None,
+                 include_paths=None,
                  exclude_regex_paths=None,
                  hasher=None,
                  ignore_repetition=True,
@@ -146,7 +147,7 @@ class DeepHash(Base):
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
                  "The valid parameters are obj, hashes, exclude_types, significant_digits, truncate_datetime,"
-                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
+                 "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
                  "number_to_string_func, ignore_private_variables, parent "
@@ -160,7 +161,8 @@ class DeepHash(Base):
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
-        self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+        self.exclude_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(exclude_paths))
+        self.include_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(include_paths))
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED_KEY] = []
@@ -326,6 +328,8 @@ class DeepHash(Base):
     def _skip_this(self, obj, parent):
         skip = False
         if self.exclude_paths and parent in self.exclude_paths:
+            skip = True
+        if self.include_paths and parent not in self.include_paths:
             skip = True
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):

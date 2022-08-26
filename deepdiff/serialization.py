@@ -1,8 +1,8 @@
-import json
 import pickle
 import sys
 import io
 import os
+import json
 import logging
 import re  # NOQA
 import builtins  # NOQA
@@ -23,8 +23,9 @@ try:
 except ImportError:  # pragma: no cover.
     clevercsv = None  # pragma: no cover.
 from copy import deepcopy
+from functools import partial
 from collections.abc import Mapping
-from deepdiff.helper import (strings, json_convertor_default, get_type, TEXT_VIEW)
+from deepdiff.helper import (strings, get_type, TEXT_VIEW)
 from deepdiff.model import DeltaResult
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,34 @@ SAFE_TO_IMPORT = {
     'collections.namedtuple',
     'collections.OrderedDict',
     're.Pattern',
+}
+
+
+TYPE_STR_TO_TYPE = {
+    'range': range,
+    'complex': complex,
+    'set': set,
+    'frozenset': frozenset,
+    'slice': slice,
+    'str': str,
+    'bytes': bytes,
+    'list': list,
+    'tuple': tuple,
+    'int': int,
+    'float': float,
+    'dict': dict,
+    'bool': bool,
+    'bin': bin,
+    'None': None,
+    'NoneType': None,
+    'datetime': datetime.datetime,
+    'time': datetime.time,
+    'timedelta': datetime.timedelta,
+    'Decimal': decimal.Decimal,
+    'OrderedSet': ordered_set.OrderedSet,
+    'namedtuple': collections.namedtuple,
+    'OrderedDict': collections.OrderedDict,
+    'Pattern': re.Pattern,    
 }
 
 
@@ -465,3 +494,56 @@ def _save_content(content, path, file_type, keep_backup=True):
         raise UnsupportedFormatErr('Only json, yaml, toml, csv, tsv and pickle are supported.\n'
                                    f' The {file_type} extension is not known.')
     return content
+
+
+JSON_CONVERTOR = {
+    decimal.Decimal: float,
+    ordered_set.OrderedSet: list,
+    type: lambda x: x.__name__,
+    bytes: lambda x: x.decode('utf-8'),
+    datetime.datetime: lambda x: x.isoformat(),
+}
+
+
+def json_convertor_default(default_mapping=None):
+    if default_mapping:
+        _convertor_mapping = JSON_CONVERTOR.copy()
+        _convertor_mapping.update(default_mapping)
+    else:
+        _convertor_mapping = JSON_CONVERTOR
+
+    def _convertor(obj):
+        for original_type, convert_to in _convertor_mapping.items():
+            if isinstance(obj, original_type):
+                return convert_to(obj)
+        raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
+
+    return _convertor
+
+
+class JSONDecoder(json.JSONDecoder):
+
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        if 'old_type' in obj and 'new_type' in obj:
+            for type_key in ('old_type', 'new_type'):
+                type_str = obj[type_key]
+                obj[type_key] = TYPE_STR_TO_TYPE.get(type_str, type_str)
+
+        return obj
+
+
+def json_dumps(item, default_mapping=None, **kwargs):
+    """
+    Dump json with extra details that are not normally json serializable
+
+    Note: I tried to replace json with orjson for its speed. It does work
+    but the output it makes is a byte object and Postgres couldn't directly use it without
+    encoding to str. So I switched back to json.
+    """
+    return json.dumps(item, default=json_convertor_default(default_mapping=default_mapping), **kwargs)
+
+
+json_loads = partial(json.loads, cls=JSONDecoder)

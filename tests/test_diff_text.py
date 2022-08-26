@@ -96,6 +96,7 @@ class TestDeepDiffText:
             }
         }
         assert result == ddiff
+        assert {"root[2]", "root[4]", "root[5]", "root[6]"} == ddiff.affected_paths
 
     def test_item_added_and_removed_verbose(self):
         t1 = {1: 1, 3: 3, 4: 4}
@@ -1301,6 +1302,15 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, exclude_paths={"root['ingredients']"})
         assert {} == ddiff
 
+    def test_skip_path2_key_names(self):
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
+        t2 = {"for life": "vegan"}
+        ddiff = DeepDiff(t1, t2, exclude_paths={"ingredients"})
+        assert {} == ddiff
+
     def test_skip_path2_reverse(self):
         t1 = {
             "for life": "vegan",
@@ -1308,6 +1318,24 @@ class TestDeepDiffText:
         }
         t2 = {"for life": "vegan"}
         ddiff = DeepDiff(t2, t1, exclude_paths={"root['ingredients']"})
+        assert {} == ddiff
+
+    def test_include_path3(self):
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
+        t2 = {"for life": "vegan"}
+        ddiff = DeepDiff(t2, t1, include_paths={"root['for_life']"})
+        assert {} == ddiff
+
+    def test_include_path3_with_just_key_names(self):
+        t1 = {
+            "for life": "vegan",
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
+        t2 = {"for life": "vegan"}
+        ddiff = DeepDiff(t2, t1, include_paths={"for_life"})
         assert {} == ddiff
 
     def test_skip_path4(self):
@@ -1394,6 +1422,7 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, exclude_obj_callback_strict=exclude_obj_callback_strict)
         result = {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
         assert result == ddiff
+        assert {"root['x']"} == ddiff.affected_paths
 
     def test_skip_str_type_in_dictionary(self):
         t1 = {1: {2: "a"}}
@@ -1447,6 +1476,7 @@ class TestDeepDiffText:
             'iterable_item_removed': {'root[2]': None}
         }
         assert result == ddiff
+        assert {"root[2]"} == ddiff.affected_paths
 
     def test_non_subscriptable_iterable(self):
         def gen1():
@@ -1466,6 +1496,7 @@ class TestDeepDiffText:
         # Note: In text-style results, we currently pretend this stuff is subscriptable for readability
 
         assert result == ddiff
+        assert {"root[2]"} == ddiff.affected_paths
 
     @pytest.mark.parametrize('t1, t2, params, expected_result', [
         (float('nan'), float('nan'), {}, ['values_changed']),
@@ -1594,6 +1625,7 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2, group_by='id')
         expected = {'values_changed': {'root[1]': {'new_value': 3, 'old_value': 2}}}
         assert expected == diff
+        assert {"root[1]"} == diff.affected_paths
 
     def test_datetime_in_key(self):
 

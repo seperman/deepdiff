@@ -8,7 +8,7 @@ import warnings
 import time
 from ast import literal_eval
 from decimal import Decimal, localcontext
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 from itertools import repeat
 from ordered_set import OrderedSet
 from threading import Timer
@@ -220,28 +220,6 @@ class indexed_set(set):
     """
 
 
-JSON_CONVERTOR = {
-    Decimal: float,
-    OrderedSet: list,
-    type: lambda x: x.__name__,
-    bytes: lambda x: x.decode('utf-8')
-}
-
-
-def json_convertor_default(default_mapping=None):
-    _convertor_mapping = JSON_CONVERTOR.copy()
-    if default_mapping:
-        _convertor_mapping.update(default_mapping)
-
-    def _convertor(obj):
-        for original_type, convert_to in _convertor_mapping.items():
-            if isinstance(obj, original_type):
-                return convert_to(obj)
-        raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
-
-    return _convertor
-
-
 def add_to_frozen_set(parents_ids, item_id):
     return parents_ids | {item_id}
 
@@ -255,6 +233,26 @@ def convert_item_or_items_into_set_else_none(items):
     else:
         items = None
     return items
+
+
+def add_root_to_paths(paths):
+    """
+    Sometimes the users want to just pass
+    [key] instead of root[key] for example.
+    Here we automatically add all sorts of variations that might match
+    the path they were supposed to pass. 
+    """
+    if paths is None:
+        return
+    result = OrderedSet()
+    for path in paths:
+        if path.startswith('root'):
+            result.add(path)
+        else:
+            result.add(f"root.{path}")
+            result.add(f"root[{path}]")
+            result.add(f"root['{path}']")
+    return result
 
 
 RE_COMPILED_TYPE = type(re.compile(''))

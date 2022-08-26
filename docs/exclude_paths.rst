@@ -16,6 +16,34 @@ Example
     >>> print (DeepDiff(t1, t2, exclude_paths=["root['ingredients']", "root['ingredients2']"]))  # multiple items pass as a list or a set.
     {}
 
+Also for root keys you don't have to pass as "root['key']". You can instead just pass the key:
+
+Example
+    >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+    >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+    >>> print (DeepDiff(t1, t2, exclude_paths="ingredients))  # one item pass it as a string
+    {}
+    >>> print (DeepDiff(t1, t2, exclude_paths=["ingredients", "ingredients2"]))  # multiple items pass as a list or a set.
+    {}
+
+
+.. _include_paths_label:
+
+Include Paths
+=============
+
+Only include this part of your object tree in the comparison.
+Use include_paths and pass a set or list of paths to limit diffing to only those paths. If only one item is being passed, just put it there as a string—no need to pass it as a list then.
+
+Example
+    >>> t1 = {"for life": "vegan", "ingredients": ["no meat", "no eggs", "no dairy"]}
+    >>> t2 = {"for life": "vegan", "ingredients": ["veggies", "tofu", "soy sauce"]}
+    >>> print (DeepDiff(t1, t2, include_paths="root['for life']"))  # one item pass it as a string
+    {}
+    >>> print (DeepDiff(t1, t2, include_paths=["for life", "ingredients2"]))  # multiple items pass as a list or a set and you don't need to pass the full path when dealing with root keys. So instead of "root['for life']" you can pass "for life"
+    {}
+
+
 .. _exclude_regex_paths_label:
 
 Exclude Regex Paths
