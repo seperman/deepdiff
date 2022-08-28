@@ -1431,6 +1431,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def get_stats(self):
         """
         Get some stats on internals of the DeepDiff run.
+        """
+        return self._stats
+
+    @property
+    def affected_paths(self):
+        """
+        Get the list of paths that were affected.
+        Whether a value was changed or they were added or removed.
 
         Example
             >>> t1 = {1: 1, 2: 2, 3: [3], 4: 4}
@@ -1447,14 +1455,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             >>> ddiff.affected_root_keys
             OrderedSet([3, 4, 5, 6, 2])
 
-        """
-        return self._stats
-
-    @property
-    def affected_paths(self):
-        """
-        Get the list of paths that were affected.
-        Whether a value was changed or they were added or removed.
         """
         result = OrderedSet()
         for key in REPORT_KEYS:
