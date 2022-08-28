@@ -438,8 +438,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         skip = False
         if self.exclude_paths and level_path in self.exclude_paths:
             skip = True
-        if self.include_paths and level_path not in self.include_paths:
-            skip = True
+        if self.include_paths and level_path != 'root':
+            if level_path not in self.include_paths:
+                skip = True
+                for prefix in self.include_paths:
+                    if level_path.startswith(prefix):
+                        skip = False
+                        break
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(level_path) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
@@ -1443,6 +1448,22 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     result |= value
                 else:
                     result |= OrderedSet(value.keys())
+        return result
+
+    @property
+    def affected_root_keys(self):
+        """
+        Get the list of root keys that were affected.
+        Whether a value was changed or they were added or removed.
+        """
+        result = OrderedSet()
+        for key in REPORT_KEYS:
+            value = self.tree.get(key)
+            if value:
+                if isinstance(value, PrettyOrderedSet):
+                    result |= OrderedSet([i.get_root_key() for i in value])
+                else:
+                    result |= OrderedSet([i.get_root_key() for i in value.keys()])
         return result
 
 

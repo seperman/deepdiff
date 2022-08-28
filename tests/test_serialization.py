@@ -317,7 +317,7 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize('test_num, value', [
         (1, {'10': None}),
-        (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}})
+        (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}),
     ])
     def test_json_dumps_and_loads(self, test_num, value):
         serialized = json_dumps(value)

@@ -5,6 +5,7 @@ import datetime
 import uuid
 import logging
 import warnings
+import string
 import time
 from ast import literal_eval
 from decimal import Decimal, localcontext
@@ -92,6 +93,8 @@ py2 = py_major_version == 2
 py3 = py_major_version == 3
 py4 = py_major_version == 4
 
+
+NUMERICS = frozenset(string.digits)
 
 # we used to use OrderedDictPlus when dictionaries in Python were not ordered.
 dict_ = dict
@@ -254,9 +257,14 @@ def add_root_to_paths(paths):
         if path.startswith('root'):
             result.add(path)
         else:
-            result.add(f"root.{path}")
-            result.add(f"root[{path}]")
-            result.add(f"root['{path}']")
+            if path.isdigit():
+                result.add(f"root['{path}']")
+                result.add(f"root[{path}]")
+            elif path[0].isdigit():
+                result.add(f"root['{path}']")
+            else:
+                result.add(f"root.{path}")
+                result.add(f"root['{path}']")
     return result
 
 

@@ -44,6 +44,21 @@ Example
     {}
 
 
+When passing include_paths, all the children of that path will be included too.
+
+Example
+    >>> t1 = {
+    ...     "foo": {"bar": "potato"},
+    ...     "ingredients": ["no meat", "no eggs", "no dairy"]
+    ... }
+    >>> t2 = {
+    ...     "foo": {"bar": "banana"},
+    ...     "ingredients": ["bread", "cheese"]
+    ... }
+    >>> DeepDiff(t1, t2, include_paths="foo")
+    {'values_changed': {"root['foo']['bar']": {'new_value': 'banana', 'old_value': 'potato'}}}
+
+
 .. _exclude_regex_paths_label:
 
 Exclude Regex Paths

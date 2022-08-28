@@ -1335,8 +1335,27 @@ class TestDeepDiffText:
             "ingredients": ["no meat", "no eggs", "no dairy"]
         }
         t2 = {"for life": "vegan"}
-        ddiff = DeepDiff(t2, t1, include_paths={"for_life"})
+        ddiff = DeepDiff(t1, t2, include_paths={"for_life"})
         assert {} == ddiff
+
+    def test_include_path4_nested(self):
+        t1 = {
+            "foo": {"bar": "potato"},
+            "ingredients": ["no meat", "no eggs", "no dairy"]
+        }
+        t2 = {
+            "foo": {"bar": "banana"},
+            "ingredients": ["bread", "cheese"]
+        }
+        ddiff = DeepDiff(t1, t2, include_paths="foo")
+        assert {
+            'values_changed': {
+                "root['foo']['bar']": {
+                    'new_value': 'banana',
+                    'old_value': 'potato'
+                }
+            }
+        } == ddiff
 
     def test_skip_path4(self):
         t1 = {
@@ -1423,6 +1442,7 @@ class TestDeepDiffText:
         result = {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
         assert result == ddiff
         assert {"root['x']"} == ddiff.affected_paths
+        assert {"x"} == ddiff.affected_root_keys
 
     def test_skip_str_type_in_dictionary(self):
         t1 = {1: {2: "a"}}

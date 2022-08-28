@@ -9,7 +9,7 @@ from deepdiff.helper import (
     cartesian_product_of_shape, literal_eval_extended,
     not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
     get_truncate_datetime, datetime_normalize,
-    detailed__dict__, ENUM_IGNORE_KEYS,
+    detailed__dict__, ENUM_IGNORE_KEYS, add_root_to_paths,
 )
 
 
@@ -288,3 +288,12 @@ class TestHelper:
     def test_detailed__dict__(self, obj, ignore_keys, expected):
         result = detailed__dict__(obj, ignore_private_variables=True, ignore_keys=ignore_keys)
         assert expected == result, f"test_detailed__dict__ failed for {obj}"
+
+    @pytest.mark.parametrize('test_num, value, expected', [
+        (1, ['ab'], {'root.ab', "root['ab']"}),
+        (2, ['11'], {"root['11']", 'root[11]'}),
+        (3, ['1a'], {"root['1a']"}),
+    ])
+    def test_add_root_to_paths(self, test_num, value, expected):
+        result = add_root_to_paths(value)
+        assert expected == result, f"test_add_root_to_paths #{test_num} failed."

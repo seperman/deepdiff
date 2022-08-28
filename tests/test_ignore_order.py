@@ -1130,7 +1130,7 @@ class TestDecodingErrorIgnoreOrder:
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
 
     EXPECTED_MESSAGE2 = (
-        "'utf-8' codec can't decode byte 0xbc in position 0: Can not produce a hash for root: invalid start byte in 'p of flo...'. "
+        "'utf-8' codec can't decode byte 0xbc in position 0: Can not produce a hash for root: invalid start byte in ' cup of flour'. "
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
 
     @pytest.mark.parametrize('test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message', [

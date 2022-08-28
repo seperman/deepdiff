@@ -621,6 +621,21 @@ class DiffLevel:
     def _format_result(root, result):
         return None if result is None else "{}{}".format(root, result)
 
+    def get_root_key(self, use_t2=False):
+        """
+        Get the path's root key value for this change
+
+        For example if the path to the element that is reported to have a change in value is root['X'][0]
+        then get_root_key should return 'X'
+        """
+        root_level = self.all_up
+        if(use_t2):
+            next_rel = root_level.t2_child_rel
+        else:
+            next_rel = root_level.t1_child_rel or root_level.t2_child_rel  # next relationship object to get a formatted param from
+
+        return next_rel.param
+
     def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str'):
         """
         A python syntax string describing how to descend to this level, assuming the top level object is called root.

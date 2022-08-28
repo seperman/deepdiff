@@ -3,6 +3,7 @@ import sys
 import io
 import os
 import json
+import uuid
 import logging
 import re  # NOQA
 import builtins  # NOQA
@@ -70,6 +71,7 @@ SAFE_TO_IMPORT = {
     'datetime.time',
     'datetime.timedelta',
     'decimal.Decimal',
+    'uuid.UUID',
     'ordered_set.OrderedSet',
     'collections.namedtuple',
     'collections.OrderedDict',
@@ -502,6 +504,7 @@ JSON_CONVERTOR = {
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),
     datetime.datetime: lambda x: x.isoformat(),
+    uuid.UUID: lambda x: str(x),
 }
 
 

@@ -88,11 +88,11 @@ def prepare_string_for_hashing(
                 err = er
         if not encoded:
             obj_decoded = obj.decode('utf-8', errors='ignore')
-            start = min(err.start - 10, 0)
+            start = max(err.start - 20, 0)
             start_prefix = ''
             if start > 0:
                 start_prefix = '...'
-            end = err.end + 10
+            end = err.end + 20
             end_suffix = '...'
             if end >= len(obj):
                 end = len(obj)
@@ -329,8 +329,13 @@ class DeepHash(Base):
         skip = False
         if self.exclude_paths and parent in self.exclude_paths:
             skip = True
-        if self.include_paths and parent not in self.include_paths:
-            skip = True
+        if self.include_paths and parent != 'root':
+            if parent not in self.include_paths:
+                skip = True
+                for prefix in self.include_paths:
+                    if parent.startswith(prefix):
+                        skip = False
+                        break
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
