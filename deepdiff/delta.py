@@ -7,7 +7,8 @@ from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
     strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
-    not_found, numpy_dtype_string_to_type, dict_)
+    not_found, numpy_dtype_string_to_type, dict_,
+)
 from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
 from deepdiff.anyset import AnySet
 
@@ -70,11 +71,11 @@ class Delta:
         serializer=pickle_dump,
         verify_symmetry=False,
     ):
-        if 'safe_to_import' not in set(deserializer.__code__.co_varnames):
+        if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
+            _deserializer = deserializer
+        else:
             def _deserializer(obj, safe_to_import=None):
                 return deserializer(obj)
-        else:
-            _deserializer = deserializer
 
         if diff is not None:
             if isinstance(diff, DeepDiff):

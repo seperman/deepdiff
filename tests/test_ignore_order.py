@@ -47,6 +47,7 @@ class TestIgnoreOrder:
         t2 = [[{4, 5, 6}], {1, 2, 3}]
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert {'set_item_added': ["root[1][0][6]"]} == ddiff
+        assert {"root[1][0][6]"} == ddiff.affected_paths
 
     def test_ignore_order_depth4(self):
         t1 = [[1, 2, 3, 4], [4, 2, 2, 1]]
@@ -74,6 +75,7 @@ class TestIgnoreOrder:
             }
         }
         assert expected == ddiff
+        assert {"root[1]", "root[2]", "root[3]"} == ddiff.affected_paths
 
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False, cache_purge_level=0)
         dist = ddiff._get_rough_distance()
@@ -124,6 +126,7 @@ class TestIgnoreOrder:
         t2 = {"a": [[{"b": 2, "c": 3}, {"b": 2, "c": 4}]]}
         ddiff = DeepDiff(t1, t2, ignore_order=True)
         assert {} == ddiff
+        assert set() == ddiff.affected_paths
 
     def test_nested_list_ignore_order(self):
         t1 = [1, 2, [3, 4]]
@@ -190,6 +193,7 @@ class TestIgnoreOrder:
             }
         }
         assert result != ddiff
+        assert {"root[2][0]"} == ddiff.affected_paths
 
     def test_list_of_unhashable_difference_ignore_order(self):
         t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
@@ -1126,7 +1130,7 @@ class TestDecodingErrorIgnoreOrder:
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
 
     EXPECTED_MESSAGE2 = (
-        "'utf-8' codec can't decode byte 0xbc in position 0: Can not produce a hash for root: invalid start byte in 'p of flo...'. "
+        "'utf-8' codec can't decode byte 0xbc in position 0: Can not produce a hash for root: invalid start byte in ' cup of flour'. "
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
 
     @pytest.mark.parametrize('test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message', [

@@ -21,15 +21,15 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
-                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__,
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_IGNORE_KEYS)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
-    DictRelationship, AttributeRelationship,
+    DictRelationship, AttributeRelationship, REPORT_KEYS,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD)
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD, PrettyOrderedSet, )
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
@@ -85,6 +85,7 @@ CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT = 0.7
 DEEPHASH_PARAM_KEYS = (
     'exclude_types',
     'exclude_paths',
+    'include_paths',
     'exclude_regex_paths',
     'hasher',
     'significant_digits',
@@ -119,6 +120,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_obj_callback=None,
                  exclude_obj_callback_strict=None,
                  exclude_paths=None,
+                 include_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
                  get_deep_distance=False,
@@ -157,7 +159,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
-                "number_format_notation, exclude_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
+                "number_format_notation, exclude_paths, include_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_diffs, "
@@ -188,7 +190,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 ignore_numeric_type_changes=ignore_numeric_type_changes,
                 ignore_type_subclasses=ignore_type_subclasses)
             self.report_repetition = report_repetition
-            self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+            self.exclude_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(exclude_paths))
+            self.include_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(include_paths))
             self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
             self.exclude_types = set(exclude_types) if exclude_types else None
             self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
@@ -431,21 +434,29 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
         :rtype: bool
         """
+        level_path = level.path()
         skip = False
-        if self.exclude_paths and level.path() in self.exclude_paths:
+        if self.exclude_paths and level_path in self.exclude_paths:
             skip = True
+        if self.include_paths and level_path != 'root':
+            if level_path not in self.include_paths:
+                skip = True
+                for prefix in self.include_paths:
+                    if level_path.startswith(prefix):
+                        skip = False
+                        break
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.search(level.path()) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(level_path) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True
         elif self.exclude_types_tuple and \
                 (isinstance(level.t1, self.exclude_types_tuple) or isinstance(level.t2, self.exclude_types_tuple)):
             skip = True
         elif self.exclude_obj_callback and \
-                (self.exclude_obj_callback(level.t1, level.path()) or self.exclude_obj_callback(level.t2, level.path())):
+                (self.exclude_obj_callback(level.t1, level_path) or self.exclude_obj_callback(level.t2, level_path)):
             skip = True
         elif self.exclude_obj_callback_strict and \
-                (self.exclude_obj_callback_strict(level.t1, level.path()) and
-                 self.exclude_obj_callback_strict(level.t2, level.path())):
+                (self.exclude_obj_callback_strict(level.t1, level_path) and
+                 self.exclude_obj_callback_strict(level.t2, level_path)):
             skip = True
 
         return skip
@@ -477,12 +488,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return result
 
     def _diff_dict(self,
-                    level,
-                    parents_ids=frozenset([]),
-                    print_as_attribute=False,
-                    override=False,
-                    override_t1=None,
-                    override_t2=None):
+                   level,
+                   parents_ids=frozenset([]),
+                   print_as_attribute=False,
+                   override=False,
+                   override_t1=None,
+                   override_t2=None):
         """Difference of 2 dictionaries"""
         if override:
             # for special stuff like custom objects and named tuples we receive preprocessed t1 and t2
@@ -1097,7 +1108,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         old_indexes=t1_indexes,
                         new_indexes=t2_indexes)
                     self._report_result('repetition_change',
-                                         repetition_change_level)
+                                        repetition_change_level)
 
         else:
             for hash_value in hashes_added:
@@ -1422,6 +1433,69 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Get some stats on internals of the DeepDiff run.
         """
         return self._stats
+
+    @property
+    def affected_paths(self):
+        """
+        Get the list of paths that were affected.
+        Whether a value was changed or they were added or removed.
+
+        Example
+            >>> t1 = {1: 1, 2: 2, 3: [3], 4: 4}
+            >>> t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
+            >>> ddiff = DeepDiff(t1, t2)
+            >>> ddiff
+            >>> pprint(ddiff, indent=4)
+            {   'dictionary_item_added': [root[5], root[6]],
+                'dictionary_item_removed': [root[4]],
+                'iterable_item_added': {'root[3][1]': 4},
+                'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+            >>> ddiff.affected_paths
+            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            >>> ddiff.affected_root_keys
+            OrderedSet([3, 4, 5, 6, 2])
+
+        """
+        result = OrderedSet()
+        for key in REPORT_KEYS:
+            value = self.get(key)
+            if value:
+                if isinstance(value, PrettyOrderedSet):
+                    result |= value
+                else:
+                    result |= OrderedSet(value.keys())
+        return result
+
+    @property
+    def affected_root_keys(self):
+        """
+        Get the list of root keys that were affected.
+        Whether a value was changed or they were added or removed.
+
+        Example
+            >>> t1 = {1: 1, 2: 2, 3: [3], 4: 4}
+            >>> t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
+            >>> ddiff = DeepDiff(t1, t2)
+            >>> ddiff
+            >>> pprint(ddiff, indent=4)
+            {   'dictionary_item_added': [root[5], root[6]],
+                'dictionary_item_removed': [root[4]],
+                'iterable_item_added': {'root[3][1]': 4},
+                'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+            >>> ddiff.affected_paths
+            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            >>> ddiff.affected_root_keys
+            OrderedSet([3, 4, 5, 6, 2])
+        """
+        result = OrderedSet()
+        for key in REPORT_KEYS:
+            value = self.tree.get(key)
+            if value:
+                if isinstance(value, PrettyOrderedSet):
+                    result |= OrderedSet([i.get_root_key() for i in value])
+                else:
+                    result |= OrderedSet([i.get_root_key() for i in value.keys()])
+        return result
 
 
 if __name__ == "__main__":  # pragma: no cover

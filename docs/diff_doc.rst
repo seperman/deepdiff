@@ -43,6 +43,10 @@ exclude_paths: list, default = None
     :ref:`exclude_paths_label`
     List of paths to exclude from the report. If only one item, you can path it as a string.
 
+include_paths: list, default = None
+    :ref:`include_paths_label`
+    List of the only paths to include in the report. If only one item, you can path it as a string.
+
 exclude_regex_paths: list, default = None
     :ref:`exclude_regex_paths_label`
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.

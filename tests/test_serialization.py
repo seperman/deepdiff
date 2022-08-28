@@ -11,7 +11,7 @@ from deepdiff.helper import pypy3
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
-    load_path_content, UnsupportedFormatErr)
+    load_path_content, UnsupportedFormatErr, json_dumps, json_loads)
 from conftest import FIXTURES_DIR
 from ordered_set import OrderedSet
 from tests import PicklableClass
@@ -298,14 +298,14 @@ class TestDeepDiffPretty:
 
     @pytest.mark.parametrize("expected, verbose_level",
                              (
-                                     ('Item root[5] added to dictionary.'
-                                      '\nItem root[3] removed from dictionary.'
-                                      '\nType of root[2] changed from int to str and value changed from 2 to "b".'
-                                      '\nValue of root[4] changed from 4 to 5.', 0),
-                                     ('Item root[5] (5) added to dictionary.'
-                                      '\nItem root[3] (3) removed from dictionary.'
-                                      '\nType of root[2] changed from int to str and value changed from 2 to "b".'
-                                      '\nValue of root[4] changed from 4 to 5.', 2),
+                                 ('Item root[5] added to dictionary.'
+                                  '\nItem root[3] removed from dictionary.'
+                                  '\nType of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\nValue of root[4] changed from 4 to 5.', 0),
+                                 ('Item root[5] (5) added to dictionary.'
+                                  '\nItem root[3] (3) removed from dictionary.'
+                                  '\nType of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\nValue of root[4] changed from 4 to 5.', 2),
                              ), ids=("verbose=0", "verbose=2")
                              )
     def test_pretty_form_method(self, expected, verbose_level):
@@ -314,3 +314,12 @@ class TestDeepDiffPretty:
         ddiff = DeepDiff(t1, t2, view='tree', verbose_level=verbose_level)
         result = ddiff.pretty()
         assert result == expected
+
+    @pytest.mark.parametrize('test_num, value', [
+        (1, {'10': None}),
+        (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}),
+    ])
+    def test_json_dumps_and_loads(self, test_num, value):
+        serialized = json_dumps(value)
+        back = json_loads(serialized)
+        assert value == back, f"test_json_dumps_and_loads tesst #{test_num} failed"

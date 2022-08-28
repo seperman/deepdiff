@@ -9,7 +9,7 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
-                             get_truncate_datetime, dict_)
+                             get_truncate_datetime, dict_, add_root_to_paths)
 from deepdiff.base import Base
 logger = logging.getLogger(__name__)
 
@@ -88,11 +88,11 @@ def prepare_string_for_hashing(
                 err = er
         if not encoded:
             obj_decoded = obj.decode('utf-8', errors='ignore')
-            start = min(err.start - 10, 0)
+            start = max(err.start - 20, 0)
             start_prefix = ''
             if start > 0:
                 start_prefix = '...'
-            end = err.end + 10
+            end = err.end + 20
             end_suffix = '...'
             if end >= len(obj):
                 end = len(obj)
@@ -123,6 +123,7 @@ class DeepHash(Base):
                  hashes=None,
                  exclude_types=None,
                  exclude_paths=None,
+                 include_paths=None,
                  exclude_regex_paths=None,
                  hasher=None,
                  ignore_repetition=True,
@@ -146,7 +147,7 @@ class DeepHash(Base):
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
                  "The valid parameters are obj, hashes, exclude_types, significant_digits, truncate_datetime,"
-                 "exclude_paths, exclude_regex_paths, hasher, ignore_repetition, "
+                 "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
                  "number_to_string_func, ignore_private_variables, parent "
@@ -160,7 +161,8 @@ class DeepHash(Base):
         exclude_types = set() if exclude_types is None else set(exclude_types)
         self.exclude_types_tuple = tuple(exclude_types)  # we need tuple for checking isinstance
         self.ignore_repetition = ignore_repetition
-        self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
+        self.exclude_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(exclude_paths))
+        self.include_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(include_paths))
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED_KEY] = []
@@ -327,6 +329,13 @@ class DeepHash(Base):
         skip = False
         if self.exclude_paths and parent in self.exclude_paths:
             skip = True
+        if self.include_paths and parent != 'root':
+            if parent not in self.include_paths:
+                skip = True
+                for prefix in self.include_paths:
+                    if parent.startswith(prefix):
+                        skip = False
+                        break
         elif self.exclude_regex_paths and any(
                 [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
             skip = True

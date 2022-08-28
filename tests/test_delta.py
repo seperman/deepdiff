@@ -16,13 +16,43 @@ from deepdiff.delta import (
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
     FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG, UNABLE_TO_GET_PATH_MSG, NOT_VALID_NUMPY_TYPE)
 from deepdiff.serialization import (
-    DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT, DELTA_ERROR_WHEN_GROUP_BY
+    DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT, DELTA_ERROR_WHEN_GROUP_BY,
+    json_dumps, json_loads,
 )
 
 from tests import PicklableClass, parameterize_cases, CustomClass, CustomClass2
 
 
 class TestBasicsOfDelta:
+
+    def test_from_null_delta_json(self):
+        t1 = None
+        t2 = [1, 2, 3, 5]
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, serializer=json_dumps)
+        dump = delta.dumps()
+        delta2 = Delta(dump, deserializer=json_loads)
+        assert delta2 + t1 == t2
+        assert t1 + delta2 == t2
+
+    def test_to_null_delta1_json(self):
+        t1 = 1
+        t2 = None
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff, serializer=json_dumps)
+        dump = delta.dumps()
+        delta2 = Delta(dump, deserializer=json_loads)
+        assert delta2 + t1 == t2
+        assert t1 + delta2 == t2
+
+    def test_to_null_delta2_json(self):
+        t1 = [1, 2, 3, 5]
+        t2 = None
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff)
+
+        assert delta + t1 == t2
+        assert t1 + delta == t2
 
     def test_list_difference_add_delta(self):
         t1 = [1, 2]
@@ -1145,6 +1175,7 @@ class TestDeltaOther:
             'ignore_type_in_groups': [],
             'report_repetition': True,
             'exclude_paths': None,
+            'include_paths': None,
             'exclude_regex_paths': None,
             'exclude_types': None,
             'exclude_types_tuple': None,

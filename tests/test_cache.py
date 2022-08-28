@@ -7,7 +7,7 @@ from deepdiff.helper import py_current_version
 class TestCache:
 
     @pytest.mark.slow
-    def test_cache_deeply_nested_a1(self, nested_a_t1, nested_a_t2, nested_a_result):
+    def test_cache_deeply_nested_a1(self, nested_a_t1, nested_a_t2, nested_a_result, nested_a_affected_paths):
 
         diff = DeepDiff(nested_a_t1, nested_a_t2, ignore_order=True,
                         cache_size=5000, cache_tuning_sample_size=280,
@@ -25,6 +25,8 @@ class TestCache:
         assert nested_a_result == diff
         diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff
+        assert nested_a_affected_paths == diff.affected_paths
+        assert [0, 1] == diff.affected_root_keys
 
     @pytest.mark.slow
     def test_cache_deeply_nested_a2(self, nested_a_t1, nested_a_t2, nested_a_result):

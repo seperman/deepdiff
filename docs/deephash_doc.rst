@@ -32,6 +32,10 @@ exclude_paths: list, default = None
     List of paths to exclude from the report. If only one item, you can path it as a string instead of a list containing only one path.
 
 
+include_paths: list, default = None
+    List of the only paths to include in the report. If only one item, you can path it as a string.
+
+
 exclude_regex_paths: list, default = None
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can path it as a string instead of a list containing only one regex path.
 

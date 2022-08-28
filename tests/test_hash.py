@@ -357,8 +357,8 @@ class TestDeepHashPrep:
         assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
 
     @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
-        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.00,float:1.0'),
-        (100000, 100021, 3, "e", 'int:1.000e+05'),
+        ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.0,float:1.0'),
+        (100000, 100021, 3, "e", 'int:1.000e+5'),
     ])
     def test_similar_significant_hash(self, t1, t2, significant_digits,
                                       number_format_notation, result):
@@ -568,16 +568,18 @@ class TestDeepHashPrep:
         assert 1 in t1_hash
         assert t1_hash[dic1] == t2_hash[dic2]
 
-    def test_skip_path(self):
+    def test_skip_path_in_hash(self):
         dic1 = {1: "a"}
         t1 = [dic1, 2]
         dic2 = {}
         t2 = [dic2, 2]
         t1_hash = DeepHashPrep(t1, exclude_paths=['root[0]'])
         t2_hash = DeepHashPrep(t2, exclude_paths='root[0]')
+        t2_hash_again = DeepHashPrep(t2, include_paths='1')
         assert 1 not in t1_hash
         assert 2 in t1_hash
         assert t1_hash[2] == t2_hash[2]
+        assert t1_hash[2] == t2_hash_again[2]
 
     def test_skip_path2(self):
 
@@ -594,6 +596,23 @@ class TestDeepHashPrep:
 
         t1_hash = DeepHashPrep(t1, exclude_paths=exclude_paths)
         t2_hash = DeepHashPrep(t2, exclude_paths=exclude_paths)
+        assert t1_hash[t1] == t2_hash[t2]
+
+    def test_hash_include_path_nested(self):
+
+        obj10 = {'a': 1, 'b': 'f', 'e': "1111", 'foo': {'bar': 'baz'}}
+        obj11 = {'c': 1, 'd': 'f', 'e': 'Cool'}
+
+        obj20 = {'a': 1, 'b': 'f', 'e': 'Cool', 'foo': {'bar': 'baz'}}
+        obj21 = {'c': 1, 'd': 'f', 'e': "2222"}
+
+        t1 = [obj10, obj11]
+        t2 = [obj20, obj21]
+
+        include_paths = ["root[0]['foo']['bar']"]
+
+        t1_hash = DeepHashPrep(t1, include_paths=include_paths)
+        t2_hash = DeepHashPrep(t2, include_paths=include_paths)
         assert t1_hash[t1] == t2_hash[t2]
 
     def test_skip_regex_path(self):
@@ -805,8 +824,13 @@ class TestOtherHashFuncs:
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
 
     EXPECTED_MESSAGE2 = (
-        "'utf-8' codec can't decode byte 0xbc in position 0: invalid start byte in 'p of flo...'. "
+        "'utf-8' codec can't decode byte 0xbc in position 0: invalid start byte in ' cup of flour'. "
         "Please either pass ignore_encoding_errors=True or pass the encoding via encodings=['utf-8', '...'].")
+
+    EXPECTED_MESSAGE3 = (
+        "'utf-8' codec can't decode byte 0xc3 in position 34: invalid continuation byte in '...up of potatos. Then ( cup of flour'. Please either pass ignore_encoding_errors=True or "
+        "pass the encoding via encodings=['utf-8', '...']."
+    )
 
     @pytest.mark.parametrize('test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message', [
         (1, b'\xc3\x28', None, False, UnicodeDecodeError, EXPECTED_MESSAGE1),
@@ -815,8 +839,9 @@ class TestOtherHashFuncs:
         (4, b"\xbc cup of flour", ['utf-8'], False, UnicodeDecodeError, EXPECTED_MESSAGE2),
         (5, b"\xbc cup of flour", ['utf-8'], True, {b'\xbc cup of flour': '86ac12eb5e35db88cf93baca1d62098023b2d93d634e75fb4e37657e514f3d51'}, None),
         (6, b"\xbc cup of flour", ['utf-8', 'latin-1'], False, {b'\xbc cup of flour': 'cfc354ae2232a8983bf59b2004f44fcb4036f57df1d08b9cde9950adea3f8d3e'}, None),
+        (7, b"First have a cup of potatos. Then \xc3\x28 cup of flour", None, False, UnicodeDecodeError, EXPECTED_MESSAGE3),
     ])
-    def test_encodings(self, test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message):
+    def test_hash_encodings(self, test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message):
         if UnicodeDecodeError == expected_result:
             with pytest.raises(expected_result) as exc_info:
                 DeepHash(item, encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
