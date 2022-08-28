@@ -31,6 +31,17 @@ The DeepDiff library includes the following modules:
 What is New
 ***********
 
+DeepDiff 6-1-0
+--------------
+
+-  DeepDiff.affected_paths can be used to get the list of all paths
+   where a change, addition, or deletion was reported for.
+-  DeepDiff.affected_root_keys can be used to get the list of all paths
+   where a change, addition, or deletion was reported for.
+-  Bugfix: ValueError when using Decimal 0.x #339 by `Enric
+   Pou <https://github.com/epou>`__
+-  Serialization of UUID
+
 DeepDiff 6-0-0
 --------------
 -  :ref:`exclude_obj_callback_strict_label`
