@@ -58,6 +58,8 @@ Authors in order of the timeline of their contributions:
 -  Yael Mintz `yaelmi3`_ for detailed pretty print when verbose_level=2.
 -  Mikhail Khviyuzov `mskhviyu`_ for Exclude obj callback strict.
 -  `dtorres-sf`_ for the fix for diffing using iterable_compare_func with nested objects.
+-  `Enric Pou <https://github.com/epou>`__ for bug fix of ValueError
+   when using Decimal 0.x
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
