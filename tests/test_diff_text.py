@@ -82,21 +82,25 @@ class TestDeepDiffText:
         assert result == DeepDiff(t1, t2)
 
     def test_item_added_and_removed(self):
-        t1 = {1: 1, 2: 2, 3: 3, 4: 4}
-        t2 = {1: 1, 2: 4, 3: 3, 5: 5, 6: 6}
+        t1 = {1: 1, 2: 2, 3: [3], 4: 4}
+        t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
         ddiff = DeepDiff(t1, t2)
         result = {
-            'dictionary_item_added': {'root[5]', 'root[6]'},
-            'dictionary_item_removed': {'root[4]'},
+            'dictionary_item_added': ["root[5]", "root[6]"],
+            'dictionary_item_removed': ["root[4]"],
             'values_changed': {
                 'root[2]': {
-                    "old_value": 2,
-                    "new_value": 4
+                    'new_value': 4,
+                    'old_value': 2
                 }
+            },
+            'iterable_item_added': {
+                'root[3][1]': 4
             }
         }
         assert result == ddiff
-        assert {"root[2]", "root[4]", "root[5]", "root[6]"} == ddiff.affected_paths
+        assert {'root[4]', 'root[5]', 'root[6]', 'root[3][1]', 'root[2]'} == ddiff.affected_paths
+        assert {4, 5, 6, 3, 2} == ddiff.affected_root_keys
 
     def test_item_added_and_removed_verbose(self):
         t1 = {1: 1, 3: 3, 4: 4}

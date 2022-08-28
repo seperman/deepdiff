@@ -1431,6 +1431,22 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def get_stats(self):
         """
         Get some stats on internals of the DeepDiff run.
+
+        Example
+            >>> t1 = {1: 1, 2: 2, 3: [3], 4: 4}
+            >>> t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
+            >>> ddiff = DeepDiff(t1, t2)
+            >>> ddiff
+            >>> pprint(ddiff, indent=4)
+            {   'dictionary_item_added': [root[5], root[6]],
+                'dictionary_item_removed': [root[4]],
+                'iterable_item_added': {'root[3][1]': 4},
+                'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+            >>> ddiff.affected_paths
+            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            >>> ddiff.affected_root_keys
+            OrderedSet([3, 4, 5, 6, 2])
+
         """
         return self._stats
 
@@ -1455,6 +1471,21 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         """
         Get the list of root keys that were affected.
         Whether a value was changed or they were added or removed.
+
+        Example
+            >>> t1 = {1: 1, 2: 2, 3: [3], 4: 4}
+            >>> t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
+            >>> ddiff = DeepDiff(t1, t2)
+            >>> ddiff
+            >>> pprint(ddiff, indent=4)
+            {   'dictionary_item_added': [root[5], root[6]],
+                'dictionary_item_removed': [root[4]],
+                'iterable_item_added': {'root[3][1]': 4},
+                'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
+            >>> ddiff.affected_paths
+            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            >>> ddiff.affected_root_keys
+            OrderedSet([3, 4, 5, 6, 2])
         """
         result = OrderedSet()
         for key in REPORT_KEYS:
