@@ -96,6 +96,9 @@ class TreeResult(ResultDict):
             self[item] = PrettyOrderedSet()
         return self.get(item)
 
+    def __len__(self):
+        return sum([len(i) for i in self.values() if isinstance(i, PrettyOrderedSet)])
+
 
 class TextResult(ResultDict):
     ADD_QUOTES_TO_STRINGS = True

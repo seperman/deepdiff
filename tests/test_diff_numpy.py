@@ -132,12 +132,12 @@ NUMPY_CASES = {
 }
 
 
-NUMPY_CASES_PARAMS = parameterize_cases('t1, t2, deepdiff_kwargs, expected_result', NUMPY_CASES)
+NUMPY_CASES_PARAMS = parameterize_cases('test_name, t1, t2, deepdiff_kwargs, expected_result', NUMPY_CASES)
 
 
 class TestNumpy:
 
     @pytest.mark.parametrize(**NUMPY_CASES_PARAMS)
-    def test_numpy(self, t1, t2, deepdiff_kwargs, expected_result):
+    def test_numpy(self, test_name, t1, t2, deepdiff_kwargs, expected_result):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
-        assert expected_result == diff
+        assert expected_result == diff, f"test_numpy {test_name} failed."

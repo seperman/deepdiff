@@ -634,21 +634,28 @@ DELTA_CASES = {
         'to_delta_kwargs': {},
         'expected_delta_dict': {'iterable_item_removed': {'root[9]': 'a', 'root[10]': 'b', 'root[11]': 'c'}}
     },
+    'delta_case19_value_removed_from_the_middle_of_list': {
+        't1': [0, 1, 2, 3, 4, 5, 6, 7, 8, 'a', 'b', 'c'],
+        't2': [0, 1, 2, 3, 5, 6, 7, 8, 'a', 'b', 'c'],
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {'directed': True},
+        'expected_delta_dict': {'iterable_item_removed': {'root[4]': 4}}
+    },
 }
 
 
-DELTA_CASES_PARAMS = parameterize_cases('t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_CASES)
+DELTA_CASES_PARAMS = parameterize_cases('test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict', DELTA_CASES)
 
 
 class TestDelta:
 
     @pytest.mark.parametrize(**DELTA_CASES_PARAMS)
-    def test_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
+    def test_delta_cases(self, test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
-        assert expected_delta_dict == delta_dict
+        assert expected_delta_dict == delta_dict, f"test_delta_cases {test_name} failed."
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
-        assert t1 + delta == t2
+        assert t1 + delta == t2, f"test_delta_cases {test_name} failed."
 
 
 DELTA_IGNORE_ORDER_CASES = {
@@ -931,15 +938,15 @@ DELTA_IGNORE_ORDER_CASES = {
 }
 
 DELTA_IGNORE_ORDER_CASES_PARAMS = parameterize_cases(
-    't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta', DELTA_IGNORE_ORDER_CASES)
+    'test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta', DELTA_IGNORE_ORDER_CASES)
 
 
 class TestIgnoreOrderDelta:
 
     @pytest.mark.parametrize(**DELTA_IGNORE_ORDER_CASES_PARAMS)
     def test_ignore_order_delta_cases(
-            self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta, request):
-        test_name = request.node.callspec.id
+            self, test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_t1_plus_delta, request):
+        # test_name = request.node.callspec.id
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict, f"test_ignore_order_delta_cases {test_name} failed"
@@ -1094,31 +1101,31 @@ DELTA_NUMPY_TEST_CASES = {
 
 
 DELTA_NUMPY_TEST_PARAMS = parameterize_cases(
-    't1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result', DELTA_NUMPY_TEST_CASES)
+    'test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result', DELTA_NUMPY_TEST_CASES)
 
 
 class TestNumpyDelta:
 
     @pytest.mark.parametrize(**DELTA_NUMPY_TEST_PARAMS)
-    def test_numpy_delta_cases(self, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result):
+    def test_numpy_delta_cases(self, test_name, t1, t2, deepdiff_kwargs, to_delta_kwargs, expected_delta_dict, expected_result):
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         if expected_delta_dict:
-            assert expected_delta_dict == delta_dict
+            assert expected_delta_dict == delta_dict, f"test_numpy_delta_cases {test_name} failed."
         delta = Delta(diff, verify_symmetry=False, raise_errors=True)
         if expected_result == 't2':
             result = delta + t1
-            assert np.array_equal(result, t2)
+            assert np.array_equal(result, t2), f"test_numpy_delta_cases {test_name} failed."
         elif expected_result == 't2_via_deepdiff':
             result = delta + t1
             diff = DeepDiff(result, t2, ignore_order=True, report_repetition=True)
-            assert not diff
+            assert not diff, f"test_numpy_delta_cases {test_name} failed."
         elif expected_result is DeltaNumpyOperatorOverrideError:
             with pytest.raises(DeltaNumpyOperatorOverrideError):
-                assert t1 + delta
+                t1 + delta
         else:
             result = delta + t1
-            assert np.array_equal(result, expected_result)
+            assert np.array_equal(result, expected_result), f"test_numpy_delta_cases {test_name} failed."
 
     def test_invalid_numpy_type(self):
 
@@ -1510,11 +1517,27 @@ class TestDeltaCompareFunc:
         t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
-            'values_changed': {"root[2]['val']": {'new_value': 3, 'old_value': 1}},
-            'iterable_item_removed': {'root[2]': {'id': 1, 'val': 3}},
-            'iterable_item_moved': {
-                'root[0]': {'new_path': 'root[2]', 'value': {'id': 1, 'val': 3}},
-                'root[3]': {'new_path': 'root[0]', 'value': {'id': 3, 'val': 3}}
+            "iterable_item_removed": {
+                "root[2]": {
+                    "id": 1,
+                    "val": 3
+                }
+            },
+            "iterable_item_moved": {
+                "root[0]": {
+                    "new_path": "root[2]",
+                    "value": {
+                        "id": 1,
+                        "val": 3
+                    }
+                },
+                "root[3]": {
+                    "new_path": "root[0]",
+                    "value": {
+                        "id": 3,
+                        "val": 3
+                    }
+                }
             }
         }
         assert expected == ddiff
@@ -1527,11 +1550,27 @@ class TestDeltaCompareFunc:
         t2 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
-            'values_changed': {"root[0]['val']": {'new_value': 1, 'old_value': 3}},
-            'iterable_item_added': {'root[2]': {'id': 1, 'val': 3}},
+            'iterable_item_added': {
+                'root[2]': {
+                    'id': 1,
+                    'val': 3
+                }
+            },
             'iterable_item_moved': {
-                'root[2]': {'new_path': 'root[0]', 'value': {'id': 1, 'val': 1}},
-                'root[0]': {'new_path': 'root[3]', 'value': {'id': 3, 'val': 3}}
+                'root[0]': {
+                    'new_path': 'root[3]',
+                    'value': {
+                        'id': 3,
+                        'val': 3
+                    }
+                },
+                'root[2]': {
+                    'new_path': 'root[0]',
+                    'value': {
+                        'id': 1,
+                        'val': 1
+                    }
+                }
             }
         }
         assert expected == ddiff

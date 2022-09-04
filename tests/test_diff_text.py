@@ -426,44 +426,14 @@ class TestDeepDiffText:
         t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 5]}}
         t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 3, 2, 5]}}
         ddiff = DeepDiff(t1, t2)
-        result = {
-            'values_changed': {
-                "root[4]['b'][2]": {
-                    'new_value': 2,
-                    'old_value': 5
-                },
-                "root[4]['b'][1]": {
-                    'new_value': 3,
-                    'old_value': 2
-                }
-            },
-            'iterable_item_added': {
-                "root[4]['b'][3]": 5
-            }
-        }
-        assert result == ddiff
+        expected = {'iterable_item_added': {"root[4]['b'][1]": 3}}
+        assert expected == ddiff
 
     def test_list_difference4(self):
-        # TODO: Look into Levenshtein algorithm
-        # So that the result is just insertion of "c" in this test.
         t1 = ["a", "b", "d", "e"]
         t2 = ["a", "b", "c", "d", "e"]
         ddiff = DeepDiff(t1, t2)
-        result = {
-            'values_changed': {
-                'root[2]': {
-                    'new_value': 'c',
-                    'old_value': 'd'
-                },
-                'root[3]': {
-                    'new_value': 'd',
-                    'old_value': 'e'
-                }
-            },
-            'iterable_item_added': {
-                'root[4]': 'e'
-            }
-        }
+        result = {'iterable_item_added': {'root[2]': 'c'}}
         assert result == ddiff
 
     def test_list_of_booleans(self):
@@ -1501,6 +1471,35 @@ class TestDeepDiffText:
         }
         assert result == ddiff
         assert {"root[2]"} == ddiff.affected_paths
+
+    def test_list_item_removed_from_the_middle(self):
+        t1 = [0, 1, 2, 3, 'bye', 5, 6, 7, 8, 'a', 'b', 'c']
+        t2 = [0, 1, 2, 3, 5, 6, 7, 8, 'a', 'b', 'c']
+        diff = DeepDiff(t1, t2)
+        result = {'iterable_item_removed': {'root[4]': 'bye'}}
+        assert result == diff
+        assert {"root[4]"} == diff.affected_paths
+        assert {4} == diff.affected_root_keys
+
+    def test_list_item_values_replace_in_the_middle(self):
+        t1 = [0, 1, 2, 3, 'bye', 5, 6, 7, 8, 'a', 'b', 'c']
+        t2 = [0, 1, 2, 3, 'see', 'you', 'later', 5, 6, 7, 8, 'a', 'b', 'c']
+        diff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root[4]': {
+                    'old_value': 'bye',
+                    'new_value': 'see',
+                }
+            },
+            'iterable_item_added': {
+                'root[5]': 'you',
+                'root[6]': 'later'
+            }
+        }
+        assert result == diff
+        assert {'root[5]', 'root[6]', 'root[4]'} == diff.affected_paths
+        assert {4, 5, 6} == diff.affected_root_keys
 
     def test_non_subscriptable_iterable(self):
         def gen1():

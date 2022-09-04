@@ -767,18 +767,7 @@ class TestIgnoreOrder:
         ]
 
         diff = DeepDiff(t1, t2, group_by='id', ignore_order=False)
-        expected = {
-            'values_changed': {
-                "root['BB']['ate'][1]": {
-                    'new_value': 'Brownies',
-                    'old_value': 'Cheese'
-                }
-            },
-            'iterable_item_added': {
-                "root['CC']['ate'][1]": 'Apple',
-                "root['BB']['ate'][2]": 'Cheese'
-            }
-        }
+        expected = {'iterable_item_added': {"root['BB']['ate'][1]": 'Brownies', "root['CC']['ate'][1]": 'Apple'}}
         assert expected == diff
 
         diff2 = DeepDiff(t1, t2, group_by='id', ignore_order=True)

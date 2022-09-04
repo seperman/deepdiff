@@ -12,11 +12,15 @@
 - DeepSearch: Search for objects within other objects.
 - DeepHash: Hash any object based on their content.
 
-Tested on Python 3.6+ and PyPy3.
+Tested on Python 3.7+ and PyPy3.
 
 - **[Documentation](https://zepworks.com/deepdiff/6.1.0/)**
 
 ## What is new?
+
+DeepDiff 6-2-0
+
+- Major improvement in the diff report for lists when items are all hashable and the order of items is important.
 
 DeepDiff 6-1-0
 

@@ -13,7 +13,9 @@ def parameterize_cases(argnames, cases):
 
     """
     argnames_list = [i.strip() for i in argnames.split(',')]
-    argvalues = [tuple(i[k] for k in argnames_list) for i in cases.values()]
+    if 'test_name' not in argnames_list:
+        argnames_list.append('test_name')
+    argvalues = [tuple(test_name if (k == 'test_name') else test_dict[k] for k in argnames_list) for test_name, test_dict in cases.items()]
     ids = list(cases.keys())
     return {'argnames': argnames, 'argvalues': argvalues, 'ids': ids}
 

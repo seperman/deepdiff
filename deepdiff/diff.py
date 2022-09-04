@@ -7,6 +7,7 @@
 # However the docstring expects it in a specific order in order to pass!
 import difflib
 import logging
+import types
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
@@ -15,7 +16,7 @@ from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListItemRemovedOrAdded, notpresent,
-                             IndexedHash, unprocessed, add_to_frozen_set,
+                             IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
@@ -330,7 +331,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         result['number_to_string_func'] = self.number_to_string
         return result
 
-    def _report_result(self, report_type, level):
+    def _report_result(self, report_type, level, local_tree=None):
         """
         Add a detected change to the reference-style result dictionary.
         report_type will be added to level.
@@ -345,7 +346,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         if not self._skip_this(level):
             level.report_type = report_type
-            self.tree[report_type].add(level)
+            tree = self.tree if local_tree is None else local_tree
+            tree[report_type].add(level)
 
     def custom_report_result(self, report_type, level, extra_info=None):
         """
@@ -392,7 +394,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
-    def _diff_enum(self, level, parents_ids=frozenset()):
+    def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
         t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
         t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
 
@@ -402,9 +404,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             print_as_attribute=True,
             override=True,
             override_t1=t1,
-            override_t2=t2)
+            override_t2=t2,
+            local_tree=local_tree,
+        )
 
-    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False):
+    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None):
         """Difference of 2 objects"""
         try:
             if is_namedtuple:
@@ -418,7 +422,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t1 = self._dict_from_slots(level.t1)
                 t2 = self._dict_from_slots(level.t2)
             except AttributeError:
-                self._report_result('unprocessed', level)
+                self._report_result('unprocessed', level, local_tree=local_tree)
                 return
 
         self._diff_dict(
@@ -427,7 +431,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             print_as_attribute=True,
             override=True,
             override_t1=t1,
-            override_t2=t2)
+            override_t2=t2,
+            local_tree=local_tree,
+        )
 
     def _skip_this(self, level):
         """
@@ -487,13 +493,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 result[clean_key] = key
         return result
 
-    def _diff_dict(self,
-                   level,
-                   parents_ids=frozenset([]),
-                   print_as_attribute=False,
-                   override=False,
-                   override_t1=None,
-                   override_t2=None):
+    def _diff_dict(
+        self,
+        level,
+        parents_ids=frozenset([]),
+        print_as_attribute=False,
+        override=False,
+        override_t1=None,
+        override_t2=None,
+        local_tree=None,
+    ):
         """Difference of 2 dictionaries"""
         if override:
             # for special stuff like custom objects and named tuples we receive preprocessed t1 and t2
@@ -542,7 +551,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2[key],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self._report_result(item_added_key, change_level)
+            self._report_result(item_added_key, change_level, local_tree=local_tree)
 
         for key in t_keys_removed:
             if self._count_diff() is StopIteration:
@@ -554,7 +563,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 notpresent,
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self._report_result(item_removed_key, change_level)
+            self._report_result(item_removed_key, change_level, local_tree=local_tree)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
             if self._count_diff() is StopIteration:
@@ -573,9 +582,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2[key2],
                 child_relationship_class=rel_class,
                 child_relationship_param=key)
-            self._diff(next_level, parents_ids_added)
+            self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
-    def _diff_set(self, level):
+    def _diff_set(self, level, local_tree=None):
         """Difference of sets"""
         t1_hashtable = self._create_hashtable(level, 't1')
         t2_hashtable = self._create_hashtable(level, 't2')
@@ -595,7 +604,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             change_level = level.branch_deeper(
                 notpresent, item, child_relationship_class=SetRelationship)
-            self._report_result('set_item_added', change_level)
+            self._report_result('set_item_added', change_level, local_tree=local_tree)
 
         for item in items_removed:
             if self._count_diff() is StopIteration:
@@ -603,7 +612,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             change_level = level.branch_deeper(
                 item, notpresent, child_relationship_class=SetRelationship)
-            self._report_result('set_item_removed', change_level)
+            self._report_result('set_item_removed', change_level, local_tree=local_tree)
 
     @staticmethod
     def _iterables_subscriptable(t1, t2):
@@ -615,24 +624,39 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         except AttributeError:
             return False
 
-    def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None, local_tree=None):
         """Difference of iterables"""
         if self.ignore_order_func(level):
-            self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
         else:
-            self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
 
-    def _compare_in_order(self, level):
+    def _compare_in_order(
+        self, level,
+        t1_from_index=None, t1_to_index=None,
+        t2_from_index=None, t2_to_index=None
+    ):
         """
         Default compare if `iterable_compare_func` is not provided.
         This will compare in sequence order.
         """
 
-        return [((i, i), (x, y)) for i, (x, y) in enumerate(
-            zip_longest(
-                level.t1, level.t2, fillvalue=ListItemRemovedOrAdded))]
+        if t1_from_index is None:
+            return [((i, i), (x, y)) for i, (x, y) in enumerate(
+                zip_longest(
+                    level.t1, level.t2, fillvalue=ListItemRemovedOrAdded))]
+        else:
+            t1_chunk = level.t1[t1_from_index:t1_to_index]
+            t2_chunk = level.t2[t2_from_index:t2_to_index]
+            return [((i + t1_from_index, i + t2_from_index), (x, y)) for i, (x, y) in enumerate(
+                zip_longest(
+                    t1_chunk, t2_chunk, fillvalue=ListItemRemovedOrAdded))]
 
-    def _get_matching_pairs(self, level):
+    def _get_matching_pairs(
+        self, level,
+        t1_from_index=None, t1_to_index=None,
+        t2_from_index=None, t2_to_index=None
+    ):
         """
         Given a level get matching pairs. This returns list of two tuples in the form:
         [
@@ -643,9 +667,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Default it to compare in order
         """
 
-        if(self.iterable_compare_func is None):
+        if self.iterable_compare_func is None:
             # Match in order if there is no compare function provided
-            return self._compare_in_order(level)
+            return self._compare_in_order(
+                level,
+                t1_from_index=t1_from_index, t1_to_index=t1_to_index,
+                t2_from_index=t2_from_index, t2_to_index=t2_to_index,
+            )
         try:
             matches = []
             y_matched = set()
@@ -685,9 +713,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     matches.append(((-1, j), (ListItemRemovedOrAdded, y)))
             return matches
         except CannotCompare:
-            return self._compare_in_order(level)
+            return self._compare_in_order(
+                level,
+                t1_from_index=t1_from_index, t1_to_index=t1_to_index,
+                t2_from_index=t2_from_index, t2_to_index=t2_to_index
+            )
 
-    def _diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff_iterable_in_order(self, level, parents_ids=frozenset(), _original_type=None, local_tree=None):
         # We're handling both subscriptable and non-subscriptable iterables. Which one is it?
         subscriptable = self._iterables_subscriptable(level.t1, level.t2)
         if subscriptable:
@@ -695,7 +727,65 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             child_relationship_class = NonSubscriptableIterableRelationship
 
-        for (i, j), (x, y) in self._get_matching_pairs(level):
+        if self._all_values_basic_hashable(level.t1) and self._all_values_basic_hashable(level.t2) and self.iterable_compare_func is None:
+            local_tree_pass = TreeResult()
+            self._diff_ordered_iterable_by_difflib(
+                level,
+                parents_ids=parents_ids,
+                _original_type=_original_type,
+                child_relationship_class=child_relationship_class,
+                local_tree=local_tree_pass,
+            )
+            # Sometimes DeepDiff's old iterable diff does a better job than DeepDiff
+            if len(local_tree_pass) > 1:
+                local_tree_pass2 = TreeResult()
+                self._diff_by_forming_pairs_and_comparing_one_by_one(
+                    level,
+                    parents_ids=parents_ids,
+                    _original_type=_original_type,
+                    child_relationship_class=child_relationship_class,
+                    local_tree=local_tree_pass2,
+                )
+                if len(local_tree_pass) >= len(local_tree_pass2):
+                    local_tree_pass = local_tree_pass2
+            for report_type, levels in local_tree_pass.items():
+                if levels:
+                    self.tree[report_type] |= levels
+        else:
+            self._diff_by_forming_pairs_and_comparing_one_by_one(
+                level,
+                parents_ids=parents_ids,
+                _original_type=_original_type,
+                child_relationship_class=child_relationship_class,
+                local_tree=local_tree,
+            )
+
+    def _all_values_basic_hashable(self, iterable):
+        """
+        Are all items basic hashable types?
+        Or there are custom types too?
+        """
+
+    # We don't want to exhaust a generator
+        if isinstance(iterable, types.GeneratorType):
+            return False
+        for item in iterable:
+            if not isinstance(item, basic_types):
+                return False
+        return True
+
+    def _diff_by_forming_pairs_and_comparing_one_by_one(
+        self, level, local_tree, parents_ids=frozenset(),
+        _original_type=None, child_relationship_class=None,
+        t1_from_index=None, t1_to_index=None,
+        t2_from_index=None, t2_to_index=None,
+    ):
+
+        for (i, j), (x, y) in self._get_matching_pairs(
+            level, 
+            t1_from_index=t1_from_index, t1_to_index=t1_to_index,
+            t2_from_index=t2_from_index, t2_to_index=t2_to_index
+        ):
             if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
@@ -705,7 +795,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     notpresent,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=i)
-                self._report_result('iterable_item_removed', change_level)
+                self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
 
             elif x is ListItemRemovedOrAdded:  # new item added
                 change_level = level.branch_deeper(
@@ -713,11 +803,35 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     y,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=j)
-                self._report_result('iterable_item_added', change_level)
+                self._report_result('iterable_item_added', change_level, local_tree=local_tree)
 
             else:  # check if item value has changed
 
-                if (i != j):
+                # if (i != j):
+                #     # Item moved
+                #     change_level = level.branch_deeper(
+                #         x,
+                #         y,
+                #         child_relationship_class=child_relationship_class,
+                #         child_relationship_param=i,
+                #         child_relationship_param2=j
+                #     )
+                #     self._report_result('iterable_item_moved', change_level)
+
+                # item_id = id(x)
+                # if parents_ids and item_id in parents_ids:
+                #     continue
+                # parents_ids_added = add_to_frozen_set(parents_ids, item_id)
+
+                # # Go one level deeper
+                # next_level = level.branch_deeper(
+                #     x,
+                #     y,
+                #     child_relationship_class=child_relationship_class,
+                #     child_relationship_param=j)
+                # self._diff(next_level, parents_ids_added)
+
+                if (i != j and ((x == y) or self.iterable_compare_func)):
                     # Item moved
                     change_level = level.branch_deeper(
                         x,
@@ -726,7 +840,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_param=i,
                         child_relationship_param2=j
                     )
-                    self._report_result('iterable_item_moved', change_level)
+                    self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
+                    continue
 
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -739,9 +854,45 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     y,
                     child_relationship_class=child_relationship_class,
                     child_relationship_param=j)
-                self._diff(next_level, parents_ids_added)
+                self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
-    def _diff_str(self, level):
+    def _diff_ordered_iterable_by_difflib(
+        self, level, local_tree, parents_ids=frozenset(), _original_type=None, child_relationship_class=None,
+    ):
+
+        seq = difflib.SequenceMatcher(isjunk=None, a=level.t1, b=level.t2, autojunk=False)
+
+        opcode = seq.get_opcodes()
+        for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcode:
+            if tag == 'equal':
+                continue
+            # print('{:7}   t1[{}:{}] --> t2[{}:{}] {!r:>8} --> {!r}'.format(
+            #     tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index, level.t1[t1_from_index:t1_to_index], level.t2[t2_from_index:t2_to_index]))
+            if tag == 'replace':
+                self._diff_by_forming_pairs_and_comparing_one_by_one(
+                    level, local_tree=local_tree, parents_ids=parents_ids,
+                    _original_type=_original_type, child_relationship_class=child_relationship_class,
+                    t1_from_index=t1_from_index, t1_to_index=t1_to_index,
+                    t2_from_index=t2_from_index, t2_to_index=t2_to_index,
+                )
+            elif tag == 'delete':
+                for index, x in enumerate(level.t1[t1_from_index:t1_to_index]):
+                    change_level = level.branch_deeper(
+                        x,
+                        notpresent,
+                        child_relationship_class=child_relationship_class,
+                        child_relationship_param=index + t1_from_index)
+                    self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
+            elif tag == 'insert':
+                for index, y in enumerate(level.t2[t2_from_index:t2_to_index]):
+                    change_level = level.branch_deeper(
+                        notpresent,
+                        y,
+                        child_relationship_class=child_relationship_class,
+                        child_relationship_param=index + t2_from_index)
+                    self._report_result('iterable_item_added', change_level, local_tree=local_tree)
+
+    def _diff_str(self, level, local_tree=None):
         """Compare strings"""
         if self.ignore_string_case:
             level.t1 = level.t1.lower()
@@ -778,19 +929,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if diff:
                     level.additional['diff'] = '\n'.join(diff)
 
-        self._report_result('values_changed', level)
+        self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_tuple(self, level, parents_ids):
+    def _diff_tuple(self, level, parents_ids, local_tree=None):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
             level.t1._asdict
         # It must be a normal tuple
         except AttributeError:
-            self._diff_iterable(level, parents_ids)
+            self._diff_iterable(level, parents_ids, local_tree=local_tree)
         # We assume it is a namedtuple then
         else:
-            self._diff_obj(level, parents_ids, is_namedtuple=True)
+            self._diff_obj(level, parents_ids, is_namedtuple=True, local_tree=local_tree)
 
     def _add_hash(self, hashes, item_hash, item, i):
         if item_hash in hashes:
@@ -989,7 +1140,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._distance_cache.set(cache_key, value=pairs)
         return pairs.copy()
 
-    def _diff_iterable_with_deephash(self, level, parents_ids, _original_type=None):
+    def _diff_iterable_with_deephash(self, level, parents_ids, _original_type=None, local_tree=None):
         """Diff of hashable or unhashable iterables. Only used when ignoring the order."""
 
         full_t1_hashtable = self._create_hashtable(level, 't1')
@@ -1063,10 +1214,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_param=i
                     )
                     if other.item is notpresent:
-                        self._report_result('iterable_item_added', change_level)
+                        self._report_result('iterable_item_added', change_level, local_tree=local_tree)
                     else:
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                        self._diff(change_level, parents_ids_added)
+                        self._diff(change_level, parents_ids_added, local_tree=local_tree)
             for hash_value in hashes_removed:
                 if self._count_diff() is StopIteration:
                     return  # pragma: no cover. This is already covered for addition.
@@ -1079,13 +1230,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=SubscriptableIterableRelationship,
                         child_relationship_param=i)
                     if other.item is notpresent:
-                        self._report_result('iterable_item_removed', change_level)
+                        self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
                     else:
                         # I was not able to make a test case for the following 2 lines since the cases end up
                         # getting resolved above in the hashes_added calcs. However I am leaving these 2 lines
                         # in case things change in future.
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
-                        self._diff(change_level, parents_ids_added)  # pragma: no cover.
+                        self._diff(change_level, parents_ids_added, local_tree=local_tree)  # pragma: no cover.
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 
@@ -1108,7 +1259,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         old_indexes=t1_indexes,
                         new_indexes=t2_indexes)
                     self._report_result('repetition_change',
-                                        repetition_change_level)
+                                        repetition_change_level, local_tree=local_tree)
 
         else:
             for hash_value in hashes_added:
@@ -1123,10 +1274,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     child_relationship_class=SubscriptableIterableRelationship,
                     child_relationship_param=index)
                 if other.item is notpresent:
-                    self._report_result('iterable_item_added', change_level)
+                    self._report_result('iterable_item_added', change_level, local_tree=local_tree)
                 else:
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-                    self._diff(change_level, parents_ids_added)
+                    self._diff(change_level, parents_ids_added, local_tree=local_tree)
 
             for hash_value in hashes_removed:
                 if self._count_diff() is StopIteration:
@@ -1140,28 +1291,28 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     child_relationship_param=t1_hashtable[hash_value].indexes[
                         0])
                 if other.item is notpresent:
-                    self._report_result('iterable_item_removed', change_level)
+                    self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
                 else:
                     # Just like the case when report_repetition = True, these lines never run currently.
                     # However they will stay here in case things change in future.
                     parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
-                    self._diff(change_level, parents_ids_added)  # pragma: no cover.
+                    self._diff(change_level, parents_ids_added, local_tree=local_tree)  # pragma: no cover.
 
-    def _diff_booleans(self, level):
+    def _diff_booleans(self, level, local_tree=None):
         if level.t1 != level.t2:
-            self._report_result('values_changed', level)
+            self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_numbers(self, level):
+    def _diff_numbers(self, level, local_tree=None):
         """Diff Numbers"""
         t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
         t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
 
         if self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
-                self._report_result('values_changed', level)
+                self._report_result('values_changed', level, local_tree=local_tree)
         elif self.significant_digits is None:
             if level.t1 != level.t2:
-                self._report_result('values_changed', level)
+                self._report_result('values_changed', level, local_tree=local_tree)
         else:
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
             # data is read from files that were previousely written from python and
@@ -1181,23 +1332,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_s = KEY_TO_VAL_STR.format(t1_type, t1_s)
             t2_s = KEY_TO_VAL_STR.format(t2_type, t2_s)
             if t1_s != t2_s:
-                self._report_result('values_changed', level)
+                self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_datetimes(self, level):
+    def _diff_datetimes(self, level, local_tree=None):
         """Diff DateTimes"""
         if self.truncate_datetime:
             level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
             level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
 
         if level.t1 != level.t2:
-            self._report_result('values_changed', level)
+            self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_uuids(self, level):
+    def _diff_uuids(self, level, local_tree=None):
         """Diff UUIDs"""
         if level.t1.int != level.t2.int:
-            self._report_result('values_changed', level)
+            self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_numpy_array(self, level, parents_ids=frozenset()):
+    def _diff_numpy_array(self, level, parents_ids=frozenset(), local_tree=None):
         """Diff numpy arrays"""
         if level.path() not in self._numpy_paths:
             self._numpy_paths[level.path()] = get_type(level.t2).__name__
@@ -1225,19 +1376,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # They will be converted back to Numpy at their final dimension.
             level.t1 = level.t1.tolist()
             level.t2 = level.t2.tolist()
-            self._diff_iterable(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
         else:
             # metadata same -- the difference is in the content
             shape = level.t1.shape
             dimensions = len(shape)
             if dimensions == 1:
-                self._diff_iterable(level, parents_ids, _original_type=_original_type)
+                self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
             elif self.ignore_order_func(level):
                 # arrays are converted to python lists so that certain features of DeepDiff can apply on them easier.
                 # They will be converted back to Numpy at their final dimension.
                 level.t1 = level.t1.tolist()
                 level.t2 = level.t2.tolist()
-                self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type)
+                self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
             else:
                 for (t1_path, t1_row), (t2_path, t2_row) in zip(
                         get_numpy_ndarray_rows(level.t1, shape),
@@ -1249,12 +1400,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=NumpyArrayRelationship,
                         child_relationship_param=t1_path)
 
-                    self._diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type)
+                    self._diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type, local_tree=local_tree)
 
-    def _diff_types(self, level):
+    def _diff_types(self, level, local_tree=None):
         """Diff types"""
         level.report_type = 'type_changes'
-        self._report_result('type_changes', level)
+        self._report_result('type_changes', level, local_tree=local_tree)
 
     def _count_diff(self):
         if (self.max_diffs is not None and self._stats[DIFF_COUNT] > self.max_diffs):
@@ -1310,7 +1461,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return False
 
-    def _diff(self, level, parents_ids=frozenset(), _original_type=None):
+    def _diff(self, level, parents_ids=frozenset(), _original_type=None, local_tree=None):
         """
         The main diff method
 
@@ -1339,48 +1490,48 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     report_type_change = False
                     break
             if report_type_change:
-                self._diff_types(level)
+                self._diff_types(level, local_tree=local_tree)
                 return
             # This is an edge case where t1=None or t2=None and None is in the ignore type group.
             if level.t1 is None or level.t2 is None:
-                self._report_result('values_changed', level)
+                self._report_result('values_changed', level, local_tree=local_tree)
                 return
 
         if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
             return
 
         if isinstance(level.t1, booleans):
-            self._diff_booleans(level)
+            self._diff_booleans(level, local_tree=local_tree)
 
         if isinstance(level.t1, strings):
-            self._diff_str(level)
+            self._diff_str(level, local_tree=local_tree)
 
         elif isinstance(level.t1, times):
-            self._diff_datetimes(level)
+            self._diff_datetimes(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
-            self._diff_uuids(level)
+            self._diff_uuids(level, local_tree=local_tree)
 
         elif isinstance(level.t1, numbers):
-            self._diff_numbers(level)
+            self._diff_numbers(level, local_tree=local_tree)
 
         elif isinstance(level.t1, Mapping):
-            self._diff_dict(level, parents_ids)
+            self._diff_dict(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, tuple):
-            self._diff_tuple(level, parents_ids)
+            self._diff_tuple(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, (set, frozenset, OrderedSet)):
-            self._diff_set(level)
+            self._diff_set(level, local_tree=local_tree)
 
         elif isinstance(level.t1, np_ndarray):
-            self._diff_numpy_array(level, parents_ids)
+            self._diff_numpy_array(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, Iterable):
-            self._diff_iterable(level, parents_ids, _original_type=_original_type)
+            self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
 
         elif isinstance(level.t1, Enum):
-            self._diff_enum(level, parents_ids)
+            self._diff_enum(level, parents_ids, local_tree=local_tree)
 
         else:
             self._diff_obj(level, parents_ids)
