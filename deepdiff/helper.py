@@ -114,10 +114,12 @@ bytes_type = bytes
 only_complex_number = (complex,) + numpy_complex_numbers
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
-uuids = (uuid.UUID)
+uuids = (uuid.UUID, )
 times = (datetime.datetime, datetime.time)
 numbers = only_numbers + datetimes
 booleans = (bool, np_bool_)
+
+basic_types = strings + numbers + uuids + booleans + (type(None), )
 
 IndexedHash = namedtuple('IndexedHash', 'indexes item')
 
