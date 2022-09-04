@@ -31,6 +31,11 @@ The DeepDiff library includes the following modules:
 What is New
 ***********
 
+DeepDiff 6-2-0
+--------------
+
+-  Major improvement in the diff report for lists when items are all hashable and the order of items is important.
+
 DeepDiff 6-1-0
 --------------
 

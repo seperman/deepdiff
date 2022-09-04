@@ -18,6 +18,10 @@ Tested on Python 3.7+ and PyPy3.
 
 ## What is new?
 
+DeepDiff 6-2-0
+
+- Major improvement in the diff report for lists when items are all hashable and the order of items is important.
+
 DeepDiff 6-1-0
 
 - DeepDiff.affected_paths can be used to get the list of all paths where a change, addition, or deletion was reported for.
