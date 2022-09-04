@@ -12,7 +12,7 @@
 - DeepSearch: Search for objects within other objects.
 - DeepHash: Hash any object based on their content.
 
-Tested on Python 3.6+ and PyPy3.
+Tested on Python 3.7+ and PyPy3.
 
 - **[Documentation](https://zepworks.com/deepdiff/6.1.0/)**
 
