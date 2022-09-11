@@ -651,6 +651,5 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
         ):
             value = getattr(obj, key)
             if not callable(value):
-                print(f"{key}: {value}")
                 result[key] = value
     return result
