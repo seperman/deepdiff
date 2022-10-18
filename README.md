@@ -33,7 +33,6 @@ DeepDiff 6-0-0
 
 - [Exclude obj callback strict](https://github.com/seperman/deepdiff/pull/320/files) parameter is added to DeepDiff by Mikhail Khviyuzov [mskhviyu](https://github.com/mskhviyu).
 - A fix for diffing using `iterable_compare_func` with nested objects by [dtorres-sf](https://github.com/dtorres-sf) who originally contributed this feature.
-- Temporarily we are publishing DeepDiff under `DeepDiff6` on pypi until further notice.
 
 Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDiff 5 releases.
 
@@ -41,16 +40,11 @@ Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDif
 
 ### Install from PyPi:
 
-`pip install deepdiff6`
+`pip install deepdiff`
 
 If you want to use DeepDiff from commandline:
 
-`pip install "deepdiff6[cli]"`
-
-
-> Note: Prior to DeepDiff 6, it was published under DeepDiff name on pypi.
-> DeepDiff 6 is being published under DeepDiff6 package name on Pypi temporarily until further notice.
-
+`pip install "deepdiff[cli]"`
 
 ### Importing
 
@@ -60,7 +54,7 @@ If you want to use DeepDiff from commandline:
 >>> from deepdiff import DeepHash  # For hashing objects based on their contents
 ```
 
-Note: if you want to use DeepDiff via commandline, make sure to run `pip install "deepdiff6[cli]"`. Then you can access the commands via:
+Note: if you want to use DeepDiff via commandline, make sure to run `pip install "deepdiff[cli]"`. Then you can access the commands via:
 
 - DeepDiff
     - `$ deep diff --help`

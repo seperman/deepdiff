@@ -55,8 +55,6 @@ DeepDiff 6-0-0
 -  A fix for diffing using ``iterable_compare_func`` with nested objects
    by `dtorres-sf <https://github.com/dtorres-sf>`__ who originally
    contributed this feature.
--  Temporarily we are publishing DeepDiff under ``DeepDiff6`` on pypi
-   until further notice.
 
 Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDiff 5 releases.
 
@@ -72,18 +70,13 @@ Installation
 
 Install from PyPi::
 
-    pip install deepdiff6
+    pip install deepdiff
 
 If you want to use DeepDiff from commandline::
 
-    pip install "deepdiff6[cli]"
+    pip install "deepdiff[cli]"
 
 Read about DeepDiff optimizations at :ref:`optimizations_label`
-
-.. note:: Prior to DeepDiff 6, it was published under DeepDiff name on pypi.
-
-    DeepDiff 6 is being published under DeepDiff6 package name on Pypi temporarily until further notice.
-
 
 Importing
 ~~~~~~~~~
@@ -98,7 +91,7 @@ Importing
 
 
 .. note:: if you want to use DeepDiff via commandline, make sure to run:: 
-    pip install "deepdiff6[cli]"
+    pip install "deepdiff[cli]"
 
 Then you can access the commands via:
 
