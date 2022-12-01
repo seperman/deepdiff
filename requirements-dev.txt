@@ -13,3 +13,4 @@ watchdog==2.1.9
 Sphinx==5.1.1
 sphinx-sitemap==2.2.0
 flake8==5.0.4
+python-dateutil==2.8.2
