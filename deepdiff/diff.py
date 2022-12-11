@@ -11,7 +11,7 @@ import types
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
@@ -23,7 +23,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
-                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_IGNORE_KEYS)
+                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -395,8 +395,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return {i: getattr(object, unmangle(i)) for i in all_slots}
 
     def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
-        t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
-        t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables, ignore_keys=ENUM_IGNORE_KEYS)
+        t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
+        t2 = detailed__dict__(level.t2, include_keys=ENUM_INCLUDE_KEYS)
 
         self._diff_dict(
             level,
@@ -727,7 +727,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             child_relationship_class = NonSubscriptableIterableRelationship
 
-        if self._all_values_basic_hashable(level.t1) and self._all_values_basic_hashable(level.t2) and self.iterable_compare_func is None:
+        if (
+            isinstance(level.t1, Sequence)
+            and isinstance(level.t2, Sequence)
+            and self._all_values_basic_hashable(level.t1)
+            and self._all_values_basic_hashable(level.t2)
+            and self.iterable_compare_func is None
+        ):
             local_tree_pass = TreeResult()
             self._diff_ordered_iterable_by_difflib(
                 level,

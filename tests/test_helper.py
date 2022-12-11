@@ -9,7 +9,7 @@ from deepdiff.helper import (
     cartesian_product_of_shape, literal_eval_extended,
     not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
     get_truncate_datetime, datetime_normalize,
-    detailed__dict__, ENUM_IGNORE_KEYS, add_root_to_paths,
+    detailed__dict__, ENUM_INCLUDE_KEYS, add_root_to_paths,
 )
 
 
@@ -278,15 +278,15 @@ class TestHelper:
         result = datetime_normalize(truncate_datetime, obj)
         assert expected == result
 
-    @pytest.mark.parametrize('obj, ignore_keys, expected', [
+    @pytest.mark.parametrize('obj, include_keys, expected', [
         (
             MyEnum.A,
-            ENUM_IGNORE_KEYS,
+            ENUM_INCLUDE_KEYS,
             {'__objclass__': MyEnum, 'name': 'A', 'value': 1},
         )
     ])
-    def test_detailed__dict__(self, obj, ignore_keys, expected):
-        result = detailed__dict__(obj, ignore_private_variables=True, ignore_keys=ignore_keys)
+    def test_detailed__dict__(self, obj, include_keys, expected):
+        result = detailed__dict__(obj, ignore_private_variables=True, include_keys=include_keys)
         assert expected == result, f"test_detailed__dict__ failed for {obj}"
 
     @pytest.mark.parametrize('test_num, value, expected', [

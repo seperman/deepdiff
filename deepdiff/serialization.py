@@ -21,7 +21,9 @@ except ImportError:  # pragma: no cover.
     toml = None  # pragma: no cover.
 try:
     import clevercsv
+    csv = None
 except ImportError:  # pragma: no cover.
+    import csv
     clevercsv = None  # pragma: no cover.
 from copy import deepcopy
 from functools import partial
@@ -424,9 +426,11 @@ def load_path_content(path, file_type=None):
             content = the_file.read()
             content = pickle_load(content)
     elif file_type in {'csv', 'tsv'}:
-        if clevercsv is None:  # pragma: no cover.
-            raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
-        content = clevercsv.read_dicts(path)
+        if clevercsv:  # pragma: no cover.
+            content = clevercsv.read_dicts(path)
+        else:
+            with open(path, 'r') as the_file:
+                content = list(csv.DictReader(the_file))
         logger.info(f"NOTE: CSV content was empty in {path}")
 
         # Everything in csv is string but we try to automatically convert any numbers we find
@@ -485,11 +489,13 @@ def _save_content(content, path, file_type, keep_backup=True):
         with open(path, 'wb') as the_file:
             content = pickle_dump(content, file_obj=the_file)
     elif file_type in {'csv', 'tsv'}:
-        if clevercsv is None:  # pragma: no cover.
-            raise ImportError('CleverCSV needs to be installed.')  # pragma: no cover.
+        if clevercsv:  # pragma: no cover.
+            dict_writer = clevercsv.DictWriter
+        else:
+            dict_writer = csv.DictWriter
         with open(path, 'w', newline='') as csvfile:
             fieldnames = list(content[0].keys())
-            writer = clevercsv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer = dict_writer(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(content)
     else:

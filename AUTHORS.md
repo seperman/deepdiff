@@ -47,3 +47,4 @@ Authors in order of the timeline of their contributions:
 - Mikhail Khviyuzov [mskhviyu](https://github.com/mskhviyu) for Exclude obj callback strict.
 - [dtorres-sf](https://github.com/dtorres-sf) for the fix for diffing using iterable_compare_func with nested objects.
 - [Enric Pou](https://github.com/epou) for bug fix of ValueError when using Decimal 0.x
+- [Uwe Fladrich](https://github.com/uwefladrich) for fixing bug when diff'ing non-sequence iterables

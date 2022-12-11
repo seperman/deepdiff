@@ -1,5 +1,8 @@
 # DeepDiff Change log
 
+- v6-2-2
+    - Enum test fix for python 3.11
+    - Adding support for dateutils rrules
 - v6-2-1
     - Removed the print statements.
 - v6-2-0
