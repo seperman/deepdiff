@@ -5,6 +5,39 @@ Changelog
 
 DeepDiff Changelog
 
+-  v6-2-2
+
+   -  Enum test fix for python 3.11
+   -  Adding support for dateutils rrules
+
+-  v6-2-1
+
+   -  Removed the print statements.
+
+-  v6-2-0
+
+   -  Major improvement in the diff report for lists when items are all
+      hashable and the order of items is important.
+
+-  v6-1-0
+
+   -  DeepDiff.affected_paths can be used to get the list of all paths
+      where a change, addition, or deletion was reported for.
+   -  DeepDiff.affected_root_keys can be used to get the list of all
+      paths where a change, addition, or deletion was reported for.
+   -  Bugfix: ValueError when using Decimal 0.x #339 by `Enric
+      Pou <https://github.com/epou>`__
+   -  Serialization of UUID
+
+-  v6-0-0
+
+   -  `Exclude obj callback
+      strict <https://github.com/seperman/deepdiff/pull/320/files>`__
+      parameter is added to DeepDiff by Mikhail Khviyuzov
+      `mskhviyu <https://github.com/mskhviyu>`__.
+   -  A fix for diffing using ``iterable_compare_func`` with nested
+      objects by `dtorres-sf <https://github.com/dtorres-sf>`__ who
+      originally contributed this feature.
 -  v5-7-0:
 
    -  https://github.com/seperman/deepdiff/pull/284 Bug-Fix: TypeError
