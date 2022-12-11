@@ -133,7 +133,7 @@ TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 DELTA_VIEW = '_delta'
 
-ENUM_IGNORE_KEYS = frozenset(['_name_', '_value_', '_sort_order_'])
+ENUM_INCLUDE_KEYS = ['__objclass__', 'name', 'value']
 
 
 def short_repr(item, max_length=15):
@@ -630,26 +630,37 @@ def get_homogeneous_numpy_compatible_type_of_seq(seq):
         return False
 
 
-def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()):
+def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset(), include_keys=None):
     """
     Get the detailed dictionary of an object.
 
     This is used so we retrieve object properties too.
     """
-    result = obj.__dict__.copy()  # A shallow copy
-    private_var_prefix = f"_{obj.__class__.__name__}__"  # The semi private variables in Python get this prefix
-    for key in ignore_keys:
-        if key in result or (
-            ignore_private_variables and key.startswith('__') and not key.startswith(private_var_prefix)
-        ):
-            del result[key]
-    for key in dir(obj):
-        if key not in result and key not in ignore_keys and (
-                not ignore_private_variables or (
-                    ignore_private_variables and not key.startswith('__') and not key.startswith(private_var_prefix)
-                )
-        ):
-            value = getattr(obj, key)
-            if not callable(value):
-                result[key] = value
+    if include_keys:
+        result = {}
+        for key in include_keys:
+            try:
+                value = getattr(obj, key)
+            except Exception:
+                pass
+            else:
+                if not callable(value) or key == '__objclass__':  # We don't want to compare functions, however for backward compatibility, __objclass__ needs to be reported.
+                    result[key] = value
+    else:
+        result = obj.__dict__.copy()  # A shallow copy
+        private_var_prefix = f"_{obj.__class__.__name__}__"  # The semi private variables in Python get this prefix
+        for key in ignore_keys:
+            if key in result or (
+                ignore_private_variables and key.startswith('__') and not key.startswith(private_var_prefix)
+            ):
+                del result[key]
+        for key in dir(obj):
+            if key not in result and key not in ignore_keys and (
+                    not ignore_private_variables or (
+                        ignore_private_variables and not key.startswith('__') and not key.startswith(private_var_prefix)
+                    )
+            ):
+                value = getattr(obj, key)
+                if not callable(value):
+                    result[key] = value
     return result
