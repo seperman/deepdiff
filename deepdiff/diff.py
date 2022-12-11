@@ -11,7 +11,7 @@ import types
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
@@ -727,7 +727,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             child_relationship_class = NonSubscriptableIterableRelationship
 
-        if self._all_values_basic_hashable(level.t1) and self._all_values_basic_hashable(level.t2) and self.iterable_compare_func is None:
+        if (
+            isinstance(level.t1, Sequence)
+            and isinstance(level.t2, Sequence)
+            and self._all_values_basic_hashable(level.t1)
+            and self._all_values_basic_hashable(level.t2)
+            and self.iterable_compare_func is None
+        ):
             local_tree_pass = TreeResult()
             self._diff_ordered_iterable_by_difflib(
                 level,
