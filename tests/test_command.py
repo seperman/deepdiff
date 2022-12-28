@@ -44,8 +44,8 @@ class TestCommands:
         ('t1.pickle', 't2.pickle', {}, 0),
         ('t1.yaml', 't2.yaml', {}, 0),
     ])
-    def test_deeppatch_command(self, t1, t2, args, expected_exit_code):
-        t1_copy_path = f'/tmp/{t1}'
+    def test_deeppatch_command(self, t1, t2, args, expected_exit_code, tmp_path):
+        t1_copy_path = os.path.join(tmp_path, t1)
         t1 = os.path.join(FIXTURES_DIR, t1)
         t2 = os.path.join(FIXTURES_DIR, t2)
         copyfile(t1, t1_copy_path)
@@ -54,7 +54,7 @@ class TestCommands:
         assert delta_pickled.exit_code == expected_exit_code
 
         if expected_exit_code == 0:
-            delta_path = '/tmp/delta.pickle'
+            delta_path = os.path.join(tmp_path, 'delta.pickle')
             with open(delta_path, 'wb') as the_file:
                 the_file.write(delta_pickled.stdout_bytes)
 
