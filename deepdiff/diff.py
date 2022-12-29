@@ -1366,7 +1366,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if not self.ignore_order_func(level):
             # fast checks
             if self.significant_digits is None:
-                if np.array_equal(level.t1, level.t2):
+                if np.array_equal(level.t1, level.t2, equal_nan=self.ignore_nan_inequality):
                     return  # all good
             else:
                 try:
