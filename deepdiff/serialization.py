@@ -3,6 +3,7 @@ import sys
 import io
 import os
 import json
+import orjson
 import uuid
 import logging
 import re  # NOQA
@@ -181,7 +182,7 @@ class SerializationMixin:
             '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
         dic = self.to_dict(view_override=TEXT_VIEW)
-        return json.dumps(dic, default=json_convertor_default(default_mapping=default_mapping), **kwargs)
+        return json_dumps(dic, default_mapping=default_mapping, **kwargs)
 
     def to_dict(self, view_override=None):
         """
@@ -410,7 +411,7 @@ def load_path_content(path, file_type=None):
         file_type = path.split('.')[-1]
     if file_type == 'json':
         with open(path, 'r') as the_file:
-            content = json.load(the_file)
+            content = json_loads(the_file.read())
     elif file_type in {'yaml', 'yml'}:
         if yaml is None:  # pragma: no cover.
             raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
@@ -474,7 +475,8 @@ def save_content_to_path(content, path, file_type=None, keep_backup=True):
 def _save_content(content, path, file_type, keep_backup=True):
     if file_type == 'json':
         with open(path, 'w') as the_file:
-            content = json.dump(content, the_file)
+            content = json_dumps(content)
+            the_file.write(content)
     elif file_type in {'yaml', 'yml'}:
         if yaml is None:  # pragma: no cover.
             raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
@@ -504,8 +506,15 @@ def _save_content(content, path, file_type, keep_backup=True):
     return content
 
 
+def _serialize_decimal(value):
+    if value.as_tuple().exponent == 0:
+        return int(value)
+    else:
+        return float(value)
+
+
 JSON_CONVERTOR = {
-    decimal.Decimal: float,
+    decimal.Decimal: _serialize_decimal,
     ordered_set.OrderedSet: list,
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),
@@ -552,7 +561,10 @@ def json_dumps(item, default_mapping=None, **kwargs):
     but the output it makes is a byte object and Postgres couldn't directly use it without
     encoding to str. So I switched back to json.
     """
-    return json.dumps(item, default=json_convertor_default(default_mapping=default_mapping), **kwargs)
+    return orjson.dumps(
+        item,
+        default=json_convertor_default(default_mapping=default_mapping),
+        **kwargs).decode(encoding='utf-8')
 
 
 json_loads = partial(json.loads, cls=JSONDecoder)

@@ -318,8 +318,10 @@ class TestDeepDiffPretty:
     @pytest.mark.parametrize('test_num, value', [
         (1, {'10': None}),
         (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}),
+        (3, {'10': Decimal(2017)}),
+        (4, Decimal(2017.1)),
     ])
     def test_json_dumps_and_loads(self, test_num, value):
         serialized = json_dumps(value)
         back = json_loads(serialized)
-        assert value == back, f"test_json_dumps_and_loads tesst #{test_num} failed"
+        assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"
