@@ -48,3 +48,5 @@ Authors in order of the timeline of their contributions:
 - [dtorres-sf](https://github.com/dtorres-sf) for the fix for diffing using iterable_compare_func with nested objects.
 - [Enric Pou](https://github.com/epou) for bug fix of ValueError when using Decimal 0.x
 - [Uwe Fladrich](https://github.com/uwefladrich) for fixing bug when diff'ing non-sequence iterables
+- [Michal Ozery-Flato](https://github.com/michalozeryflato) for setting equal_nan=ignore_nan_inequality in the call for np.array_equal
+- [martin-kokos](https://github.com/martin-kokos) for using Pytest's tmp_path fixture instead of /tmp/

@@ -61,7 +61,11 @@ Authors in order of the timeline of their contributions:
 -  `Enric Pou <https://github.com/epou>`__ for bug fix of ValueError
    when using Decimal 0.x
 - `Uwe Fladrich <https://github.com/uwefladrich>`__ for fixing bug when diff'ing non-sequence iterables
-
+-  `Michal Ozery-Flato <https://github.com/michalozeryflato>`__ for
+   setting equal_nan=ignore_nan_inequality in the call for
+   np.array_equal
+-  `martin-kokos <https://github.com/martin-kokos>`__ for using Pytest’s
+   tmp_path fixture instead of /tmp/
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de

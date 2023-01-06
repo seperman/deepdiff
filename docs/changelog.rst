@@ -5,6 +5,13 @@ Changelog
 
 DeepDiff Changelog
 
+-  v6-2-3
+
+   -  Switching to Orjson for serialization to improve the performance.
+   -  Setting ``equal_nan=ignore_nan_inequality`` in the call for
+      ``np.array_equal``
+   -  Using Pytest’s tmp_path fixture instead of ``/tmp/``
+
 -  v6-2-2
 
    -  Enum test fix for python 3.11
