@@ -18,6 +18,8 @@ Tested on Python 3.7+ and PyPy3.
 
 ## What is new?
 
+Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
+
 DeepDiff 6-2-0
 
 - Major improvement in the diff report for lists when items are all hashable and the order of items is important.
