@@ -84,35 +84,35 @@ class TestBasicsOfDelta:
 
         assert t1 + delta1 + delta2 == t3
 
-    def test_delta_dump_and_read1(self):
+    def test_delta_dump_and_read1(self, tmp_path):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
-        path = '/tmp/delta_test.delta'
+        path = os.path.join(tmp_path, 'delta_test.delta')
         with open(path, 'wb') as the_file:
             Delta(diff).dump(the_file)
         delta = Delta(delta_path=path)
         os.remove(path)
         assert delta + t1 == t2
 
-    def test_delta_dump_and_read2(self):
+    def test_delta_dump_and_read2(self, tmp_path):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
         delta_content = Delta(diff).dumps()
-        path = '/tmp/delta_test2.delta'
+        path = os.path.join('tmp_path, delta_test2.delta')
         with open(path, 'wb') as the_file:
             the_file.write(delta_content)
         delta = Delta(delta_path=path)
         os.remove(path)
         assert delta + t1 == t2
 
-    def test_delta_dump_and_read3(self):
+    def test_delta_dump_and_read3(self, tmp_path):
         t1 = [1, 2]
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
         delta_content = Delta(diff).dumps()
-        path = '/tmp/delta_test2.delta'
+        path = os.path.join('tmp_path, delta_test2.delta')
         with open(path, 'wb') as the_file:
             the_file.write(delta_content)
         with pytest.raises(ValueError) as excinfo:

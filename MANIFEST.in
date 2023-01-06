@@ -9,7 +9,11 @@ include pytest.ini
 include *.py
 recursive-include docs/ *.rst
 recursive-include docs/ *.png
-recursive-include tests *.py
+recursive-include tests *.csv
 recursive-include tests *.json
+recursive-include tests *.pickle
+recursive-include tests *.py
+recursive-include tests *.toml
+recursive-include tests *.yaml
 global-exclude __pycache__
 global-exclude *.py[co]
