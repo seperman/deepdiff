@@ -1,4 +1,4 @@
-wheel==0.38.4
+wheel==0.38.1
 -r requirements.txt
 -r requirements-cli.txt
 bump2version==1.0.1
