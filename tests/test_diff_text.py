@@ -1396,6 +1396,28 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_include_obj_callback(self):
+        def include_obj_callback(obj, path):
+            return True if "include" in path or isinstance(obj, int) else False
+
+        t1 = {"x": 10, "y": "b", "z": "c", "include_me": "a"}
+        t2 = {"x": 10, "y": "c", "z": "b", "include_me": "b"}
+        ddiff = DeepDiff(t1, t2, include_obj_callback=include_obj_callback)
+        result = {'values_changed': {"root['include_me']": {'new_value': "b", 'old_value': "a"}}}
+        assert result == ddiff
+        assert {"root['include_me']"} == ddiff.affected_paths
+        assert {"include_me"} == ddiff.affected_root_keys
+
+    def test_include_obj_callback_strict(self):
+        def include_obj_callback_strict(obj, path):
+            return True if isinstance(obj, int) and obj > 10 else False
+
+        t1 = {"x": 10, "y": "b", "z": "c"}
+        t2 = {"x": 12, "y": "b", "z": "c"}
+        ddiff = DeepDiff(t1, t2, include_obj_callback_strict=include_obj_callback_strict)
+        result = {}
+        assert result == ddiff
+
     def test_skip_exclude_obj_callback(self):
         def exclude_obj_callback(obj, path):
             return True if "skip" in path or isinstance(obj, int) else False
