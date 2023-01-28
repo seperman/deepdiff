@@ -1412,11 +1412,13 @@ class TestDeepDiffText:
         def include_obj_callback_strict(obj, path):
             return True if isinstance(obj, int) and obj > 10 else False
 
-        t1 = {"x": 10, "y": "b", "z": "c"}
-        t2 = {"x": 12, "y": "b", "z": "c"}
+        t1 = {"x": 11, "y": 10, "z": "c"}
+        t2 = {"x": 12, "y": 12, "z": "c"}
         ddiff = DeepDiff(t1, t2, include_obj_callback_strict=include_obj_callback_strict)
-        result = {}
+        result = {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 11}}}
         assert result == ddiff
+        assert {"root['x']"} == ddiff.affected_paths
+        assert {"x"} == ddiff.affected_root_keys
 
     def test_skip_exclude_obj_callback(self):
         def exclude_obj_callback(obj, path):
