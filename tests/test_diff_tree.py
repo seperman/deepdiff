@@ -121,6 +121,14 @@ class TestDeepDiffTree:
         assert change.path(force='yes') == 'root(unrepresentable)'
         assert change.path(force='fake') == 'root[2]'
 
+    def test_report_type_in_iterable(self):
+        a = {"temp": ["a"]}
+        b = {"temp": ["b"]}
+
+        ddiff = DeepDiff(a, b, ignore_order=True, view="tree")
+        report_type = ddiff['values_changed'][0].report_type
+        assert 'values_changed' == report_type
+
     def test_significant_digits(self):
         ddiff = DeepDiff(
             [0.012, 0.98],

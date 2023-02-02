@@ -86,6 +86,7 @@ class TreeResult(ResultDict):
                 self['iterable_item_added'].remove(level_after)
                 level_before.t2 = level_after.t2
                 self['values_changed'].add(level_before)
+                level_before.report_type = 'values_changed'
         if 'iterable_item_removed' in self and not self['iterable_item_removed']:
             del self['iterable_item_removed']
         if 'iterable_item_added' in self and not self['iterable_item_added']:
