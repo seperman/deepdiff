@@ -121,6 +121,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_obj_callback=None,
                  exclude_obj_callback_strict=None,
                  exclude_paths=None,
+                 include_obj_callback=None,
+                 include_obj_callback_strict=None,
                  include_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -201,6 +203,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_string_case = ignore_string_case
             self.exclude_obj_callback = exclude_obj_callback
             self.exclude_obj_callback_strict = exclude_obj_callback_strict
+            self.include_obj_callback = include_obj_callback
+            self.include_obj_callback_strict = include_obj_callback_strict
             self.number_to_string = number_to_string_func or number_to_string
             self.iterable_compare_func = iterable_compare_func
             self.ignore_private_variables = ignore_private_variables
@@ -464,6 +468,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 (self.exclude_obj_callback_strict(level.t1, level_path) and
                  self.exclude_obj_callback_strict(level.t2, level_path)):
             skip = True
+        elif self.include_obj_callback and level_path != 'root':
+            skip = True
+            if (self.include_obj_callback(level.t1, level_path) or self.include_obj_callback(level.t2, level_path)):
+                skip = False
+        elif self.include_obj_callback_strict and level_path != 'root':
+            skip = True
+            if (self.include_obj_callback_strict(level.t1, level_path) and
+                self.include_obj_callback_strict(level.t2, level_path)):
+                skip = False
+
 
         return skip
 

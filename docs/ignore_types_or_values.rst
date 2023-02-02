@@ -291,6 +291,44 @@ exclude_obj_callback_strict: function, default = None
     >>> DeepDiff(t1, t2, exclude_obj_callback_strict=exclude_obj_callback_strict)
     {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
 
+
+.. _include_obj_callback_label:
+
+Include Obj Callback
+--------------------
+
+include_obj_callback: function, default = None
+    A function that takes the object and its path and returns a Boolean. If True is returned, the object is included in the results, otherwise it is excluded.
+    This is to give the user a higher level of control than one can achieve via include_paths.
+
+    >>> def include_obj_callback(obj, path):
+    ...     return True if "include" in path or isinstance(obj, int) else False
+    ...
+    >>> t1 = {"x": 10, "y": "b", "z": "c", "include_me": "a"}
+    >>> t2 = {"x": 10, "y": "b", "z": "c", "include_me": "b"}
+    >>> DeepDiff(t1, t2, include_obj_callback=include_obj_callback)
+    {'values_changed': {"root['include_me']": {'new_value': "b", 'old_value': "a"}}}
+
+
+.. _include_obj_callback_strict_label:
+
+Include Obj Callback Strict
+---------------------------
+
+include_obj_callback_strict: function, default = None
+    A function that works the same way as include_obj_callback, but includes elements in the result only if the function returns True for both elements.
+
+    >>> def include_obj_callback_strict(obj, path):
+    ...         return True if isinstance(obj, int) and obj > 10 else False
+    ...
+    >>> t1 = {"x": 10, "y": "b", "z": "c"}
+    >>> t1 = {"x": 12, "y": "b", "z": "c"}
+    >>> DeepDiff(t1, t2, include_obj_callback=include_obj_callback_strict)
+    {'values_changed': {"root['x']": {'new_value': 12, 'old_value': 10}}}
+    >>> DeepDiff(t1, t2, include_obj_callback_strict=include_obj_callback_strict)
+    {}
+
+
 .. _truncate_datetime_label:
 
 Truncate Datetime
