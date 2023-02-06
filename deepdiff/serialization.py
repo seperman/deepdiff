@@ -3,7 +3,6 @@ import sys
 import io
 import os
 import json
-import orjson
 import uuid
 import logging
 import re  # NOQA
@@ -26,6 +25,11 @@ try:
 except ImportError:  # pragma: no cover.
     import csv
     clevercsv = None  # pragma: no cover.
+try:
+    import orjson
+except ImportError:  # pragma: no cover.
+    orjson = None
+
 from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
@@ -556,15 +560,17 @@ class JSONDecoder(json.JSONDecoder):
 def json_dumps(item, default_mapping=None, **kwargs):
     """
     Dump json with extra details that are not normally json serializable
-
-    Note: I tried to replace json with orjson for its speed. It does work
-    but the output it makes is a byte object and Postgres couldn't directly use it without
-    encoding to str. So I switched back to json.
     """
-    return orjson.dumps(
-        item,
-        default=json_convertor_default(default_mapping=default_mapping),
-        **kwargs).decode(encoding='utf-8')
+    if orjson:
+        return orjson.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs).decode(encoding='utf-8')
+    else:
+        return json.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs)
 
 
 json_loads = partial(json.loads, cls=JSONDecoder)

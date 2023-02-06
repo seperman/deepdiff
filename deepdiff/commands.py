@@ -11,6 +11,11 @@ from deepdiff.diff import (
 from deepdiff import Delta, DeepSearch, extract as deep_extract
 from deepdiff.serialization import load_path_content, save_content_to_path
 
+try:
+    import orjson
+except ImportError:
+    orjson = None
+
 
 @click.group()
 def cli():
@@ -105,7 +110,13 @@ def diff(
         # printing into stdout
         sys.stdout.buffer.write(delta.dumps())
     else:
-        pprint(diff, indent=2)
+        try:
+            if orjson:
+                print(diff.to_json(option=orjson.OPT_INDENT_2))
+            else:
+                print(diff.to_json(indent=2))
+        except Exception:
+            pprint(diff, indent=2)
 
 
 @cli.command()

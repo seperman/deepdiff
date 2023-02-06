@@ -48,6 +48,10 @@ If you want to use DeepDiff from commandline:
 
 `pip install "deepdiff[cli]"`
 
+If you want to improve the performance of DeepDiff with certain processes such as json serialization:
+
+`pip install "deepdiff[optimize]"`
+
 ### Importing
 
 ```python

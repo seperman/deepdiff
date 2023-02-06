@@ -21,6 +21,7 @@ def get_reqs(filename):
 
 reqs = get_reqs("requirements.txt")
 cli_reqs = get_reqs("requirements-cli.txt")
+optimize_reqs = get_reqs("requirements-optimize.txt")
 
 with open('README.md') as file:
     long_description = file.read()
@@ -45,6 +46,7 @@ setup(name='deepdiff',
       python_requires='>=3.7',
       extras_require={
           "cli": cli_reqs,
+          "optimize": optimize_reqs,
       },
       classifiers=[
           "Intended Audience :: Developers",
@@ -54,6 +56,7 @@ setup(name='deepdiff',
           "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: 3.9",
           "Programming Language :: Python :: 3.10",
+          "Programming Language :: Python :: 3.11",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"

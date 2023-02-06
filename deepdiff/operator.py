@@ -25,3 +25,14 @@ class BaseOperator:
 
     def give_up_diffing(self, level, diff_instance) -> bool:
         raise NotImplementedError('Please implement the diff function.')
+
+
+class PrefixOrSuffixOperator:
+
+    def match(self, level) -> bool:
+        return level.t1 and level.t2 and isinstance(level.t1, str) and isinstance(level.t2, str)
+
+    def give_up_diffing(self, level, diff_instance) -> bool:
+        t1 = level.t1
+        t2 = level.t2
+        return t1.startswith(t2) or t2.startswith(t1)
