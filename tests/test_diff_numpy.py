@@ -105,6 +105,14 @@ NUMPY_CASES = {
             }
         },
     },
+    'numpy_array9_ignore_nan_inequality_float32': {
+        't1': np.array([1, 2, 3, np.nan], np.float32),
+        't2': np.array([1, 2, 4, np.nan], np.float32),
+        'deepdiff_kwargs': {
+            'ignore_nan_inequality': True,
+        },
+        'expected_result': {'values_changed': {'root[2]': {'new_value': 4.0, 'old_value': 3.0}}}
+    },
     'numpy_almost_equal': {
         't1': np.array([1.0, 2.3333333333333]),
         't2': np.array([1.0, 2.33333334]),

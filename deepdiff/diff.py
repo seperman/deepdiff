@@ -21,7 +21,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
-                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
+                             np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS)
 from deepdiff.serialization import SerializationMixin
@@ -1517,7 +1517,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('values_changed', level, local_tree=local_tree)
                 return
 
-        if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
+        if self.ignore_nan_inequality and isinstance(level.t1, (float, np_floating)) and str(level.t1) == str(level.t2) == 'nan':
             return
 
         if isinstance(level.t1, booleans):
