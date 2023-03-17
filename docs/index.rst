@@ -43,7 +43,7 @@ DeepDiff 6-3-0
    when using ``ignore_nan_equality`` by `Noam
    Gottlieb <https://github.com/noamgot>`__
 -  ``orjson`` becomes optional again.
-
+-  Fix for ``ignore_type_in_groups`` with numeric values so it does not report number changes when the number types are different.
 
 DeepDiff 6-2-0
 --------------

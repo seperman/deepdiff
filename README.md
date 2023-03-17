@@ -29,6 +29,7 @@ DeepDiff 6-3-0
 - `include_obj_callback` and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
 - Fixed a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality` by [Noam Gottlieb](https://github.com/noamgot)
 - `orjson` becomes optional again.
+- Fix for `ignore_type_in_groups` with numeric values so it does not report number changes when the number types are different.
 
 DeepDiff 6-2-0
 
