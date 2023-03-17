@@ -73,11 +73,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2022). DeepDiff (Version 6.3.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.3.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2022. DeepDiff (version 6.3.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.3.0).
 
 # Authors
 
