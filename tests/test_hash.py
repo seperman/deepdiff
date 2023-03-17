@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 import pytest
+from pathlib import Path
 import logging
 import datetime
 from collections import namedtuple
@@ -152,6 +153,13 @@ class TestDeepHash:
         b_hash = DeepHash(b, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)[b]
         assert a_hash == b_hash
 
+
+    def test_path(self):
+        a = Path('testdir')
+        b = Path('testdir2')
+        a_hash = DeepHash(a)[a]
+        b_hash = DeepHash(b)[b]
+        assert a_hash != b_hash
 
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
