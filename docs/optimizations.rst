@@ -8,6 +8,15 @@ Optimizations
 If you are dealing with large nested objects and ignore_order=True, chances are DeepDiff takes a while to calculate the diff. Here are some tips that may help you with optimizations and progress report.
 
 
+Optimized Libraries
+-------------------
+
+If you dump DeepDiff or Delta objects as json, you can improve the performance by installing orjson.
+DeepDiff will automatically use orjson instead of Python's built-in json library to do json serialization.
+
+    pip install "deepdiff[optimize]"
+
+
 Max Passes
 ----------
 

@@ -128,21 +128,62 @@ For example you could use the level object to further determine if the 2 objects
 Custom Operators
 ----------------
 
-Whether two objects are different or not are largely depend on the context. For example, apple and banana are the same
+Whether two objects are different or not largely depends on the context. For example, apples and bananas are the same
 if you are considering whether they are fruits or not.
 
 In that case, you can pass a *custom_operators* for the job.
 
-In fact, custom operators give you a lot of power. In the following examples we explore use cases from making DeepDiff
-report the L2 Distance of items, to only include certain paths in diffing all the way to making DeepDiff stop diffing
-as soon as the first diff is reported.
+Custom operators give you a lot of power. In the following examples, we explore various use cases such as:
+
+- Making DeepDiff report the L2 Distance of items
+- Only include specific paths in diffing
+- Making DeepDiff stop diffing once we find the first diff.
+
+You can use one of the predefined custom operators that come with DeepDiff. Or you can define one yourself.
+
+
+Built-In Custom Operators
+
+.. _prefix_or_suffix_operator_label:
+
+PrefixOrSuffixOperator
+......................
+
+
+This operator will skip strings that are suffix or prefix of each other.
+
+For example when this operator is used, the two strings of "joe" and "joe's car" will not be reported as different.
+
+    >>> from deepdiff import DeepDiff
+    >>> from deepdiff.operator import PrefixOrSuffixOperator
+    >>> t1 = {
+    ...     "key1": ["foo", "bar's food", "jack", "joe"]
+    ... }
+    >>> t2 = {
+    ...     "key1": ["foo", "bar", "jill", "joe'car"]
+    ... }
+    >>>
+    >>> DeepDiff(t1, t2)
+    {'values_changed': {"root['key1'][1]": {'new_value': 'bar', 'old_value': "bar's food"}, "root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}, "root['key1'][3]": {'new_value': "joe'car", 'old_value': 'joe'}}}
+    >>> DeepDiff(t1, t2, custom_operators=[
+    ...     PrefixOrSuffixOperator()
+    ... ])
+    >>>
+    {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
+
+
+
+
+Define A Custom Operator
+------------------------
+
 
 To define an custom operator, you just need to inherit a *BaseOperator* and
 
     * implement a give_up_diffing method
         * give_up_diffing(level: DiffLevel, diff_instance: DeepDiff) -> boolean
 
-          If it returns True, then we will give up diffing the 2 objects.
+          If it returns True, then we will give up diffing the tow objects.
           You may or may not use the diff_instance.custom_report_result within this function
           to report any diff. If you decide not to report anything, and this
           function returns True, then the objects are basically skipped in the results.

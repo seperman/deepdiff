@@ -2,7 +2,7 @@ import math
 
 from typing import List
 from deepdiff import DeepDiff
-from deepdiff.operator import BaseOperator
+from deepdiff.operator import BaseOperator, PrefixOrSuffixOperator
 
 
 class TestOperators:
@@ -217,3 +217,26 @@ class TestOperators:
 
         expected = {'values_changed': {'root[0][1]': {'new_value': 3, 'old_value': 2}}}
         assert expected == ddiff
+
+    def test_prefix_or_suffix_diff(self):
+
+        t1 = {
+            "key1": ["foo", "bar's food", "jack", "joe"]
+        }
+        t2 = {
+            "key1": ["foo", "bar", "jill", "joe'car"]
+        }
+
+        ddiff = DeepDiff(t1, t2, custom_operators=[
+            PrefixOrSuffixOperator()
+        ])
+
+        expected = {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
+        assert expected == ddiff
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, custom_operators=[
+            PrefixOrSuffixOperator()
+        ])
+
+        expected2 = {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
+        assert expected2 == ddiff2

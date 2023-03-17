@@ -21,7 +21,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
-                             np_ndarray, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
+                             np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS)
 from deepdiff.serialization import SerializationMixin
@@ -121,6 +121,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_obj_callback=None,
                  exclude_obj_callback_strict=None,
                  exclude_paths=None,
+                 include_obj_callback=None,
+                 include_obj_callback_strict=None,
                  include_paths=None,
                  exclude_regex_paths=None,
                  exclude_types=None,
@@ -201,6 +203,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_string_case = ignore_string_case
             self.exclude_obj_callback = exclude_obj_callback
             self.exclude_obj_callback_strict = exclude_obj_callback_strict
+            self.include_obj_callback = include_obj_callback
+            self.include_obj_callback_strict = include_obj_callback_strict
             self.number_to_string = number_to_string_func or number_to_string
             self.iterable_compare_func = iterable_compare_func
             self.ignore_private_variables = ignore_private_variables
@@ -464,6 +468,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 (self.exclude_obj_callback_strict(level.t1, level_path) and
                  self.exclude_obj_callback_strict(level.t2, level_path)):
             skip = True
+        elif self.include_obj_callback and level_path != 'root':
+            skip = True
+            if (self.include_obj_callback(level.t1, level_path) or self.include_obj_callback(level.t2, level_path)):
+                skip = False
+        elif self.include_obj_callback_strict and level_path != 'root':
+            skip = True
+            if (self.include_obj_callback_strict(level.t1, level_path) and
+                self.include_obj_callback_strict(level.t2, level_path)):
+                skip = False
+
 
         return skip
 
@@ -1308,10 +1322,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_numbers(self, level, local_tree=None):
+    def _diff_numbers(self, level, local_tree=None, report_type_change=True):
         """Diff Numbers"""
-        t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
-        t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
+        if report_type_change:
+            t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
+            t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
+        else:
+            t1_type = t2_type = ''
 
         if self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
@@ -1489,8 +1506,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if self._skip_this(level):
             return
 
+        report_type_change = True
         if get_type(level.t1) != get_type(level.t2):
-            report_type_change = True
             for type_group in self.ignore_type_in_groups:
                 if self.type_check_func(level.t1, type_group) and self.type_check_func(level.t2, type_group):
                     report_type_change = False
@@ -1503,7 +1520,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('values_changed', level, local_tree=local_tree)
                 return
 
-        if self.ignore_nan_inequality and isinstance(level.t1, float) and str(level.t1) == str(level.t2) == 'nan':
+        if self.ignore_nan_inequality and isinstance(level.t1, (float, np_floating)) and str(level.t1) == str(level.t2) == 'nan':
             return
 
         if isinstance(level.t1, booleans):
@@ -1519,7 +1536,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._diff_uuids(level, local_tree=local_tree)
 
         elif isinstance(level.t1, numbers):
-            self._diff_numbers(level, local_tree=local_tree)
+            self._diff_numbers(level, local_tree=local_tree, report_type_change=report_type_change)
 
         elif isinstance(level.t1, Mapping):
             self._diff_dict(level, parents_ids, local_tree=local_tree)

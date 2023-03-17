@@ -153,16 +153,16 @@ Json Deserializer for Delta
 If all you deal with are Json serializable objects, you can use json for serialization.
 
 >>> from deepdiff import DeepDiff, Delta
->>> import json
+>>> from deepdiff.serialization import json_dumps, json_loads
 >>> t1 = {"a": 1}
 >>> t2 = {"a": 2}
 >>>
 >>> diff = DeepDiff(t1, t2)
->>> delta = Delta(diff, serializer=json.dumps)
+>>> delta = Delta(diff, serializer=json_dumps)
 >>> dump = delta.dumps()
 >>> dump
 '{"values_changed": {"root[\'a\']": {"new_value": 2}}}'
->>> delta_reloaded = Delta(dump, deserializer=json.loads)
+>>> delta_reloaded = Delta(dump, deserializer=json_loads)
 >>> t2 == delta_reloaded + t1
 True
 

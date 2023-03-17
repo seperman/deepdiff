@@ -3,7 +3,6 @@ import sys
 import io
 import os
 import json
-import orjson
 import uuid
 import logging
 import re  # NOQA
@@ -26,6 +25,15 @@ try:
 except ImportError:  # pragma: no cover.
     import csv
     clevercsv = None  # pragma: no cover.
+try:
+    import orjson
+except ImportError:  # pragma: no cover.
+    orjson = None
+try:
+    from pydantic import BaseModel as PydanticBaseModel
+except ImportError:  # pragma: no cover.
+    PydanticBaseModel = None
+
 from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
@@ -303,7 +311,7 @@ class _RestrictedPickler(pickle.Pickler):
         return None
 
 
-def pickle_dump(obj, file_obj=None):
+def pickle_dump(obj, file_obj=None, protocol=4):
     """
     **pickle_dump**
     Dumps the obj into pickled content.
@@ -321,21 +329,21 @@ def pickle_dump(obj, file_obj=None):
     """
     file_obj_passed = bool(file_obj)
     file_obj = file_obj or io.BytesIO()
-    # We expect at least python 3.5 so protocol 4 is good.
-    _RestrictedPickler(file_obj, protocol=4, fix_imports=False).dump(obj)
+    _RestrictedPickler(file_obj, protocol=protocol, fix_imports=False).dump(obj)
     if not file_obj_passed:
         return file_obj.getvalue()
 
 
-def pickle_load(content, safe_to_import=None):
+def pickle_load(content=None, file_obj=None, safe_to_import=None):
     """
     **pickle_load**
     Load the pickled content. content should be a bytes object.
 
     **Parameters**
 
-    content : Bytes of pickled object. It needs to have Delta header in it that is
-        separated by a newline character from the rest of the pickled object.
+    content : Bytes of pickled object. 
+
+    file_obj : A file object to load the content from
 
     safe_to_import : A set of modules that needs to be explicitly allowed to be loaded.
         Example: {'mymodule.MyClass', 'decimal.Decimal'}
@@ -354,9 +362,13 @@ def pickle_load(content, safe_to_import=None):
 
 
     """
+    if not content and not file_obj:
+        raise ValueError('Please either pass the content or the file_obj to pickle_load.') 
     if isinstance(content, str):
         content = content.encode('utf-8')
-    return _RestrictedUnpickler(io.BytesIO(content), safe_to_import=safe_to_import).load()
+    if content:
+        file_obj = io.BytesIO(content)
+    return _RestrictedUnpickler(file_obj, safe_to_import=safe_to_import).load()
 
 
 def _get_pretty_form_text(verbose_level):
@@ -522,6 +534,9 @@ JSON_CONVERTOR = {
     uuid.UUID: lambda x: str(x),
 }
 
+if PydanticBaseModel:
+    JSON_CONVERTOR[PydanticBaseModel] = lambda x: x.dict()
+
 
 def json_convertor_default(default_mapping=None):
     if default_mapping:
@@ -556,15 +571,20 @@ class JSONDecoder(json.JSONDecoder):
 def json_dumps(item, default_mapping=None, **kwargs):
     """
     Dump json with extra details that are not normally json serializable
-
-    Note: I tried to replace json with orjson for its speed. It does work
-    but the output it makes is a byte object and Postgres couldn't directly use it without
-    encoding to str. So I switched back to json.
     """
-    return orjson.dumps(
-        item,
-        default=json_convertor_default(default_mapping=default_mapping),
-        **kwargs).decode(encoding='utf-8')
+    if orjson:
+        indent = kwargs.pop('indent', None)
+        if indent:
+            kwargs['option'] = orjson.OPT_INDENT_2
+        return orjson.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs).decode(encoding='utf-8')
+    else:
+        return json.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs)
 
 
 json_loads = partial(json.loads, cls=JSONDecoder)

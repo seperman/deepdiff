@@ -5,6 +5,19 @@ Changelog
 
 DeepDiff Changelog
 
+-  v6-3-0
+
+   -  ``PrefixOrSuffixOperator``: This operator will skip strings that
+      are suffix or prefix of each other.
+   -  ``include_obj_callback`` and ``include_obj_callback_strict`` are
+      added by `Håvard Thom <https://github.com/havardthom>`__.
+   -  Fixed a corner case where numpy’s ``np.float32`` nans are not
+      ignored when using ``ignore_nan_equality`` by `Noam
+      Gottlieb <https://github.com/noamgot>`__
+   -  ``orjson`` becomes optional again.
+   -  Fix for ``ignore_type_in_groups`` with numeric values so it does
+      not report number changes when the number types are different.
+
 -  v6-2-3
 
    -  Switching to Orjson for serialization to improve the performance.

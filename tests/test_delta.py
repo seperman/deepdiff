@@ -1188,6 +1188,8 @@ class TestDeltaOther:
             'exclude_types_tuple': None,
             'ignore_type_subclasses': False,
             'ignore_string_case': False,
+            'include_obj_callback': None,
+            'include_obj_callback_strict': None,
             'exclude_obj_callback': None,
             'exclude_obj_callback_strict': None,
             'ignore_private_variables': True,

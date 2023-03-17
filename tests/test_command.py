@@ -11,14 +11,14 @@ from deepdiff.helper import pypy3
 class TestCommands:
 
     @pytest.mark.parametrize('t1, t2, expected_in_stdout, expected_exit_code', [
-        ('t1.json', 't2.json', "'dictionary_item_added\': [root[0]", 0),
+        ('t1.json', 't2.json', '"dictionary_item_added": [\n    "root[0]', 0),
         ('t1_corrupt.json', 't2.json', "Expecting property name enclosed in double quotes", 1),
-        ('t1.json', 't2_json.csv', "'old_value\': \'value2\'", 0),
-        ('t2_json.csv', 't1.json', "'old_value\': \'value3\'", 0),
-        ('t1.csv', 't2.csv', "\'new_value\': \'James\'", 0),
+        ('t1.json', 't2_json.csv', '"old_value": "value2"', 0),
+        ('t2_json.csv', 't1.json', '"old_value": "value3"', 0),
+        ('t1.csv', 't2.csv', '"new_value": "James"', 0),
         ('t1.toml', 't2.toml', "10.0.0.2", 0),
-        ('t1.pickle', 't2.pickle', "'new_value': 5, 'old_value': 1", 0),
-        ('t1.yaml', 't2.yaml', "'new_value': 61, 'old_value': 65", 0),
+        ('t1.pickle', 't2.pickle', '"new_value": 5,\n      "old_value": 1', 0),
+        ('t1.yaml', 't2.yaml', '"new_value": 61,\n      "old_value": 65', 0),
     ])
     def test_diff_command(self, t1, t2, expected_in_stdout, expected_exit_code):
         t1 = os.path.join(FIXTURES_DIR, t1)
@@ -74,7 +74,7 @@ class TestCommands:
         diffed = runner.invoke(diff, [t1, t2, '--group-by', 'id'])
         assert 0 == diffed.exit_code
         assert 'values_changed' in diffed.output
-        assert '\'new_value\': \'Chicken\'' in diffed.output
+        assert '"new_value": "Chicken"' in diffed.output
 
     def test_command_math_epsilon(self):
         t1 = os.path.join(FIXTURES_DIR, 'd_t1.yaml')
@@ -86,7 +86,7 @@ class TestCommands:
 
         diffed2 = runner.invoke(diff, [t1, t2, '--math-epsilon', '0.001'])
         assert 0 == diffed2.exit_code
-        assert "{'values_changed': {'root[2][2]': {'new_value': 0.289, 'old_value': 0.288}}}\n" == diffed2.output
+        assert '{\n  "values_changed": {\n    "root[2][2]": {\n      "new_value": 0.289,\n      "old_value": 0.288\n    }\n  }\n}\n' == diffed2.output
 
     def test_command_grep(self):
         path = os.path.join(FIXTURES_DIR, 'd_t1.yaml')

@@ -4,12 +4,12 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 6.2.3 documentation!
+DeepDiff 6.3.0 documentation!
 =============================
 
-*****************
-DeepDiff Overview
-*****************
+*******
+Modules
+*******
 
 The DeepDiff library includes the following modules:
 
@@ -31,32 +31,25 @@ The DeepDiff library includes the following modules:
 What is New
 ***********
 
+
+DeepDiff 6-3-0
+--------------
+
+-  :ref:`prefix_or_suffix_operator_label`: This operator will skip strings that are
+   suffix or prefix of each other.
+-  :ref:`include_obj_callback_label` and :ref:`include_obj_callback_strict_label` are
+   added by `Håvard Thom <https://github.com/havardthom>`__.
+-  Fixed a corner case where numpy’s ``np.float32`` nans are not ignored
+   when using ``ignore_nan_equality`` by `Noam
+   Gottlieb <https://github.com/noamgot>`__
+-  ``orjson`` becomes optional again.
+-  Fix for ``ignore_type_in_groups`` with numeric values so it does not report number changes when the number types are different.
+
 DeepDiff 6-2-0
 --------------
 
 -  Major improvement in the diff report for lists when items are all hashable and the order of items is important.
 
-DeepDiff 6-1-0
---------------
-
--  DeepDiff.affected_paths can be used to get the list of all paths
-   where a change, addition, or deletion was reported for.
--  DeepDiff.affected_root_keys can be used to get the list of all paths
-   where a change, addition, or deletion was reported for.
--  Bugfix: ValueError when using Decimal 0.x #339 by `Enric
-   Pou <https://github.com/epou>`__
--  Serialization of UUID
-
-DeepDiff 6-0-0
---------------
--  :ref:`exclude_obj_callback_strict_label`
-   parameter is added to DeepDiff by Mikhail Khviyuzov
-   `mskhviyu <https://github.com/mskhviyu>`__.
--  A fix for diffing using ``iterable_compare_func`` with nested objects
-   by `dtorres-sf <https://github.com/dtorres-sf>`__ who originally
-   contributed this feature.
-
-Note: There are no breaking changes in DeepDiff 6 compared to the latest DeepDiff 5 releases.
 
 *********
 Tutorials
@@ -75,6 +68,10 @@ Install from PyPi::
 If you want to use DeepDiff from commandline::
 
     pip install "deepdiff[cli]"
+
+If you want to improve the performance of DeepDiff with certain processes such as json serialization::
+
+    pip install "deepdiff[optimize]"
 
 Read about DeepDiff optimizations at :ref:`optimizations_label`
 
@@ -118,21 +115,11 @@ Then you can access the commands via:
 
     $ deep extract --help
 
+
 Supported data types
 ~~~~~~~~~~~~~~~~~~~~
 
 int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy, custom objects and more!
-
-
-*****
-Pycon
-*****
-
-**Pycon 2016 Talk**
-A talk was given about the basics of how DeepDiff does what it does at Pycon 2016.
-`Diff it to Dig it Pycon 2016 video <https://www.youtube.com/watch?v=J5r99eJIxF4>`_
-
-You can find more information about the contents of that Pycon talk here: http://zepworks.com/blog/diff-it-to-digg-it/
 
 
 

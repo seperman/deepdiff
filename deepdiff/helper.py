@@ -39,6 +39,7 @@ except ImportError:  # pragma: no cover. The case without Numpy is tested locall
     np_float32 = np_type  # pragma: no cover.
     np_float64 = np_type  # pragma: no cover.
     np_float_ = np_type  # pragma: no cover.
+    np_floating = np_type  # pragma: no cover.
     np_complex64 = np_type  # pragma: no cover.
     np_complex128 = np_type  # pragma: no cover.
     np_complex_ = np_type  # pragma: no cover.
@@ -60,6 +61,7 @@ else:
     np_float32 = np.float32
     np_float64 = np.float64
     np_float_ = np.float_
+    np_floating = np.floating
     np_complex64 = np.complex64
     np_complex128 = np.complex128
     np_complex_ = np.complex_
@@ -68,7 +70,7 @@ else:
 numpy_numbers = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
-    np_float32, np_float64, np_float_, np_complex64,
+    np_float32, np_float64, np_float_, np_floating, np_complex64,
     np_complex128, np_complex_,)
 
 numpy_complex_numbers = (
@@ -336,7 +338,7 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
         using = number_formatting[number_format_notation]
     except KeyError:
         raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
-    
+
     if not isinstance(number, numbers):
         return number
     elif isinstance(number, Decimal):
