@@ -25,8 +25,8 @@ Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
 DeepDiff 6-3-0
 
-- `PrefixOrSuffixOperator`: This operator will skip strings that are suffix or prefix of each other.
-- `include_obj_callback` and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
+- [`PrefixOrSuffixOperator`](https://zepworks.com/deepdiff/current/custom.html#prefix-or-suffix-operator-label): This operator will skip strings that are suffix or prefix of each other.
+- [`include_obj_callback`](https://zepworks.com/deepdiff/current/ignore_types_or_values.html#include-obj-callback-label) and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
 - Fixed a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality` by [Noam Gottlieb](https://github.com/noamgot)
 - `orjson` becomes optional again.
 - Fix for `ignore_type_in_groups` with numeric values so it does not report number changes when the number types are different.
