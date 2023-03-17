@@ -144,6 +144,7 @@ You can use one of the predefined custom operators that come with DeepDiff. Or y
 
 Built-In Custom Operators
 
+.. _prefix_or_suffix_operator_label:
 
 PrefixOrSuffixOperator
 ......................
