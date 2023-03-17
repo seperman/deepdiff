@@ -51,3 +51,4 @@ Authors in order of the timeline of their contributions:
 - [Michal Ozery-Flato](https://github.com/michalozeryflato) for setting equal_nan=ignore_nan_inequality in the call for np.array_equal
 - [martin-kokos](https://github.com/martin-kokos) for using Pytest's tmp_path fixture instead of /tmp/
 - Håvard Thom [havardthom](https://github.com/havardthom) for adding include_obj_callback and include_obj_callback_strict.
+- [Noam Gottlieb](https://github.com/noamgot) for fixing a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality`.

@@ -66,6 +66,12 @@ Authors in order of the timeline of their contributions:
    np.array_equal
 -  `martin-kokos <https://github.com/martin-kokos>`__ for using Pytest’s
    tmp_path fixture instead of /tmp/
+-  Håvard Thom `havardthom <https://github.com/havardthom>`__ for adding
+   include_obj_callback and include_obj_callback_strict.
+-  `Noam Gottlieb <https://github.com/noamgot>`__ for fixing a corner
+   case where numpy’s ``np.float32`` nans are not ignored when using
+   ``ignore_nan_equality``.
+
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
