@@ -1196,6 +1196,10 @@ class TestDeepDiffText:
         result = {'values_changed': {'root[4]': {'new_value': 'now', 'old_value': now}}}
         assert result == ddiff
 
+    def test_ignore_type_in_groups_float_vs_decimal(self):
+        diff = DeepDiff(float('0.1'), Decimal('0.1'), ignore_type_in_groups=[(float, Decimal)], significant_digits=2)
+        assert not diff
+
     @pytest.mark.parametrize("t1, t2, significant_digits, result", [
         ([0.1], [Decimal('0.10')], 55,
             {'values_changed': {'root[0]': {'new_value': Decimal('0.10'), 'old_value': 0.1}}}),  # Due to floating point arithmetics with high significant digits.

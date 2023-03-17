@@ -1322,10 +1322,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_numbers(self, level, local_tree=None):
+    def _diff_numbers(self, level, local_tree=None, report_type_change=True):
         """Diff Numbers"""
-        t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
-        t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
+        if report_type_change:
+            t1_type = "number" if self.ignore_numeric_type_changes else level.t1.__class__.__name__
+            t2_type = "number" if self.ignore_numeric_type_changes else level.t2.__class__.__name__
+        else:
+            t1_type = t2_type = ''
 
         if self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
@@ -1503,8 +1506,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if self._skip_this(level):
             return
 
+        report_type_change = True
         if get_type(level.t1) != get_type(level.t2):
-            report_type_change = True
             for type_group in self.ignore_type_in_groups:
                 if self.type_check_func(level.t1, type_group) and self.type_check_func(level.t2, type_group):
                     report_type_change = False
@@ -1533,7 +1536,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._diff_uuids(level, local_tree=local_tree)
 
         elif isinstance(level.t1, numbers):
-            self._diff_numbers(level, local_tree=local_tree)
+            self._diff_numbers(level, local_tree=local_tree, report_type_change=report_type_change)
 
         elif isinstance(level.t1, Mapping):
             self._diff_dict(level, parents_ids, local_tree=local_tree)
