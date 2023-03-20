@@ -416,3 +416,50 @@ Expected the old value for root[0] to be 1 but it is 3. Error found on: while ch
 [2]
 
 And if you had set raise_errors=True, then it would have raised the error in addition to logging it.
+
+
+.. _delta_force_label:
+
+Delta Force
+-----------
+
+force : Boolean, default=False
+    force is used to force apply a delta to objects that have a very different structure.
+
+
+>>> from deepdiff import DeepDiff, Delta
+>>> t1 = {
+...     'x': {
+...         'y': [1, 2, 3]
+...     },
+...     'q': {
+...         'r': 'abc',
+...     }
+... }
+>>>
+>>> t2 = {
+...     'x': {
+...         'y': [1, 2, 3, 4]
+...     },
+...     'q': {
+...         'r': 'abc',
+...         't': 0.5,
+...     }
+... }
+>>>
+>>> diff = DeepDiff(t1, t2)
+>>> diff
+{'dictionary_item_added': [root['q']['t']], 'iterable_item_added': {"root['x']['y'][3]": 4}}
+>>> delta = Delta(diff)
+>>> {} + delta
+Unable to get the item at root['x']['y'][3]: 'x'
+Unable to get the item at root['q']['t']
+{}
+
+# Once we set the force to be True
+
+>>> delta = Delta(diff, force=True)
+>>> {} + delta
+{'x': {'y': {3: 4}}, 'q': {'t': 0.5}}
+
+Notice that the force attribute does not know the original object at ['x']['y'] was supposed to be a list, so it assumes it was a dictionary.

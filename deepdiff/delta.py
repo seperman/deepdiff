@@ -9,7 +9,7 @@ from deepdiff.helper import (
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
 )
-from deepdiff.path import _path_to_elements, _get_nested_obj, GET, GETATTR
+from deepdiff.path import _path_to_elements, _get_nested_obj, _get_nested_obj_and_force, GET, GETATTR
 from deepdiff.anyset import AnySet
 
 
@@ -70,6 +70,7 @@ class Delta:
         safe_to_import=None,
         serializer=pickle_dump,
         verify_symmetry=False,
+        force=False,
     ):
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
             _deserializer = deserializer
@@ -104,6 +105,11 @@ class Delta:
         self._numpy_paths = self.diff.pop('_numpy_paths', False)
         self.serializer = serializer
         self.deserializer = deserializer
+        self.force = force
+        if force:
+            self.get_nested_obj = _get_nested_obj_and_force
+        else:
+            self.get_nested_obj = _get_nested_obj
         self.reset()
 
     def __repr__(self):
@@ -162,7 +168,14 @@ class Delta:
                 current_old_value = getattr(obj, elem)
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
-        except (KeyError, IndexError, AttributeError, IndexError, TypeError) as e:
+        except (KeyError, IndexError, AttributeError, TypeError) as e:
+            if self.force:
+                forced_old_value = {}
+                if action == GET:
+                    obj[elem] = forced_old_value
+                elif action == GETATTR:
+                    setattr(obj, elem, forced_old_value)
+                return forced_old_value
             current_old_value = not_found
             if isinstance(path_for_err_reporting, (list, tuple)):
                 path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
@@ -351,14 +364,14 @@ class Delta:
         try:
             elements = _path_to_elements(path)
             if len(elements) > 1:
-                parent = _get_nested_obj(obj=self, elements=elements[:-2])
+                parent = self.get_nested_obj(obj=self, elements=elements[:-2])
                 parent_to_obj_elem, parent_to_obj_action = elements[-2]
                 obj = self._get_elem_and_compare_to_old_value(
                     obj=parent, path_for_err_reporting=path, expected_old_value=None,
                     elem=parent_to_obj_elem, action=parent_to_obj_action)
             else:
                 parent = parent_to_obj_elem = parent_to_obj_action = None
-                obj = _get_nested_obj(obj=self, elements=elements[:-1])
+                obj = self.get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
         except Exception as e:
             self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
@@ -458,7 +471,7 @@ class Delta:
     def _do_set_or_frozenset_item(self, items, func):
         for path, value in items.items():
             elements = _path_to_elements(path)
-            parent = _get_nested_obj(obj=self, elements=elements[:-1])
+            parent = self.get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
             obj = self._get_elem_and_compare_to_old_value(
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
