@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import inspect
 import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
@@ -308,17 +309,28 @@ class DeepHash(Base):
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """prepping objects"""
         original_type = type(obj) if not isinstance(obj, type) else obj
-        try:
-            if is_namedtuple:
-                obj = obj._asdict()
-            else:
-                obj = obj.__dict__
-        except AttributeError:
+
+        obj_to_dict_strategies = []
+        if is_namedtuple:
+            obj_to_dict_strategies.append(lambda o: o._asdict())
+        else:
+            obj_to_dict_strategies.append(lambda o: o.__dict__)
+
+        if hasattr(obj, "__slots__"):
+            obj_to_dict_strategies.append(lambda o: {i: getattr(o, i) for i in o.__slots__})
+        else:
+            obj_to_dict_strategies.append(lambda o: dict(inspect.getmembers(o, lambda m: not inspect.isroutine(m))))
+
+        for get_dict in obj_to_dict_strategies:
             try:
-                obj = {i: getattr(obj, i) for i in obj.__slots__}
+                d = get_dict(obj)
+                break
             except AttributeError:
-                self.hashes[UNPROCESSED_KEY].append(obj)
-                return (unprocessed, 0)
+                pass
+        else:
+            self.hashes[UNPROCESSED_KEY].append(obj)
+            return (unprocessed, 0)
+        obj = d
 
         result, counts = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
                                          print_as_attribute=True, original_type=original_type)
