@@ -3,6 +3,7 @@ import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
+from pathlib import Path
 from enum import Enum
 from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
@@ -420,6 +421,12 @@ class DeepHash(Base):
     def _prep_bool(self, obj):
         return BoolObj.TRUE if obj else BoolObj.FALSE
 
+
+    def _prep_path(self, obj):
+        type_ = obj.__class__.__name__
+        return KEY_TO_VAL_STR.format(type_, obj)
+
+
     def _prep_number(self, obj):
         type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
         if self.significant_digits is not None:
@@ -475,6 +482,9 @@ class DeepHash(Base):
                 encodings=self.encodings,
                 ignore_encoding_errors=self.ignore_encoding_errors,
             )
+
+        elif isinstance(obj, Path):
+            result = self._prep_path(obj)
 
         elif isinstance(obj, times):
             result = self._prep_datetime(obj)
