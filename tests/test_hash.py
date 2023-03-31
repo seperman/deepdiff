@@ -153,13 +153,18 @@ class TestDeepHash:
         b_hash = DeepHash(b, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)[b]
         assert a_hash == b_hash
 
-
     def test_path(self):
         a = Path('testdir')
         b = Path('testdir2')
         a_hash = DeepHash(a)[a]
         b_hash = DeepHash(b)[b]
         assert a_hash != b_hash
+
+    def test_re(self):
+        import re
+        a = re.compile("asdf.?")
+        a_hash = DeepHash(a)[a]
+        assert not( a_hash is unprocessed)
 
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
