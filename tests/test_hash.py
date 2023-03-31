@@ -153,6 +153,13 @@ class TestDeepHash:
         assert a_hash == b_hash
 
 
+    def test_re(self):
+        import re
+        a = re.compile("asdf.?")
+        a_hash = DeepHash(a)[a]
+        assert not( a_hash is unprocessed)
+
+
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
 
