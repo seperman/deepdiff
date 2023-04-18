@@ -452,7 +452,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if level_path not in self.include_paths:
                 skip = True
                 for prefix in self.include_paths:
-                    if level_path.startswith(prefix):
+                    if prefix in level_path or level_path in prefix:
                         skip = False
                         break
         elif self.exclude_regex_paths and any(
