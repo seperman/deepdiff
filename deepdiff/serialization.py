@@ -16,9 +16,16 @@ try:
 except ImportError:  # pragma: no cover.
     yaml = None  # pragma: no cover.
 try:
-    import toml
+    if sys.version_info >= (3, 11):
+        import tomllib as tomli
+    else:
+        import tomli
 except ImportError:  # pragma: no cover.
-    toml = None  # pragma: no cover.
+    tomli = None  # pragma: no cover.
+try:
+    import tomli_w
+except ImportError:  # pragma: no cover.
+    tomli_w = None  # pragma: no cover.
 try:
     import clevercsv
     csv = None
@@ -430,10 +437,10 @@ def load_path_content(path, file_type=None):
         with open(path, 'r') as the_file:
             content = yaml.safe_load(the_file)
     elif file_type == 'toml':
-        if toml is None:  # pragma: no cover.
-            raise ImportError('Toml needs to be installed.')  # pragma: no cover.
-        with open(path, 'r') as the_file:
-            content = toml.load(the_file)
+        if tomli is None:  # pragma: no cover.
+            raise ImportError('On python<=3.10 tomli needs to be installed.')  # pragma: no cover.
+        with open(path, 'rb') as the_file:
+            content = tomli.load(the_file)
     elif file_type == 'pickle':
         with open(path, 'rb') as the_file:
             content = the_file.read()
@@ -495,10 +502,10 @@ def _save_content(content, path, file_type, keep_backup=True):
         with open(path, 'w') as the_file:
             content = yaml.safe_dump(content, stream=the_file)
     elif file_type == 'toml':
-        if toml is None:  # pragma: no cover.
-            raise ImportError('Toml needs to be installed.')  # pragma: no cover.
-        with open(path, 'w') as the_file:
-            content = toml.dump(content, the_file)
+        if tomli_w is None:  # pragma: no cover.
+            raise ImportError('Tomli-w needs to be installed.')  # pragma: no cover.
+        with open(path, 'wb') as the_file:
+            content = tomli_w.dump(content, the_file)
     elif file_type == 'pickle':
         with open(path, 'wb') as the_file:
             content = pickle_dump(content, file_obj=the_file)
