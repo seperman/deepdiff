@@ -50,6 +50,14 @@ If you want to improve the performance of DeepDiff with certain functionalities 
 
 `pip install "deepdiff[optimize]"`
 
+Install optional packages:
+- [yaml](https://pypi.org/project/PyYAML/)
+- [tomli](https://pypi.org/project/tomli/) (python 3.10 and older) and [tomli-w](https://pypi.org/project/tomli-w/) for writing
+- [clevercsv](https://pypi.org/project/clevercsv/) for more rubust CSV parsing
+- [orjson](https://pypi.org/project/orjson/) for speed and memory optimized parsing
+- [pydantic](https://pypi.org/project/pydantic/)
+
+
 # Documentation
 
 <https://zepworks.com/deepdiff/current/>
