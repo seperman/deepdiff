@@ -25,8 +25,8 @@ Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
 DeepDiff 6-3-0
 
-- `PrefixOrSuffixOperator`: This operator will skip strings that are suffix or prefix of each other.
-- `include_obj_callback` and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
+- [`PrefixOrSuffixOperator`](https://zepworks.com/deepdiff/current/custom.html#prefix-or-suffix-operator-label): This operator will skip strings that are suffix or prefix of each other.
+- [`include_obj_callback`](https://zepworks.com/deepdiff/current/ignore_types_or_values.html#include-obj-callback-label) and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
 - Fixed a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality` by [Noam Gottlieb](https://github.com/noamgot)
 - `orjson` becomes optional again.
 - Fix for `ignore_type_in_groups` with numeric values so it does not report number changes when the number types are different.
@@ -49,6 +49,14 @@ If you want to use DeepDiff from commandline:
 If you want to improve the performance of DeepDiff with certain functionalities such as improved json serialization:
 
 `pip install "deepdiff[optimize]"`
+
+Install optional packages:
+- [yaml](https://pypi.org/project/PyYAML/)
+- [tomli](https://pypi.org/project/tomli/) (python 3.10 and older) and [tomli-w](https://pypi.org/project/tomli-w/) for writing
+- [clevercsv](https://pypi.org/project/clevercsv/) for more rubust CSV parsing
+- [orjson](https://pypi.org/project/orjson/) for speed and memory optimized parsing
+- [pydantic](https://pypi.org/project/pydantic/)
+
 
 # Documentation
 
@@ -73,11 +81,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2022). DeepDiff (Version 6.3.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.3.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2022. DeepDiff (version 6.3.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.3.0).
 
 # Authors
 
