@@ -58,6 +58,11 @@ If you want to improve the performance of DeepDiff with certain functionalities 
 
 Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 
+# Survey
+
+:mega: **Please fill out our [fast 5-question survey](https://forms.gle/E6qXexcgjoKnSzjB8)** so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! :dancers:
+
+
 # Contribute
 
 1. Please make your PR against the dev branch
