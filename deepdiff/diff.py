@@ -23,7 +23,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
-                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS)
+                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
+                             PydanticBaseModel, )
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -1549,6 +1550,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         elif isinstance(level.t1, np_ndarray):
             self._diff_numpy_array(level, parents_ids, local_tree=local_tree)
+
+        elif isinstance(level.t1, PydanticBaseModel):
+            self._diff_obj(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
