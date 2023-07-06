@@ -52,3 +52,9 @@ Authors in order of the timeline of their contributions:
 - [martin-kokos](https://github.com/martin-kokos) for using Pytest's tmp_path fixture instead of /tmp/
 - Håvard Thom [havardthom](https://github.com/havardthom) for adding include_obj_callback and include_obj_callback_strict.
 - [Noam Gottlieb](https://github.com/noamgot) for fixing a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality`.
+- [maggelus](https://github.com/maggelus) for the bugfix deephash for paths.
+- [maggelus](https://github.com/maggelus) for the bugfix deephash compiled regex.
+- [martin-kokos](https://github.com/martin-kokos) for fixing the tests dependent on toml.
+- [kor4ik](https://github.com/kor4ik) for the bugfix for `include_paths` for nested dictionaries.
+- [martin-kokos](https://github.com/martin-kokos) for using tomli and tomli-w for dealing with tomli files.
+- [Alex Sauer-Budge](https://github.com/amsb) for the bugfix for `datetime.date`.

@@ -71,7 +71,18 @@ Authors in order of the timeline of their contributions:
 -  `Noam Gottlieb <https://github.com/noamgot>`__ for fixing a corner
    case where numpy’s ``np.float32`` nans are not ignored when using
    ``ignore_nan_equality``.
-
+-  `maggelus <https://github.com/maggelus>`__ for the bugfix deephash
+   for paths.
+-  `maggelus <https://github.com/maggelus>`__ for the bugfix deephash
+   compiled regex.
+-  `martin-kokos <https://github.com/martin-kokos>`__ for fixing the
+   tests dependent on toml.
+-  `kor4ik <https://github.com/kor4ik>`__ for the bugfix for
+   ``include_paths`` for nested dictionaries.
+-  `martin-kokos <https://github.com/martin-kokos>`__ for using tomli
+   and tomli-w for dealing with tomli files.
+-  `Alex Sauer-Budge <https://github.com/amsb>`__ for the bugfix for
+   ``datetime.date``.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
