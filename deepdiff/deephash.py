@@ -426,11 +426,9 @@ class DeepHash(Base):
                 '{}|{}'.format(i, v) for i, v in result.items()
             ]
 
-        print(result)
         result = map(str, result) # making sure the result items are string so join command works.
         if self.ignore_list_order:
             result = sorted(result)  
-        print(result)
         result = ','.join(result)
         result = KEY_TO_VAL_STR.format(type(obj).__name__, result)
 
