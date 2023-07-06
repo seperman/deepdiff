@@ -111,6 +111,24 @@ def _get_nested_obj(obj, elements):
     return obj
 
 
+def _get_nested_obj_and_force(obj, elements):
+    for (elem, action) in elements:
+        if action == GET:
+            try:
+                obj = obj[elem]
+            except KeyError:
+                obj[elem] = {}
+                obj = obj[elem]
+            except IndexError:
+                if isinstance(obj, list) and isinstance(elem, int) and elem >= len(obj):
+                    obj.extend([None] * (elem - len(obj)))
+                    obj.append({})
+                    obj = obj[-1]
+        elif action == GETATTR:
+            obj = getattr(obj, elem)
+    return obj
+
+
 def extract(obj, path):
     """
     Get the item from obj based on path.

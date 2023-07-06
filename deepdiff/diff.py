@@ -15,7 +15,7 @@ from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
-from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListItemRemovedOrAdded, notpresent,
+from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
@@ -23,7 +23,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListIte
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
-                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS)
+                             np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
+                             PydanticBaseModel, )
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -452,7 +453,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if level_path not in self.include_paths:
                 skip = True
                 for prefix in self.include_paths:
-                    if level_path.startswith(prefix):
+                    if prefix in level_path or level_path in prefix:
                         skip = False
                         break
         elif self.exclude_regex_paths and any(
@@ -1529,7 +1530,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
-        elif isinstance(level.t1, times):
+        elif isinstance(level.t1, datetimes):
             self._diff_datetimes(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
@@ -1549,6 +1550,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         elif isinstance(level.t1, np_ndarray):
             self._diff_numpy_array(level, parents_ids, local_tree=local_tree)
+
+        elif isinstance(level.t1, PydanticBaseModel):
+            self._diff_obj(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)

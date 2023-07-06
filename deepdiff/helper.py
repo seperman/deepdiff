@@ -19,6 +19,10 @@ class np_type:
     pass
 
 
+class pydantic_base_model_type:
+    pass
+
+
 try:
     import numpy as np
 except ImportError:  # pragma: no cover. The case without Numpy is tested locally only.
@@ -83,6 +87,12 @@ numpy_dtypes.add(np_bool_)
 numpy_dtype_str_to_type = {
     item.__name__: item for item in numpy_dtypes
 }
+
+try:
+    from pydantic.main import BaseModel as PydanticBaseModel
+except ImportError:
+    PydanticBaseModel = pydantic_base_model_type
+
 
 logger = logging.getLogger(__name__)
 

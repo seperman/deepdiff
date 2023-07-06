@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+import inspect
 import logging
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
+from pathlib import Path
 from enum import Enum
 from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc,
@@ -308,17 +310,28 @@ class DeepHash(Base):
     def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
         """prepping objects"""
         original_type = type(obj) if not isinstance(obj, type) else obj
-        try:
-            if is_namedtuple:
-                obj = obj._asdict()
-            else:
-                obj = obj.__dict__
-        except AttributeError:
+
+        obj_to_dict_strategies = []
+        if is_namedtuple:
+            obj_to_dict_strategies.append(lambda o: o._asdict())
+        else:
+            obj_to_dict_strategies.append(lambda o: o.__dict__)
+
+        if hasattr(obj, "__slots__"):
+            obj_to_dict_strategies.append(lambda o: {i: getattr(o, i) for i in o.__slots__})
+        else:
+            obj_to_dict_strategies.append(lambda o: dict(inspect.getmembers(o, lambda m: not inspect.isroutine(m))))
+
+        for get_dict in obj_to_dict_strategies:
             try:
-                obj = {i: getattr(obj, i) for i in obj.__slots__}
+                d = get_dict(obj)
+                break
             except AttributeError:
-                self.hashes[UNPROCESSED_KEY].append(obj)
-                return (unprocessed, 0)
+                pass
+        else:
+            self.hashes[UNPROCESSED_KEY].append(obj)
+            return (unprocessed, 0)
+        obj = d
 
         result, counts = self._prep_dict(obj, parent=parent, parents_ids=parents_ids,
                                          print_as_attribute=True, original_type=original_type)
@@ -420,6 +433,12 @@ class DeepHash(Base):
     def _prep_bool(self, obj):
         return BoolObj.TRUE if obj else BoolObj.FALSE
 
+
+    def _prep_path(self, obj):
+        type_ = obj.__class__.__name__
+        return KEY_TO_VAL_STR.format(type_, obj)
+
+
     def _prep_number(self, obj):
         type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
         if self.significant_digits is not None:
@@ -475,6 +494,9 @@ class DeepHash(Base):
                 encodings=self.encodings,
                 ignore_encoding_errors=self.ignore_encoding_errors,
             )
+
+        elif isinstance(obj, Path):
+            result = self._prep_path(obj)
 
         elif isinstance(obj, times):
             result = self._prep_datetime(obj)

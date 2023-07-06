@@ -4,10 +4,12 @@ import pytest
 import logging
 import uuid
 from enum import Enum
+from typing import List
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3
+from deepdiff.helper import pypy3, PydanticBaseModel
 from tests import CustomClass
+
 
 logging.disable(logging.CRITICAL)
 
@@ -1772,3 +1774,33 @@ class TestDeepDiffText:
             },
             "iterable_item_removed": {"root[4]": datetime.datetime(2015, 7, 31, 0, 0)},
         }
+
+    def test_pydantic1(self):
+
+        class Foo(PydanticBaseModel):
+            thing: int = None
+            that: str
+
+        t1 = Foo(thing=1, that='yes')
+        t2 = Foo(thing=2, that='yes')
+
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {'root.thing': {'new_value': 2, 'old_value': 1}}}
+        assert expected == diff
+
+    def test_pydantic2(self):
+
+        class Foo(PydanticBaseModel):
+            thing: int = None
+            that: str
+
+        class Bar(PydanticBaseModel):
+            stuff: List[Foo]
+
+        t1 = Bar(stuff=[Foo(thing=1, that='yes')])
+        t2 = Bar(stuff=[Foo(thing=2, that='yes')])
+
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
+        assert expected == diff
+

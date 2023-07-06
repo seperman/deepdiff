@@ -1668,3 +1668,30 @@ class TestDeltaCompareFunc:
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
         assert t2 == recreated_t2
+
+    def test_delta_force1(self):
+        t1 = {
+            'x': {
+                'y': [1, 2, 3]
+            },
+            'q': {
+                'r': 'abc',
+            }
+        }
+
+        t2 = {
+            'x': {
+                'y': [1, 2, 3, 4]
+            },
+            'q': {
+                'r': 'abc',
+                't': 0.5,
+            }
+        }
+
+        diff = DeepDiff(t1, t2)
+
+        delta = Delta(diff=diff, force=True)
+        result = {} + delta
+        expected = {'x': {'y': {3: 4}}, 'q': {'t': 0.5}}
+        assert expected == result
