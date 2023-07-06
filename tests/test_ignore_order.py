@@ -176,24 +176,44 @@ class TestIgnoreOrder:
         }
         assert result == ddiff
 
-    # TODO: fix repeition report
-    def test_nested_list_ignore_order_report_repetition_wrong_currently(self):
+    def test_nested_list_ignore_order_report_repetition(self):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3, 3], 2, 1]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=False)
+        assert not ddiff
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
         result = {
             'repetition_change': {
                 'root[2][0]': {
                     'old_repeat': 1,
+                    'new_repeat': 2,
+                    'old_indexes': [0],
                     'new_indexes': [1, 2],
-                    'old_indexes': [1],
-                    'value': 3,
-                    'new_repeat': 2
+                    'value': 3
                 }
             }
         }
-        assert result != ddiff
-        assert {"root[2][0]"} == ddiff.affected_paths
+        assert result == ddiff2
+        assert {"root[2][0]"} == ddiff2.affected_paths
+
+    @pytest.mark.skip
+    def test_nested_list_and_dict_ignore_order_report_repetition(self):
+        """
+        This test shows that ignore order is not doing the right thing.
+
+        It should have said that root[1] and root[2] are removed.
+        """
+        t1 = [{"id": 1}, {"id": 1}, {"id": 1}]
+        t2 = [{"id": 1, "name": 1}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {'dictionary_item_added': ["root[0]['name']"]}
+        assert result == ddiff
+
+        # Here there is nothing that is "repeated" in an iterable
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        assert result == ddiff2
+        assert {"root[2][0]"} == ddiff2.affected_paths
 
     def test_list_of_unhashable_difference_ignore_order(self):
         t1 = [{"a": 2}, {"b": [3, 4, {1: 1}]}]
