@@ -15,7 +15,7 @@ from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from itertools import zip_longest
 from ordered_set import OrderedSet
-from deepdiff.helper import (strings, bytes_type, numbers, uuids, times, ListItemRemovedOrAdded, notpresent,
+from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
@@ -1530,7 +1530,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
-        elif isinstance(level.t1, times):
+        elif isinstance(level.t1, datetimes):
             self._diff_datetimes(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
