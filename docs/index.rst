@@ -37,18 +37,12 @@ DeepDiff 6-3-1
 
 This release includes many bug fixes.
 
--  Bugfix deephash for paths by
-  `maggelus <https://github.com/maggelus>`__
--  Bugfix deephash compiled regex
-  `maggelus <https://github.com/maggelus>`__
--  Fix tests dependent on toml by
-  `martin-kokos <https://github.com/martin-kokos>`__
--  Bugfix for ``include_paths`` for nested dictionaries by
-  `kor4ik <https://github.com/kor4ik>`__
--  Use tomli and tomli-w for dealing with tomli files by
-  `martin-kokos <https://github.com/martin-kokos>`__
--  Bugfix for ``datetime.date`` by `Alex
-  Sauer-Budge <https://github.com/amsb>`__
+-  Bugfix deephash for paths by `maggelus <https://github.com/maggelus>`__
+-  Bugfix deephash compiled regex `maggelus <https://github.com/maggelus>`__
+-  Fix tests dependent on toml by `martin-kokos <https://github.com/martin-kokos>`__
+-  Bugfix for ``include_paths`` for nested dictionaries by `kor4ik <https://github.com/kor4ik>`__
+-  Use tomli and tomli-w for dealing with tomli files by `martin-kokos <https://github.com/martin-kokos>`__
+-  Bugfix for ``datetime.date`` by `Alex Sauer-Budge <https://github.com/amsb>`__
 
 
 DeepDiff 6-3-0

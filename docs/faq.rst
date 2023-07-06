@@ -3,6 +3,9 @@
 F.A.Q
 =====
 
+.. Note::
+    |:mega:| **Please fill out our** `fast 5-question survey <https://forms.gle/E6qXexcgjoKnSzjB8>`__ so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! |:dancers:|
+
 
 Q: DeepDiff report is not precise when ignore_order=True
 --------------------------------------------------------

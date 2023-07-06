@@ -6,6 +6,9 @@ DeepDiff
 Deep Difference of dictionaries, iterables, strings and almost any other object.
 It will recursively look for all the changes.
 
+.. Note::
+    |:mega:| **Please fill out our** `fast 5-question survey <https://forms.gle/E6qXexcgjoKnSzjB8>`__ so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! |:dancers:|
+
 **Parameters**
 
 t1 : A dictionary, list, string or any python object that has __dict__ or __slots__
@@ -185,3 +188,4 @@ view: string, default = text
 **Supported data types**
 
 int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy, custom objects and more!
+

@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx_sitemap',
+    'sphinxemoji.sphinxemoji',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DeepDiff'
-copyright = '2015-2021, Sep Dehpour'
+copyright = '2015-2023, Sep Dehpour'
 author = 'Sep Dehpour'
 
 # The version info for the project you're documenting, acts as replacement for

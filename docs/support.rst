@@ -6,9 +6,14 @@ Support
 Hello,
 
 This is Sep, the creator of DeepDiff. Thanks for using DeepDiff!
-If you find a bug please create a ticket on our `github repo`_
+If you find a bug, please create a ticket on our `github repo`_
 
-Please note that my time is very limited for support given my other commitments so it may take a while to get back to you. In case you need direct contact for a pressing issue, I can be reached via hello at zepworks . com email address for consulting.
+Contributions to DeepDiff are always very welcome! More than `50 people </deepdiff/current/authors.html>`__ have contributed code to DeepDiff so far.
+
+I love working on DeepDiff and other open-source projects. These projects will stay free and open source forever. If my work has been helpful to you, I would appreciate any sponsorship. Also, if you have any issue with my code that needs my immediate attention, I will be grateful for donations.
+
+Please `click here <https://github.com/sponsors/seperman>`__ to read
+more about sponsoring my work.
 
 Thank you!
 
