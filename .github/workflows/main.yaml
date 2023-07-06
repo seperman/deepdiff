@@ -38,23 +38,23 @@ jobs:
       if: matrix.python-version != 3.7
       run: pip install -r requirements-dev.txt
     - name: Lint with flake8
-      if: matrix.python-version == 3.10
+      if: matrix.python-version == 3.11
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 deepdiff --count --exit-zero --max-complexity=26 --max-line-lengt=250 --statistics
     - name: Test with pytest and get the coverage
-      if: matrix.python-version == 3.10
+      if: matrix.python-version == 3.11
       run: |
         pytest --cov-report=xml --cov=deepdiff tests/ --runslow
     - name: Test with pytest and no coverage report
-      if: matrix.python-version != 3.10
+      if: matrix.python-version != 3.11
       run: |
         pytest
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      if: matrix.python-version == 3.10
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == 3.11
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
