@@ -382,8 +382,6 @@ class TestDeepHashPrep:
         list1_hash = DeepHash(list1, ignore_list_order=ignore_list_order)
         list2_hash = DeepHash(list2, ignore_list_order=ignore_list_order)
         
-        print(list2_hash)
-        
         assert is_equal == (list1_hash[list1] == list2_hash[list2])
 
     @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
