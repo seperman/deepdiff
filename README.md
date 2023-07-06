@@ -23,6 +23,18 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 6-3-1
+
+This release includes many bug fixes.
+
+- Bugfix deephash for paths by [maggelus](https://github.com/maggelus)
+- Bugfix deephash compiled regex [maggelus](https://github.com/maggelus)
+- Fix tests dependent on toml by [martin-kokos](https://github.com/martin-kokos)
+- Bugfix for `include_paths` for nested dictionaries by [kor4ik](https://github.com/kor4ik)
+- Use tomli and tomli-w for dealing with tomli files by [martin-kokos](https://github.com/martin-kokos)
+- Bugfix for `datetime.date` by [Alex Sauer-Budge](https://github.com/amsb)
+
+
 DeepDiff 6-3-0
 
 - [`PrefixOrSuffixOperator`](https://zepworks.com/deepdiff/current/custom.html#prefix-or-suffix-operator-label): This operator will skip strings that are suffix or prefix of each other.
@@ -30,11 +42,6 @@ DeepDiff 6-3-0
 - Fixed a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality` by [Noam Gottlieb](https://github.com/noamgot)
 - `orjson` becomes optional again.
 - Fix for `ignore_type_in_groups` with numeric values so it does not report number changes when the number types are different.
-
-DeepDiff 6-2-0
-
-- Major improvement in the diff report for lists when items are all hashable and the order of items is important.
-
 
 ## Installation
 

@@ -32,6 +32,25 @@ What is New
 ***********
 
 
+DeepDiff 6-3-1
+--------------
+
+This release includes many bug fixes.
+
+-  Bugfix deephash for paths by
+  `maggelus <https://github.com/maggelus>`__
+-  Bugfix deephash compiled regex
+  `maggelus <https://github.com/maggelus>`__
+-  Fix tests dependent on toml by
+  `martin-kokos <https://github.com/martin-kokos>`__
+-  Bugfix for ``include_paths`` for nested dictionaries by
+  `kor4ik <https://github.com/kor4ik>`__
+-  Use tomli and tomli-w for dealing with tomli files by
+  `martin-kokos <https://github.com/martin-kokos>`__
+-  Bugfix for ``datetime.date`` by `Alex
+  Sauer-Budge <https://github.com/amsb>`__
+
+
 DeepDiff 6-3-0
 --------------
 
@@ -44,12 +63,6 @@ DeepDiff 6-3-0
    Gottlieb <https://github.com/noamgot>`__
 -  ``orjson`` becomes optional again.
 -  Fix for ``ignore_type_in_groups`` with numeric values so it does not report number changes when the number types are different.
-
-DeepDiff 6-2-0
---------------
-
--  Major improvement in the diff report for lists when items are all hashable and the order of items is important.
-
 
 *********
 Tutorials

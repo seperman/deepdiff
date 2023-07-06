@@ -1,5 +1,12 @@
 # DeepDiff Change log
 
+- v6-3-1
+    - Bugfix deephash for paths by [maggelus](https://github.com/maggelus)
+    - Bugfix deephash compiled regex [maggelus](https://github.com/maggelus)
+    - Fix tests dependent on toml by [martin-kokos](https://github.com/martin-kokos)
+    - Bugfix for `include_paths` for nested dictionaries by [kor4ik](https://github.com/kor4ik)
+    - Use tomli and tomli-w for dealing with tomli files by [martin-kokos](https://github.com/martin-kokos)
+    - Bugfix for `datetime.date` by [Alex Sauer-Budge](https://github.com/amsb)
 - v6-3-0
     - `PrefixOrSuffixOperator`: This operator will skip strings that are suffix or prefix of each other.
     - `include_obj_callback` and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
