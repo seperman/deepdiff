@@ -144,7 +144,7 @@ class DeepHash(Base):
                  parent="root",
                  encodings=None,
                  ignore_encoding_errors=False,
-                 ignore_list_order=True,
+                 ignore_iterable_order=True,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -191,7 +191,7 @@ class DeepHash(Base):
         self.ignore_private_variables = ignore_private_variables
         self.encodings = encodings
         self.ignore_encoding_errors = ignore_encoding_errors
-        self.ignore_list_order = ignore_list_order
+        self.ignore_iterable_order = ignore_iterable_order
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
@@ -427,7 +427,7 @@ class DeepHash(Base):
             ]
 
         result = map(str, result) # making sure the result items are string so join command works.
-        if self.ignore_list_order:
+        if self.ignore_iterable_order:
             result = sorted(result)  
         result = ','.join(result)
         result = KEY_TO_VAL_STR.format(type(obj).__name__, result)
