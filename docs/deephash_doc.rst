@@ -123,6 +123,8 @@ ignore_private_variables: Boolean, default = True
 ignore_encoding_errors: Boolean, default = False
     If you want to get away with UnicodeDecodeError without passing explicit character encodings, set this option to True. If you want to make sure the encoding is done properly, keep this as False and instead pass an explicit list of character encodings to be considered via the encodings parameter.
 
+ignore_iterable_order: Boolean, default = True
+    If order of items in an iterable should not cause the hash of the iterable to be different.
 
 number_format_notation : string, default="f"
     number_format_notation is what defines the meaning of significant digits. The default value of "f" means the digits AFTER the decimal point. "f" stands for fixed point. The other option is "e" which stands for exponent notation or scientific notation.
