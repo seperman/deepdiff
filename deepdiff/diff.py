@@ -13,6 +13,7 @@ from copy import deepcopy
 from math import isclose as is_close
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
+from inspect import getmembers
 from itertools import zip_longest
 from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
@@ -415,20 +416,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None):
         """Difference of 2 objects"""
+        processing_error = False
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
-            else:
+            elif all('__dict__' in dir(t) for t in level):
                 t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
                 t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
-        except AttributeError:
-            try:
+            elif all('__slots__' in dir(t) for t in level):
                 t1 = self._dict_from_slots(level.t1)
                 t2 = self._dict_from_slots(level.t2)
-            except AttributeError:
-                self._report_result('unprocessed', level, local_tree=local_tree)
-                return
+            else:
+                t1 = {k: v for k, v in getmembers(level.t1) if not callable(v)}
+                t2 = {k: v for k, v in getmembers(level.t2) if not callable(v)}
+        except AttributeError:
+            processing_error = True
+        if processing_error is True:
+            self._report_result('unprocessed', level, local_tree=local_tree)
+            return
 
         self._diff_dict(
             level,
