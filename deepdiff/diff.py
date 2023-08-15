@@ -1533,7 +1533,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if isinstance(level.t1, booleans):
             self._diff_booleans(level, local_tree=local_tree)
 
-        if isinstance(level.t1, strings):
+        elif isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
         elif isinstance(level.t1, datetimes):
