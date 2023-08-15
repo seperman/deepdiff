@@ -880,7 +880,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=j)
+                    child_relationship_param=j
+                )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
     def _diff_ordered_iterable_by_difflib(
