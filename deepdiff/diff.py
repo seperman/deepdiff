@@ -655,7 +655,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Default compare if `iterable_compare_func` is not provided.
         This will compare in sequence order.
         """
-
         if t1_from_index is None:
             return [((i, i), (x, y)) for i, (x, y) in enumerate(
                 zip_longest(
