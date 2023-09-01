@@ -2,6 +2,7 @@
 import datetime
 import pytest
 import logging
+import re
 import uuid
 from enum import Enum
 from typing import List
@@ -600,6 +601,64 @@ class TestDeepDiffText:
                 'root.value': {
                     'old_value': 1,
                     'new_value': 2
+                },
+            }
+        }
+        assert ddiff == result
+
+    def test_precompiled_regex(self):
+
+        pattern_1 = re.compile('foo')
+        pattern_2 = re.compile('foo')
+        pattern_3 = re.compile('foo', flags=re.I)
+        pattern_4 = re.compile('(foo)')
+        pattern_5 = re.compile('bar')
+
+        # same object
+        ddiff = DeepDiff(pattern_1, pattern_1)
+        result = {}
+        assert ddiff == result
+
+        # same pattern, different object
+        ddiff = DeepDiff(pattern_1, pattern_2)
+        result = {}
+        assert ddiff == result
+
+        # same pattern, different flags
+        ddiff = DeepDiff(pattern_1, pattern_3)
+        result = {
+            'values_changed': {
+                'root.flags': {
+                    'new_value': 34,
+                    'old_value': 32,
+                },
+            }
+        }
+        assert ddiff == result
+
+        # same pattern, different groups
+        ddiff = DeepDiff(pattern_1, pattern_4)
+        result = {
+            'values_changed': {
+                'root.pattern': {
+                    'new_value': '(foo)',
+                    'old_value': 'foo',
+                },
+                'root.groups': {
+                    'new_value': 1,
+                    'old_value': 0,
+                },
+            }
+        }
+        assert ddiff == result
+
+        # different pattern
+        ddiff = DeepDiff(pattern_1, pattern_5)
+        result = {
+            'values_changed': {
+                'root.pattern': {
+                    'new_value': 'bar',
+                    'old_value': 'foo',
                 },
             }
         }
