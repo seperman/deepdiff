@@ -155,7 +155,7 @@ if py2:  # pragma: no cover
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 
 
-if get_semvar_as_integer(np.__version__) < 1019000:
+if np and get_semvar_as_integer(np.__version__) < 1019000:
     sys.exit('The minimum required Numpy version is 1.19.0. Please upgrade your Numpy package.')
 
 strings = (str, bytes)  # which are both basestring

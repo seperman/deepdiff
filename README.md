@@ -1,4 +1,4 @@
-# DeepDiff v 6.4.0
+# DeepDiff v 6.4.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,13 +17,13 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.4.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.4.1/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
-DeepDiff 6-4-0
+DeepDiff 6-4-1
 
 - [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
 [Bobby Morck](https://github.com/bmorck)
@@ -82,11 +82,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.4.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.4.1) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.4.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.4.1).
 
 # Authors
 

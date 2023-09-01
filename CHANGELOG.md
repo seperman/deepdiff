@@ -1,5 +1,7 @@
 # DeepDiff Change log
 
+- v6-4-1
+    - Bugfix: Keep Numpy Optional
 - v6-4-0
     - [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
 [Bobby Morck](https://github.com/bmorck)
