@@ -1,5 +1,11 @@
 # DeepDiff Change log
 
+- v6-4-0
+    - [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
+[Bobby Morck](https://github.com/bmorck)
+    - [pyyaml to 6.0.1 to fix cython build problems](https://github.com/seperman/deepdiff/pull/406) by [Robert Bo Davis](https://github.com/robert-bo-davis)
+    - [Precompiled regex simple diff](https://github.com/seperman/deepdiff/pull/413) by [cohml](https://github.com/cohml)
+    - New flag: `zip_ordered_iterables` for forcing iterable items to be compared one by one. 
 - v6-3-1
     - Bugfix deephash for paths by [maggelus](https://github.com/maggelus)
     - Bugfix deephash compiled regex [maggelus](https://github.com/maggelus)
