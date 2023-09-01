@@ -577,6 +577,10 @@ class DiffLevel:
         else:
             self.__dict__[key] = value
 
+    def __iter__(self):
+        yield self.t1
+        yield self.t2
+
     @property
     def repetition(self):
         return self.additional['repetition']

@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 6.3.1 documentation!
+DeepDiff 6.4.0 documentation!
 =============================
 
 *******
@@ -32,31 +32,21 @@ What is New
 ***********
 
 
-DeepDiff 6-3-1
+DeepDiff 6-4-0
 --------------
 
-This release includes many bug fixes.
+-  `Add Ignore List Order Option to
+  DeepHash <https://github.com/seperman/deepdiff/pull/403>`__ by
+  `Bobby Morck <https://github.com/bmorck>`__
+-  `pyyaml to 6.0.1 to fix cython build
+  problems <https://github.com/seperman/deepdiff/pull/406>`__ by
+  `Robert Bo Davis <https://github.com/robert-bo-davis>`__
+-  `Precompiled regex simple
+  diff <https://github.com/seperman/deepdiff/pull/413>`__ by
+  `cohml <https://github.com/cohml>`__
+-  New flag: ``zip_ordered_iterables`` for forcing iterable items to
+  be compared one by one.
 
--  Bugfix deephash for paths by `maggelus <https://github.com/maggelus>`__
--  Bugfix deephash compiled regex `maggelus <https://github.com/maggelus>`__
--  Fix tests dependent on toml by `martin-kokos <https://github.com/martin-kokos>`__
--  Bugfix for ``include_paths`` for nested dictionaries by `kor4ik <https://github.com/kor4ik>`__
--  Use tomli and tomli-w for dealing with tomli files by `martin-kokos <https://github.com/martin-kokos>`__
--  Bugfix for ``datetime.date`` by `Alex Sauer-Budge <https://github.com/amsb>`__
-
-
-DeepDiff 6-3-0
---------------
-
--  :ref:`prefix_or_suffix_operator_label`: This operator will skip strings that are
-   suffix or prefix of each other.
--  :ref:`include_obj_callback_label` and :ref:`include_obj_callback_strict_label` are
-   added by `Håvard Thom <https://github.com/havardthom>`__.
--  Fixed a corner case where numpy’s ``np.float32`` nans are not ignored
-   when using ``ignore_nan_equality`` by `Noam
-   Gottlieb <https://github.com/noamgot>`__
--  ``orjson`` becomes optional again.
--  Fix for ``ignore_type_in_groups`` with numeric values so it does not report number changes when the number types are different.
 
 *********
 Tutorials

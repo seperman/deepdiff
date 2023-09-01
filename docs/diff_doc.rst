@@ -129,6 +129,10 @@ ignore_encoding_errors: Boolean, default = False
     :ref:`ignore_encoding_errors_label` If you want to get away with UnicodeDecodeError without passing explicit character encodings, set this option to True. If you want to make sure the encoding is done properly, keep this as False and instead pass an explicit list of character encodings to be considered via the :ref:`encodings_label` parameter.
 
 
+zip_ordered_iterables: Boolean, default = False
+    :ref:`zip_ordered_iterables_label`:
+    When comparing ordered iterables such as lists, DeepDiff tries to find the smallest difference between the two iterables to report. That means that items in the two lists are not paired individually in the order of appearance in the iterables. Sometimes, that is not the desired behavior. Set this flag to True to make DeepDiff pair and compare the items in the iterables in the order they appear.
+
 iterable_compare_func:
     :ref:`iterable_compare_func_label`:
     There are times that we want to guide DeepDiff as to what items to compare with other items. In such cases we can pass a iterable_compare_func that takes a function pointer to compare two items. The function takes three parameters (x, y, level) and should return True if it is a match, False if it is not a match or raise CannotCompare if it is unable to compare the two.

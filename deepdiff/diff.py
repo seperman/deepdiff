@@ -13,6 +13,7 @@ from copy import deepcopy
 from math import isclose as is_close
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
+from inspect import getmembers
 from itertools import zip_longest
 from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
@@ -142,6 +143,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_type_in_groups=None,
                  ignore_type_subclasses=False,
                  iterable_compare_func=None,
+                 zip_ordered_iterables=False,
                  log_frequency_in_sec=0,
                  math_epsilon=None,
                  max_diffs=None,
@@ -166,7 +168,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "number_format_notation, exclude_paths, include_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, max_diffs, "
+                "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
                 "math_epsilon, iterable_compare_func, _original_type, "
@@ -208,6 +210,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.include_obj_callback_strict = include_obj_callback_strict
             self.number_to_string = number_to_string_func or number_to_string
             self.iterable_compare_func = iterable_compare_func
+            self.zip_ordered_iterables = zip_ordered_iterables
             self.ignore_private_variables = ignore_private_variables
             self.ignore_nan_inequality = ignore_nan_inequality
             self.hasher = hasher
@@ -415,20 +418,25 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None):
         """Difference of 2 objects"""
+        processing_error = False
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
-            else:
+            elif all('__dict__' in dir(t) for t in level):
                 t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
                 t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
-        except AttributeError:
-            try:
+            elif all('__slots__' in dir(t) for t in level):
                 t1 = self._dict_from_slots(level.t1)
                 t2 = self._dict_from_slots(level.t2)
-            except AttributeError:
-                self._report_result('unprocessed', level, local_tree=local_tree)
-                return
+            else:
+                t1 = {k: v for k, v in getmembers(level.t1) if not callable(v)}
+                t2 = {k: v for k, v in getmembers(level.t2) if not callable(v)}
+        except AttributeError:
+            processing_error = True
+        if processing_error is True:
+            self._report_result('unprocessed', level, local_tree=local_tree)
+            return
 
         self._diff_dict(
             level,
@@ -655,7 +663,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         Default compare if `iterable_compare_func` is not provided.
         This will compare in sequence order.
         """
-
         if t1_from_index is None:
             return [((i, i), (x, y)) for i, (x, y) in enumerate(
                 zip_longest(
@@ -743,7 +750,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             child_relationship_class = NonSubscriptableIterableRelationship
 
         if (
-            isinstance(level.t1, Sequence)
+            not self.zip_ordered_iterables
+            and isinstance(level.t1, Sequence)
             and isinstance(level.t2, Sequence)
             and self._all_values_basic_hashable(level.t1)
             and self._all_values_basic_hashable(level.t2)
@@ -874,7 +882,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=j)
+                    child_relationship_param=j
+                )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
     def _diff_ordered_iterable_by_difflib(
@@ -1527,7 +1536,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         if isinstance(level.t1, booleans):
             self._diff_booleans(level, local_tree=local_tree)
 
-        if isinstance(level.t1, strings):
+        elif isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
         elif isinstance(level.t1, datetimes):

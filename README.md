@@ -1,4 +1,4 @@
-# DeepDiff v 6.3.1
+# DeepDiff v 6.4.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,31 +17,20 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.3.1/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.4.0/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
-DeepDiff 6-3-1
+DeepDiff 6-4-0
 
-This release includes many bug fixes.
+- [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
+[Bobby Morck](https://github.com/bmorck)
+- [pyyaml to 6.0.1 to fix cython build problems](https://github.com/seperman/deepdiff/pull/406) by [Robert Bo Davis](https://github.com/robert-bo-davis)
+- [Precompiled regex simple diff](https://github.com/seperman/deepdiff/pull/413) by [cohml](https://github.com/cohml)
+- New flag: `zip_ordered_iterables` for forcing iterable items to be compared one by one. 
 
-- Bugfix deephash for paths by [maggelus](https://github.com/maggelus)
-- Bugfix deephash compiled regex [maggelus](https://github.com/maggelus)
-- Fix tests dependent on toml by [martin-kokos](https://github.com/martin-kokos)
-- Bugfix for `include_paths` for nested dictionaries by [kor4ik](https://github.com/kor4ik)
-- Use tomli and tomli-w for dealing with tomli files by [martin-kokos](https://github.com/martin-kokos)
-- Bugfix for `datetime.date` by [Alex Sauer-Budge](https://github.com/amsb)
-
-
-DeepDiff 6-3-0
-
-- [`PrefixOrSuffixOperator`](https://zepworks.com/deepdiff/current/custom.html#prefix-or-suffix-operator-label): This operator will skip strings that are suffix or prefix of each other.
-- [`include_obj_callback`](https://zepworks.com/deepdiff/current/ignore_types_or_values.html#include-obj-callback-label) and `include_obj_callback_strict` are added by [Håvard Thom](https://github.com/havardthom).
-- Fixed a corner case where numpy's `np.float32` nans are not ignored when using `ignore_nan_equality` by [Noam Gottlieb](https://github.com/noamgot)
-- `orjson` becomes optional again.
-- Fix for `ignore_type_in_groups` with numeric values so it does not report number changes when the number types are different.
 
 ## Installation
 
@@ -93,11 +82,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.3.1) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.4.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.3.1).
+    Dehpour, Sep. 2023. DeepDiff (version 6.4.0).
 
 # Authors
 

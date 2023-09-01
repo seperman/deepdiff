@@ -368,6 +368,21 @@ class TestDeepHashPrep:
         t2_hash = DeepHashPrep(t2)
 
         assert t1_hash[get_id(t1)] == t2_hash[get_id(t2)]
+        
+    @pytest.mark.parametrize("list1, list2, ignore_iterable_order, is_equal", [
+        ([1, 2], [2, 1], False, False),
+        ([1, 2], [2, 1], True, True),
+        ([1, 2, 3], [1, 3, 2], False, False),
+        ([1, [1, 2, 3]], [1, [3, 2, 1]], False, False),
+        ([1, [1, 2, 3]], [1, [3, 2, 1]], True, True),
+        ((1, 2), (2, 1), False, False),
+        ((1, 2), (2, 1), True, True),
+    ])
+    def test_ignore_iterable_order(self, list1, list2, ignore_iterable_order, is_equal):
+        list1_hash = DeepHash(list1, ignore_iterable_order=ignore_iterable_order)
+        list2_hash = DeepHash(list2, ignore_iterable_order=ignore_iterable_order)
+        
+        assert is_equal == (list1_hash[list1] == list2_hash[list2])
 
     @pytest.mark.parametrize("t1, t2, significant_digits, number_format_notation, result", [
         ({0.012, 0.98}, {0.013, 0.99}, 1, "f", 'set:float:0.0,float:1.0'),

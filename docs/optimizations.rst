@@ -241,6 +241,29 @@ cache_purge_level: int, 0, 1, or 2. default=1
     cache_purge_level defines what objects in DeepDiff should be deleted to free the memory once the diff object is calculated. If this value is set to zero, most of the functionality of the diff object is removed and the most memory is released. A value of 1 preserves all the functionalities of the diff object. A value of 2 also preserves the cache and hashes that were calculated during the diff calculations. In most cases the user does not need to have those objects remained in the diff unless for investigation purposes.
 
 
+.. _zip_ordered_iterables_label:
+
+Zip Ordered Iterables
+---------------------
+
+zip_ordered_iterables: Boolean, default = False
+    When comparing ordered iterables such as lists, DeepDiff tries to find the smallest difference between the two iterables to report. That means that items in the two lists are not paired individually in the order of appearance in the iterables. Sometimes, that is not the desired behavior. Set this flag to True to make DeepDiff pair and compare the items in the iterables in the order they appear.
+
+
+    >>> from pprint import pprint
+    >>> from deepdiff import DeepDiff
+    >>> t1 = ["a", "b", "d", "e"]
+    >>> t2 = ["a", "b", "c", "d", "e"]
+    >>> DeepDiff(t1, t2)
+    {'iterable_item_added': {'root[2]': 'c'}}
+
+    When this flag is set to True and ignore_order=False, diffing will be faster.
+
+    >>> diff=DeepDiff(t1, t2, zip_ordered_iterables=True)
+    >>> pprint(diff)
+    {'iterable_item_added': {'root[4]': 'e'},
+     'values_changed': {'root[2]': {'new_value': 'c', 'old_value': 'd'},
+                        'root[3]': {'new_value': 'd', 'old_value': 'e'}}}
 
 
 

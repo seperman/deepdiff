@@ -240,3 +240,40 @@ class TestOperators:
 
         expected2 = {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
         assert expected2 == ddiff2
+
+    def test_custom_operator3_small_numbers(self):
+        x = [2.0000000000000027, 2.500000000000005, 2.000000000000002, 3.000000000000001]
+        y = [2.000000000000003, 2.500000000000005, 2.0000000000000027, 3.0000000000000027]
+        result = DeepDiff(x, y)
+        expected = {
+            'values_changed': {
+                'root[0]': {'new_value': 2.000000000000003, 'old_value': 2.0000000000000027},
+                'root[2]': {'new_value': 2.0000000000000027, 'old_value': 2.000000000000002},
+                'root[3]': {'new_value': 3.0000000000000027, 'old_value': 3.000000000000001}}}
+        assert expected == result
+
+        class CustomCompare(BaseOperator):
+            def __init__(self, tolerance, types):
+                self.tolerance = tolerance
+                self.types = types
+
+            def match(self, level) -> bool:
+                if type(level.t1) in self.types:
+                    return True
+
+            def give_up_diffing(self, level, diff_instance) -> bool:
+                relative = abs(abs(level.t1 - level.t2) / level.t1)
+                if not max(relative, self.tolerance) == self.tolerance:
+                    custom_report = f'relative diff: {relative:.8e}'
+                    diff_instance.custom_report_result('diff', level, custom_report)
+                return True
+
+        def compare_func(x, y, level):
+            return True
+
+        operators = [CustomCompare(types=[float], tolerance=5.5e-5)]
+        result2 = DeepDiff(x, y, custom_operators=operators, iterable_compare_func=compare_func)
+        assert {} == result2
+
+        result3 = DeepDiff(x, y, custom_operators=operators, zip_ordered_iterables=True)
+        assert {} == result3, "We should get the same result as result2 when zip_ordered_iterables is True."

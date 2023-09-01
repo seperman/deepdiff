@@ -10,6 +10,7 @@ from deepdiff.helper import (
     not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
     get_truncate_datetime, datetime_normalize,
     detailed__dict__, ENUM_INCLUDE_KEYS, add_root_to_paths,
+    get_semvar_as_integer,
 )
 
 
@@ -297,3 +298,14 @@ class TestHelper:
     def test_add_root_to_paths(self, test_num, value, expected):
         result = add_root_to_paths(value)
         assert expected == result, f"test_add_root_to_paths #{test_num} failed."
+
+    @pytest.mark.parametrize('test_num, value, expected', [
+        (1, '1.2.3', 1002003),
+        (2, '1.22.3', 1022003),
+        (3, '1.22.3c', 1022003),
+        (4, '2.4', 2004000),
+        (5, '1.19.0', 1019000),
+    ])
+    def test_get_semvar_as_integer(self, test_num, value, expected):
+        result = get_semvar_as_integer(value)
+        assert expected == result, f"test_get_semvar_as_integer #{test_num} failed."

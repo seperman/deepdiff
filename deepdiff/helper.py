@@ -108,6 +108,40 @@ py4 = py_major_version == 4
 
 NUMERICS = frozenset(string.digits)
 
+
+def _int_or_zero(value):
+    """
+    Tries to extract some number from a string.
+
+    12c becomes 12
+    """
+    try:
+        return int(value)
+    except Exception:
+        result = []
+        for char in value:
+            if char in NUMERICS:
+                result.append(char)
+        if result:
+            return int(''.join(result))
+        return 0
+
+
+def get_semvar_as_integer(version):
+    """
+    Converts:
+
+    '1.23.5' to 1023005
+    """
+    version = version.split('.')
+    if len(version) > 3:
+        version = version[:3]
+    elif len(version) < 3:
+        version.extend(['0'] * (3 - len(version)))
+
+    return sum([10**(i * 3) * _int_or_zero(v) for i, v in enumerate(reversed(version))])
+
+
 # we used to use OrderedDictPlus when dictionaries in Python were not ordered.
 dict_ = dict
 
@@ -119,6 +153,10 @@ if py2:  # pragma: no cover
     sys.exit('Python 2 is not supported anymore. The last version of DeepDiff that supported Py2 was 3.3.0')
 
 pypy3 = py3 and hasattr(sys, "pypy_translation_info")
+
+
+if get_semvar_as_integer(np.__version__) < 1019000:
+    sys.exit('The minimum required Numpy version is 1.19.0. Please upgrade your Numpy package.')
 
 strings = (str, bytes)  # which are both basestring
 unicode_type = str
@@ -321,8 +359,8 @@ def type_in_type_group(item, type_group):
 
 def type_is_subclass_of_type_group(item, type_group):
     return isinstance(item, type_group) \
-           or (isinstance(item, type) and issubclass(item, type_group)) \
-           or type_in_type_group(item, type_group)
+        or (isinstance(item, type) and issubclass(item, type_group)) \
+        or type_in_type_group(item, type_group)
 
 
 def get_doc(doc_filename):

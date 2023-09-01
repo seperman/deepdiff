@@ -2,6 +2,7 @@
 import datetime
 import pytest
 import logging
+import re
 import uuid
 from enum import Enum
 from typing import List
@@ -438,6 +439,60 @@ class TestDeepDiffText:
         result = {'iterable_item_added': {'root[2]': 'c'}}
         assert result == ddiff
 
+    def test_list_difference5(self):
+        t1 = ["a", "b", "d", "e", "f", "g"]
+        t2 = ["a", "b", "c", "d", "e", "f"]
+        ddiff = DeepDiff(t1, t2)
+        result = {'iterable_item_added': {'root[2]': 'c'}, 'iterable_item_removed': {'root[5]': 'g'}}
+        assert result == ddiff
+
+    def test_list_difference_with_tiny_variations(self):
+        t1 = ['a', 'b', 'c', 'd']
+        t2 = ['f', 'b', 'a', 'g']
+
+        values = {
+            'a': 2.0000000000000027,
+            'b': 2.500000000000005,
+            'c': 2.000000000000002,
+            'd': 3.000000000000001,
+            'f': 2.000000000000003,
+            'g': 3.0000000000000027,
+        }
+        ddiff = DeepDiff(t1, t2)
+        result = {
+            'values_changed': {
+                'root[0]': {
+                    'new_value': 'f',
+                    'old_value': 'a'
+                },
+                'root[2]': {
+                    'new_value': 'a',
+                    'old_value': 'c'
+                },
+                'root[3]': {
+                    'new_value': 'g',
+                    'old_value': 'd'
+                }
+            }
+        }
+        assert result == ddiff
+
+        ddiff2 = DeepDiff(t1, t2, zip_ordered_iterables=True)
+        assert result == ddiff2
+        # Now we change the characters with numbers with tiny variations
+
+        t3 = [2.0000000000000027, 2.500000000000005, 2.000000000000002, 3.000000000000001]
+        t4 = [2.000000000000003, 2.500000000000005, 2.0000000000000027, 3.0000000000000027]
+        ddiff3 = DeepDiff(t3, t4)
+
+        expected = {'values_changed': {}}
+        for path, report in result['values_changed'].items():
+            expected['values_changed'][path] = {
+                'new_value': values[report['new_value']],
+                'old_value': values[report['old_value']],
+            }
+        assert expected == ddiff3
+
     def test_list_of_booleans(self):
         t1 = [False, False, True, True]
         t2 = [False, False, False, True]
@@ -546,6 +601,64 @@ class TestDeepDiffText:
                 'root.value': {
                     'old_value': 1,
                     'new_value': 2
+                },
+            }
+        }
+        assert ddiff == result
+
+    def test_precompiled_regex(self):
+
+        pattern_1 = re.compile('foo')
+        pattern_2 = re.compile('foo')
+        pattern_3 = re.compile('foo', flags=re.I)
+        pattern_4 = re.compile('(foo)')
+        pattern_5 = re.compile('bar')
+
+        # same object
+        ddiff = DeepDiff(pattern_1, pattern_1)
+        result = {}
+        assert ddiff == result
+
+        # same pattern, different object
+        ddiff = DeepDiff(pattern_1, pattern_2)
+        result = {}
+        assert ddiff == result
+
+        # same pattern, different flags
+        ddiff = DeepDiff(pattern_1, pattern_3)
+        result = {
+            'values_changed': {
+                'root.flags': {
+                    'new_value': 34,
+                    'old_value': 32,
+                },
+            }
+        }
+        assert ddiff == result
+
+        # same pattern, different groups
+        ddiff = DeepDiff(pattern_1, pattern_4)
+        result = {
+            'values_changed': {
+                'root.pattern': {
+                    'new_value': '(foo)',
+                    'old_value': 'foo',
+                },
+                'root.groups': {
+                    'new_value': 1,
+                    'old_value': 0,
+                },
+            }
+        }
+        assert ddiff == result
+
+        # different pattern
+        ddiff = DeepDiff(pattern_1, pattern_5)
+        result = {
+            'values_changed': {
+                'root.pattern': {
+                    'new_value': 'bar',
+                    'old_value': 'foo',
                 },
             }
         }
@@ -1803,4 +1916,3 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
-
