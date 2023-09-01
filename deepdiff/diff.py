@@ -142,6 +142,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_type_in_groups=None,
                  ignore_type_subclasses=False,
                  iterable_compare_func=None,
+                 zip_ordered_iterables=False,
                  log_frequency_in_sec=0,
                  math_epsilon=None,
                  max_diffs=None,
@@ -166,7 +167,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "number_format_notation, exclude_paths, include_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
-                "view, hasher, hashes, max_passes, max_diffs, "
+                "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, cache_purge_level, "
                 "math_epsilon, iterable_compare_func, _original_type, "
@@ -208,6 +209,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.include_obj_callback_strict = include_obj_callback_strict
             self.number_to_string = number_to_string_func or number_to_string
             self.iterable_compare_func = iterable_compare_func
+            self.zip_ordered_iterables = zip_ordered_iterables
             self.ignore_private_variables = ignore_private_variables
             self.ignore_nan_inequality = ignore_nan_inequality
             self.hasher = hasher
@@ -742,7 +744,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             child_relationship_class = NonSubscriptableIterableRelationship
 
         if (
-            isinstance(level.t1, Sequence)
+            not self.zip_ordered_iterables
+            and isinstance(level.t1, Sequence)
             and isinstance(level.t2, Sequence)
             and self._all_values_basic_hashable(level.t1)
             and self._all_values_basic_hashable(level.t2)
