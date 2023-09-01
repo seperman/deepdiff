@@ -23,7 +23,7 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
-DeepDiff 6-4-0
+DeepDiff 6-4-1
 
 - [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
 [Bobby Morck](https://github.com/bmorck)

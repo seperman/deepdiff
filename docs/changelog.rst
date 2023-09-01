@@ -5,6 +5,10 @@ Changelog
 
 DeepDiff Changelog
 
+-  v6-4-1
+
+   -  Bugfix: Keep Numpy Optional
+
 -  v6-4-0
 
    -  `Add Ignore List Order Option to
