@@ -88,4 +88,23 @@ In order to serialize DeepDiff results into json, use to_json()
     >>> diff.to_json()
     '{"type_changes": {"root": {"old_type": "int", "new_type": "str", "old_value": 1, "new_value": "a"}}}'
 
+
+Q: How do I parse DeepDiff result paths?
+----------------------------------------
+
+**Answer**
+
+Use parse_path:
+
+    >>> from deepdiff import parse_path
+    >>> parse_path("root[1][2]['age']")
+    [1, 2, 'age']
+    >>> parse_path("root[1][2]['age']", include_actions=True)
+    [{'element': 1, 'action': 'GET'}, {'element': 2, 'action': 'GET'}, {'element': 'age', 'action': 'GET'}]
+    >>>
+    >>> parse_path("root['joe'].age")
+    ['joe', 'age']
+    >>> parse_path("root['joe'].age", include_actions=True)
+    [{'element': 'joe', 'action': 'GET'}, {'element': 'age', 'action': 'GETATTR'}]
+
 Back to :doc:`/index`
