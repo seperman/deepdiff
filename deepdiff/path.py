@@ -185,3 +185,41 @@ def extract(obj, path):
     """
     elements = _path_to_elements(path, root_element=None)
     return _get_nested_obj(obj, elements)
+
+
+def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
+    """
+    Parse a path to a format that is machine readable
+
+    **Parameters**
+
+    path : A string
+    The path string such as "root[1][2]['age']"
+
+    root_element: string, default='root'
+        What the root is called in the path.
+
+    include_actions: boolean, default=False
+        If True, we return the action required to retrieve the item at each element of the path.  
+
+    **Examples**
+
+        >>> from deepdiff import parse_path
+        >>> parse_path("root[1][2]['age']")
+        [1, 2, 'age']
+        >>> parse_path("root[1][2]['age']", include_actions=True)
+        [{'element': 1, 'action': 'GET'}, {'element': 2, 'action': 'GET'}, {'element': 'age', 'action': 'GET'}]
+        >>>
+        >>> parse_path("root['joe'].age")
+        ['joe', 'age']
+        >>> parse_path("root['joe'].age", include_actions=True)
+        [{'element': 'joe', 'action': 'GET'}, {'element': 'age', 'action': 'GETATTR'}]
+
+    """
+
+    result = _path_to_elements(path, root_element=root_element)
+    result = iter(result)
+    next(result)  # We don't want the root item
+    if include_actions is False:
+        return [i[0] for i in result]
+    return [{'element': i[0], 'action': i[1]} for i in result]

@@ -1,5 +1,5 @@
 import pytest
-from deepdiff.path import _path_to_elements, GET, GETATTR, extract
+from deepdiff.path import _path_to_elements, GET, GETATTR, extract, parse_path
 
 
 @pytest.mark.parametrize('path, expected', [
@@ -32,3 +32,14 @@ def test_path_to_elements(path, expected):
 def test_get_item(obj, path, expected):
     result = extract(obj, path)
     assert expected == result
+
+
+def test_parse_path():
+    result = parse_path("root[1][2]['age']")
+    assert [1, 2, 'age'] == result
+    result2 = parse_path("root[1][2]['age']", include_actions=True)
+    assert [{'element': 1, 'action': 'GET'}, {'element': 2, 'action': 'GET'}, {'element': 'age', 'action': 'GET'}] == result2
+    result3 = parse_path("root['joe'].age")
+    assert ['joe', 'age'] == result3
+    result4 = parse_path("root['joe'].age", include_actions=True)
+    assert [{'element': 'joe', 'action': 'GET'}, {'element': 'age', 'action': 'GETATTR'}] == result4
