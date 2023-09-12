@@ -1,4 +1,4 @@
-# DeepDiff v 6.4.1
+# DeepDiff v 6.5.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,7 +17,7 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.4.1/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.5.0/)**
 
 ## What is new?
 
@@ -82,11 +82,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.4.1) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.5.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.4.1).
+    Dehpour, Sep. 2023. DeepDiff (version 6.5.0).
 
 # Authors
 
