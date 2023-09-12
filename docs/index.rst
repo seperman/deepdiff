@@ -31,6 +31,10 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 6-5-0
+--------------
+
+    -  `parse_path <https://zepworks.com/deepdiff/current/faq.html#q-how-do-i-parse-deepdiff-result-paths>`__
 
 DeepDiff 6-4-0
 --------------

@@ -23,6 +23,10 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 6-5-0
+
+- [parse_path](https://zepworks.com/deepdiff/current/faq.html#q-how-do-i-parse-deepdiff-result-paths)
+
 DeepDiff 6-4-1
 
 - [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
