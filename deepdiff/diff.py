@@ -181,7 +181,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
 
-            self.ignore_order_func = ignore_order_func or (lambda *_args, **_kwargs: ignore_order)
+            self.ignore_order_func = ignore_order_func
 
             ignore_type_in_groups = ignore_type_in_groups or []
             if numbers == ignore_type_in_groups or numbers in ignore_type_in_groups:
@@ -649,7 +649,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None, local_tree=None):
         """Difference of iterables"""
-        if self.ignore_order_func(level):
+        if (self.ignore_order_func and self.ignore_order_func(level)) or self.ignore_order:
             self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
         else:
             self._diff_iterable_in_order(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
@@ -1103,7 +1103,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         # And the objects with the same distances are grouped together in an ordered set.
         # It also includes a "max" key that is just the value of the biggest current distance in the
         # most_in_common_pairs dictionary.
-        most_in_common_pairs = defaultdict(lambda: defaultdict(OrderedSetPlus))
+        def defaultdict_orderedset():
+            return defaultdict(OrderedSetPlus)
+        most_in_common_pairs = defaultdict(defaultdict_orderedset)
         pairs = dict_()
 
         pre_calced_distances = None
@@ -1390,7 +1392,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             # which means numpy module needs to be available. So np can't be None.
             raise ImportError(CANT_FIND_NUMPY_MSG)  # pragma: no cover
 
-        if not self.ignore_order_func(level):
+        if (self.ignore_order_func and not self.ignore_order_func(level)) or not self.ignore_order:
             # fast checks
             if self.significant_digits is None:
                 if np.array_equal(level.t1, level.t2, equal_nan=self.ignore_nan_inequality):
@@ -1416,7 +1418,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             dimensions = len(shape)
             if dimensions == 1:
                 self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
-            elif self.ignore_order_func(level):
+            elif (self.ignore_order_func and self.ignore_order_func(level)) or self.ignore_order:
                 # arrays are converted to python lists so that certain features of DeepDiff can apply on them easier.
                 # They will be converted back to Numpy at their final dimension.
                 level.t1 = level.t1.tolist()
