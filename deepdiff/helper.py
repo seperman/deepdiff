@@ -64,11 +64,11 @@ else:
     np_uintp = np.uintp
     np_float32 = np.float32
     np_float64 = np.float64
-    np_float_ = np.float_
+    np_float_ = np.double  # np.float_ is an alias for np.double and is being removed by NumPy 2.0
     np_floating = np.floating
     np_complex64 = np.complex64
     np_complex128 = np.complex128
-    np_complex_ = np.complex_
+    np_complex_ = np.cdouble # np.complex_ is an alias for np.cdouble and is being removed by NumPy 2.0
     np_complexfloating = np.complexfloating
 
 numpy_numbers = (
