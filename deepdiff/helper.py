@@ -655,7 +655,7 @@ def diff_numpy_array(A, B):
     By Divakar
     https://stackoverflow.com/a/52417967/1497443
     """
-    return A[~np.in1d(A, B)]
+    return A[~np.isin(A, B)]
 
 
 PYTHON_TYPE_TO_NUMPY_TYPE = {
