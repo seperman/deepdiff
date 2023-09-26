@@ -59,6 +59,22 @@ verify_symmetry : Boolean, default=False
 
     A delta object that can be added to t1 to recreate t2.
 
+    Delta objects can contain the following vocabulary:
+
+    iterable_item_added
+    iterable_item_moved
+    iterable_item_removed
+    set_item_added
+    set_item_removed
+    dictionary_item_added
+    dictionary_item_removed
+    attribute_added
+    attribute_removed
+    type_changes
+    values_changed
+    iterable_items_added_at_indexes
+    iterable_items_removed_at_indexes
+
 
 .. _delta_diff_label:
 

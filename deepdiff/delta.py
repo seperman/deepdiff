@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from collections.abc import Mapping
 from copy import deepcopy
 from ordered_set import OrderedSet
@@ -9,7 +10,7 @@ from deepdiff.helper import (
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
 )
-from deepdiff.path import _path_to_elements, _get_nested_obj, _get_nested_obj_and_force, GET, GETATTR
+from deepdiff.path import _path_to_elements, _get_nested_obj, _get_nested_obj_and_force, GET, GETATTR, parse_path
 from deepdiff.anyset import AnySet
 
 
@@ -590,6 +591,90 @@ class Delta:
 
     def to_dict(self):
         return dict(self.diff)
+
+    @staticmethod
+    def _get_flat_row(action, info, _parse_path, keys_and_funcs):
+        for path, details in info.items():
+            row = {'path': _parse_path(path), 'action': action}
+            for key, new_key, func in keys_and_funcs:
+                if key in details:
+                    if func:
+                        row[new_key] = func(details[key])
+                    else:
+                        row[new_key] = details[key]
+            yield row
+
+    def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True):
+        """
+        Returns a flat list of actions
+        """
+        result = []
+        if include_action_in_path:
+            _parse_path = partial(parse_path, include_actions=True)
+        else:
+            _parse_path = parse_path
+        if report_type_changes:
+            keys_and_funcs = [
+                ('value', 'value', None),
+                ('new_value', 'value', None),
+                ('old_value', 'old_value', None),
+                ('new_type', 'new_type', None),
+                ('old_type', 'old_type', None),
+                ('new_path', 'new_path', _parse_path),
+            ]
+            action_mapping = {}
+        else:
+            keys_and_funcs = [
+                ('value', 'value', None),
+                ('new_value', 'value', None),
+                ('old_value', 'old_value', None),
+                ('new_path', 'new_path', _parse_path),
+            ]
+            action_mapping = {'type_changes': 'values_changed'}
+
+        FLATTENING_NEW_ACTION_MAP = {
+            'iterable_items_added_at_indexes': 'iterable_item_added',
+            'iterable_items_removed_at_indexes': 'iterable_item_removed',
+        }
+        for action, info in self.diff.items():
+            if action in FLATTENING_NEW_ACTION_MAP:
+                new_action = FLATTENING_NEW_ACTION_MAP[action]
+                for path, index_to_value in info.items():
+                    path = _parse_path(path)
+                    for index, value in index_to_value.items():
+                        path2 = path.copy()
+                        if include_action_in_path:
+                            path2.append((index, 'GET'))
+                        else:
+                            path2.append(index)
+                        result.append(
+                            {'path': path2, 'value': value, 'action': new_action}
+                        )
+            elif action in {'set_item_added', 'set_item_removed'}:
+                for path, values in info.items():
+                    path = _parse_path(path)
+                    for value in values:
+                        result.append(
+                            {'path': path, 'value': value, 'action': action}
+                        )
+            elif action in {
+                'dictionary_item_added', 'dictionary_item_removed', 'iterable_item_added',
+                'iterable_item_removed', 'attribute_removed', 'attribute_added'
+            }:
+                for path, value in info.items():
+                    path = _parse_path(path)
+                    result.append(
+                        {'path': path, 'value': value, 'action': action}
+                    )
+            else:
+                for row in self._get_flat_row(
+                    action=action_mapping.get(action, action),
+                    info=info,
+                    _parse_path=_parse_path,
+                    keys_and_funcs=keys_and_funcs,
+                ):
+                    result.append(row)
+        return result
 
 
 if __name__ == "__main__":  # pragma: no cover
