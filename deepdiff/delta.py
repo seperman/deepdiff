@@ -606,7 +606,55 @@ class Delta:
 
     def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True):
         """
-        Returns a flat list of actions
+        Returns a flat list of actions that is easily machine readable.
+
+        For example:
+            {'iterable_item_added': {'root[3]': 5, 'root[2]': 3}}
+
+        Becomes:
+            [
+                {'path': [3], 'value': 5, 'action': 'iterable_item_added'},
+                {'path': [2], 'value': 3, 'action': 'iterable_item_added'},
+            ]
+
+        
+        **Parameters**
+
+        include_action_in_path : Boolean, default=False
+            When False, we translate DeepDiff's paths like root[3].attribute1 into a [3, 'attribute1'].
+            When True, we include the action to retrieve the item in the path: [(3, 'GET'), ('attribute1', 'GETATTR')]
+
+        report_type_changes : Boolean, default=True
+            If False, we don't report the type change. Instead we report the value change.
+
+        Example:
+            t1 = {"a": None}
+            t2 = {"a": 1}
+
+            dump = Delta(DeepDiff(t1, t2)).dumps()
+            delta = Delta(dump)
+            assert t2 == delta + t1
+
+            flat_result = delta.to_flat_dicts()
+            flat_expected = [{'path': ['a'], 'action': 'type_changes', 'value': 1, 'new_type': int, 'old_type': type(None)}]
+            assert flat_expected == flat_result
+
+            flat_result2 = delta.to_flat_dicts(report_type_changes=False)
+            flat_expected2 = [{'path': ['a'], 'action': 'values_changed', 'value': 1}]
+
+        **List of actions**
+
+        Here are the list of actions that the flat dictionary can return.
+            iterable_item_added
+            iterable_item_removed
+            values_changed
+            type_changes
+            set_item_added
+            set_item_removed
+            dictionary_item_added
+            dictionary_item_removed
+            attribute_added
+            attribute_removed
         """
         result = []
         if include_action_in_path:
@@ -618,7 +666,7 @@ class Delta:
                 ('value', 'value', None),
                 ('new_value', 'value', None),
                 ('old_value', 'old_value', None),
-                ('new_type', 'new_type', None),
+                ('new_type', 'type', None),
                 ('old_type', 'old_type', None),
                 ('new_path', 'new_path', _parse_path),
             ]
@@ -657,8 +705,25 @@ class Delta:
                         result.append(
                             {'path': path, 'value': value, 'action': action}
                         )
+            elif action == 'dictionary_item_added':
+                for path, value in info.items():
+                    path = _parse_path(path)
+                    if isinstance(value, dict) and len(value) == 1:
+                        new_key = next(iter(value))
+                        path.append(new_key)
+                        value = value[new_key]
+                    elif isinstance(value, (list, tuple)) and len(value) == 1:
+                        value = value[0]
+                        path.append(0)
+                        action = 'iterable_item_added'
+                    elif isinstance(value, set) and len(value) == 1:
+                        value = value.pop()
+                        action = 'set_item_added'
+                    result.append(
+                        {'path': path, 'value': value, 'action': action}
+                    )
             elif action in {
-                'dictionary_item_added', 'dictionary_item_removed', 'iterable_item_added',
+                'dictionary_item_removed', 'iterable_item_added',
                 'iterable_item_removed', 'attribute_removed', 'attribute_added'
             }:
                 for path, value in info.items():

@@ -1521,7 +1521,7 @@ class TestDeltaOther:
         assert t2 == delta + t1
 
         flat_result = delta.to_flat_dicts()
-        flat_expected = [{'path': ['a'], 'action': 'type_changes', 'value': 1, 'new_type': int, 'old_type': type(None)}]
+        flat_expected = [{'path': ['a'], 'action': 'type_changes', 'value': 1, 'type': int, 'old_type': type(None)}]
         assert flat_expected == flat_result
 
         flat_result2 = delta.to_flat_dicts(report_type_changes=False)
@@ -1805,17 +1805,74 @@ class TestDeltaCompareFunc:
         expected = {'x': {'y': {3: 4}}, 'q': {'t': 0.5}}
         assert expected == result
 
-    def test_dict_added(self):
+    def test_flatten_dict_with_one_key_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe Nobody"}, "field2": {"jimmy": "Jimmy"}}
         diff = DeepDiff(t1, t2)
         delta = Delta(diff=diff)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
         expected_result = [
-            {'path': ['field2'], 'value': {'jimmy': 'Jimmy'}, 'action': 'dictionary_item_added'},
+            {'path': ['field2', 'jimmy'], 'value': 'Jimmy', 'action': 'dictionary_item_added'},
             {'path': ['field1', 'joe'], 'action': 'values_changed', 'value': 'Joe Nobody'},
         ]
         assert expected_result == flat_result
+
+    def test_flatten_dict_with_multiple_keys_added(self):
+        t1 = {"field1": {"joe": "Joe"}}
+        t2 = {"field1": {"joe": "Joe Nobody"}, "field2": {"jimmy": "Jimmy", "sar": "Sarah"}}
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff=diff)
+        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        expected_result = [
+            {'path': ['field2'], 'value': {'jimmy': 'Jimmy', 'sar': 'Sarah'}, 'action': 'dictionary_item_added'},
+            {'path': ['field1', 'joe'], 'action': 'values_changed', 'value': 'Joe Nobody'},
+        ]
+        assert expected_result == flat_result
+
+    def test_flatten_list_with_one_item_added(self):
+        t1 = {"field1": {"joe": "Joe"}}
+        t2 = {"field1": {"joe": "Joe"}, "field2": ["James"]}
+        t3 = {"field1": {"joe": "Joe"}, "field2": ["James", "Jack"]}
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff=diff)
+        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        expected_result = [{'path': ['field2', 0], 'value': 'James', 'action': 'iterable_item_added'}]
+        assert expected_result == flat_result
+
+        diff = DeepDiff(t2, t3)
+        delta2 = Delta(diff=diff)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
+        expected_result2 = [{'path': ['field2', 1], 'value': 'Jack', 'action': 'iterable_item_added'}]
+        assert expected_result2 == flat_result2
+
+    def test_flatten_set_with_one_item_added(self):
+        t1 = {"field1": {"joe": "Joe"}}
+        t2 = {"field1": {"joe": "Joe"}, "field2": {"James"}}
+        t3 = {"field1": {"joe": "Joe"}, "field2": {"James", "Jack"}}
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff=diff)
+        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        expected_result = [{'path': ['field2'], 'value': 'James', 'action': 'set_item_added'}]
+        assert expected_result == flat_result
+
+        diff = DeepDiff(t2, t3)
+        delta2 = Delta(diff=diff)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
+        expected_result2 = [{'path': ['field2'], 'value': 'Jack', 'action': 'set_item_added'}]
+        assert expected_result2 == flat_result2
+
+    def test_flatten_list_with_multiple_item_added(self):
+        t1 = {"field1": {"joe": "Joe"}}
+        t2 = {"field1": {"joe": "Joe"}, "field2": ["James", "Jack"]}
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff=diff)
+        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        expected_result = [{'path': ['field2'], 'value': ['James', 'Jack'], 'action': 'dictionary_item_added'}]
+        assert expected_result == flat_result
+
+        delta2 = Delta(diff=diff, verify_symmetry=True)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
+        assert expected_result == flat_result2
 
     def test_flatten_attribute_added(self):
         t1 = picklalbe_obj_without_item
