@@ -1861,6 +1861,22 @@ class TestDeltaCompareFunc:
         expected_result2 = [{'path': ['field2'], 'value': 'Jack', 'action': 'set_item_added'}]
         assert expected_result2 == flat_result2
 
+    def test_flatten_tuple_with_one_item_added(self):
+        t1 = {"field1": {"joe": "Joe"}}
+        t2 = {"field1": {"joe": "Joe"}, "field2": ("James", )}
+        t3 = {"field1": {"joe": "Joe"}, "field2": ("James", "Jack")}
+        diff = DeepDiff(t1, t2)
+        delta = Delta(diff=diff)
+        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        expected_result = [{'path': ['field2', 0], 'value': 'James', 'action': 'iterable_item_added'}]
+        assert expected_result == flat_result
+
+        diff = DeepDiff(t2, t3)
+        delta2 = Delta(diff=diff)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
+        expected_result2 = [{'path': ['field2', 1], 'value': 'Jack', 'action': 'iterable_item_added'}]
+        assert expected_result2 == flat_result2
+
     def test_flatten_list_with_multiple_item_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe"}, "field2": ["James", "Jack"]}
