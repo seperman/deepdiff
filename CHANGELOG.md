@@ -1,5 +1,10 @@
 # DeepDiff Change log
 
+- v6-6-0
+    - Numpy 2.0 support
+    - Adding [Delta.to_flat_dicts](https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries)
+- v6-5-0
+    - Adding [`parse_path`](https://github.com/seperman/deepdiff/pull/419)
 - v6-4-1
     - Bugfix: Keep Numpy Optional
 - v6-4-0
