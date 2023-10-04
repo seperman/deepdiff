@@ -67,8 +67,8 @@ Install optional packages:
 
 <https://zepworks.com/deepdiff/current/>
 
-> # A message from Sep, the creator of DeepDiff
->
+### A message from Sep, the creator of DeepDiff
+
 > 👋 Hi there,
 > If you find value in DeepDiff, you might be interested in another tool I've crafted: [Qluster](https://qluster.ai/solution). <br/>
 > As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines. <br/>
