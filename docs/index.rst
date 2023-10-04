@@ -63,6 +63,7 @@ Tutorials
 *********
 
 Tutorials can be found on `Zepworks blog <https://zepworks.com/tags/deepdiff/>`_
+                                                                                                                                                                                                          
 
 ************
 Installation
@@ -127,7 +128,6 @@ Supported data types
 ~~~~~~~~~~~~~~~~~~~~
 
 int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, NamedTuple, Numpy, custom objects and more!
-
 
 
 References

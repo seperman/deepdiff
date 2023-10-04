@@ -67,11 +67,12 @@ Install optional packages:
 
 <https://zepworks.com/deepdiff/current/>
 
-# ⚡ Detect And Clean Messy Data In Transit
-
-If you deal with messy data, please check out [Qluster](https://qluster.ai/solution), another tool by [Seperman](https://github.com/seperman), the creator of DeepDiff.
-
-###### [*Qluster's mission is to enable users to create adaptive data pipelines that detect issues, quarantine bad data, and enable the user to fix data issues via a spreadsheet UI.*](https://qluster.ai)
+> # A message from Sep, the creator of DeepDiff
+>
+> 👋 Hi there,
+> If you find value in DeepDiff, you might be interested in another tool I've crafted: [Qluster](https://qluster.ai/solution). <br/>
+> As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines. <br/>
+> I developed **Qluster** to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
 
 # ChangeLog
 

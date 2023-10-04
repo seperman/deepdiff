@@ -107,4 +107,15 @@ Use parse_path:
     >>> parse_path("root['joe'].age", include_actions=True)
     [{'element': 'joe', 'action': 'GET'}, {'element': 'age', 'action': 'GETATTR'}]
 
+
+---------
+
+.. admonition:: A message from `Sep <https://github.com/seperman>`__, the creator of DeepDiff
+
+    | 👋 Hi there,
+    | Thank you for using DeepDiff!
+    | If you find value in DeepDiff, you might be interested in another tool I've crafted: `Qluster <https://qluster.ai/solution>`__.
+    | As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines.
+    | I developed Qluster to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
+
 Back to :doc:`/index`

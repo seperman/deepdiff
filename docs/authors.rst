@@ -83,8 +83,7 @@ Authors in order of the timeline of their contributions:
    and tomli-w for dealing with tomli files.
 -  `Alex Sauer-Budge <https://github.com/amsb>`__ for the bugfix for
    ``datetime.date``.
-- `William Jamieson <https://github.com/WilliamJamieson>`__ for `NumPy 2.0
-compatibility <https://github.com/seperman/deepdiff/pull/422>`__
+- `William Jamieson <https://github.com/WilliamJamieson>`__ for `NumPy 2.0 compatibility <https://github.com/seperman/deepdiff/pull/422>`__
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de
