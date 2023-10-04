@@ -58,3 +58,4 @@ Authors in order of the timeline of their contributions:
 - [kor4ik](https://github.com/kor4ik) for the bugfix for `include_paths` for nested dictionaries.
 - [martin-kokos](https://github.com/martin-kokos) for using tomli and tomli-w for dealing with tomli files.
 - [Alex Sauer-Budge](https://github.com/amsb) for the bugfix for `datetime.date`.
+- [William Jamieson](https://github.com/WilliamJamieson) for [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422)

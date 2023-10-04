@@ -2,10 +2,27 @@ import pytest
 import datetime
 from time import sleep
 from unittest import mock
+from functools import partial
+from collections import namedtuple
+from deepdiff import DeepHash
+from deepdiff.helper import pypy3
 from deepdiff.model import DiffLevel
 from deepdiff.diff import (
     DeepDiff, PROGRESS_MSG, INVALID_VIEW_MSG, VERBOSE_LEVEL_RANGE_MSG,
     PURGE_LEVEL_RANGE_MSG)
+from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures import as_completed
+
+# Only the prep part of DeepHash. We don't need to test the actual hash function.
+DeepHashPrep = partial(DeepHash, apply_hash=False)
+
+
+def prep_str(obj, ignore_string_type_changes=True):
+    return obj if ignore_string_type_changes else 'str:{}'.format(obj)
+
+
+Point = namedtuple('Point', ["x"])
+point_obj = Point(x=11)
 
 
 class SlowDiffLevel(DiffLevel):
@@ -120,3 +137,66 @@ class TestDiffOther:
     def test_get_distance_cache_key(self):
         result = DeepDiff._get_distance_cache_key(added_hash=5, removed_hash=20)
         assert b'0x14--0x5dc' == result
+
+    def test_multi_processing1(self):
+    
+        t1 = [[1, 2, 3, 9], [1, 2, 4, 10]]
+        t2 = [[1, 2, 4, 10], [1, 2, 3, 10]]
+        
+        futures = []
+        expected_result = {
+            'values_changed': {
+                'root[0][2]': {
+                    'new_value': 4,
+                    'old_value': 3
+                },
+                'root[0][3]': {
+                    'new_value': 10,
+                    'old_value': 9
+                },
+                'root[1][2]': {
+                    'new_value': 3,
+                    'old_value': 4
+                }
+            }
+        }
+
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            futures.append(executor.submit(DeepDiff, t1, t2))
+            
+            for future in as_completed(futures, timeout=10):
+                assert not future._exception
+                assert expected_result == future._result
+
+    def test_multi_processing2_with_ignore_order(self):
+    
+        t1 = [[1, 2, 3, 9], [1, 2, 4, 10]]
+        t2 = [[1, 2, 4, 10], [1, 2, 3, 10]]
+        
+        futures = []
+        expected_result = {'values_changed': {'root[0][3]': {'new_value': 10, 'old_value': 9}}}
+
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            futures.append(executor.submit(DeepDiff, t1, t2, ignore_order=True))
+            
+            for future in as_completed(futures, timeout=10):
+                assert not future._exception
+                assert expected_result == future._result
+
+    @pytest.mark.skipif(pypy3, reason="pypy3 expected results are different")
+    def test_multi_processing3_deephash(self):
+        x = "x"
+        x_prep = prep_str(x)
+        expected_result = {
+            x: x_prep,
+            point_obj: "ntPoint:{%s:int:11}" % x,
+            11: 'int:11',
+        }
+
+        futures = []
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            futures.append(executor.submit(DeepHashPrep, point_obj, ignore_string_type_changes=True))
+            
+            for future in as_completed(futures, timeout=10):
+                assert not future._exception
+                assert expected_result == future._result

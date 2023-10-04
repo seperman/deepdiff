@@ -1,4 +1,4 @@
-# DeepDiff v 6.5.0
+# DeepDiff v 6.6.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,11 +17,16 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.5.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.6.0/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
+
+DeepDiff 6-6-0
+
+- [Serialize To Flat Dicts]()
+- [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422) by [William Jamieson](https://github.com/WilliamJamieson)
 
 DeepDiff 6-5-0
 
@@ -62,6 +67,13 @@ Install optional packages:
 
 <https://zepworks.com/deepdiff/current/>
 
+### A message from Sep, the creator of DeepDiff
+
+> 👋 Hi there,
+> If you find value in DeepDiff, you might be interested in another tool I've crafted: [Qluster](https://qluster.ai/solution). <br/>
+> As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines. <br/>
+> I developed **Qluster** to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
+
 # ChangeLog
 
 Please take a look at the [CHANGELOG](CHANGELOG.md) file.
@@ -69,7 +81,6 @@ Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 # Survey
 
 :mega: **Please fill out our [fast 5-question survey](https://forms.gle/E6qXexcgjoKnSzjB8)** so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! :dancers:
-
 
 # Contribute
 
@@ -86,11 +97,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.5.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.6.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.5.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.6.0).
 
 # Authors
 

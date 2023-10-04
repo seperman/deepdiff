@@ -61,9 +61,9 @@ author = 'Sep Dehpour'
 # built documents.
 #
 # The short X.Y version.
-version = '6.5.0'
+version = '6.6.0'
 # The full version, including alpha/beta/rc tags.
-release = '6.5.0'
+release = '6.6.0'
 
 load_dotenv(override=True)
 DOC_VERSION = os.environ.get('DOC_VERSION', version)
@@ -74,7 +74,7 @@ DOC_VERSION = os.environ.get('DOC_VERSION', version)
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -124,14 +124,17 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'description': 'Get the deep difference of any Python objects',
+    'description': 'Get the deep difference of any Python objects.',
     'show_powered_by': False,
     'logo': 'logo_long_B1_black.svg',
     'logo_name': 'Zepworks DeepDiff',
     'analytics_id': 'UA-59104908-2',
     'fixed_sidebar': True,
     'extra_nav_links': {
-        'Zepworks': 'https://zepworks.com', 'Github': 'https://github.com/seperman/deepdiff'},
+        'Zepworks (Blog)': 'https://zepworks.com',
+        'Qluster (Smart ETL)': 'https://qluster.ai',
+        'Github': 'https://github.com/seperman/deepdiff'
+    },
     'show_relbars': True,
     # 'github_repo': 'deepdiff',
     'anchor': '#DDD',
@@ -219,7 +222,7 @@ html_static_path = ['_static']
 # Sphinx supports the following languages:
 #   'da', 'de', 'en', 'es', 'fi', 'fr', 'h', 'it', 'ja'
 #   'nl', 'no', 'pt', 'ro', 'r', 'sv', 'tr'
-#html_search_language = 'en'
+html_search_language = 'en'
 
 # A dictionary with options for the search language support, empty by default.
 # Now only 'ja' uses this config value

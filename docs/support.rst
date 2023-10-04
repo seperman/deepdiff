@@ -3,22 +3,23 @@
 Support
 =======
 
-Hello,
+👋 Hi there,
 
-This is Sep, the creator of DeepDiff. Thanks for using DeepDiff!
-If you find a bug, please create a ticket on our `github repo`_
+Thank you for using DeepDiff!
+If you find a bug, please create a ticket on our `GitHub repo <https://github.com/seperman/deepdiff>`__
 
-Contributions to DeepDiff are always very welcome! More than `50 people </deepdiff/current/authors.html>`__ have contributed code to DeepDiff so far.
+I am **available for consulting** if you need immediate help or custom implementations of DeepDiff. You can reach me by emailing hello at this domain.
 
-I love working on DeepDiff and other open-source projects. These projects will stay free and open source forever. If my work has been helpful to you, I would appreciate any sponsorship. Also, if you have any issue with my code that needs my immediate attention, I will be grateful for donations.
+I love working on DeepDiff and other open-source projects. These projects will stay free and open source forever. If my work has been helpful to you, I would appreciate any sponsorship. 
 
-Please `click here <https://github.com/sponsors/seperman>`__ to read
-more about sponsoring my work.
+Please `click here <https://github.com/sponsors/seperman>`__ for sponsorship information.
 
-Thank you!
+| Lastly, you might be interested in another tool I've crafted: ⚡ `Qluster <https://qluster.ai/solution>`__.
+| As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines.
+| I developed Qluster to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
+|
+| If you are going through this pain now, I would love to give you `early access <https://www.qluster.ai/try-qluster>`__ to Qluster and get your feedback.
 
-Sep
 
-.. _github repo: https://github.com/seperman/deepdiff
 
 Back to :doc:`/index`

@@ -59,6 +59,22 @@ verify_symmetry : Boolean, default=False
 
     A delta object that can be added to t1 to recreate t2.
 
+    Delta objects can contain the following vocabulary:
+
+    iterable_item_added
+    iterable_item_moved
+    iterable_item_removed
+    set_item_added
+    set_item_removed
+    dictionary_item_added
+    dictionary_item_removed
+    attribute_added
+    attribute_removed
+    type_changes
+    values_changed
+    iterable_items_added_at_indexes
+    iterable_items_removed_at_indexes
+
 
 .. _delta_diff_label:
 
@@ -191,6 +207,14 @@ Delta Serializer
 ----------------
 
 DeepDiff uses pickle to serialize delta objects by default. Please take a look at the :ref:`delta_deserializer_label` for more information.
+
+
+.. _to_flat_dicts:
+
+Delta Serialize To Flat Dictionaries
+------------------------------------
+
+Read about :ref:`delta_to_flat_dicts_label`
 
 .. _delta_dump_safety_label:
 
@@ -456,7 +480,7 @@ Unable to get the item at root['x']['y'][3]: 'x'
 Unable to get the item at root['q']['t']
 {}
 
-# Once we set the force to be True
+Once we set the force to be True
 
 >>> delta = Delta(diff, force=True)
 >>> {} + delta

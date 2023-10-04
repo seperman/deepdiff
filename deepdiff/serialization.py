@@ -44,7 +44,9 @@ except ImportError:  # pragma: no cover.
 from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
-from deepdiff.helper import (strings, get_type, TEXT_VIEW)
+from deepdiff.helper import (
+    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64
+)
 from deepdiff.model import DeltaResult
 
 logger = logging.getLogger(__name__)
@@ -539,6 +541,10 @@ JSON_CONVERTOR = {
     bytes: lambda x: x.decode('utf-8'),
     datetime.datetime: lambda x: x.isoformat(),
     uuid.UUID: lambda x: str(x),
+    np_float32: float,
+    np_float64: float,
+    np_int32: int,
+    np_int64: int
 }
 
 if PydanticBaseModel:

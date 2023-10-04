@@ -42,11 +42,11 @@ except ImportError:  # pragma: no cover. The case without Numpy is tested locall
     np_uintp = np_type  # pragma: no cover.
     np_float32 = np_type  # pragma: no cover.
     np_float64 = np_type  # pragma: no cover.
-    np_float_ = np_type  # pragma: no cover.
+    np_double = np_type  # pragma: no cover.
     np_floating = np_type  # pragma: no cover.
     np_complex64 = np_type  # pragma: no cover.
     np_complex128 = np_type  # pragma: no cover.
-    np_complex_ = np_type  # pragma: no cover.
+    np_cdouble = np_type  # pragma: no cover.
     np_complexfloating = np_type  # pragma: no cover.
 else:
     np_array_factory = np.array
@@ -64,21 +64,21 @@ else:
     np_uintp = np.uintp
     np_float32 = np.float32
     np_float64 = np.float64
-    np_float_ = np.float_
+    np_double = np.double  # np.float_ is an alias for np.double and is being removed by NumPy 2.0
     np_floating = np.floating
     np_complex64 = np.complex64
     np_complex128 = np.complex128
-    np_complex_ = np.complex_
+    np_cdouble = np.cdouble  # np.complex_ is an alias for np.cdouble and is being removed by NumPy 2.0
     np_complexfloating = np.complexfloating
 
 numpy_numbers = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
-    np_float32, np_float64, np_float_, np_floating, np_complex64,
-    np_complex128, np_complex_,)
+    np_float32, np_float64, np_double, np_floating, np_complex64,
+    np_complex128, np_cdouble,)
 
 numpy_complex_numbers = (
-    np_complexfloating, np_complex64, np_complex128, np_complex_,
+    np_complexfloating, np_complex64, np_complex128, np_cdouble,
 )
 
 numpy_dtypes = set(numpy_numbers)
@@ -655,7 +655,7 @@ def diff_numpy_array(A, B):
     By Divakar
     https://stackoverflow.com/a/52417967/1497443
     """
-    return A[~np.in1d(A, B)]
+    return A[~np.isin(A, B)]
 
 
 PYTHON_TYPE_TO_NUMPY_TYPE = {
