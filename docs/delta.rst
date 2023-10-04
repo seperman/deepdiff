@@ -208,6 +208,14 @@ Delta Serializer
 
 DeepDiff uses pickle to serialize delta objects by default. Please take a look at the :ref:`delta_deserializer_label` for more information.
 
+
+.. _to_flat_dicts:
+
+Delta Serialize To Flat Dictionaries
+------------------------------------
+
+Read about :ref:`delta_to_flat_dicts_label`
+
 .. _delta_dump_safety_label:
 
 Delta Dump Safety
@@ -472,7 +480,7 @@ Unable to get the item at root['x']['y'][3]: 'x'
 Unable to get the item at root['q']['t']
 {}
 
-# Once we set the force to be True
+Once we set the force to be True
 
 >>> delta = Delta(diff, force=True)
 >>> {} + delta

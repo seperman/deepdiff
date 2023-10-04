@@ -31,6 +31,12 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 6-6-0
+--------------
+    
+    - :ref:`delta_to_flat_dicts_label` can be used to serialize delta objects into a flat list of dictionaries.
+    - `NumPy 2.0 compatibility <https://github.com/seperman/deepdiff/pull/422>`__ by `William Jamieson <https://github.com/WilliamJamieson>`__
+
 DeepDiff 6-5-0
 --------------
 

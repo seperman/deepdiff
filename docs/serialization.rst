@@ -105,4 +105,48 @@ From Json Pickle
 Load the diff object from the json pickle dump.
 Take a look at the above :ref:`to_json_pickle_label` for an example.
 
+
+.. _delta_to_flat_dicts_label:
+
+Delta Serialize To Flat Dictionaries
+------------------------------------
+
+Sometimes, it is desired to serialize a :ref:`delta_label` object to a list of flat dictionaries. For example, to store them in relation databases. In that case, you can use the Delta.to_flat_dicts to achieve the desired outcome.
+
+For example:
+
+    >>> from pprint import pprint
+    >>> from deepdiff import DeepDiff, Delta
+    >>> t1 = {"key1": "value1"}
+    >>> t2 = {"field2": {"key2": "value2"}}
+    >>> diff = DeepDiff(t1, t2, verbose_level=2)
+    >>> pprint(diff, indent=2)
+    { 'dictionary_item_added': {"root['field2']": {'key2': 'value2'}},
+      'dictionary_item_removed': {"root['key1']": 'value1'}}
+    >>>
+    >>> delta = Delta(diff, verify_symmetry=True)
+    >>> flat_dicts = delta.to_flat_dicts()
+    >>> pprint(flat_dicts, indent=2)
+    [ { 'action': 'dictionary_item_added',
+        'path': ['field2', 'key2'],
+        'value': 'value2'},
+      {'action': 'dictionary_item_removed', 'path': ['key1'], 'value': 'value1'}]
+
+
+Example 2:
+
+    >>> t3 = ["A", "B"]
+    >>> t4 = ["A", "B", "C", "D"]
+    >>> diff = DeepDiff(t3, t4, verbose_level=2)
+    >>> pprint(diff, indent=2)
+    {'iterable_item_added': {'root[2]': 'C', 'root[3]': 'D'}}
+    >>>
+    >>> delta = Delta(diff, verify_symmetry=True)
+    >>> flat_dicts = delta.to_flat_dicts()
+    >>> pprint(flat_dicts, indent=2)
+    [ {'action': 'iterable_item_added', 'path': [2], 'value': 'C'},
+      {'action': 'iterable_item_added', 'path': [3], 'value': 'D'}]
+
+
+
 Back to :doc:`/index`

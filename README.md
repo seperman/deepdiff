@@ -23,6 +23,11 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 6-6-0
+
+- [Serialize To Flat Dicts]()
+- [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422) by [William Jamieson](https://github.com/WilliamJamieson)
+
 DeepDiff 6-5-0
 
 - [parse_path](https://zepworks.com/deepdiff/current/faq.html#q-how-do-i-parse-deepdiff-result-paths)
@@ -66,9 +71,20 @@ Install optional packages:
 
 Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 
+# 🛠️ Detect And Clean Messy Data In Transit
+
+If you deal with messy data, check out [Qluster](https://qluster.ai/solution), another tool by the creator of DeepDiff.
+
+*Qluster's mission is to enable users to create adaptive data pipelines that detect issues, quarantine bad data, and enable the user to fix data issues via a spreadsheet UI.*
+
+
 # Survey
 
 :mega: **Please fill out our [fast 5-question survey](https://forms.gle/E6qXexcgjoKnSzjB8)** so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! :dancers:
+
+# Data Cleaning
+
+
 
 
 # Contribute
