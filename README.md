@@ -71,7 +71,7 @@ Install optional packages:
 
 If you deal with messy data, please check out [Qluster](https://qluster.ai/solution), another tool by [Seperman](https://github.com/seperman) the creator of DeepDiff.
 
-#### *Qluster's mission is to enable users to create adaptive data pipelines that detect issues, quarantine bad data, and enable the user to fix data issues via a spreadsheet UI.*
+###### *Qluster's mission is to enable users to create adaptive data pipelines that detect issues, quarantine bad data, and enable the user to fix data issues via a spreadsheet UI.*
 
 # ChangeLog
 
