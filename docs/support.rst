@@ -17,6 +17,9 @@ Please `click here <https://github.com/sponsors/seperman>`__ for sponsorship inf
 | Lastly, you might be interested in another tool I've crafted: ⚡ `Qluster <https://qluster.ai/solution>`__.
 | As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines.
 | I developed Qluster to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
+|
+| If you are going through this pain now, I would love to give you `early access <https://www.qluster.ai/try-qluster>`__ to Qluster and get your feedback.
+
 
 
 Back to :doc:`/index`

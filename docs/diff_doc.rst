@@ -196,7 +196,9 @@ int, string, unicode, dictionary, list, tuple, set, frozenset, OrderedDict, Name
 .. admonition:: A message from `Sep <https://github.com/seperman>`__, the creator of DeepDiff
 
     | 👋 Hi there,
+    |
     | Thank you for using DeepDiff!
-    | If you find value in DeepDiff, you might be interested in another tool I've crafted: `Qluster <https://qluster.ai/solution>`__.
     | As an engineer, I understand the frustration of wrestling with **unruly data** in pipelines.
-    | I developed Qluster to empower product managers and ops teams to control and resolve data issues autonomously and **stop bugging the engineers**! 🛠️
+    | That's why I developed a new tool - `Qluster <https://qluster.ai/solution>`__ to empower non-engineers to control and resolve data issues at scale autonomously and **stop bugging the engineers**! 🛠️
+    |
+    | If you are going through this pain now, I would love to give you `early access <https://www.qluster.ai/try-qluster>`__ to Qluster and get your feedback.
