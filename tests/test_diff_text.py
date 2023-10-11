@@ -1710,6 +1710,44 @@ class TestDeepDiffText:
             'old_value': 'Blue'}}}
         assert expected_grouped == diff
 
+    def test_group_by2_when_repeats(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue', 'int_id': 20},
+            {'id': 'BB', 'name': 'Jimmy', 'last_name': 'Red', 'int_id': 3},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown', 'int_id': 20},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id', group_by_sort_key='name')
+        expected_grouped = {
+            'values_changed': {
+                "root['BB'][0]['last_name']": {
+                    'new_value': 'Brown',
+                    'old_value': 'Blue'
+                }
+            },
+            'iterable_item_removed': {
+                "root['BB'][1]": {
+                    'name': 'Jimmy',
+                    'last_name': 'Red',
+                    'int_id': 3
+                }
+            }
+        }
+        assert expected_grouped == diff
+
+        diff2 = DeepDiff(t1, t2, group_by='id', group_by_sort_key=lambda x: x['name'])
+        assert expected_grouped == diff2
+
+        diff3 = DeepDiff(t1, t2, group_by='id', group_by_sort_key=lambda x: x['name'])
+        assert expected_grouped == diff3
+
     def test_group_by_key_missing(self):
         t1 = [
             {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
