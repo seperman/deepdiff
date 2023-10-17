@@ -148,9 +148,24 @@ Object attribute added:
 Group By
 --------
 
-group_by can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
+group_by can be used when dealing with the list of dictionaries. It converts them from lists to a single dictionary with the key defined by group_by. The common use case is when reading data from a flat CSV, and the primary key is one of the columns in the CSV. We want to use the primary key instead of the CSV row number to group the rows. The group_by can do 2D group_by by passing a list of 2 keys.
 
-Example:
+For example:
+    >>> [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+    ... ]
+
+Becomes:
+    >>> t1 = {
+    ...     'AA': {'name': 'Joe', 'last_name': 'Nobody'},
+    ...     'BB': {'name': 'James', 'last_name': 'Blue'},
+    ...     'CC': {'name': 'Mike', 'last_name': 'Apple'},
+    ... }
+
+
+With that in mind, let's take a look at the following:
     >>> from deepdiff import DeepDiff
     >>> t1 = [
     ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
@@ -186,6 +201,76 @@ Now we use group_by='id':
     <root t1:{'AA': {'nam...}, t2:{'AA': {'nam...}>
     >>> diff['values_changed'][0].up.up.t1
     {'AA': {'name': 'Joe', 'last_name': 'Nobody'}, 'BB': {'name': 'James', 'last_name': 'Blue'}, 'CC': {'name': 'Mike', 'last_name': 'Apple'}}
+
+2D Example:
+    >>> from pprint import pprint
+    >>> from deepdiff import DeepDiff
+    >>>
+    >>> t1 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Blue'},
+    ...     {'id': 'BB', 'name': 'Jimmy', 'last_name': 'Red'},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+    ... ]
+    >>>
+    >>> t2 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody'},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Brown'},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple'},
+    ... ]
+    >>>
+    >>> diff = DeepDiff(t1, t2, group_by=['id', 'name'])
+    >>> pprint(diff)
+    {'dictionary_item_removed': [root['BB']['Jimmy']],
+     'values_changed': {"root['BB']['James']['last_name']": {'new_value': 'Brown',
+                                                             'old_value': 'Blue'}}}
+
+.. _group_by_sort_key_label:
+
+Group By - Sort Key
+-------------------
+
+group_by_sort_key is used to define how dictionaries are sorted if multiple ones fall under one group. When this parameter is used, group_by converts the lists of dictionaries into a dictionary of keys to lists of dictionaries. Then, group_by_sort_key is used to sort between the list.
+
+For example, there are duplicate id values. If we only use group_by='id', one of the dictionaries with id of 'BB' will overwrite the other. However, if we also set group_by_sort_key='name', we keep both dictionaries with the id of 'BB'. 
+
+Example:
+
+    [{'id': 'AA', 'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'},
+     {'id': 'BB', 'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
+     {'id': 'BB', 'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'},
+     {'id': 'CC', 'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]
+
+
+Becomes:
+    {'AA': [{'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'}],
+     'BB': [{'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
+            {'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'}],
+     'CC': [{'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]}
+
+
+Example of using group_by_sort_key
+    >>> t1 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Blue', 'int_id': 20},
+    ...     {'id': 'BB', 'name': 'Jimmy', 'last_name': 'Red', 'int_id': 3},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+    ... ]
+    >>>
+    >>> t2 = [
+    ...     {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+    ...     {'id': 'BB', 'name': 'James', 'last_name': 'Brown', 'int_id': 20},
+    ...     {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+    ... ]
+    >>>
+    >>> diff = DeepDiff(t1, t2, group_by='id', group_by_sort_key='name')
+    >>>
+    >>> pprint(diff)
+    {'iterable_item_removed': {"root['BB'][1]": {'int_id': 3,
+                                                 'last_name': 'Red',
+                                                 'name': 'Jimmy'}},
+     'values_changed': {"root['BB'][0]['last_name']": {'new_value': 'Brown',
+                                                       'old_value': 'Blue'}}}
 
 
 Back to :doc:`/index`

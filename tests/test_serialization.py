@@ -315,13 +315,16 @@ class TestDeepDiffPretty:
         result = ddiff.pretty()
         assert result == expected
 
-    @pytest.mark.parametrize('test_num, value', [
-        (1, {'10': None}),
-        (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}),
-        (3, {'10': Decimal(2017)}),
-        (4, Decimal(2017.1)),
+    @pytest.mark.parametrize('test_num, value, func_to_convert_back', [
+        (1, {'10': None}, None),
+        (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}, None),
+        (3, {'10': Decimal(2017)}, None),
+        (4, Decimal(2017.1), None),
+        (5, {1, 2, 10}, set),
     ])
-    def test_json_dumps_and_loads(self, test_num, value):
+    def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)
         back = json_loads(serialized)
+        if func_to_convert_back:
+            back = func_to_convert_back(back)
         assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"

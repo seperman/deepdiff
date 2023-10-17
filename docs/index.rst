@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 6.6.0 documentation!
+DeepDiff 6.6.1 documentation!
 =============================
 
 *******
@@ -30,6 +30,15 @@ The DeepDiff library includes the following modules:
 ***********
 What Is New
 ***********
+
+DeepDiff 6-6-1
+--------------
+
+    -  Fix for `DeepDiff raises decimal exception when using significant
+       digits <https://github.com/seperman/deepdiff/issues/426>`__
+    -  Introducing group_by_sort_key
+    -  Adding group_by 2D. For example
+       ``group_by=['last_name', 'zip_code']``
 
 DeepDiff 6-6-0
 --------------

@@ -1144,18 +1144,19 @@ class TestDeepDiffText:
         }
         assert result == ddiff
 
-    @pytest.mark.parametrize("t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result", [
-        (43.265798602382986, 43.71677762295505, False, 0, "f", {'values_changed': {'root': {'new_value': 43.71677762295505, 'old_value': 43.265798602382986}}}),  # Note that it rounds the number so one becomes 43 and the other one is 44
-        (Decimal('2.5'), Decimal('1.5'), False, 0, "f", {}),
-        (Decimal('2.5'), Decimal('1.5'), False, 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
-        (Decimal('2.5'), Decimal(2.5), False, 3, "f", {}),
-        (1024, 1022, False, 2, "e", {}),
-        ({"key": [Decimal('2.0001'), Decimal('20000.0001')]}, {"key": [2.0002, 20000.0002]}, True, 4, "e", {'values_changed': {"root['key'][0]": {'new_value': 2.0002, 'old_value': Decimal('2.0001')}}})
+    @pytest.mark.parametrize("test_num, t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result", [
+        (1, 43.265798602382986, 43.71677762295505, False, 0, "f", {'values_changed': {'root': {'new_value': 43.71677762295505, 'old_value': 43.265798602382986}}}),  # Note that it rounds the number so one becomes 43 and the other one is 44
+        (2, Decimal('2.5'), Decimal('1.5'), False, 0, "f", {}),
+        (3, Decimal('2.5'), Decimal('1.5'), False, 1, "f", {'values_changed': {'root': {'new_value': Decimal('1.5'), 'old_value': Decimal('2.5')}}}),
+        (4, Decimal('2.5'), Decimal(2.5), False, 3, "f", {}),
+        (5, 1024, 1022, False, 2, "e", {}),
+        (6, {"key": [Decimal('2.0001'), Decimal('20000.0001')]}, {"key": [2.0002, 20000.0002]}, True, 4, "e", {'values_changed': {"root['key'][0]": {'new_value': 2.0002, 'old_value': Decimal('2.0001')}}}),
+        (7, [Decimal("999.99999999")], [Decimal("999.9999999999")], False, 6, "f", {}),
     ])
-    def test_significant_digits_and_notation(self, t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result):
+    def test_significant_digits_and_notation(self, test_num, t1, t2, ignore_numeric_type_changes, significant_digits, number_format_notation, result):
         ddiff = DeepDiff(t1, t2, significant_digits=significant_digits, number_format_notation=number_format_notation,
                          ignore_numeric_type_changes=ignore_numeric_type_changes)
-        assert result == ddiff
+        assert result == ddiff, f"test_significant_digits_and_notation #{test_num} failed."
 
     def test_significant_digits_for_complex_imaginary_part(self):
         t1 = 1.23 + 1.222254j
@@ -1709,6 +1710,79 @@ class TestDeepDiffText:
             'new_value': 'Brown',
             'old_value': 'Blue'}}}
         assert expected_grouped == diff
+
+    def test_group_by2_when_repeats(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue', 'int_id': 20},
+            {'id': 'BB', 'name': 'Jimmy', 'last_name': 'Red', 'int_id': 3},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown', 'int_id': 20},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        diff = DeepDiff(t1, t2, group_by='id', group_by_sort_key='name')
+        expected_grouped = {
+            'values_changed': {
+                "root['BB'][0]['last_name']": {
+                    'new_value': 'Brown',
+                    'old_value': 'Blue'
+                }
+            },
+            'iterable_item_removed': {
+                "root['BB'][1]": {
+                    'name': 'Jimmy',
+                    'last_name': 'Red',
+                    'int_id': 3
+                }
+            }
+        }
+        assert expected_grouped == diff
+
+        diff2 = DeepDiff(t1, t2, group_by='id', group_by_sort_key=lambda x: x['name'])
+        assert expected_grouped == diff2
+
+    def test_group_by3_when_repeats_and_group_by_list(self):
+        t1 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Blue', 'int_id': 20},
+            {'id': 'BB', 'name': 'Jimmy', 'last_name': 'Red', 'int_id': 3},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        t2 = [
+            {'id': 'AA', 'name': 'Joe', 'last_name': 'Nobody', 'int_id': 2},
+            {'id': 'BB', 'name': 'James', 'last_name': 'Brown', 'int_id': 20},
+            {'id': 'CC', 'name': 'Mike', 'last_name': 'Apple', 'int_id': 4},
+        ]
+
+        diff1 = DeepDiff(t1, t2, group_by=['id', 'name'])
+        expected_grouped = {
+            'dictionary_item_removed': ["root['BB']['Jimmy']"],
+            'values_changed': {
+                "root['BB']['James']['last_name']": {
+                    'new_value': 'Brown',
+                    'old_value': 'Blue'
+                }
+            }
+        }
+        assert expected_grouped == diff1
+
+        diff2 = DeepDiff(t1, t2, group_by=['id', 'name'], group_by_sort_key='int_id')
+        expected_grouped = {
+            'dictionary_item_removed': ["root['BB']['Jimmy']"],
+            'values_changed': {
+                "root['BB']['James'][0]['last_name']": {
+                    'new_value': 'Brown',
+                    'old_value': 'Blue'
+                }
+            }
+        }
+        assert expected_grouped == diff2
 
     def test_group_by_key_missing(self):
         t1 = [

@@ -1,4 +1,4 @@
-# DeepDiff v 6.6.0
+# DeepDiff v 6.6.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,15 +17,21 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.6.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.6.1/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 6-6-1
+- Fix for [DeepDiff raises decimal exception when using significant digits](https://github.com/seperman/deepdiff/issues/426)
+- Introducing group_by_sort_key
+- Adding group_by 2D. For example `group_by=['last_name', 'zip_code']`
+
+
 DeepDiff 6-6-0
 
-- [Serialize To Flat Dicts]()
+- [Serialize To Flat Dicts](https://zepworks.com/deepdiff/current/serialization.html#delta-to-flat-dicts-label)
 - [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422) by [William Jamieson](https://github.com/WilliamJamieson)
 
 DeepDiff 6-5-0
@@ -101,11 +107,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.6.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.6.1) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.6.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.6.1).
 
 # Authors
 

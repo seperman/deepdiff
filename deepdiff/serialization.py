@@ -537,6 +537,7 @@ def _serialize_decimal(value):
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
     ordered_set.OrderedSet: list,
+    set: list,
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),
     datetime.datetime: lambda x: x.isoformat(),
