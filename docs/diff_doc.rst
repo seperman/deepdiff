@@ -79,8 +79,11 @@ include_obj_callback_strict: function, default = None
 get_deep_distance: Boolean, default = False
     :ref:`get_deep_distance_label` will get you the deep distance between objects. The distance is a number between 0 and 1 where zero means there is no diff between the 2 objects and 1 means they are very different. Note that this number should only be used to compare the similarity of 2 objects and nothing more. The algorithm for calculating this number may or may not change in the future releases of DeepDiff.
 
-group_by: String, default=None
-    :ref:`group_by_label` can be used when dealing with list of dictionaries to convert them to group them by value defined in group_by. The common use case is when reading data from a flat CSV and primary key is one of the columns in the CSV. We want to use the primary key to group the rows instead of CSV row number.
+group_by: String or a list of size 2, default=None
+    :ref:`group_by_label` can be used when dealing with the list of dictionaries. It converts them from lists to a single dictionary with the key defined by group_by. The common use case is when reading data from a flat CSV, and the primary key is one of the columns in the CSV. We want to use the primary key instead of the CSV row number to group the rows. The group_by can do 2D group_by by passing a list of 2 keys.
+
+group_by_sort_key: String or a function
+    :ref:`group_by_sort_key_label` is used to define how dictionaries are sorted if multiple ones fall under one group. When this parameter is used, group_by converts the lists of dictionaries into a dictionary of keys to lists of dictionaries. Then, :ref:`group_by_sort_key_label` is used to sort between the list.
 
 hasher: default = DeepHash.sha256hex
     Hash function to be used. If you don't want SHA256, you can use your own hash function

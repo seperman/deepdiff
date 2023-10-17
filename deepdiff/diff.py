@@ -1601,35 +1601,64 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
 
+    @staticmethod
+    def _get_key_for_group_by(row, group_by, item_name):
+        try:
+            return row.pop(group_by)
+        except KeyError:
+            logger.error("Unable to group {} by {}. The key is missing in {}".format(item_name, group_by, row))
+            raise
+
     def _group_iterable_to_dict(self, item, group_by, item_name):
         """
         Convert a list of dictionaries into a dictionary of dictionaries
         where the key is the value of the group_by key in each dictionary.
         """
+        group_by_level2 = None
+        if isinstance(group_by, (list, tuple)):
+            group_by_level1 = group_by[0]
+            if len(group_by) > 1:
+                group_by_level2 = group_by[1]
+        else:
+            group_by_level1 = group_by
         if isinstance(item, Iterable) and not isinstance(item, Mapping):
             result = {}
             item_copy = deepcopy(item)
             for row in item_copy:
                 if isinstance(row, Mapping):
-                    try:
-                        key = row.pop(group_by)
-                    except KeyError:
-                        logger.error("Unable to group {} by {}. The key is missing in {}".format(item_name, group_by, row))
-                        raise
-                    if self.group_by_sort_key:
-                        if key not in result:
-                            result[key] = []
-                        if row not in result[key]:
-                            result[key].append(row)
+                    key1 = self._get_key_for_group_by(row, group_by_level1, item_name)
+                    if group_by_level2:
+                        key2 = self._get_key_for_group_by(row, group_by_level2, item_name)
+                        if key1 not in result:
+                            result[key1] = {}
+                        if self.group_by_sort_key:
+                            if key2 not in result[key1]:
+                                result[key1][key2] = []
+                            result_key1_key2 = result[key1][key2]
+                            if row not in result_key1_key2:
+                                result_key1_key2.append(row)
+                        else:
+                            result[key1][key2] = row
                     else:
-                        result[key] = row
+                        if self.group_by_sort_key:
+                            if key1 not in result:
+                                result[key1] = []
+                            if row not in result[key1]:
+                                result[key1].append(row)
+                        else:
+                            result[key1] = row
                 else:
-                    msg = "Unable to group {} by {} since the item {} is not a dictionary.".format(item_name, group_by, row)
+                    msg = "Unable to group {} by {} since the item {} is not a dictionary.".format(item_name, group_by_level1, row)
                     logger.error(msg)
                     raise ValueError(msg)
             if self.group_by_sort_key:
-                for key, row in result.items():
-                    row.sort(key=self.group_by_sort_key)
+                if group_by_level2:
+                    for key1, row1 in result.items():
+                        for key2, row in row1.items():
+                            row.sort(key=self.group_by_sort_key)
+                else:
+                    for key, row in result.items():
+                        row.sort(key=self.group_by_sort_key)
             return result
         msg = "Unable to group {} by {}".format(item_name, group_by)
         logger.error(msg)

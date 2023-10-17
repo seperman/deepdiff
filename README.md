@@ -23,9 +23,15 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 6-6-1
+- Fix for [DeepDiff raises decimal exception when using significant digits](https://github.com/seperman/deepdiff/issues/426)
+- Introducing group_by_sort_key
+- Adding group_by 2D. For example `group_by=['last_name', 'zip_code']`
+
+
 DeepDiff 6-6-0
 
-- [Serialize To Flat Dicts]()
+- [Serialize To Flat Dicts](https://zepworks.com/deepdiff/current/serialization.html#delta-to-flat-dicts-label)
 - [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422) by [William Jamieson](https://github.com/WilliamJamieson)
 
 DeepDiff 6-5-0

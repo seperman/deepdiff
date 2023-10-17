@@ -8,7 +8,7 @@ import warnings
 import string
 import time
 from ast import literal_eval
-from decimal import Decimal, localcontext
+from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from collections import namedtuple
 from itertools import repeat
 from ordered_set import OrderedSet
@@ -394,7 +394,13 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
             # Precision = number of integer digits + significant_digits
             # Using number//1 to get the integer part of the number
             ctx.prec = len(str(abs(number // 1))) + significant_digits
-            number = number.quantize(Decimal('0.' + '0' * significant_digits))
+            try:
+                number = number.quantize(Decimal('0.' + '0' * significant_digits))
+            except InvalidDecimalOperation:
+                # Sometimes rounding up causes a higher precision to be needed for the quantize operation
+                # For example '999.99999999' will become '1000.000000' after quantize
+                ctx.prec += 1
+                number = number.quantize(Decimal('0.' + '0' * significant_digits))
     elif isinstance(number, only_complex_number):
         # Case for complex numbers.
         number = number.__class__(
