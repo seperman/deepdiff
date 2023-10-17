@@ -1,5 +1,9 @@
 # DeepDiff Change log
 
+- v6-6-1
+    - Fix for [DeepDiff raises decimal exception when using significant digits](https://github.com/seperman/deepdiff/issues/426)
+    - Introducing group_by_sort_key
+    - Adding group_by 2D. For example `group_by=['last_name', 'zip_code']`
 - v6-6-0
     - Numpy 2.0 support
     - Adding [Delta.to_flat_dicts](https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries)
