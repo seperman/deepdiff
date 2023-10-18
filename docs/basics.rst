@@ -235,18 +235,17 @@ group_by_sort_key is used to define how dictionaries are sorted if multiple ones
 For example, there are duplicate id values. If we only use group_by='id', one of the dictionaries with id of 'BB' will overwrite the other. However, if we also set group_by_sort_key='name', we keep both dictionaries with the id of 'BB'. 
 
 Example:
-
-    [{'id': 'AA', 'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'},
-     {'id': 'BB', 'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
-     {'id': 'BB', 'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'},
-     {'id': 'CC', 'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]
+    >>> [{'id': 'AA', 'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'},
+    ...  {'id': 'BB', 'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
+    ...  {'id': 'BB', 'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'},
+    ...  {'id': 'CC', 'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]
 
 
 Becomes:
-    {'AA': [{'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'}],
-     'BB': [{'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
-            {'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'}],
-     'CC': [{'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]}
+    >>> {'AA': [{'int_id': 2, 'last_name': 'Nobody', 'name': 'Joe'}],
+    ...  'BB': [{'int_id': 20, 'last_name': 'Blue', 'name': 'James'},
+    ...         {'int_id': 3, 'last_name': 'Red', 'name': 'Jimmy'}],
+    ...  'CC': [{'int_id': 4, 'last_name': 'Apple', 'name': 'Mike'}]}
 
 
 Example of using group_by_sort_key
