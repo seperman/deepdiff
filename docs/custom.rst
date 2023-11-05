@@ -183,7 +183,7 @@ To define an custom operator, you just need to inherit a *BaseOperator* and
     * implement a give_up_diffing method
         * give_up_diffing(level: DiffLevel, diff_instance: DeepDiff) -> boolean
 
-          If it returns True, then we will give up diffing the tow objects.
+          If it returns True, then we will give up diffing the two objects.
           You may or may not use the diff_instance.custom_report_result within this function
           to report any diff. If you decide not to report anything, and this
           function returns True, then the objects are basically skipped in the results.
