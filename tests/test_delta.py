@@ -681,6 +681,13 @@ DELTA_CASES = {
         'to_delta_kwargs': {'directed': True},
         'expected_delta_dict': {'iterable_item_removed': {'root[4]': 4}}
     },
+    'delta_case20_quotes_in_path': {
+        't1': {"a']['b']['c": 1},
+        't2': {"a']['b']['c": 2},
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {'directed': True},
+        'expected_delta_dict': {'values_changed': {'root["a\'][\'b\'][\'c"]': {'new_value': 2}}}
+    },
 }
 
 

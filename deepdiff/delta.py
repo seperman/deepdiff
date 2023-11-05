@@ -623,6 +623,7 @@ class Delta:
         include_action_in_path : Boolean, default=False
             When False, we translate DeepDiff's paths like root[3].attribute1 into a [3, 'attribute1'].
             When True, we include the action to retrieve the item in the path: [(3, 'GET'), ('attribute1', 'GETATTR')]
+            Note that the "action" here is the different than the action reported by to_flat_dicts. The action here is just about the "path" output.
 
         report_type_changes : Boolean, default=True
             If False, we don't report the type change. Instead we report the value change.

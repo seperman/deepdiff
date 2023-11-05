@@ -874,7 +874,21 @@ class ChildRelationship:
         """
         param = self.param
         if isinstance(param, strings):
-            result = param if self.quote_str is None else self.quote_str.format(param)
+            has_quote = "'" in param
+            has_double_quote = '"' in param
+            if has_quote and has_double_quote:
+                new_param = []
+                for char in param:
+                    if char in {'"', "'"}:
+                        new_param.append('\\')
+                    new_param.append(char)
+                param = ''.join(new_param)
+            elif has_quote:
+                result = f'"{param}"'
+            elif has_double_quote:
+                result = f"'{param}'"
+            else:
+                result = param if self.quote_str is None else self.quote_str.format(param)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
         else:
