@@ -10,7 +10,10 @@ from deepdiff.helper import (
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
 )
-from deepdiff.path import _path_to_elements, _get_nested_obj, _get_nested_obj_and_force, GET, GETATTR, parse_path
+from deepdiff.path import (
+    _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
+    GET, GETATTR, parse_path, stringify_path, DEFAULT_FIRST_ELEMENT
+)
 from deepdiff.anyset import AnySet
 
 
@@ -55,6 +58,10 @@ class DeltaNumpyOperatorOverrideError(ValueError):
     pass
 
 
+class _ObjDoesNotExist:
+    pass
+
+
 class Delta:
 
     __doc__ = doc
@@ -64,6 +71,7 @@ class Delta:
         diff=None,
         delta_path=None,
         delta_file=None,
+        flat_dict_list=None,
         deserializer=pickle_load,
         log_errors=True,
         mutate=False,
@@ -78,6 +86,8 @@ class Delta:
         else:
             def _deserializer(obj, safe_to_import=None):
                 return deserializer(obj)
+
+        self._reversed_diff = None
 
         if diff is not None:
             if isinstance(diff, DeepDiff):
@@ -96,6 +106,8 @@ class Delta:
             except UnicodeDecodeError as e:
                 raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
             self.diff = _deserializer(content, safe_to_import=safe_to_import)
+        elif flat_dict_list:
+            self.diff = self._from_flat_dicts(flat_dict_list)
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
@@ -161,7 +173,7 @@ class Delta:
             self._raise_or_log(VERIFICATION_MSG.format(
                 path, expected_old_value, current_old_value, VERIFY_SYMMETRY_MSG))
 
-    def _get_elem_and_compare_to_old_value(self, obj, path_for_err_reporting, expected_old_value, elem=None, action=None):
+    def _get_elem_and_compare_to_old_value(self, obj, path_for_err_reporting, expected_old_value, elem=None, action=None, forced_old_value=None):
         try:
             if action == GET:
                 current_old_value = obj[elem]
@@ -171,12 +183,12 @@ class Delta:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError, TypeError) as e:
             if self.force:
-                forced_old_value = {}
+                _forced_old_value = {} if forced_old_value is None else forced_old_value
                 if action == GET:
-                    obj[elem] = forced_old_value
+                    obj[elem] = _forced_old_value
                 elif action == GETATTR:
-                    setattr(obj, elem, forced_old_value)
-                return forced_old_value
+                    setattr(obj, elem, _forced_old_value)
+                return _forced_old_value
             current_old_value = not_found
             if isinstance(path_for_err_reporting, (list, tuple)):
                 path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
@@ -475,7 +487,7 @@ class Delta:
             parent = self.get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
             obj = self._get_elem_and_compare_to_old_value(
-                parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action)
+                parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action, forced_old_value=set())
             new_value = getattr(obj, func)(value)
             self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
 
@@ -568,6 +580,9 @@ class Delta:
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
 
+    def _reverse_diff(self):
+        pass
+
     def dump(self, file):
         """
         Dump into file object
@@ -603,6 +618,78 @@ class Delta:
                     else:
                         row[new_key] = details[key]
             yield row
+
+    @staticmethod
+    def _from_flat_dicts(flat_dict_list):
+        """
+        Create the delta's diff object from the flat_dict_list
+        """
+        result = {}
+
+        DEFLATTENING_NEW_ACTION_MAP = {
+            'iterable_item_added': 'iterable_items_added_at_indexes',
+            'iterable_item_removed': 'iterable_items_removed_at_indexes',
+        }
+        for flat_dict in flat_dict_list:
+            index = None
+            action = flat_dict.get("action")
+            path = flat_dict.get("path")
+            value = flat_dict.get('value')
+            old_value = flat_dict.get('old_value', _ObjDoesNotExist)
+            if not action:
+                raise ValueError("Flat dict need to include the 'action'.")
+            if path is None:
+                raise ValueError("Flat dict need to include the 'path'.")
+            if action in DEFLATTENING_NEW_ACTION_MAP:
+                action = DEFLATTENING_NEW_ACTION_MAP[action]
+                index = path.pop()
+            if action in {'attribute_added', 'attribute_removed'}:
+                root_element = ('root', GETATTR)
+            else:
+                root_element = ('root', GET)
+            path_str = stringify_path(path, root_element=root_element)  # We need the string path
+            if action not in result:
+                result[action] = {}
+            if action in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
+                if path_str not in result[action]:
+                    result[action][path_str] = {}
+                result[action][path_str][index] = value
+            elif action in {'set_item_added', 'set_item_removed'}:
+                if path_str not in result[action]:
+                    result[action][path_str] = set()
+                result[action][path_str].add(value)
+            elif action in {
+                'dictionary_item_added', 'dictionary_item_removed', 'iterable_item_added',
+                'iterable_item_removed', 'attribute_removed', 'attribute_added'
+            }:
+                result[action][path_str] = value
+            elif action == 'values_changed':
+                if old_value is _ObjDoesNotExist:
+                    result[action][path_str] = {'new_value': value}
+                else:
+                    result[action][path_str] = {'new_value': value, 'old_value': old_value}
+            elif action == 'type_changes':
+                type_ = flat_dict.get('type', _ObjDoesNotExist)
+                old_type = flat_dict.get('old_type', _ObjDoesNotExist)
+
+                result[action][path_str] = {'new_value': value}
+                for elem, elem_value in [
+                    ('new_type', type_),
+                    ('old_type', old_type),
+                    ('old_value', old_value),
+                ]:
+                    if elem_value is not _ObjDoesNotExist:
+                        result[action][path_str][elem] = elem_value
+            elif action == 'iterable_item_moved':
+                result[action][path_str] = {
+                    'new_path': stringify_path(
+                        flat_dict.get('new_path', ''),
+                        root_element=('root', GET)
+                    ),
+                    'value': value,
+                }
+
+        return result
 
     def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True):
         """

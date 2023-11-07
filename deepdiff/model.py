@@ -5,6 +5,7 @@ from ordered_set import OrderedSet
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_)
+from deepdiff.path import stringify_element
 
 logger = logging.getLogger(__name__)
 
@@ -874,21 +875,7 @@ class ChildRelationship:
         """
         param = self.param
         if isinstance(param, strings):
-            has_quote = "'" in param
-            has_double_quote = '"' in param
-            if has_quote and has_double_quote:
-                new_param = []
-                for char in param:
-                    if char in {'"', "'"}:
-                        new_param.append('\\')
-                    new_param.append(char)
-                param = ''.join(new_param)
-            elif has_quote:
-                result = f'"{param}"'
-            elif has_double_quote:
-                result = f"'{param}'"
-            else:
-                result = param if self.quote_str is None else self.quote_str.format(param)
+            result = stringify_element(param, quote_str=self.quote_str)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
         else:
