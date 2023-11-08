@@ -11,7 +11,7 @@ from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotC
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     ELEM_NOT_FOUND_TO_ADD_MSG,
-    VERIFICATION_MSG, VERIFY_SYMMETRY_MSG, not_found, DeltaNumpyOperatorOverrideError,
+    VERIFICATION_MSG, VERIFY_BIDIRECTIONAL_MSG, not_found, DeltaNumpyOperatorOverrideError,
     BINIARY_MODE_NEEDED_MSG, DELTA_AT_LEAST_ONE_ARG_NEEDED, DeltaError,
     INVALID_ACTION_WHEN_CALLING_GET_ELEM, INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM,
     INVALID_ACTION_WHEN_CALLING_SIMPLE_DELETE_ELEM, INDEXES_NOT_FOUND_WHEN_IGNORE_ORDER,
@@ -35,6 +35,11 @@ class TestBasicsOfDelta:
         delta2 = Delta(dump, deserializer=json_loads)
         assert delta2 + t1 == t2
         assert t1 + delta2 == t2
+        with pytest.raises(ValueError) as exc_info:
+            t2 - delta
+        assert 'Please recreate the delta with bidirectional=True' == str(exc_info.value)
+        delta = Delta(diff, serializer=json_dumps, bidirectional=True)
+        assert t2 - delta == t1
 
     def test_to_null_delta1_json(self):
         t1 = 1
@@ -71,6 +76,8 @@ class TestBasicsOfDelta:
         ]
 
         assert flat_expected1 == flat_result1
+        delta2 = Delta(diff=diff, bidirectional=True)
+        assert t1 == t2 - delta2
 
     def test_list_difference_dump_delta(self):
         t1 = [1, 2]
@@ -245,13 +252,13 @@ class TestBasicsOfDelta:
         # since we sort the keys by the path elements, root[3] is gonna be processed before root[20]
         expected_msg = ELEM_NOT_FOUND_TO_ADD_MSG.format(3, 'root[3]')
 
-        delta2 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=False)
+        delta2 = Delta(diff, bidirectional=True, raise_errors=True, log_errors=False)
         with pytest.raises(ValueError) as excinfo:
             delta2 + t1
         assert expected_msg == str(excinfo.value)
         assert not mock_logger.called
 
-        delta3 = Delta(diff, verify_symmetry=True, raise_errors=True, log_errors=True)
+        delta3 = Delta(diff, bidirectional=True, raise_errors=True, log_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta3 + t1
         assert expected_msg == str(excinfo.value)
@@ -289,6 +296,9 @@ class TestBasicsOfDelta:
 
         assert flat_expected1 == flat_result1
 
+        delta2 = Delta(diff=diff, bidirectional=True)
+        assert t1 == t2 - delta2
+
     def test_list_difference_delta_raises_error_if_prev_value_does_not_match(self):
         t1 = [1, 2, 6]
         t2 = [1, 3, 2, 5]
@@ -308,14 +318,14 @@ class TestBasicsOfDelta:
             }
         }
 
-        expected_msg = VERIFICATION_MSG.format('root[2]', 5, 6, VERIFY_SYMMETRY_MSG)
+        expected_msg = VERIFICATION_MSG.format('root[2]', 5, 6, VERIFY_BIDIRECTIONAL_MSG)
 
-        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
+        delta = Delta(diff, bidirectional=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_symmetry=False)
+        delta2 = Delta(diff, bidirectional=False)
         assert delta2 + t1 == t2
 
         flat_result2 = delta2.to_flat_dicts()
@@ -357,6 +367,9 @@ class TestBasicsOfDelta:
 
         assert flat_expected == flat_result
 
+        delta2 = Delta(diff=diff, bidirectional=True)
+        assert t1 == t2 - delta2
+
     @mock.patch('deepdiff.delta.logger.error')
     def test_list_difference_delta_if_item_is_already_removed(self, mock_logger):
         t1 = [1, 2, 'to_be_removed']
@@ -369,12 +382,12 @@ class TestBasicsOfDelta:
             }
         }
         expected_msg = VERIFICATION_MSG.format("root[3]", 'to_be_removed2', not_found, 'list index out of range')
-        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
+        delta = Delta(diff, bidirectional=True, raise_errors=True)
         with pytest.raises(DeltaError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_symmetry=False, raise_errors=False)
+        delta2 = Delta(diff, bidirectional=False, raise_errors=False)
         assert t1 + delta2 == t2
         expected_msg = UNABLE_TO_GET_PATH_MSG.format('root[3]')
         mock_logger.assert_called_with(expected_msg)
@@ -397,14 +410,14 @@ class TestBasicsOfDelta:
                 "root[4]['b'][3]": 'to_be_removed2'
             }
         }
-        expected_msg = VERIFICATION_MSG.format("root[4]['b'][2]", 'to_be_removed', 'wrong', VERIFY_SYMMETRY_MSG)
+        expected_msg = VERIFICATION_MSG.format("root[4]['b'][2]", 'to_be_removed', 'wrong', VERIFY_BIDIRECTIONAL_MSG)
 
-        delta = Delta(diff, verify_symmetry=True, raise_errors=True)
+        delta = Delta(diff, bidirectional=True, raise_errors=True)
         with pytest.raises(ValueError) as excinfo:
             delta + t1
         assert expected_msg == str(excinfo.value)
 
-        delta2 = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta2 = Delta(diff, bidirectional=False, raise_errors=True)
         assert t1 + delta2 == t2
 
     def test_delta_dict_items_added_retain_order(self):
@@ -434,13 +447,16 @@ class TestBasicsOfDelta:
         diff = DeepDiff(t1, t2)
         delta_dict = diff._to_delta_dict()
         assert expected_delta_dict == delta_dict
-        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta = Delta(diff, bidirectional=False, raise_errors=True)
 
         result = t1 + delta
         assert result == t2
 
         assert list(result.keys()) == [6, 7, 3, 5, 2, 4]
         assert list(result.keys()) == list(t2.keys())
+
+        delta2 = Delta(diff=diff, bidirectional=True)
+        assert t1 == t2 - delta2
 
 
 picklalbe_obj_without_item = PicklableClass(11)
@@ -681,6 +697,13 @@ DELTA_CASES = {
         'to_delta_kwargs': {'directed': True},
         'expected_delta_dict': {'iterable_item_removed': {'root[4]': 4}}
     },
+    'delta_case20_quotes_in_path': {
+        't1': {"a']['b']['c": 1},
+        't2': {"a']['b']['c": 2},
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {'directed': True},
+        'expected_delta_dict': {'values_changed': {'root["a\'][\'b\'][\'c"]': {'new_value': 2}}}
+    },
 }
 
 
@@ -694,8 +717,11 @@ class TestDelta:
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict, f"test_delta_cases {test_name} failed."
-        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta = Delta(diff, bidirectional=False, raise_errors=True)
         assert t1 + delta == t2, f"test_delta_cases {test_name} failed."
+
+        delta2 = Delta(diff, bidirectional=True, raise_errors=True)
+        assert t2 - delta2 == t1, f"test_delta_cases {test_name} failed."
 
 
 DELTA_IGNORE_ORDER_CASES = {
@@ -990,7 +1016,7 @@ class TestIgnoreOrderDelta:
         diff = DeepDiff(t1, t2, **deepdiff_kwargs)
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         assert expected_delta_dict == delta_dict, f"test_ignore_order_delta_cases {test_name} failed"
-        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta = Delta(diff, bidirectional=False, raise_errors=True)
         expected_t1_plus_delta = t2 if expected_t1_plus_delta == 't2' else expected_t1_plus_delta
         t1_plus_delta = t1 + delta
         assert t1_plus_delta == expected_t1_plus_delta, f"test_ignore_order_delta_cases {test_name} failed: diff = {DeepDiff(t1_plus_delta, expected_t1_plus_delta, ignore_order=True)}"
@@ -1152,7 +1178,7 @@ class TestNumpyDelta:
         delta_dict = diff._to_delta_dict(**to_delta_kwargs)
         if expected_delta_dict:
             assert expected_delta_dict == delta_dict, f"test_numpy_delta_cases {test_name} failed."
-        delta = Delta(diff, verify_symmetry=False, raise_errors=True)
+        delta = Delta(diff, bidirectional=False, raise_errors=True)
         if expected_result == 't2':
             result = delta + t1
             assert np.array_equal(result, t2), f"test_numpy_delta_cases {test_name} failed."
@@ -1219,6 +1245,9 @@ class TestDeltaOther:
         ]
         assert flat_expected1 == flat_result1
 
+        delta1_again = Delta(flat_dict_list=flat_expected1)
+        assert delta1.diff == delta1_again.diff
+
         flat_result2 = delta2.to_flat_dicts()
         flat_expected2 = [
             {'path': [1], 'value': 4, 'action': 'iterable_item_added'},
@@ -1228,6 +1257,9 @@ class TestDeltaOther:
             {'path': [0], 'action': 'values_changed', 'value': 8},
         ]
         assert flat_expected2 == flat_result2
+
+        delta2_again = Delta(flat_dict_list=flat_expected2)
+        assert delta2.diff == delta2_again.diff
 
     def test_delta_view_and_to_delta_dict_are_equal_when_parameteres_passed(self):
         """
@@ -1287,7 +1319,7 @@ class TestDeltaOther:
         Test a specific case where path was a list of elements (in the form of tuples)
         and the item could not be found.
         """
-        delta = Delta({}, verify_symmetry=True, raise_errors=True, log_errors=False)
+        delta = Delta({}, bidirectional=True, raise_errors=True, log_errors=False)
         with pytest.raises(DeltaError) as excinfo:
             delta._get_elem_and_compare_to_old_value(
                 obj={},
@@ -1362,10 +1394,16 @@ class TestDeltaOther:
         flat_expected2 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5}]
         assert flat_expected2 == flat_result2
 
-        delta3 = Delta(diff, raise_errors=False, verify_symmetry=True)
+        delta2_again = Delta(flat_dict_list=flat_expected2)
+        assert delta2.diff == delta2_again.diff
+
+        delta3 = Delta(diff, raise_errors=False, bidirectional=True)
         flat_result3 = delta3.to_flat_dicts()
         flat_expected3 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5, 'old_value': 4}]
         assert flat_expected3 == flat_result3
+
+        delta3_again = Delta(flat_dict_list=flat_expected3)
+        assert delta3.diff == delta3_again.diff
 
     def test_apply_delta_to_incompatible_object7_type_change(self):
         t1 = ['1']
@@ -1386,11 +1424,11 @@ class TestDeltaOther:
 
         diff = DeepDiff(t1, t2)
 
-        delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+        delta2 = Delta(diff, raise_errors=False, bidirectional=True)
         t4 = delta2 + t3
 
         assert [2] == t4
-        expected_msg = VERIFICATION_MSG.format('root[0]', 1, 3, VERIFY_SYMMETRY_MSG)
+        expected_msg = VERIFICATION_MSG.format('root[0]', 1, 3, VERIFY_BIDIRECTIONAL_MSG)
         mock_logger.assert_called_once_with(expected_msg)
 
     @mock.patch('deepdiff.delta.logger.error')
@@ -1401,7 +1439,7 @@ class TestDeltaOther:
 
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
 
-        delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+        delta2 = Delta(diff, raise_errors=False, bidirectional=True)
         t4 = delta2 + t3
 
         assert [5] == t4
@@ -1416,7 +1454,7 @@ class TestDeltaOther:
 
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
 
-        delta = Delta(diff, raise_errors=False, verify_symmetry=True)
+        delta = Delta(diff, raise_errors=False, bidirectional=True)
         t4 = delta + t3
 
         assert [1, 2, 'C'] == t4
@@ -1431,13 +1469,13 @@ class TestDeltaOther:
 
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
 
-        # when verify_symmetry=False, we still won't remove the item that is different
+        # when bidirectional=False, we still won't remove the item that is different
         # than what we expect specifically when ignore_order=True when generating the diff.
         # The reason is that when ignore_order=True, we can' rely too much on the index
         # of the item alone to delete it. We need to make sure we are deleting the correct value.
-        # The expected behavior is exactly the same as when verify_symmetry=True
+        # The expected behavior is exactly the same as when bidirectional=True
         # specifically for when ignore_order=True AND an item is removed.
-        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+        delta = Delta(diff, raise_errors=False, bidirectional=False)
         t4 = delta + t3
 
         assert [1, 2, 'C'] == t4
@@ -1451,7 +1489,7 @@ class TestDeltaOther:
         t3 = {}
 
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+        delta = Delta(diff, raise_errors=False, bidirectional=False)
         t4 = delta + t3
 
         assert {} == t4
@@ -1462,7 +1500,7 @@ class TestDeltaOther:
         t1 = [1, 2, 'B']
         t2 = [1, 2]
         diff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
-        delta = Delta(diff, raise_errors=False, verify_symmetry=False)
+        delta = Delta(diff, raise_errors=False, bidirectional=False)
 
         result = delta.to_dict()
         expected = {'iterable_items_removed_at_indexes': {'root': {2: 'B'}}}
@@ -1471,6 +1509,9 @@ class TestDeltaOther:
         flat_result = delta.to_flat_dicts()
         flat_expected = [{'action': 'iterable_item_removed', 'path': [2], 'value': 'B'}]
         assert flat_expected == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_expected)
+        assert delta.diff == delta_again.diff
 
     def test_class_type_change(self):
         t1 = CustomClass
@@ -1524,7 +1565,14 @@ class TestDeltaOther:
         flat_expected = [{'path': ['a'], 'action': 'type_changes', 'value': 1, 'type': int, 'old_type': type(None)}]
         assert flat_expected == flat_result
 
-        flat_result2 = delta.to_flat_dicts(report_type_changes=False)
+        delta_again = Delta(flat_dict_list=flat_expected)
+        assert delta.diff == delta_again.diff
+
+        with pytest.raises(ValueError) as exc_info:
+            delta.to_flat_dicts(report_type_changes=False)
+        assert str(exc_info.value).startswith("When converting to flat dictionaries, if report_type_changes=False and there are type")
+        delta2 = Delta(dump, always_include_values=True)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
         flat_expected2 = [{'path': ['a'], 'action': 'values_changed', 'value': 1}]
         assert flat_expected2 == flat_result2
 
@@ -1543,6 +1591,9 @@ class TestDeltaOther:
         # even though we are using OrderedSet here. It still is converted to set at some point and loses its order.
         flat_result.sort(key=lambda x: str(x['value']))
         assert flat_expected == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_expected)
+        assert delta.diff == delta_again.diff
 
     def test_delta_with_json_serializer(self):
         t1 = {"a": 1}
@@ -1655,6 +1706,45 @@ class TestDeltaCompareFunc:
             {'path': [3], 'action': 'iterable_item_moved', 'value': {'id': 3, 'val': 3}, 'new_path': [0]},
         ]
         assert flat_expected == flat_result
+
+        Delta.DEBUG = True
+        delta_again = Delta(flat_dict_list=flat_expected)
+        expected_delta_dict = {
+            'iterable_items_removed_at_indexes': {
+                'root': {
+                    2: {
+                        'id': 1,
+                        'val': 3
+                    },
+                    0: {
+                        'id': 1,
+                        'val': 3
+                    },
+                    3: {
+                        'id': 3,
+                        'val': 3
+                    }
+                }
+            },
+            'iterable_item_moved': {
+                'root[0]': {
+                    'new_path': 'root[2]',
+                    'value': {
+                        'id': 1,
+                        'val': 3
+                    }
+                },
+                'root[3]': {
+                    'new_path': 'root[0]',
+                    'value': {
+                        'id': 3,
+                        'val': 3
+                    }
+                }
+            }
+        }
+        assert expected_delta_dict == delta_again.diff
+        assert t2 == t1 + delta_again
 
     def test_compare_func_with_duplicates_added(self):
         t1 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
@@ -1809,92 +1899,161 @@ class TestDeltaCompareFunc:
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe Nobody"}, "field2": {"jimmy": "Jimmy"}}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
-        expected_result = [
+        flat_expected = [
             {'path': ['field2', 'jimmy'], 'value': 'Jimmy', 'action': 'dictionary_item_added'},
             {'path': ['field1', 'joe'], 'action': 'values_changed', 'value': 'Joe Nobody'},
         ]
-        assert expected_result == flat_result
+        assert flat_expected == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_expected, force=True)  # We need to enable force so it creates the dictionary when added to t1
+        expected_data_again_diff = {'dictionary_item_added': {"root['field2']['jimmy']": 'Jimmy'}, 'values_changed': {"root['field1']['joe']": {'new_value': 'Joe Nobody'}}}
+
+        assert delta.diff != delta_again.diff, "Since a dictionary containing a single field was created, the flat dict acted like one key was added."
+        assert expected_data_again_diff == delta_again.diff, "Since a dictionary containing a single field was created, the flat dict acted like one key was added."
+
+        assert t2 == t1 + delta_again
 
     def test_flatten_dict_with_multiple_keys_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe Nobody"}, "field2": {"jimmy": "Jimmy", "sar": "Sarah"}}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
-        expected_result = [
+        flat_expected = [
             {'path': ['field2'], 'value': {'jimmy': 'Jimmy', 'sar': 'Sarah'}, 'action': 'dictionary_item_added'},
             {'path': ['field1', 'joe'], 'action': 'values_changed', 'value': 'Joe Nobody'},
         ]
-        assert expected_result == flat_result
+        assert flat_expected == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_expected)
+        assert delta.diff == delta_again.diff
 
     def test_flatten_list_with_one_item_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe"}, "field2": ["James"]}
         t3 = {"field1": {"joe": "Joe"}, "field2": ["James", "Jack"]}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
-        expected_result = [{'path': ['field2', 0], 'value': 'James', 'action': 'iterable_item_added'}]
-        assert expected_result == flat_result
+        flat_expected = [{'path': ['field2', 0], 'value': 'James', 'action': 'iterable_item_added'}]
+        assert flat_expected == flat_result
 
-        diff = DeepDiff(t2, t3)
-        delta2 = Delta(diff=diff)
+        delta_again = Delta(flat_dict_list=flat_expected, force=True)
+        assert {'iterable_items_added_at_indexes': {"root['field2']": {0: 'James'}}} == delta_again.diff
+        assert t2 == t1 + delta_again
+
+        diff2 = DeepDiff(t2, t3)
+        delta2 = Delta(diff=diff2, always_include_values=True)
         flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
-        expected_result2 = [{'path': ['field2', 1], 'value': 'Jack', 'action': 'iterable_item_added'}]
-        assert expected_result2 == flat_result2
+        flat_expected2 = [{'path': ['field2', 1], 'value': 'Jack', 'action': 'iterable_item_added'}]
+        assert flat_expected2 == flat_result2
+
+        delta_again2 = Delta(flat_dict_list=flat_expected2, force=True)
+
+        assert {'iterable_items_added_at_indexes': {"root['field2']": {1: 'Jack'}}} == delta_again2.diff
+        assert t3 == t2 + delta_again2
 
     def test_flatten_set_with_one_item_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe"}, "field2": {"James"}}
         t3 = {"field1": {"joe": "Joe"}, "field2": {"James", "Jack"}}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
+        assert t2 == t1 + delta
         flat_result = delta.to_flat_dicts(report_type_changes=False)
-        expected_result = [{'path': ['field2'], 'value': 'James', 'action': 'set_item_added'}]
-        assert expected_result == flat_result
+        flat_expected = [{'path': ['field2'], 'value': 'James', 'action': 'set_item_added'}]
+        assert flat_expected == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_expected, force=True)
+        assert {'set_item_added': {"root['field2']": {'James'}}} == delta_again.diff
+        assert t2 == t1 + delta_again
 
         diff = DeepDiff(t2, t3)
-        delta2 = Delta(diff=diff)
+        delta2 = Delta(diff=diff, always_include_values=True)
         flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
-        expected_result2 = [{'path': ['field2'], 'value': 'Jack', 'action': 'set_item_added'}]
-        assert expected_result2 == flat_result2
+        flat_expected2 = [{'path': ['field2'], 'value': 'Jack', 'action': 'set_item_added'}]
+        assert flat_expected2 == flat_result2
+
+        delta_again2 = Delta(flat_dict_list=flat_expected2, force=True)
+        assert {'set_item_added': {"root['field2']": {'Jack'}}} == delta_again2.diff
+        assert t3 == t2 + delta_again2
 
     def test_flatten_tuple_with_one_item_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe"}, "field2": ("James", )}
         t3 = {"field1": {"joe": "Joe"}, "field2": ("James", "Jack")}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
-        flat_result = delta.to_flat_dicts(report_type_changes=False)
+        delta = Delta(diff=diff, always_include_values=True)
+        flat_expected = delta.to_flat_dicts(report_type_changes=False)
         expected_result = [{'path': ['field2', 0], 'value': 'James', 'action': 'iterable_item_added'}]
-        assert expected_result == flat_result
+        assert expected_result == flat_expected
+
+        delta_again = Delta(flat_dict_list=flat_expected)
+        assert {'iterable_items_added_at_indexes': {"root['field2']": {0: 'James'}}} == delta_again.diff
 
         diff = DeepDiff(t2, t3)
-        delta2 = Delta(diff=diff)
+        delta2 = Delta(diff=diff, always_include_values=True)
         flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
         expected_result2 = [{'path': ['field2', 1], 'value': 'Jack', 'action': 'iterable_item_added'}]
         assert expected_result2 == flat_result2
+
+        delta_again2 = Delta(flat_dict_list=flat_result2)
+        assert {'iterable_items_added_at_indexes': {"root['field2']": {1: 'Jack'}}} == delta_again2.diff
 
     def test_flatten_list_with_multiple_item_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe"}, "field2": ["James", "Jack"]}
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
         expected_result = [{'path': ['field2'], 'value': ['James', 'Jack'], 'action': 'dictionary_item_added'}]
         assert expected_result == flat_result
 
-        delta2 = Delta(diff=diff, verify_symmetry=True)
+        delta2 = Delta(diff=diff, bidirectional=True, always_include_values=True)
         flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
         assert expected_result == flat_result2
+
+        delta_again = Delta(flat_dict_list=flat_result)
+        assert delta.diff == delta_again.diff
 
     def test_flatten_attribute_added(self):
         t1 = picklalbe_obj_without_item
         t2 = PicklableClass(10)
         diff = DeepDiff(t1, t2)
-        delta = Delta(diff=diff)
+        delta = Delta(diff=diff, always_include_values=True)
         flat_result = delta.to_flat_dicts(report_type_changes=False)
         expected_result = [{'path': ['item'], 'value': 10, 'action': 'attribute_added'}]
         assert expected_result == flat_result
+
+        delta_again = Delta(flat_dict_list=flat_result)
+        assert delta.diff == delta_again.diff
+
+    def test_flatten_when_simple_type_change(self):
+        t1 = [1, 2, '3']
+        t2 = [1, 2, 3]
+
+        diff = DeepDiff(t1, t2)
+        expected_diff = {
+            'type_changes': {'root[2]': {'old_type': str, 'new_type': int, 'old_value': '3', 'new_value': 3}}
+        }
+
+        assert expected_diff == diff
+        delta = Delta(diff=diff)
+        with pytest.raises(ValueError) as exc_info:
+            delta.to_flat_dicts(report_type_changes=False)
+        assert str(exc_info.value).startswith("When converting to flat dictionaries")
+
+        delta2 = Delta(diff=diff, always_include_values=True)
+        flat_result2 = delta2.to_flat_dicts(report_type_changes=False)
+        expected_result2 = [{'path': [2], 'action': 'values_changed', 'value': 3}]
+        assert expected_result2 == flat_result2
+
+        delta3 = Delta(diff=diff, always_include_values=True, bidirectional=True)
+        flat_result3 = delta3.to_flat_dicts(report_type_changes=False)
+        expected_result3 = [{'path': [2], 'action': 'values_changed', 'value': 3, 'old_value': '3'}]
+        assert expected_result3 == flat_result3
+
+        delta_again = Delta(flat_dict_list=flat_result3)
+        assert {'values_changed': {'root[2]': {'new_value': 3, 'old_value': '3'}}} == delta_again.diff

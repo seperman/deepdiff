@@ -148,5 +148,22 @@ Example 2:
       {'action': 'iterable_item_added', 'path': [3], 'value': 'D'}]
 
 
+.. _delta_from_flat_dicts_label:
+
+Delta Load From Flat Dictionaries
+------------------------------------
+
+    >>> from deepdiff import DeepDiff, Delta
+    >>> t3 = ["A", "B"]
+    >>> t4 = ["A", "B", "C", "D"]
+    >>> diff = DeepDiff(t3, t4, verbose_level=2)
+    >>> delta = Delta(diff, verify_symmetry=True)
+    DeepDiff Deprecation: use bidirectional instead of verify_symmetry parameter.
+    >>> flat_dicts = delta.to_flat_dicts()
+    >>>
+    >>> delta2 = Delta(flat_dict_list=flat_dicts)
+    >>> t3 + delta == t4
+    True
+
 
 Back to :doc:`/index`

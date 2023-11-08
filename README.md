@@ -1,4 +1,4 @@
-# DeepDiff v 6.6.1
+# DeepDiff v 6.7.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,34 +17,25 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.6.1/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.7.0/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff v6-7-0
+
+- Delta can be subtracted from other objects now.
+- verify_symmetry is deprecated. Use bidirectional instead.
+- always_include_values flag in Delta can be enabled to include values in the delta for every change.
+- Fix for Delta.__add__ breaks with esoteric dict keys.
+- You can load a delta from the list of flat dictionaries.
+
 DeepDiff 6-6-1
+
 - Fix for [DeepDiff raises decimal exception when using significant digits](https://github.com/seperman/deepdiff/issues/426)
 - Introducing group_by_sort_key
 - Adding group_by 2D. For example `group_by=['last_name', 'zip_code']`
-
-
-DeepDiff 6-6-0
-
-- [Serialize To Flat Dicts](https://zepworks.com/deepdiff/current/serialization.html#delta-to-flat-dicts-label)
-- [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422) by [William Jamieson](https://github.com/WilliamJamieson)
-
-DeepDiff 6-5-0
-
-- [parse_path](https://zepworks.com/deepdiff/current/faq.html#q-how-do-i-parse-deepdiff-result-paths)
-
-DeepDiff 6-4-1
-
-- [Add Ignore List Order Option to DeepHash](https://github.com/seperman/deepdiff/pull/403) by 
-[Bobby Morck](https://github.com/bmorck)
-- [pyyaml to 6.0.1 to fix cython build problems](https://github.com/seperman/deepdiff/pull/406) by [Robert Bo Davis](https://github.com/robert-bo-davis)
-- [Precompiled regex simple diff](https://github.com/seperman/deepdiff/pull/413) by [cohml](https://github.com/cohml)
-- New flag: `zip_ordered_iterables` for forcing iterable items to be compared one by one. 
 
 
 ## Installation
@@ -107,11 +98,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.6.1) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.7.0) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.6.1).
+    Dehpour, Sep. 2023. DeepDiff (version 6.7.0).
 
 # Authors
 

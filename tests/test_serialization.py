@@ -321,6 +321,8 @@ class TestDeepDiffPretty:
         (3, {'10': Decimal(2017)}, None),
         (4, Decimal(2017.1), None),
         (5, {1, 2, 10}, set),
+        (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
+        (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)

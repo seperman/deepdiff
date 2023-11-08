@@ -21,10 +21,17 @@ def _add_to_elements(elements, elem, inside):
     if not elem:
         return
     if not elem.startswith('__'):
-        try:
-            elem = literal_eval(elem)
-        except (ValueError, SyntaxError):
-            pass
+        remove_quotes = False
+        if '\\' in elem:
+            remove_quotes = True
+        else:
+            try:
+                elem = literal_eval(elem)
+                remove_quotes = False
+            except (ValueError, SyntaxError):
+                remove_quotes = True
+        if remove_quotes and elem[0] == elem[-1] and elem[0] in {'"', "'"}:
+            elem = elem[1: -1]
         action = GETATTR if inside == '.' else GET
         elements.append((elem, action))
 
@@ -53,15 +60,21 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     path = path[4:]  # removing "root from the beginning"
     brackets = []
     inside_quotes = False
+    quote_used = ''
     for char in path:
         if prev_char == '\\':
             elem += char
         elif char in {'"', "'"}:
             elem += char
-            inside_quotes = not inside_quotes
-            if not inside_quotes:
-                _add_to_elements(elements, elem, inside)
-                elem = ''
+            # If we are inside and the quote is not what we expected, the quote is not closing
+            if not(inside_quotes and quote_used != char):
+                inside_quotes = not inside_quotes
+                if inside_quotes:
+                    quote_used = char
+                else:
+                    _add_to_elements(elements, elem, inside)
+                    elem = ''
+                    quote_used = ''
         elif inside_quotes:
             elem += char
         elif char == '[':
@@ -223,3 +236,51 @@ def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
     if include_actions is False:
         return [i[0] for i in result]
     return [{'element': i[0], 'action': i[1]} for i in result]
+
+
+def stringify_element(param, quote_str=None):
+    has_quote = "'" in param
+    has_double_quote = '"' in param
+    if has_quote and has_double_quote:
+        new_param = []
+        for char in param:
+            if char in {'"', "'"}:
+                new_param.append('\\')
+            new_param.append(char)
+        param = ''.join(new_param)
+    elif has_quote:
+        result = f'"{param}"'
+    elif has_double_quote:
+        result = f"'{param}'"
+    else:
+        result = param if quote_str is None else quote_str.format(param)
+    return result
+
+
+def stringify_path(path, root_element=DEFAULT_FIRST_ELEMENT, quote_str="'{}'"):
+    """
+    Gets the path as an string.
+
+    For example [1, 2, 'age'] should become
+    root[1][2]['age']
+    """
+    if not path:
+        return root_element[0]
+    result = [root_element[0]]
+    has_actions = False
+    try:
+        if path[0][1] in {GET, GETATTR}:
+            has_actions = True
+    except (KeyError, IndexError, TypeError):
+        pass
+    if not has_actions:
+        path = [(i, GET) for i in path]
+        path[0] = (path[0][0], root_element[1])  # The action for the first element might be a GET or GETATTR. We update the action based on the root_element.
+    for element, action in path:
+        if isinstance(element, str) and action == GET:
+            element = stringify_element(element, quote_str)
+        if action == GET:
+            result.append(f"[{element}]")
+        else:
+            result.append(f".{element}")
+    return ''.join(result)

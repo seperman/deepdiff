@@ -21,6 +21,9 @@ delta_path : String, default=None.
 delta_file : File Object, default=None.
     :ref:`delta_file_label` is the file object containing the delta data.
 
+flat_dict_list : List of flat dictionaries, default=None,
+    :ref:`flat_dict_list_label` can be used to load the delta object from a list of flat dictionaries.
+
 .. note::
     You need to pass only one of the diff, delta_path, or delta_file parameters.
 
@@ -52,8 +55,15 @@ safe_to_import : Set, default=None.
     Note that this set will be added to the basic set of modules that are already white listed.
     The set of what is already white listed can be found in deepdiff.serialization.SAFE_TO_IMPORT
 
-verify_symmetry : Boolean, default=False
-    :ref:`delta_verify_symmetry_label` is used to verify that the original value of items are the same as when the delta was created. Note that in order for this option to work, the delta object will need to store more data and thus the size of the object will increase. Let's say that the diff object says root[0] changed value from X to Y. If you create the delta with the default value of verify_symmetry=False, then what delta will store is root[0] = Y. And if this delta was applied to an object that has any root[0] value, it will still set the root[0] to Y. However if verify_symmetry=True, then the delta object will store also that the original value of root[0] was X and if you try to apply the delta to an object that has root[0] of any value other than X, it will notify you.
+bidirectional : Boolean, default=False
+    :ref:`delta_verify_symmetry_label` is used to verify that the original value of items are the same as when the delta was created. Note that in order for this option to work, the delta object will need to store more data and thus the size of the object will increase. Let's say that the diff object says root[0] changed value from X to Y. If you create the delta with the default value of bidirectional=False, then what delta will store is root[0] = Y. And if this delta was applied to an object that has any root[0] value, it will still set the root[0] to Y. However if bidirectional=True, then the delta object will store also that the original value of root[0] was X and if you try to apply the delta to an object that has root[0] of any value other than X, it will notify you.
+
+force : Boolean, default=False
+    :ref:`delta_force_label` is used to force apply a delta to objects that have a different structure than what the delta was originally created from.
+
+always_include_values : Boolean, default=False
+    :ref:`always_include_values_label` is used to make sure the delta objects includes the values that were changed. Sometime Delta tries to be efficient not include the values when it can get away with it. By setting this parameter to True, you ensure that the Delta object will include the values.
+
 
 **Returns**
 
@@ -101,6 +111,14 @@ Applying the delta object to t1 will yield t2:
 >>> t1 + delta
 ['a', 2, 3, 4]
 >>> t1 + delta == t2
+True
+
+If we want to subtract a delta, we need to create a bidirectional delta:
+
+>>> delta = Delta(diff, bidirectional=True)
+>>> t2 - delta
+[1, 2, 3]
+>>> t2 - delta == t1
 True
 
 Now let's dump the delta object so we can store it.
@@ -152,6 +170,14 @@ You can also pass a file object containing the delta dump:
 True
 
 
+.. _flat_dict_list_label:
+
+Flat Dict List
+--------------
+
+You can create a delta object from the list of flat dictionaries that are produced via :ref:`to_flat_dicts_label`. Read more on :ref:`delta_from_flat_dicts_label`.
+
+
 .. _delta_deserializer_label:
 
 Delta Deserializer
@@ -177,7 +203,7 @@ If all you deal with are Json serializable objects, you can use json for seriali
 >>> delta = Delta(diff, serializer=json_dumps)
 >>> dump = delta.dumps()
 >>> dump
-'{"values_changed": {"root[\'a\']": {"new_value": 2}}}'
+'{"values_changed":{"root[\'a\']":{"new_value": 2}}}'
 >>> delta_reloaded = Delta(dump, deserializer=json_loads)
 >>> t2 == delta_reloaded + t1
 True
@@ -187,6 +213,7 @@ True
 
     Json is very limited and easily you can get to deltas that are not json serializable. You will probably want to extend the Python's Json serializer to support your needs.
 
+    >>> import json
     >>> t1 = {"a": 1}
     >>> t2 = {"a": None}
     >>> diff = DeepDiff(t1, t2)
@@ -209,7 +236,7 @@ Delta Serializer
 DeepDiff uses pickle to serialize delta objects by default. Please take a look at the :ref:`delta_deserializer_label` for more information.
 
 
-.. _to_flat_dicts:
+.. _to_flat_dicts_label:
 
 Delta Serialize To Flat Dictionaries
 ------------------------------------
@@ -384,13 +411,15 @@ At the time of writing this document, this list consists of:
  'builtins.slice',
  'builtins.str',
  'builtins.tuple',
+ 'collections.OrderedDict',
  'collections.namedtuple',
  'datetime.datetime',
  'datetime.time',
  'datetime.timedelta',
  'decimal.Decimal',
  'ordered_set.OrderedSet',
- 're.Pattern'}
+ 're.Pattern',
+ 'uuid.UUID'}
 
 If you want to pass any other argument to safe_to_import, you will need to put the full path to the type as it appears in the sys.modules
 
@@ -421,9 +450,10 @@ In order to let Delta know that this specific module is safe to import, you will
 Delta Verify Symmetry parameter
 -------------------------------
 
-verify_symmetry : Boolean, default=False
-    verify_symmetry is used to verify that the original value of items are the same as when the delta was created. Note that in order for this option to work, the delta object will need to store more data and thus the size of the object will increase. Let's say that the diff object says root[0] changed value from X to Y. If you create the delta with the default value of verify_symmetry=False, then what delta will store is root[0] = Y. And if this delta was applied to an object that has any root[0] value, it will still set the root[0] to Y. However if verify_symmetry=True, then the delta object will store also that the original value of root[0] was X and if you try to apply the delta to an object that has root[0] of any value other than X, it will notify you.
+bidirectional : Boolean, default=False
+    bidirectional is used to to include all the required information so that we can use the delta object both for addition and subtraction. It will also check that the object you are adding the delta to, has the same values as the original object that the delta was created from.
 
+    It complains if the object is not what it expected to be.
 
 
 >>> from deepdiff import DeepDiff, Delta
@@ -433,7 +463,7 @@ verify_symmetry : Boolean, default=False
 >>>
 >>> diff = DeepDiff(t1, t2)
 >>>
->>> delta2 = Delta(diff, raise_errors=False, verify_symmetry=True)
+>>> delta2 = Delta(diff, raise_errors=False, bidirectional=True)
 >>> t4 = delta2 + t3
 Expected the old value for root[0] to be 1 but it is 3. Error found on: while checking the symmetry of the delta. You have applied the delta to an object that has different values than the original object the delta was made from
 >>> t4
@@ -448,7 +478,7 @@ Delta Force
 -----------
 
 force : Boolean, default=False
-    force is used to force apply a delta to objects that have a very different structure.
+    force is used to force apply a delta to objects that have a different structure than what the delta was originally created from.
 
 
 >>> from deepdiff import DeepDiff, Delta
@@ -487,3 +517,35 @@ Once we set the force to be True
 {'x': {'y': {3: 4}}, 'q': {'t': 0.5}}
 
 Notice that the force attribute does not know the original object at ['x']['y'] was supposed to be a list, so it assumes it was a dictionary.
+
+
+.. _always_include_values_label:
+
+Always Include Values
+---------------------
+
+always_include_values is used to make sure the delta objects includes the values that were changed. Sometime Delta tries to be efficient not include the values when it can get away with it. By setting this parameter to True, you ensure that the Delta object will include the values.
+
+For example, when the type of an object changes, if we can easily convert from one type to the other, the Delta object does not include the values:
+
+
+>>> from deepdiff import DeepDiff, Delta
+>>> diff = DeepDiff(t1=[1, 2], t2=[1, '2'])
+>>> diff
+{'type_changes': {'root[1]': {'old_type': <class 'int'>, 'new_type': <class 'str'>, 'old_value': 2, 'new_value': '2'}}}
+>>> delta=Delta(diff)
+>>> delta
+<Delta: {'type_changes': {'root[1]': {'old_type': <class 'int'>, 'new_type': <class 'str'>}}}>
+
+As you can see the delta object does not include the values that were changed. Now let's pass always_include_values=True:
+
+>>> delta=Delta(diff, always_include_values=True)
+>>> delta.diff
+{'type_changes': {'root[1]': {'old_type': <class 'int'>, 'new_type': <class 'str'>, 'new_value': '2'}}}
+
+If we want to make sure the old values stay with delta, we pass bidirectional=True. By doing so we can also use the delta object to subtract from other objects. 
+
+>>> delta=Delta(diff, always_include_values=True, bidirectional=True)
+>>> delta.diff
+{'type_changes': {'root[1]': {'old_type': <class 'int'>, 'new_type': <class 'str'>, 'old_value': 2, 'new_value': '2'}}}
+

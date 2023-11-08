@@ -297,6 +297,17 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_diff_quote_in_string(self):
+        t1 = {
+            "a']['b']['c": 1
+        }
+        t2 = {
+            "a']['b']['c": 2
+        }
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {'''root["a']['b']['c"]''': {'new_value': 2, 'old_value': 1}}}
+        assert expected == diff
+
     def test_bytes(self):
         t1 = {
             1: 1,

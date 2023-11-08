@@ -5,6 +5,7 @@ from ordered_set import OrderedSet
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_)
+from deepdiff.path import stringify_element
 
 logger = logging.getLogger(__name__)
 
@@ -278,8 +279,9 @@ class TextResult(ResultDict):
 class DeltaResult(TextResult):
     ADD_QUOTES_TO_STRINGS = False
 
-    def __init__(self, tree_results=None, ignore_order=None):
+    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False):
         self.ignore_order = ignore_order
+        self.always_include_values = always_include_values
 
         self.update({
             "type_changes": dict_(),
@@ -374,7 +376,7 @@ class DeltaResult(TextResult):
                 })
                 self['type_changes'][change.path(
                     force=FORCE_DEFAULT)] = remap_dict
-                if include_values:
+                if include_values or self.always_include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
@@ -874,7 +876,7 @@ class ChildRelationship:
         """
         param = self.param
         if isinstance(param, strings):
-            result = param if self.quote_str is None else self.quote_str.format(param)
+            result = stringify_element(param, quote_str=self.quote_str)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
         else:
