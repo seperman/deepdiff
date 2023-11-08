@@ -1,5 +1,11 @@
 # DeepDiff Change log
 
+- v6-7-0
+    - Delta can be subtracted from other objects now.
+    - verify_symmetry is deprecated. Use bidirectional instead.
+    - always_include_values flag in Delta can be enabled to include values in the delta for every change.
+    - Fix for Delta.__add__ breaks with esoteric dict keys.
+    - You can load a delta from the list of flat dictionaries.
 - v6-6-1
     - Fix for [DeepDiff raises decimal exception when using significant digits](https://github.com/seperman/deepdiff/issues/426)
     - Introducing group_by_sort_key

@@ -279,8 +279,9 @@ class TextResult(ResultDict):
 class DeltaResult(TextResult):
     ADD_QUOTES_TO_STRINGS = False
 
-    def __init__(self, tree_results=None, ignore_order=None):
+    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False):
         self.ignore_order = ignore_order
+        self.always_include_values = always_include_values
 
         self.update({
             "type_changes": dict_(),
@@ -375,7 +376,7 @@ class DeltaResult(TextResult):
                 })
                 self['type_changes'][change.path(
                     force=FORCE_DEFAULT)] = remap_dict
-                if include_values:
+                if include_values or self.always_include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):

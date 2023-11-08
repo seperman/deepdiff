@@ -31,6 +31,18 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+
+DeepDiff 6-7-0
+--------------
+
+    -  Delta can be subtracted from other objects now.
+    -  verify_symmetry is deprecated. Use bidirectional instead.
+    -  :ref:`always_include_values_label` flag in Delta can be enabled to include
+       values in the delta for every change.
+    -  Fix for Delta.\__add\_\_ breaks with esoteric dict keys.
+    -  :ref:`delta_from_flat_dicts_label` can be used to load a delta from the list of flat dictionaries.
+
+
 DeepDiff 6-6-1
 --------------
 
@@ -45,26 +57,6 @@ DeepDiff 6-6-0
     
     - :ref:`delta_to_flat_dicts_label` can be used to serialize delta objects into a flat list of dictionaries.
     - `NumPy 2.0 compatibility <https://github.com/seperman/deepdiff/pull/422>`__ by `William Jamieson <https://github.com/WilliamJamieson>`__
-
-DeepDiff 6-5-0
---------------
-
-    -  `parse_path <https://zepworks.com/deepdiff/current/faq.html#q-how-do-i-parse-deepdiff-result-paths>`__
-
-DeepDiff 6-4-0
---------------
-
-   -  `Add Ignore List Order Option to
-      DeepHash <https://github.com/seperman/deepdiff/pull/403>`__ by
-      `Bobby Morck <https://github.com/bmorck>`__
-   -  `pyyaml to 6.0.1 to fix cython build
-      problems <https://github.com/seperman/deepdiff/pull/406>`__ by
-      `Robert Bo Davis <https://github.com/robert-bo-davis>`__
-   -  `Precompiled regex simple
-      diff <https://github.com/seperman/deepdiff/pull/413>`__ by
-      `cohml <https://github.com/cohml>`__
-   -  New flag: ``zip_ordered_iterables`` for forcing iterable items to
-      be compared one by one.
 
 
 *********

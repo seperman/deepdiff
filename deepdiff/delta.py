@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}'
 ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
-VERIFY_SYMMETRY_MSG = ('while checking the symmetry of the delta. You have applied the delta to an object that has '
-                       'different values than the original object the delta was made from')
+VERIFY_BIDIRECTIONAL_MSG = ('You have applied the delta to an object that has '
+                            'different values than the original object the delta was made from.')
 FAIL_TO_REMOVE_ITEM_IGNORE_ORDER_MSG = 'Failed to remove index[{}] on {}. It was expected to be {} but got {}'
 DELTA_NUMPY_OPERATOR_OVERRIDE_MSG = (
     'A numpy ndarray is most likely being added to a delta. '
@@ -78,7 +78,9 @@ class Delta:
         raise_errors=False,
         safe_to_import=None,
         serializer=pickle_dump,
-        verify_symmetry=False,
+        verify_symmetry=None,
+        bidirectional=False,
+        always_include_values=False,
         force=False,
     ):
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
@@ -89,9 +91,21 @@ class Delta:
 
         self._reversed_diff = None
 
+        if verify_symmetry is not None:
+            logger.warning(
+                "DeepDiff Deprecation: use bidirectional instead of verify_symmetry parameter."
+            )
+            bidirectional = verify_symmetry
+
+        self.bidirectional = bidirectional
+        if bidirectional:
+            self.always_include_values = True  # We need to include the values in bidirectional deltas
+        else:
+            self.always_include_values = always_include_values
+
         if diff is not None:
             if isinstance(diff, DeepDiff):
-                self.diff = diff._to_delta_dict(directed=not verify_symmetry)
+                self.diff = diff._to_delta_dict(directed=not bidirectional, always_include_values=self.always_include_values)
             elif isinstance(diff, Mapping):
                 self.diff = diff
             elif isinstance(diff, strings):
@@ -112,7 +126,6 @@ class Delta:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
         self.mutate = mutate
-        self.verify_symmetry = verify_symmetry
         self.raise_errors = raise_errors
         self.log_errors = log_errors
         self._numpy_paths = self.diff.pop('_numpy_paths', False)
@@ -162,6 +175,14 @@ class Delta:
 
     __radd__ = __add__
 
+    def __rsub__(self, other):
+        if self._reversed_diff is None:
+            self._reversed_diff = self._get_reverse_diff()
+        self.diff, self._reversed_diff = self._reversed_diff, self.diff
+        result = self.__add__(other)
+        self.diff, self._reversed_diff = self._reversed_diff, self.diff
+        return result
+
     def _raise_or_log(self, msg, level='error'):
         if self.log_errors:
             getattr(logger, level)(msg)
@@ -169,9 +190,13 @@ class Delta:
             raise DeltaError(msg)
 
     def _do_verify_changes(self, path, expected_old_value, current_old_value):
-        if self.verify_symmetry and expected_old_value != current_old_value:
+        if self.bidirectional and expected_old_value != current_old_value:
+            if isinstance(path, str):
+                path_str = path
+            else:
+                path_str = stringify_path(path, root_element=('', GETATTR))
             self._raise_or_log(VERIFICATION_MSG.format(
-                path, expected_old_value, current_old_value, VERIFY_SYMMETRY_MSG))
+                path_str, expected_old_value, current_old_value, VERIFY_BIDIRECTIONAL_MSG))
 
     def _get_elem_and_compare_to_old_value(self, obj, path_for_err_reporting, expected_old_value, elem=None, action=None, forced_old_value=None):
         try:
@@ -192,7 +217,7 @@ class Delta:
             current_old_value = not_found
             if isinstance(path_for_err_reporting, (list, tuple)):
                 path_for_err_reporting = '.'.join([i[0] for i in path_for_err_reporting])
-            if self.verify_symmetry:
+            if self.bidirectional:
                 self._raise_or_log(VERIFICATION_MSG.format(
                     path_for_err_reporting,
                     expected_old_value, current_old_value, e))
@@ -357,7 +382,9 @@ class Delta:
 
     def _do_post_process(self):
         if self.post_process_paths_to_convert:
-            self._do_values_or_type_changed(self.post_process_paths_to_convert, is_type_change=True)
+            # Example: We had converted some object to be mutable and now we are converting them back to be immutable.
+            # We don't need to check the change because it is not really a change that was part of the original diff.
+            self._do_values_or_type_changed(self.post_process_paths_to_convert, is_type_change=True, verify_changes=False)
 
     def _do_pre_process(self):
         if self._numpy_paths and ('iterable_item_added' in self.diff or 'iterable_item_removed' in self.diff):
@@ -394,7 +421,7 @@ class Delta:
                 return None
             return elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action
 
-    def _do_values_or_type_changed(self, changes, is_type_change=False):
+    def _do_values_or_type_changed(self, changes, is_type_change=False, verify_changes=True):
         for path, value in changes.items():
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
@@ -409,7 +436,7 @@ class Delta:
                 continue  # pragma: no cover. I have not been able to write a test for this case. But we should still check for it.
             # With type change if we could have originally converted the type from old_value
             # to new_value just by applying the class of the new_value, then we might not include the new_value
-            # in the delta dictionary.
+            # in the delta dictionary. That is defined in Model.DeltaResult._from_tree_type_changes
             if is_type_change and 'new_value' not in value:
                 try:
                     new_type = value['new_type']
@@ -427,7 +454,8 @@ class Delta:
             self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
                                 obj, elements, path, elem, action, new_value)
 
-            self._do_verify_changes(path, expected_old_value, current_old_value)
+            if verify_changes:
+                self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_item_removed(self, items):
         """
@@ -580,8 +608,50 @@ class Delta:
             self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                         value=new_obj, action=parent_to_obj_action)
 
-    def _reverse_diff(self):
-        pass
+    def _get_reverse_diff(self):
+        if not self.bidirectional:
+            raise ValueError('Please recreate the delta with bidirectional=True')
+
+        SIMPLE_ACTION_TO_REVERSE = {
+            'iterable_item_added': 'iterable_item_removed',
+            'iterable_items_added_at_indexes': 'iterable_items_removed_at_indexes',
+            'attribute_added': 'attribute_removed',
+            'set_item_added': 'set_item_removed',
+            'dictionary_item_added': 'dictionary_item_removed',
+        }
+        # Adding the reverse of the dictionary
+        for key in list(SIMPLE_ACTION_TO_REVERSE.keys()):
+            SIMPLE_ACTION_TO_REVERSE[SIMPLE_ACTION_TO_REVERSE[key]] = key
+
+        r_diff = {}
+        for action, info in self.diff.items():
+            reverse_action = SIMPLE_ACTION_TO_REVERSE.get(action)
+            if reverse_action:
+                r_diff[reverse_action] = info
+            elif action == 'values_changed':
+                r_diff[action] = {}
+                for path, path_info in info.items():
+                    r_diff[action][path] = {
+                        'new_value': path_info['old_value'], 'old_value': path_info['new_value']
+                    } 
+            elif action == 'type_changes':
+                r_diff[action] = {}
+                for path, path_info in info.items():
+                    r_diff[action][path] = {
+                        'old_type': path_info['new_type'], 'new_type': path_info['old_type'],
+                    }
+                    if 'new_value' in path_info:
+                        r_diff[action][path]['old_value'] = path_info['new_value']
+                    if 'old_value' in path_info:
+                        r_diff[action][path]['new_value'] = path_info['old_value']
+            elif action == 'iterable_item_moved':
+                r_diff[action] = {}
+                for path, path_info in info.items():
+                    old_path = path_info['new_path']
+                    r_diff[action][old_path] = {
+                        'new_path': path, 'value': path_info['value'],
+                    }
+        return r_diff
 
     def dump(self, file):
         """
@@ -735,6 +805,7 @@ class Delta:
         Here are the list of actions that the flat dictionary can return.
             iterable_item_added
             iterable_item_removed
+            iterable_item_moved
             values_changed
             type_changes
             set_item_added
@@ -758,15 +829,18 @@ class Delta:
                 ('old_type', 'old_type', None),
                 ('new_path', 'new_path', _parse_path),
             ]
-            action_mapping = {}
         else:
+            if not self.always_include_values:
+                raise ValueError(
+                    "When converting to flat dictionaries, if report_type_changes=False and there are type changes, "
+                    "you must set the always_include_values=True at the delta object creation. Otherwise there is nothing to include."
+                )
             keys_and_funcs = [
                 ('value', 'value', None),
                 ('new_value', 'value', None),
                 ('old_value', 'old_value', None),
                 ('new_path', 'new_path', _parse_path),
             ]
-            action_mapping = {'type_changes': 'values_changed'}
 
         FLATTENING_NEW_ACTION_MAP = {
             'iterable_items_added_at_indexes': 'iterable_item_added',
@@ -819,9 +893,20 @@ class Delta:
                     result.append(
                         {'path': path, 'value': value, 'action': action}
                     )
+            elif action == 'type_changes':
+                if not report_type_changes:
+                    action = 'values_changed'
+
+                for row in self._get_flat_row(
+                    action=action,
+                    info=info,
+                    _parse_path=_parse_path,
+                    keys_and_funcs=keys_and_funcs,
+                ):
+                    result.append(row)
             else:
                 for row in self._get_flat_row(
-                    action=action_mapping.get(action, action),
+                    action=action,
                     info=info,
                     _parse_path=_parse_path,
                     keys_and_funcs=keys_and_funcs,

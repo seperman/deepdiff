@@ -5,6 +5,14 @@ Changelog
 
 DeepDiff Changelog
 
+-  v6-7-0
+
+   -  Delta can be subtracted from other objects now.
+   -  verify_symmetry is deprecated. Use bidirectional instead.
+   -  always_include_values flag in Delta can be enabled to include
+      values in the delta for every change.
+   -  Fix for Delta.\__add\_\_ breaks with esoteric dict keys.
+
 -  v6-6-1
 
     -  Fix for `DeepDiff raises decimal exception when using significant

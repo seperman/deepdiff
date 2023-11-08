@@ -493,9 +493,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif self.include_obj_callback_strict and level_path != 'root':
             skip = True
             if (self.include_obj_callback_strict(level.t1, level_path) and
-                self.include_obj_callback_strict(level.t2, level_path)):
+                    self.include_obj_callback_strict(level.t2, level_path)):
                 skip = False
-
 
         return skip
 

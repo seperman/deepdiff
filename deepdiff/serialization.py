@@ -215,7 +215,7 @@ class SerializationMixin:
         view = view_override if view_override else self.view
         return dict(self._get_view_results(view))
 
-    def _to_delta_dict(self, directed=True, report_repetition_required=True):
+    def _to_delta_dict(self, directed=True, report_repetition_required=True, always_include_values=False):
         """
         Dump to a dictionary suitable for delta usage.
         Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
@@ -241,7 +241,7 @@ class SerializationMixin:
         if self.group_by is not None:
             raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
 
-        result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order)
+        result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order, always_include_values=always_include_values)
         result.remove_empty_keys()
         if report_repetition_required and self.ignore_order and not self.report_repetition:
             raise ValueError(DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT)
