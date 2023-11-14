@@ -256,6 +256,9 @@ class SerializationMixin:
             # and will be omitted when counting distance. (Look inside the distance module.)
             result['_numpy_paths'] = self._numpy_paths
 
+        if self.iterable_compare_func:
+            result['_iterable_compare_func_was_used'] = True
+
         return deepcopy(dict(result))
 
     def pretty(self):

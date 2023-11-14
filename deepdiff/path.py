@@ -22,7 +22,7 @@ def _add_to_elements(elements, elem, inside):
         return
     if not elem.startswith('__'):
         remove_quotes = False
-        if '\\' in elem:
+        if '𝆺𝅥𝅯' in elem or '\\' in elem:
             remove_quotes = True
         else:
             try:
@@ -62,7 +62,7 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     inside_quotes = False
     quote_used = ''
     for char in path:
-        if prev_char == '\\':
+        if prev_char == '𝆺𝅥𝅯':
             elem += char
         elif char in {'"', "'"}:
             elem += char
@@ -115,7 +115,7 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     return tuple(elements)
 
 
-def _get_nested_obj(obj, elements):
+def _get_nested_obj(obj, elements, next_element=None):
     for (elem, action) in elements:
         if action == GET:
             obj = obj[elem]
@@ -124,21 +124,50 @@ def _get_nested_obj(obj, elements):
     return obj
 
 
-def _get_nested_obj_and_force(obj, elements):
-    for (elem, action) in elements:
+def _guess_type(elements, elem, index, next_element):
+    # If we are not at the last elements
+    if index < len(elements) - 1:
+        # We assume it is a nested dictionary not a nested list
+        return {}
+    if isinstance(next_element, int):
+        return []
+    return {}
+
+
+def _get_nested_obj_and_force(obj, elements, next_element=None):
+    prev_elem = None
+    prev_action = None
+    prev_obj = obj
+    for index, (elem, action) in enumerate(elements):
+        _prev_obj = obj
         if action == GET:
             try:
                 obj = obj[elem]
+                prev_obj = _prev_obj
             except KeyError:
-                obj[elem] = {}
+                obj[elem] = _guess_type(elements, elem, index, next_element)
                 obj = obj[elem]
+                prev_obj = _prev_obj
             except IndexError:
                 if isinstance(obj, list) and isinstance(elem, int) and elem >= len(obj):
                     obj.extend([None] * (elem - len(obj)))
-                    obj.append({})
+                    obj.append(_guess_type(elements, elem, index), next_element)
                     obj = obj[-1]
+                    prev_obj = _prev_obj
+                elif isinstance(obj, list) and len(obj) == 0 and prev_elem:
+                    # We ran into an empty list that should have been a dictionary
+                    # We need to change it from an empty list to a dictionary
+                    obj = {elem: _guess_type(elements, elem, index, next_element)}
+                    if prev_action == GET:
+                        prev_obj[prev_elem] = obj
+                    else:
+                        setattr(prev_obj, prev_elem, obj)
+                    obj = obj[elem]
         elif action == GETATTR:
             obj = getattr(obj, elem)
+            prev_obj = _prev_obj
+        prev_elem = elem
+        prev_action = action
     return obj
 
 
@@ -241,13 +270,13 @@ def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
 def stringify_element(param, quote_str=None):
     has_quote = "'" in param
     has_double_quote = '"' in param
-    if has_quote and has_double_quote:
+    if has_quote and has_double_quote and not quote_str:
         new_param = []
         for char in param:
             if char in {'"', "'"}:
-                new_param.append('\\')
+                new_param.append('𝆺𝅥𝅯')
             new_param.append(char)
-        param = ''.join(new_param)
+        result = '"' + ''.join(new_param) + '"'
     elif has_quote:
         result = f'"{param}"'
     elif has_double_quote:

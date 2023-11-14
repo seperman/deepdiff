@@ -21,6 +21,10 @@ delta_path : String, default=None.
 delta_file : File Object, default=None.
     :ref:`delta_file_label` is the file object containing the delta data.
 
+delta_diff : Delta diff, default=None.
+    This is a slightly different diff than the output of DeepDiff. When Delta object is initiated from the DeepDiff output, it transforms the diff into a slightly different structure that is more suitable for delta. You can find that object via delta.diff.
+    It is the same object that is serialized when you create a delta dump. If you already have the delta_diff object, you can pass it to Delta via the delta_diff parameter.
+
 flat_dict_list : List of flat dictionaries, default=None,
     :ref:`flat_dict_list_label` can be used to load the delta object from a list of flat dictionaries.
 

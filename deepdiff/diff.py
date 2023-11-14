@@ -231,7 +231,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
             self.math_epsilon = math_epsilon
             if self.math_epsilon is not None and self.ignore_order:
-                logger.warning("math_epsilon will be ignored. It cannot be used when ignore_order is True.")
+                logger.warning("math_epsilon in conjunction with ignore_order=True is only used for flat object comparisons. Custom math_epsilon will not have an effect when comparing nested objects.")
             self.truncate_datetime = get_truncate_datetime(truncate_datetime)
             self.number_format_notation = number_format_notation
             if verbose_level in {0, 1, 2}:

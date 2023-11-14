@@ -1,4 +1,4 @@
-# DeepDiff v 6.7.0
+# DeepDiff v 6.7.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,13 +17,20 @@
 
 Tested on Python 3.7+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.7.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/6.7.1/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
-DeepDiff v6-7-0
+DeepDiff 6-7-1
+
+- Support for subtracting delta objects when iterable_compare_func is used.
+- Better handling of force adding a delta to an object. 
+- Fix for [`Can't compare dicts with both single and double quotes in keys`](https://github.com/seperman/deepdiff/issues/430)
+- Updated docs for Inconsistent Behavior with math_epsilon and ignore_order = True
+
+DeepDiff 6-7-0
 
 - Delta can be subtracted from other objects now.
 - verify_symmetry is deprecated. Use bidirectional instead.
@@ -98,11 +105,11 @@ Thank you!
 
 How to cite this library (APA style):
 
-    Dehpour, S. (2023). DeepDiff (Version 6.7.0) [Software]. Available from https://github.com/seperman/deepdiff.
+    Dehpour, S. (2023). DeepDiff (Version 6.7.1) [Software]. Available from https://github.com/seperman/deepdiff.
 
 How to cite this library (Chicago style):
 
-    Dehpour, Sep. 2023. DeepDiff (version 6.7.0).
+    Dehpour, Sep. 2023. DeepDiff (version 6.7.1).
 
 # Authors
 

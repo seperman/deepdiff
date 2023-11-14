@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 6.7.0 documentation!
+DeepDiff 6.7.1 documentation!
 =============================
 
 *******
@@ -31,6 +31,17 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+
+DeepDiff 6-7-1
+--------------
+
+   -  Support for subtracting delta objects when iterable_compare_func
+      is used.
+   -  Better handling of force adding a delta to an object.
+   -  Fix for
+      ```Can't compare dicts with both single and double quotes in keys`` <https://github.com/seperman/deepdiff/issues/430>`__
+   -  Updated docs for Inconsistent Behavior with math_epsilon and
+      ignore_order = True
 
 DeepDiff 6-7-0
 --------------
