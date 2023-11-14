@@ -390,9 +390,6 @@ class Delta:
         else:
             items = items.items()
 
-        # if getattr(self, 'DEBUG', None):
-        #     import pytest; pytest.set_trace()
-
         for path, new_value in items:
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
@@ -507,8 +504,6 @@ class Delta:
         """
         # Sorting the iterable_item_removed in reverse order based on the paths.
         # So that we delete a bigger index before a smaller index
-        # if hasattr(self, 'DEBUG'):
-        #     import pytest; pytest.set_trace()
         for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
