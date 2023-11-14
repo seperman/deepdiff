@@ -23,7 +23,14 @@ Tested on Python 3.7+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
-DeepDiff v6-7-0
+DeepDiff 6-7-1
+
+- Support for subtracting delta objects when iterable_compare_func is used.
+- Better handling of force adding a delta to an object. 
+- Fix for [`Can't compare dicts with both single and double quotes in keys`](https://github.com/seperman/deepdiff/issues/430)
+- Updated docs for Inconsistent Behavior with math_epsilon and ignore_order = True
+
+DeepDiff 6-7-0
 
 - Delta can be subtracted from other objects now.
 - verify_symmetry is deprecated. Use bidirectional instead.
