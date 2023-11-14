@@ -116,7 +116,7 @@ class TestBasicsOfDelta:
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
         delta_content = Delta(diff).dumps()
-        path = os.path.join('tmp_path, delta_test2.delta')
+        path = os.path.join(tmp_path, 'delta_test2.delta')
         with open(path, 'wb') as the_file:
             the_file.write(delta_content)
         delta = Delta(delta_path=path)
@@ -128,7 +128,7 @@ class TestBasicsOfDelta:
         t2 = [1, 2, 3, 5]
         diff = DeepDiff(t1, t2)
         delta_content = Delta(diff).dumps()
-        path = os.path.join('tmp_path, delta_test2.delta')
+        path = os.path.join(tmp_path, 'delta_test2.delta')
         with open(path, 'wb') as the_file:
             the_file.write(delta_content)
         with pytest.raises(ValueError) as excinfo:
