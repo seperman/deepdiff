@@ -2008,4 +2008,3 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
-

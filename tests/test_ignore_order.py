@@ -897,6 +897,32 @@ class TestIgnoreOrder:
 
         assert expected == diff
 
+    def test_math_epsilon_when_ignore_order_in_dictionary(self):
+        a = {'x': 0.001}
+        b = {'x': 0.0011}
+        diff = DeepDiff(a, b, ignore_order=True)
+        assert {'values_changed': {"root['x']": {'new_value': 0.0011, 'old_value': 0.001}}} == diff
+
+        diff2 = DeepDiff(a, b, ignore_order=True, math_epsilon=0.01)
+        assert {} == diff2
+
+    def test_math_epsilon_when_ignore_order_in_list(self):
+        a = [0.001, 2]
+        b = [2, 0.0011]
+        diff = DeepDiff(a, b, ignore_order=True)
+        assert {'values_changed': {'root[0]': {'new_value': 0.0011, 'old_value': 0.001}}} == diff
+
+        diff2 = DeepDiff(a, b, ignore_order=True, math_epsilon=0.01)
+        assert {} == diff2
+
+    def test_math_epsilon_when_ignore_order_in_nested_list(self):
+        a = [{'x': 0.001}, {'y': 2.00002}]
+        b = [{'x': 0.0011}, {'y': 2}]
+
+        diff = DeepDiff(a, b, ignore_order=True, math_epsilon=0.01)
+        expected = {'values_changed': {'root[0]': {'new_value': {'x': 0.0011}, 'old_value': {'x': 0.001}}, 'root[1]': {'new_value': {'y': 2}, 'old_value': {'y': 2.00002}}}}
+        assert expected == diff
+
 
 class TestCompareFuncIgnoreOrder:
 
