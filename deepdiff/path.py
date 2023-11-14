@@ -22,7 +22,7 @@ def _add_to_elements(elements, elem, inside):
         return
     if not elem.startswith('__'):
         remove_quotes = False
-        if '\\' in elem:
+        if '𝆺𝅥𝅯' in elem or '\\' in elem:
             remove_quotes = True
         else:
             try:
@@ -62,7 +62,7 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
     inside_quotes = False
     quote_used = ''
     for char in path:
-        if prev_char == '\\':
+        if prev_char == '𝆺𝅥𝅯':
             elem += char
         elif char in {'"', "'"}:
             elem += char
@@ -270,12 +270,11 @@ def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
 def stringify_element(param, quote_str=None):
     has_quote = "'" in param
     has_double_quote = '"' in param
-    if has_quote and has_double_quote:
+    if has_quote and has_double_quote and not quote_str:
         new_param = []
         for char in param:
             if char in {'"', "'"}:
-                import pytest; pytest.set_trace()
-                new_param.append('\\')
+                new_param.append('𝆺𝅥𝅯')
             new_param.append(char)
         result = '"' + ''.join(new_param) + '"'
     elif has_quote:
