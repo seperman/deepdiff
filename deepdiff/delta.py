@@ -71,6 +71,7 @@ class Delta:
         diff=None,
         delta_path=None,
         delta_file=None,
+        delta_diff=None,
         flat_dict_list=None,
         deserializer=pickle_load,
         log_errors=True,
@@ -81,6 +82,7 @@ class Delta:
         verify_symmetry=None,
         bidirectional=False,
         always_include_values=False,
+        iterable_compare_func_was_used=None,
         force=False,
     ):
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
@@ -114,6 +116,8 @@ class Delta:
             with open(delta_path, 'rb') as the_file:
                 content = the_file.read()
             self.diff = _deserializer(content, safe_to_import=safe_to_import)
+        elif delta_diff:
+            self.diff = delta_diff
         elif delta_file:
             try:
                 content = delta_file.read()
@@ -128,7 +132,10 @@ class Delta:
         self.mutate = mutate
         self.raise_errors = raise_errors
         self.log_errors = log_errors
-        self._numpy_paths = self.diff.pop('_numpy_paths', False)
+        self._numpy_paths = self.diff.get('_numpy_paths', False)
+        # When we create the delta from a list of flat dictionaries, details such as iterable_compare_func_was_used get lost.
+        # That's why we allow iterable_compare_func_was_used to be explicitly set.
+        self._iterable_compare_func_was_used = self.diff.get('_iterable_compare_func_was_used', iterable_compare_func_was_used)
         self.serializer = serializer
         self.deserializer = deserializer
         self.force = force
@@ -198,7 +205,17 @@ class Delta:
             self._raise_or_log(VERIFICATION_MSG.format(
                 path_str, expected_old_value, current_old_value, VERIFY_BIDIRECTIONAL_MSG))
 
-    def _get_elem_and_compare_to_old_value(self, obj, path_for_err_reporting, expected_old_value, elem=None, action=None, forced_old_value=None):
+    def _get_elem_and_compare_to_old_value(
+        self,
+        obj,
+        path_for_err_reporting,
+        expected_old_value,
+        elem=None,
+        action=None,
+        forced_old_value=None,
+        next_element=None,
+    ):
+        # if forced_old_value is not None:
         try:
             if action == GET:
                 current_old_value = obj[elem]
@@ -208,9 +225,21 @@ class Delta:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError, TypeError) as e:
             if self.force:
-                _forced_old_value = {} if forced_old_value is None else forced_old_value
+                if forced_old_value is None:
+                    if next_element is None or isinstance(next_element, str):
+                        _forced_old_value = {}
+                    else:
+                        _forced_old_value = []    
+                else:
+                    _forced_old_value = forced_old_value
                 if action == GET:
-                    obj[elem] = _forced_old_value
+                    if isinstance(obj, list):
+                        if isinstance(elem, int) and elem < len(obj):
+                            obj[elem] = _forced_old_value
+                        else:
+                            obj.append(_forced_old_value)
+                    else:
+                        obj[elem] = _forced_old_value
                 elif action == GETATTR:
                     setattr(obj, elem, _forced_old_value)
                 return _forced_old_value
@@ -277,6 +306,11 @@ class Delta:
                 parent, obj, path, parent_to_obj_elem,
                 parent_to_obj_action, elements,
                 to_type=list, from_type=tuple)
+        if elem != 0 and self.force and isinstance(obj, list) and len(obj) == 0:
+            # it must have been a dictionary    
+            obj = {}
+            self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                        value=obj, action=parent_to_obj_action)
         self._simple_set_elem_value(obj=obj, path_for_err_reporting=path, elem=elem,
                                     value=new_value, action=action)
 
@@ -356,6 +390,9 @@ class Delta:
         else:
             items = items.items()
 
+        # if getattr(self, 'DEBUG', None):
+        #     import pytest; pytest.set_trace()
+
         for path, new_value in items:
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
@@ -404,14 +441,21 @@ class Delta:
         try:
             elements = _path_to_elements(path)
             if len(elements) > 1:
-                parent = self.get_nested_obj(obj=self, elements=elements[:-2])
+                elements_subset = elements[:-2]
+                if len(elements_subset) != len(elements):
+                    next_element = elements[-2][0]
+                    next2_element = elements[-1][0]
+                else:
+                    next_element = None
+                parent = self.get_nested_obj(obj=self, elements=elements_subset, next_element=next_element)
                 parent_to_obj_elem, parent_to_obj_action = elements[-2]
                 obj = self._get_elem_and_compare_to_old_value(
                     obj=parent, path_for_err_reporting=path, expected_old_value=None,
-                    elem=parent_to_obj_elem, action=parent_to_obj_action)
+                    elem=parent_to_obj_elem, action=parent_to_obj_action, next_element=next2_element)
             else:
                 parent = parent_to_obj_elem = parent_to_obj_action = None
-                obj = self.get_nested_obj(obj=self, elements=elements[:-1])
+                obj = self
+                # obj = self.get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]
         except Exception as e:
             self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
@@ -458,6 +502,57 @@ class Delta:
                 self._do_verify_changes(path, expected_old_value, current_old_value)
 
     def _do_item_removed(self, items):
+        """
+        Handle removing items.
+        """
+        # Sorting the iterable_item_removed in reverse order based on the paths.
+        # So that we delete a bigger index before a smaller index
+        # if hasattr(self, 'DEBUG'):
+        #     import pytest; pytest.set_trace()
+        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
+            elem_and_details = self._get_elements_and_details(path)
+            if elem_and_details:
+                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+            else:
+                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
+
+            look_for_expected_old_value = False
+            current_old_value = not_found
+            try:
+                if action == GET:
+                    current_old_value = obj[elem]
+                    look_for_expected_old_value = current_old_value != expected_old_value
+                elif action == GETATTR:
+                    current_old_value = getattr(obj, elem)
+                    look_for_expected_old_value = current_old_value != expected_old_value
+            except (KeyError, IndexError, AttributeError, TypeError):
+                look_for_expected_old_value = True
+
+            if look_for_expected_old_value and isinstance(obj, list) and not self._iterable_compare_func_was_used:
+                # It may return None if it doesn't find it
+                elem = self._find_closest_iterable_element_for_index(obj, elem, expected_old_value)
+                if elem is not None:
+                    current_old_value = expected_old_value
+            if current_old_value is not_found or elem is None:
+                continue
+
+            self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
+                           obj, elements, path, elem, action)
+            self._do_verify_changes(path, expected_old_value, current_old_value)
+
+    def _find_closest_iterable_element_for_index(self, obj, elem, expected_old_value):
+        closest_elem = None
+        closest_distance = float('inf')
+        for index, value in enumerate(obj):
+            dist = abs(index - elem)
+            if dist > closest_distance:
+                break
+            if value == expected_old_value and dist < closest_distance:
+                closest_elem = index
+                closest_distance = dist
+        return closest_elem
+
+    def _do_item_removedOLD(self, items):
         """
         Handle removing items.
         """
@@ -695,10 +790,9 @@ class Delta:
         Create the delta's diff object from the flat_dict_list
         """
         result = {}
-
-        DEFLATTENING_NEW_ACTION_MAP = {
-            'iterable_item_added': 'iterable_items_added_at_indexes',
-            'iterable_item_removed': 'iterable_items_removed_at_indexes',
+        FLATTENING_NEW_ACTION_MAP = {
+            'unordered_iterable_item_added': 'iterable_items_added_at_indexes',
+            'unordered_iterable_item_removed': 'iterable_items_removed_at_indexes',
         }
         for flat_dict in flat_dict_list:
             index = None
@@ -710,8 +804,8 @@ class Delta:
                 raise ValueError("Flat dict need to include the 'action'.")
             if path is None:
                 raise ValueError("Flat dict need to include the 'path'.")
-            if action in DEFLATTENING_NEW_ACTION_MAP:
-                action = DEFLATTENING_NEW_ACTION_MAP[action]
+            if action in FLATTENING_NEW_ACTION_MAP:
+                action = FLATTENING_NEW_ACTION_MAP[action]
                 index = path.pop()
             if action in {'attribute_added', 'attribute_removed'}:
                 root_element = ('root', GETATTR)
@@ -729,8 +823,8 @@ class Delta:
                     result[action][path_str] = set()
                 result[action][path_str].add(value)
             elif action in {
-                'dictionary_item_added', 'dictionary_item_removed', 'iterable_item_added',
-                'iterable_item_removed', 'attribute_removed', 'attribute_added'
+                'dictionary_item_added', 'dictionary_item_removed',
+                'attribute_removed', 'attribute_added', 'iterable_item_added', 'iterable_item_removed',
             }:
                 result[action][path_str] = value
             elif action == 'values_changed':
@@ -843,10 +937,12 @@ class Delta:
             ]
 
         FLATTENING_NEW_ACTION_MAP = {
-            'iterable_items_added_at_indexes': 'iterable_item_added',
-            'iterable_items_removed_at_indexes': 'iterable_item_removed',
+            'iterable_items_added_at_indexes': 'unordered_iterable_item_added',
+            'iterable_items_removed_at_indexes': 'unordered_iterable_item_removed',
         }
         for action, info in self.diff.items():
+            if action.startswith('_'):
+                continue
             if action in FLATTENING_NEW_ACTION_MAP:
                 new_action = FLATTENING_NEW_ACTION_MAP[action]
                 for path, index_to_value in info.items():

@@ -308,6 +308,13 @@ class TestDeepDiffText:
         expected = {'values_changed': {'''root["a']['b']['c"]''': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
 
+    def test_diff_quote_and_double_quote_in_string(self):
+        t1 = {'''a'"a''': 1}
+        t2 = {'''a'"a''': 2}
+        diff = DeepDiff(t1, t2)
+        expected = {'values_changed': {"root['a\\'\\\"a']": {'new_value': 2, 'old_value': 1}}}
+        assert expected == diff
+
     def test_bytes(self):
         t1 = {
             1: 1,
@@ -2001,3 +2008,4 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
+
