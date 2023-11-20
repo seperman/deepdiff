@@ -1004,19 +1004,26 @@ class TestCompareFuncIgnoreOrder:
             }
         }
         expected_with_compare_func = {
+            'dictionary_item_removed': [
+                "root[2]['id']",
+                "root[2]['value']"
+            ],
             'type_changes': {
                 'root[0]': {
-                    'old_type': set,
                     'new_type': dict,
-                    'old_value': {1},
-                    'new_value': {}
+                    'new_value': {
+                        'id': 2,
+                        'value': [7, 8]
+                    },
+                    'old_type': set,
+                    'old_value': {1}
                 }
             },
-            'iterable_item_added': {
-                "root[2]['value'][2]": 1
-            },
-            'iterable_item_removed': {
-                "root[1]['value'][2]": 1
+            'values_changed': {
+                "root[1]['id']": {
+                    'new_value': 3,
+                    'old_value': 2
+                }
             }
         }
 

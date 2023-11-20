@@ -1,0 +1,38 @@
+{
+    "values_changed": {
+        "root['numberfield_set'][1]": {
+            "new_value": {
+                "address": 7,
+                "documentation": "",
+                "first_bit_offset": 8,
+                "is_lsb_left": false,
+                "is_signed": false,
+                "name": "field_3",
+                "size_in_bits": 9,
+                "uuid": "056429c5-812b-4f49-9aae-1b52bd40aacd",
+                "value_divide_by": 1.0,
+                "value_increase_by": 0.0,
+                "value_multiply_by": 1.0,
+                "value_unit": ""
+            },
+            "old_value": {
+                "address": 5,
+                "documentation": "",
+                "first_bit_offset": 5,
+                "is_lsb_left": false,
+                "is_signed": false,
+                "name": "field_2",
+                "size_in_bits": 6,
+                "uuid": "332e5cfe-886d-41cc-b4d9-0fc1296b3ea0",
+                "value_divide_by": 1.0,
+                "value_increase_by": 0.0,
+                "value_multiply_by": 1.0,
+                "value_unit": ""
+            }
+        },
+        "root['version']": {
+            "new_value": "0.0.1",
+            "old_value": "0.0.0"
+        }
+    }
+}

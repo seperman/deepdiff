@@ -80,3 +80,27 @@ def compare_func_t2():
 def compare_func_result1():
     with open(os.path.join(FIXTURES_DIR, 'compare_func_result1.json')) as the_file:
         return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def nested_c_t1():
+    with open(os.path.join(FIXTURES_DIR, 'nested_c_t1.json')) as the_file:
+        return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def nested_c_t2():
+    with open(os.path.join(FIXTURES_DIR, 'nested_c_t2.json')) as the_file:
+        return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def nested_c_result_report_repetition_true():
+    with open(os.path.join(FIXTURES_DIR, 'nested_c_result_report_repetition_true.json')) as the_file:
+        return json.load(the_file)
+
+
+@pytest.fixture(scope='class')
+def nested_c_result_report_repetition_false():
+    with open(os.path.join(FIXTURES_DIR, 'nested_c_result_report_repetition_false.json')) as the_file:
+        return json.load(the_file)

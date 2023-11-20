@@ -1,0 +1,42 @@
+{
+  "stringfield_set": [],
+  "numberfield_set": [
+    {
+      "uuid": "fa0c87e8-01f5-43f5-8e63-24886f72ffd0",
+      "name": "field_1",
+      "address": 1,
+      "documentation": "",
+      "first_bit_offset": 2,
+      "size_in_bits": 3,
+      "is_signed": false,
+      "is_lsb_left": false,
+      "value_multiply_by": 1.0,
+      "value_divide_by": 1.0,
+      "value_increase_by": 0.0,
+      "value_unit": ""
+    },
+    {
+      "uuid": "332e5cfe-886d-41cc-b4d9-0fc1296b3ea0",
+      "name": "field_2",
+      "address": 5,
+      "documentation": "",
+      "first_bit_offset": 5,
+      "size_in_bits": 6,
+      "is_signed": false,
+      "is_lsb_left": false,
+      "value_multiply_by": 1.0,
+      "value_divide_by": 1.0,
+      "value_increase_by": 0.0,
+      "value_unit": ""
+    }
+  ],
+  "enumfield_set": [],
+  "version": "0.0.0",
+  "version_date": null,
+  "version_commit": null,
+  "ros_link": null,
+  "documentation": "",
+  "definition": 42,
+  "information": [],
+  "users": []
+}
