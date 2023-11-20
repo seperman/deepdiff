@@ -516,6 +516,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
+            if self.ignore_string_case:
+                clean_key = clean_key.lower()
             if clean_key in result:
                 logger.warning(('{} and {} in {} become the same key when ignore_numeric_type_changes'
                                 'or ignore_numeric_type_changes are set to be true.').format(
@@ -559,7 +561,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_keys = OrderedSet(t1.keys())
             t2_keys = OrderedSet(t2.keys())
-        if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
+        if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
             t1_keys = OrderedSet(t1_clean_to_keys.keys())
