@@ -1410,9 +1410,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             else:
                 try:
                     np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
-                    return  # all good
+                except TypeError:
+                    np.array_equal(level.t1, level.t2, equal_nan=self.ignore_nan_inequality)
                 except AssertionError:
                     pass    # do detailed checking below
+                else:
+                    return  # all good
 
         # compare array meta-data
         _original_type = level.t1.dtype
