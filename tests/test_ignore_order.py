@@ -213,6 +213,22 @@ class TestIgnoreOrder:
         }
         assert result2 == ddiff2
 
+    @pytest.mark.skip
+    def test_list_difference_ignore_order_report_repetition4(self):
+        t1 = [{"id": 1}, {"id": 1}, {"id": 1}, {"name": "Joe"}, {"name": "Joe"}]
+        t2 = [{"id": 1, "name": 1}, {"id": 1, "name": "Joe"}]
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
+        result2 = {
+            'iterable_item_removed': {
+                'root[2]': {"id": 1},
+                'root[3]': {"name": "Joe"},
+                'root[4]': {"name": "Joe"},
+            },
+            'dictionary_item_added': ["root[0]['name']", "root[1]['name']"]
+        }
+        assert result2 == ddiff2
+
     def test_nested_list_ignore_order_report_repetition(self):
         t1 = [1, 2, [3, 4]]
         t2 = [[4, 3, 3], 2, 1]
