@@ -1232,6 +1232,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             other = pairs.pop(hash_value, notpresent)
             if other is notpresent:
                 other = notpresent_indexed
+            elif self.report_repetition:
+                del pairs[other]
+                other = hashtable[other]
             else:
                 # The pairs are symmetrical.
                 # removing the other direction of pair
@@ -1248,6 +1251,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
+                count = 0
                 for i in indexes:
                     change_level = level.branch_deeper(
                         other.item,
@@ -1260,11 +1264,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     else:
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)
                         self._diff(change_level, parents_ids_added, local_tree=local_tree)
+                        count += 1
+                        if hash_value in t2_hashtable and count == len(t2_hashtable[hash_value].indexes) :
+                            break
+
             for hash_value in hashes_removed:
                 if self._count_diff() is StopIteration:
                     return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
+                count = 0
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,
@@ -1279,6 +1288,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         # in case things change in future.
                         parents_ids_added = add_to_frozen_set(parents_ids, item_id)  # pragma: no cover.
                         self._diff(change_level, parents_ids_added, local_tree=local_tree)  # pragma: no cover.
+                        count += 1
+                        if hash_value in t2_hashtable and count == len(t2_hashtable[hash_value].indexes):
+                            break
 
             items_intersect = t2_hashes.intersection(t1_hashes)
 

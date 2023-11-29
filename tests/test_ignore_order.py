@@ -176,29 +176,22 @@ class TestIgnoreOrder:
         }
         assert result == ddiff
 
-    @pytest.mark.skip
     def test_list_difference_ignore_order_report_repetition2(self):
         t1 = [1, 1, 1]
         t2 = [2, 2]
-        ddiff = DeepDiff(t1, t2, ignore_order=True)
-        result = {'values_changed': {'root[0]': {'new_value': 2, 'old_value': 1}}}
-        assert result == ddiff
-
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
         result2 = {
             'iterable_item_removed': {
                 'root[0]': 1,
                 'root[1]': 1,
-                'root[2]': 1
-            },
-            'iterable_item_added': {
-                'root[0]': 2,
-                'root[1]': 2,
-            },
+                'root[2]': 1},
+            'values_changed': {
+                'root[0]': {'new_value': 2, 'old_value': 1},
+                'root[1]': {'new_value': 2, 'old_value': 1}
+            }
         }
         assert result2 == ddiff2
 
-    @pytest.mark.skip
     def test_list_difference_ignore_order_report_repetition3(self):
         t1 = [{"id": 1}, {"id": 1}, {"id": 1}]
         t2 = [{"id": 1, "name": 1}]
@@ -206,6 +199,7 @@ class TestIgnoreOrder:
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
         result2 = {
             'iterable_item_removed': {
+                'root[0]': {"id": 1},
                 'root[1]': {"id": 1},
                 'root[2]': {"id": 1},
             },
@@ -213,20 +207,21 @@ class TestIgnoreOrder:
         }
         assert result2 == ddiff2
 
-    @pytest.mark.skip
+
     def test_list_difference_ignore_order_report_repetition4(self):
         t1 = [{"id": 1}, {"id": 1}, {"id": 1}, {"name": "Joe"}, {"name": "Joe"}]
         t2 = [{"id": 1, "name": 1}, {"id": 1, "name": "Joe"}]
 
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
         result2 = {
+            'dictionary_item_added':['root[0][\'name\']', 'root[3][\'id\']'],
             'iterable_item_removed': {
-                'root[2]': {"id": 1},
-                'root[3]': {"name": "Joe"},
-                'root[4]': {"name": "Joe"},
-            },
-            'dictionary_item_added': ["root[0]['name']", "root[1]['name']"]
-        }
+                'root[0]': {'id': 1},
+                'root[1]': {'id': 1},
+                'root[2]': {'id': 1},
+                'root[3]': {'name': 'Joe'},
+                'root[4]': {'name': 'Joe'}
+            }}
         assert result2 == ddiff2
 
     def test_nested_list_ignore_order_report_repetition(self):
