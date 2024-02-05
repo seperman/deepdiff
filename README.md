@@ -101,16 +101,6 @@ Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov
 
 Thank you!
 
-# Citing
-
-How to cite this library (APA style):
-
-    Dehpour, S. (2023). DeepDiff (Version 6.7.1) [Software]. Available from https://github.com/seperman/deepdiff.
-
-How to cite this library (Chicago style):
-
-    Dehpour, Sep. 2023. DeepDiff (version 6.7.1).
-
 # Authors
 
 Please take a look at the [AUTHORS](AUTHORS.md) file.

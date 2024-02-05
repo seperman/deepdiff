@@ -537,6 +537,12 @@ def _serialize_decimal(value):
         return float(value)
 
 
+def _serialize_tuple(value):
+    if hasattr(value, '_asdict'):  # namedtuple
+        return value._asdict()
+    return value
+
+
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
     ordered_set.OrderedSet: list,
@@ -548,7 +554,8 @@ JSON_CONVERTOR = {
     np_float32: float,
     np_float64: float,
     np_int32: int,
-    np_int64: int
+    np_int64: int,
+    tuple: _serialize_tuple,
 }
 
 if PydanticBaseModel:

@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Dehpour"
+  given-names: "Sep"
+  orcid: "https://orcid.org/0009-0009-5828-4345"
+title: "DeepDiff"
+version: 6.7.1
+date-released: 2024
+url: "https://github.com/seperman/deepdiff"

@@ -86,6 +86,27 @@ class TestDeepHash:
         b_hash = DeepHash(b)
         assert a_hash[a] == b_hash[b]
 
+    def test_date1(self):
+        date = datetime.date(2024, 2, 1)
+        date_hash = DeepHash(date)
+        assert 'd90e95901f85ca09b2536d3cb81a49747c3a4fb14906d6fa0d492713ebb4309c' == date_hash[date]
+
+    def test_date2(self):
+        item = {'due_date': datetime.date(2024, 2, 1)}
+
+        result = DeepHash(
+            item,
+            significant_digits=12,
+            number_format_notation='f',
+            ignore_numeric_type_changes=True,
+            ignore_type_in_groups=[{int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, datetime.time}],
+            ignore_type_subclasses=False,
+            ignore_encoding_errors=False,
+            ignore_repetition=True,
+            number_to_string_func=number_to_string,
+        )
+        assert 'e0d7ec984a0eda44ceb1e3c595f9b805530d715c779483e63a72c67cbce68615' == result[item]
+
     def test_datetime_truncate(self):
         a = datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)
         b = datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)

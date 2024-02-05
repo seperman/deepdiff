@@ -1360,7 +1360,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('values_changed', level, local_tree=local_tree)
         else:
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
-            # data is read from files that were previousely written from python and
+            # data is read from files that were previously written from python and
             # to be consistent with on-screen representation of numbers.
             # Other options would be abs(t1-t2)<10**-self.significant_digits
             # or math.is_close (python3.5+)

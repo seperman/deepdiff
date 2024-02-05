@@ -418,6 +418,7 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
             )
         )
     else:
+        # import pytest; pytest.set_trace()
         number = round(number=number, ndigits=significant_digits)
 
         if significant_digits == 0:

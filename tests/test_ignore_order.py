@@ -1,5 +1,6 @@
 import pytest
 import re
+import datetime
 from unittest import mock
 from deepdiff.helper import number_to_string, CannotCompare
 from deepdiff import DeepDiff
@@ -975,6 +976,16 @@ class TestIgnoreOrder:
         diff = DeepDiff(a, b, ignore_order=True, math_epsilon=0.01)
         expected = {'values_changed': {'root[0]': {'new_value': {'x': 0.0011}, 'old_value': {'x': 0.001}}, 'root[1]': {'new_value': {'y': 2}, 'old_value': {'y': 2.00002}}}}
         assert expected == diff
+
+    def test_datetime_and_ignore_order(self):
+        diff = DeepDiff(
+            [{'due_date': datetime.date(2024, 2, 1)}],
+            [{'due_date': datetime.date(2024, 2, 2)}],
+            ignore_order=True,
+            ignore_numeric_type_changes=True
+        )
+        assert {} != diff
+
 
 
 class TestCompareFuncIgnoreOrder:

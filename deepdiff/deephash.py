@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import inspect
 import logging
+import datetime
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
@@ -455,6 +456,10 @@ class DeepHash(Base):
         obj = datetime_normalize(self.truncate_datetime, obj)
         return KEY_TO_VAL_STR.format(type_, obj)
 
+    def _prep_date(self, obj):
+        type_ = 'datetime'  # yes still datetime but it doesn't need normalization
+        return KEY_TO_VAL_STR.format(type_, obj)
+
     def _prep_tuple(self, obj, parent, parents_ids):
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
@@ -504,6 +509,9 @@ class DeepHash(Base):
 
         elif isinstance(obj, times):
             result = self._prep_datetime(obj)
+
+        elif isinstance(obj, datetime.date):
+            result = self._prep_date(obj)
 
         elif isinstance(obj, numbers):
             result = self._prep_number(obj)

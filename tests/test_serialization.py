@@ -4,8 +4,10 @@ import json
 import sys
 import pytest
 import datetime
+from typing import NamedTuple, Optional
 from pickle import UnpicklingError
 from decimal import Decimal
+from collections import Counter
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3
 from deepdiff.serialization import (
@@ -21,6 +23,19 @@ logging.disable(logging.CRITICAL)
 
 t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+
+
+class SomeStats(NamedTuple):
+    counter: Optional[Counter]
+    context_aware_counter: Optional[Counter] = None
+    min_int: Optional[int] = 0
+    max_int: Optional[int] = 0
+
+
+field_stats1 = SomeStats(
+    counter=Counter(["a", "a", "b"]),
+    max_int=10
+)
 
 
 class TestSerialization:
@@ -323,6 +338,7 @@ class TestDeepDiffPretty:
         (5, {1, 2, 10}, set),
         (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
         (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
+        (8, field_stats1, lambda x: SomeStats(**x)),
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)
