@@ -57,6 +57,7 @@ setup(name='deepdiff',
           "Programming Language :: Python :: 3.9",
           "Programming Language :: Python :: 3.10",
           "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"
