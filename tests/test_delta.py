@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 import os
 import io
@@ -460,6 +462,154 @@ class TestBasicsOfDelta:
 
         delta2 = Delta(diff=diff, bidirectional=True)
         assert t1 == t2 - delta2
+
+    def test_delta_constr_flat_dict_list_param_preserve(self):
+        """
+        Issue: https://github.com/seperman/deepdiff/issues/457
+
+        Scenario:
+        We found that when a flat_dict_list was provided as a constructor
+        parameter for instantiating a new delta, the provided flat_dict_list
+        is unexpectedly being mutated/changed, which can be troublesome for the
+        caller if they were expecting the flat_dict_list to be used BY COPY
+        rather than BY REFERENCE.
+
+        Intent:
+        Preserve the original value of the flat_dict_list variable within the
+        calling module/function after instantiating the new delta.
+        """
+
+        t1 = {
+            "individualNames": [
+                {
+                    "firstName": "Johnathan",
+                    "lastName": "Doe",
+                    "prefix": "COLONEL",
+                    "middleName": "A",
+                    "primaryIndicator": True,
+                    "professionalDesignation": "PHD",
+                    "suffix": "SR",
+                    "nameIdentifier": "00001"
+                },
+                {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "prefix": "",
+                    "middleName": "",
+                    "primaryIndicator": False,
+                    "professionalDesignation": "",
+                    "suffix": "SR",
+                    "nameIdentifier": "00002"
+                }
+            ]
+        }
+
+        t2 = {
+            "individualNames": [
+                {
+                    "firstName": "Johnathan",
+                    "lastName": "Doe",
+                    "prefix": "COLONEL",
+                    "middleName": "A",
+                    "primaryIndicator": True,
+                    "professionalDesignation": "PHD",
+                    "suffix": "SR",
+                    "nameIdentifier": "00001"
+                },
+                {
+                    "firstName": "Johnny",
+                    "lastName": "Doe",
+                    "prefix": "",
+                    "middleName": "A",
+                    "primaryIndicator": False,
+                    "professionalDesignation": "",
+                    "suffix": "SR",
+                    "nameIdentifier": "00003"
+                }
+            ]
+        }
+
+        def compare_func(item1, item2, level=None):
+            print("*** inside compare ***")
+            it1_keys = item1.keys()
+
+            try:
+
+                # --- individualNames ---
+                if 'nameIdentifier' in it1_keys and 'lastName' in it1_keys:
+                    match_result = item1['nameIdentifier'] == item2['nameIdentifier']
+                    print("individualNames - matching result:", match_result)
+                    return match_result
+                else:
+                    print("Unknown list item...", "matching result:", item1 == item2)
+                    return item1 == item2
+            except Exception:
+                raise CannotCompare() from None
+        # ---------------------------- End of nested function
+
+        # This diff should show:
+        # 1 - list item (with an index on the path) being added
+        # 1 - list item (with an index on the path) being removed
+        diff = DeepDiff(t1, t2, report_repetition=True,
+                             ignore_order=True, iterable_compare_func=compare_func, cutoff_intersection_for_pairs=1)
+
+        # Now create a flat_dict_list from a delta instantiated from the diff...
+        temp_delta = Delta(diff, always_include_values=True, bidirectional=True, raise_errors=True)
+        flat_dict_list = temp_delta.to_flat_dicts()
+
+        # Note: the list index is provided on the path value...
+        assert flat_dict_list == [{'path': ['individualNames', 1],
+                                   'value': {'firstName': 'Johnny',
+                                             'lastName': 'Doe',
+                                             'prefix': '',
+                                             'middleName': 'A',
+                                             'primaryIndicator': False,
+                                             'professionalDesignation': '',
+                                             'suffix': 'SR',
+                                             'nameIdentifier': '00003'},
+                                   'action': 'unordered_iterable_item_added'},
+                                  {'path': ['individualNames', 1],
+                                   'value': {'firstName': 'John',
+                                             'lastName': 'Doe',
+                                             'prefix': '',
+                                             'middleName': '',
+                                             'primaryIndicator': False,
+                                             'professionalDesignation': '',
+                                             'suffix': 'SR',
+                                             'nameIdentifier': '00002'},
+                                   'action': 'unordered_iterable_item_removed'}]
+
+        preserved_flat_dict_list = copy.deepcopy(flat_dict_list)  # Use this later for assert comparison
+
+        # Now use the flat_dict_list to instantiate a new delta...
+        delta = Delta(flat_dict_list=flat_dict_list,
+                      always_include_values=True, bidirectional=True, raise_errors=True)
+
+        # if the flat_dict_list is (unexpectedly) mutated, it will be missing the list index number on the path value.
+        old_mutated_list_missing_indexes_on_path = [{'path': ['individualNames'],
+                                         'value': {'firstName': 'Johnny',
+                                                   'lastName': 'Doe',
+                                                   'prefix': '',
+                                                   'middleName': 'A',
+                                                   'primaryIndicator': False,
+                                                   'professionalDesignation': '',
+                                                   'suffix': 'SR',
+                                                   'nameIdentifier': '00003'},
+                                         'action': 'unordered_iterable_item_added'},
+                                        {'path': ['individualNames'],
+                                         'value': {'firstName': 'John',
+                                                   'lastName': 'Doe',
+                                                   'prefix': '',
+                                                   'middleName': '',
+                                                   'primaryIndicator': False,
+                                                   'professionalDesignation': '',
+                                                   'suffix': 'SR',
+                                                   'nameIdentifier': '00002'},
+                                         'action': 'unordered_iterable_item_removed'}]
+
+        # Verify that our fix in the delta constructor worked...
+        assert flat_dict_list != old_mutated_list_missing_indexes_on_path
+        assert flat_dict_list == preserved_flat_dict_list
 
 
 picklalbe_obj_without_item = PicklableClass(11)
