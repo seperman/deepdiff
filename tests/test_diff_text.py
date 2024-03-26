@@ -297,6 +297,28 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_string_dict_key_ignore_case(self):
+        t1 = {'User': {'AboutMe': 1, 'ALIAS': 1}}
+        t2 = {'User': {'Alias': 1, 'AboutMe': 1}}
+        ddiff = DeepDiff(t1, t2)
+        result = {'dictionary_item_added': ["root['User']['Alias']"], 'dictionary_item_removed': ["root['User']['ALIAS']"]}
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_string_case=True)
+        result = {}
+        assert result == ddiff
+
+    def test_string_list_ignore_case(self):
+        t1 = ['AboutMe', 'ALIAS']
+        t2 = ['aboutme', 'alias']
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root[0]': {'new_value': 'aboutme', 'old_value': 'AboutMe'}, 'root[1]': {'new_value': 'alias', 'old_value': 'ALIAS'}}}
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_string_case=True)
+        result = {}
+        assert result == ddiff
+
     def test_diff_quote_in_string(self):
         t1 = {
             "a']['b']['c": 1

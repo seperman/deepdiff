@@ -516,6 +516,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
+            if self.ignore_string_case:
+                clean_key = clean_key.lower()
             if clean_key in result:
                 logger.warning(('{} and {} in {} become the same key when ignore_numeric_type_changes'
                                 'or ignore_numeric_type_changes are set to be true.').format(
@@ -559,7 +561,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_keys = OrderedSet(t1.keys())
             t2_keys = OrderedSet(t2.keys())
-        if self.ignore_string_type_changes or self.ignore_numeric_type_changes:
+        if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
             t1_keys = OrderedSet(t1_clean_to_keys.keys())
@@ -1125,7 +1127,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             pre_calced_distances = self._precalculate_numpy_arrays_distance(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
 
-        if hashes_added and hashes_removed and self.iterable_compare_func and len(hashes_added) > 1 and len(hashes_removed) > 1:
+        if hashes_added and hashes_removed \
+                and self.iterable_compare_func \
+                and len(hashes_added) > 0 and len(hashes_removed) > 0:
             pre_calced_distances = self._precalculate_distance_by_custom_compare_func(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
 
@@ -1358,7 +1362,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('values_changed', level, local_tree=local_tree)
         else:
             # Bernhard10: I use string formatting for comparison, to be consistent with usecases where
-            # data is read from files that were previousely written from python and
+            # data is read from files that were previously written from python and
             # to be consistent with on-screen representation of numbers.
             # Other options would be abs(t1-t2)<10**-self.significant_digits
             # or math.is_close (python3.5+)
@@ -1408,9 +1412,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             else:
                 try:
                     np.testing.assert_almost_equal(level.t1, level.t2, decimal=self.significant_digits)
-                    return  # all good
+                except TypeError:
+                    np.array_equal(level.t1, level.t2, equal_nan=self.ignore_nan_inequality)
                 except AssertionError:
                     pass    # do detailed checking below
+                else:
+                    return  # all good
 
         # compare array meta-data
         _original_type = level.t1.dtype

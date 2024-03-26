@@ -1,3 +1,4 @@
+import copy
 import logging
 from functools import partial
 from collections.abc import Mapping
@@ -125,7 +126,8 @@ class Delta:
                 raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
             self.diff = _deserializer(content, safe_to_import=safe_to_import)
         elif flat_dict_list:
-            self.diff = self._from_flat_dicts(flat_dict_list)
+            # Use copy to preserve original value of flat_dict_list in calling module
+            self.diff = self._from_flat_dicts(copy.deepcopy(flat_dict_list))
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 

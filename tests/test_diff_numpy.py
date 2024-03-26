@@ -119,6 +119,12 @@ NUMPY_CASES = {
         'deepdiff_kwargs': {'significant_digits': 3},
         'expected_result': {},
     },
+    'numpy_almost_equal2': {
+        't1': np.array(['a', 'b'], dtype=object),
+        't2': np.array(['a', 'b'], dtype=object),
+        'deepdiff_kwargs': {'significant_digits': 6},
+        'expected_result': {},
+    },
     'numpy_different_shape': {
         't1': np.array([[1, 1], [2, 3]]),
         't2': np.array([1]),
