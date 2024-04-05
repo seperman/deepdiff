@@ -1316,6 +1316,15 @@ DELTA_NUMPY_TEST_CASES = {
         },
         'expected_result': 't2'
     },
+    'delta_with_null_as_key': {
+        't1': { None: [1, 2], 'foo': [1, 2] },
+        't2': { None: [1], 'foo': [1] },
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {
+        },
+        'expected_result': 't2'
+    },
 }
 
 

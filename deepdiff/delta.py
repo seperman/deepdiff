@@ -1,7 +1,7 @@
 import copy
 import logging
 from typing import List, Dict, IO, Callable, Set, Union, Optional
-from functools import partial
+from functools import partial, cmp_to_key
 from collections.abc import Mapping
 from copy import deepcopy
 from ordered_set import OrderedSet
@@ -399,12 +399,51 @@ class Delta:
         # We only care about the values in the elements not how to get the values.
         return [i[0] for i in elements] 
 
+    @staticmethod
+    def _sort_comparison(left, right):
+        """
+        We use sort comparison instead of _sort_key_for_item_added when we run into comparing element types that can not
+        be compared with each other, such as None to None. Or integer to string.
+        """
+        # Example elements: [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
+        # We only care about the values in the elements not how to get the values.
+        left_path = [i[0] for i in _path_to_elements(left[0], root_element=None)]
+        right_path = [i[0] for i in _path_to_elements(right[0], root_element=None)]
+        try:
+            if left_path < right_path:
+                return -1
+            elif left_path > right_path:
+                return 1
+            else:
+                return 0
+        except TypeError:
+            if len(left_path) > len(right_path):
+                left_path = left_path[:len(right_path)]
+            elif len(right_path) > len(left_path):
+                right_path = right_path[:len(left_path)]
+            for l_elem, r_elem in zip(left_path, right_path):
+                if type(l_elem) != type(r_elem) or type(l_elem) in None:
+                    l_elem = str(l_elem)
+                    r_elem = str(r_elem)
+                try:
+                    if l_elem < r_elem:
+                        return -1
+                    elif l_elem > r_elem:
+                        return 1
+                except TypeError:
+                    continue
+        return 0
+
+
     def _do_item_added(self, items, sort=True, insert=False):
         if sort:
             # sorting items by their path so that the items with smaller index
             # are applied first (unless `sort` is `False` so that order of
             # added items is retained, e.g. for dicts).
-            items = sorted(items.items(), key=self._sort_key_for_item_added)
+            try:
+                items = sorted(items.items(), key=self._sort_key_for_item_added)
+            except TypeError:
+                items = sorted(items.items(), key=cmp_to_key(self._sort_comparison))
         else:
             items = items.items()
 
@@ -526,7 +565,11 @@ class Delta:
         """
         # Sorting the iterable_item_removed in reverse order based on the paths.
         # So that we delete a bigger index before a smaller index
-        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
+        try:
+            sorted_item = sorted(items.items(), key=self._sort_key_for_item_added, reverse=True)
+        except TypeError:
+            sorted_item = sorted(items.items(), key=cmp_to_key(self._sort_comparison), reverse=True)
+        for path, expected_old_value in sorted_item:
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
