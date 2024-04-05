@@ -208,7 +208,7 @@ Sometimes, it is desired to serialize a :ref:`delta_label` object to a list of f
 Since None is a valid value, we use a special hard-coded string to signify "unkown": '*-UNKNOWN-*'
 
 .. note::
-    Many new keys are added to the flat dicts in DeepDiff 6.7.2
+    Many new keys are added to the flat dicts in DeepDiff 6.8.0
     You may want to use :ref:`delta_to_flat_rows_label` instead of flat dicts.
 
 For example:
