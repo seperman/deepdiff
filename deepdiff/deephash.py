@@ -187,7 +187,8 @@ class DeepHash(Base):
         # the only time it should be set to False is when
         # testing the individual hash functions for different types of objects.
         self.apply_hash = apply_hash
-        self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+        self.type_check_func = type_in_type_group if ignore_type_subclasses else type_is_subclass_of_type_group
+        # self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
         self.number_to_string = number_to_string_func or number_to_string
         self.ignore_private_variables = ignore_private_variables
         self.encodings = encodings

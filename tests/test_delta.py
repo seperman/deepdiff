@@ -2132,3 +2132,55 @@ class TestDeltaCompareFunc:
         delta3 = Delta(flat_dict_list=[flat_dict_list[1]], bidirectional=True, force=True)
         delta3.DEBUG = True
         assert t1 == middle_t - delta3
+
+    def test_list_of_alphabet_and_its_delta(self):
+        l1 = "A B C D E F G D H".split()
+        l2 = "B C X D H Y Z".split()
+        diff = DeepDiff(l1, l2)
+
+        # Problem: The index of values_changed should be either all for AFTER removals or BEFORE removals.
+        # What we have here is that F & G transformation to Y and Z is not compatible with A and E removal
+        # it is really meant for the removals to happen first, and then have indexes in L2 for values changing
+        # rather than indexes in L1. Here what we need to have is:
+        # A B C D E F G D H
+        # A B C-X-E 
+        # B C D F G D H  # removal
+
+        # What we really need is to report is as it is in difflib for delta specifically:
+        # A B C D E F G D H
+        # B C D E F G D H     delete    t1[0:1] --> t2[0:0]    ['A'] --> []
+        # B C D E F G D H     equal     t1[1:3] --> t2[0:2] ['B', 'C'] --> ['B', 'C']
+        # B C X D H           replace   t1[3:7] --> t2[2:3] ['D', 'E', 'F', 'G'] --> ['X']
+        # B C X D H           equal     t1[7:9] --> t2[3:5] ['D', 'H'] --> ['D', 'H']
+        # B C X D H Y Z       insert    t1[9:9] --> t2[5:7]       [] --> ['Y', 'Z']
+
+        # So in this case, it needs to also include information about what stays equal in the delta
+        # NOTE: the problem is that these operations need to be performed in a specific order.
+        # DeepDiff removes that order and just buckets all insertions vs. replace vs. delete in their own buckets.
+        # For times that we use Difflib, we may want to keep the information for the array_change key
+        # just for the sake of delta, but not for reporting in deepdiff itself.
+        # that way we can re-apply the changes as they were reported in delta.
+
+        delta = Delta(diff)
+        assert l2 == l1 + delta
+        with pytest.raises(ValueError) as exc_info:
+            l1 == l2 - delta
+        assert "Please recreate the delta with bidirectional=True" == str(exc_info.value)
+
+        delta2 = Delta(diff, bidirectional=True)
+        assert l2 == l1 + delta2
+        assert l1 == l2 - delta2
+
+        dump = Delta(diff, bidirectional=True).dumps()
+        delta3 = Delta(dump, bidirectional=True)
+
+        assert l2 == l1 + delta3
+        assert l1 == l2 - delta3
+
+        dump4 = Delta(diff, bidirectional=True, serializer=json_dumps).dumps()
+        delta4 = Delta(dump4, bidirectional=True, deserializer=json_loads)
+
+        assert l2 == l1 + delta4
+        assert l1 == l2 - delta4
+
+

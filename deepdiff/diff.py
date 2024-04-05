@@ -25,14 +25,16 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, Lis
                              np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
-                             PydanticBaseModel, )
+                             PydanticBaseModel, Opcode,)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, REPORT_KEYS,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD, PrettyOrderedSet, )
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD, PrettyOrderedSet,
+    FORCE_DEFAULT,
+)
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
@@ -203,7 +205,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.exclude_types = set(exclude_types) if exclude_types else None
             self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
             self.ignore_type_subclasses = ignore_type_subclasses
-            self.type_check_func = type_is_subclass_of_type_group if ignore_type_subclasses else type_in_type_group
+            self.type_check_func = type_in_type_group if ignore_type_subclasses else type_is_subclass_of_type_group
             self.ignore_string_case = ignore_string_case
             self.exclude_obj_callback = exclude_obj_callback
             self.exclude_obj_callback_strict = exclude_obj_callback_strict
@@ -297,6 +299,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self._parameters = _parameters
         self.deephash_parameters = self._get_deephash_params()
         self.tree = TreeResult()
+        self._iterable_opcodes = {}
         if group_by and self.is_root:
             try:
                 original_t1 = t1
@@ -348,23 +351,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         result['number_to_string_func'] = self.number_to_string
         return result
 
-    def _report_result(self, report_type, level, local_tree=None):
+    def _report_result(self, report_type, change_level, local_tree=None):
         """
         Add a detected change to the reference-style result dictionary.
         report_type will be added to level.
         (We'll create the text-style report from there later.)
         :param report_type: A well defined string key describing the type of change.
                             Examples: "set_item_added", "values_changed"
-        :param parent: A DiffLevel object describing the objects in question in their
+        :param change_level: A DiffLevel object describing the objects in question in their
                        before-change and after-change object structure.
 
-        :rtype: None
+        :local_tree: None
         """
 
-        if not self._skip_this(level):
-            level.report_type = report_type
+        if not self._skip_this(change_level):
+            change_level.report_type = report_type
             tree = self.tree if local_tree is None else local_tree
-            tree[report_type].add(level)
+            tree[report_type].add(change_level)
 
     def custom_report_result(self, report_type, level, extra_info=None):
         """
@@ -768,7 +771,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             and self.iterable_compare_func is None
         ):
             local_tree_pass = TreeResult()
-            self._diff_ordered_iterable_by_difflib(
+            opcodes_with_values = self._diff_ordered_iterable_by_difflib(
                 level,
                 parents_ids=parents_ids,
                 _original_type=_original_type,
@@ -787,6 +790,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 )
                 if len(local_tree_pass) >= len(local_tree_pass2):
                     local_tree_pass = local_tree_pass2
+                else:
+                    self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
             for report_type, levels in local_tree_pass.items():
                 if levels:
                     self.tree[report_type] |= levels
@@ -892,7 +897,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=j
+                    child_relationship_param=i
+                    # child_relationship_param=j  # wrong
                 )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
@@ -902,12 +908,24 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         seq = difflib.SequenceMatcher(isjunk=None, a=level.t1, b=level.t2, autojunk=False)
 
-        opcode = seq.get_opcodes()
-        for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcode:
+        opcodes = seq.get_opcodes()
+        opcodes_with_values = []
+
+        for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcodes:
             if tag == 'equal':
+                opcodes_with_values.append(Opcode(
+                    tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index,
+                ))
                 continue
             # print('{:7}   t1[{}:{}] --> t2[{}:{}] {!r:>8} --> {!r}'.format(
             #     tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index, level.t1[t1_from_index:t1_to_index], level.t2[t2_from_index:t2_to_index]))
+
+            opcodes_with_values.append(Opcode(
+                tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index,
+                old_values = level.t1[t1_from_index: t1_to_index],
+                new_values = level.t2[t2_from_index: t2_to_index],
+            ))
+
             if tag == 'replace':
                 self._diff_by_forming_pairs_and_comparing_one_by_one(
                     level, local_tree=local_tree, parents_ids=parents_ids,
@@ -931,6 +949,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_class=child_relationship_class,
                         child_relationship_param=index + t2_from_index)
                     self._report_result('iterable_item_added', change_level, local_tree=local_tree)
+        return opcodes_with_values
+
 
     def _diff_str(self, level, local_tree=None):
         """Compare strings"""
@@ -957,6 +977,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t2_str = level.t2.decode('ascii')
             except UnicodeDecodeError:
                 do_diff = False
+
+        if isinstance(level.t1, Enum):
+            t1_str = level.t1.value
+
+        if isinstance(level.t2, Enum):
+            t2_str = level.t2.value
 
         if t1_str == t2_str:
             return

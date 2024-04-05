@@ -9,10 +9,11 @@ from deepdiff.helper import (
     strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
+    Opcode,
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
-    GET, GETATTR, parse_path, stringify_path, DEFAULT_FIRST_ELEMENT
+    GET, GETATTR, parse_path, stringify_path,
 )
 from deepdiff.anyset import AnySet
 
@@ -85,11 +86,25 @@ class Delta:
         iterable_compare_func_was_used=None,
         force=False,
     ):
+        # for pickle deserializer:
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
             _deserializer = deserializer
         else:
             def _deserializer(obj, safe_to_import=None):
-                return deserializer(obj)
+                result = deserializer(obj)
+                if result.get('_iterable_opcodes'):
+                    _iterable_opcodes = {}
+                    for path, op_codes in result['_iterable_opcodes'].items():
+                        _iterable_opcodes[path] = []
+                        for op_code in op_codes:
+                            _iterable_opcodes[path].append(
+                                Opcode(
+                                    **op_code
+                                )
+                            )
+                    result['_iterable_opcodes'] = _iterable_opcodes
+                return result
+
 
         self._reversed_diff = None
 
@@ -165,6 +180,7 @@ class Delta:
         self._do_type_changes()
         # NOTE: the remove iterable action needs to happen BEFORE
         # all the other iterables to match the reverse of order of operations in DeepDiff
+        self._do_iterable_opcodes()
         self._do_iterable_item_removed()
         self._do_iterable_item_added()
         self._do_ignore_order()
@@ -450,6 +466,10 @@ class Delta:
                     obj=parent, path_for_err_reporting=path, expected_old_value=None,
                     elem=parent_to_obj_elem, action=parent_to_obj_action, next_element=next2_element)
             else:
+                # parent = self
+                # obj = self.root
+                # parent_to_obj_elem = 'root'
+                # parent_to_obj_action = GETATTR
                 parent = parent_to_obj_elem = parent_to_obj_action = None
                 obj = self
                 # obj = self.get_nested_obj(obj=self, elements=elements[:-1])
@@ -516,10 +536,9 @@ class Delta:
             try:
                 if action == GET:
                     current_old_value = obj[elem]
-                    look_for_expected_old_value = current_old_value != expected_old_value
                 elif action == GETATTR:
                     current_old_value = getattr(obj, elem)
-                    look_for_expected_old_value = current_old_value != expected_old_value
+                look_for_expected_old_value = current_old_value != expected_old_value
             except (KeyError, IndexError, AttributeError, TypeError):
                 look_for_expected_old_value = True
 
@@ -547,25 +566,52 @@ class Delta:
                 closest_distance = dist
         return closest_elem
 
-    def _do_item_removedOLD(self, items):
-        """
-        Handle removing items.
-        """
-        # Sorting the iterable_item_removed in reverse order based on the paths.
-        # So that we delete a bigger index before a smaller index
-        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
-            elem_and_details = self._get_elements_and_details(path)
-            if elem_and_details:
-                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
-            else:
-                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
-            current_old_value = self._get_elem_and_compare_to_old_value(
-                obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
-            if current_old_value is not_found:
-                continue
-            self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
-                           obj, elements, path, elem, action)
-            self._do_verify_changes(path, expected_old_value, current_old_value)
+    def _do_iterable_opcodes(self):
+        _iterable_opcodes = self.diff.get('_iterable_opcodes', {})
+        if _iterable_opcodes:
+            for path, opcodes in _iterable_opcodes.items():
+                transformed = []
+                # elements = _path_to_elements(path)
+                elem_and_details = self._get_elements_and_details(path)
+                if elem_and_details:
+                    elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+                    if parent is None:
+                        parent = self
+                        obj = self.root
+                        parent_to_obj_elem = 'root'
+                        parent_to_obj_action = GETATTR
+                else:
+                    continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
+                # import pytest; pytest.set_trace()
+                obj = self.get_nested_obj(obj=self, elements=elements)
+                is_obj_tuple = isinstance(obj, tuple)
+                for opcode in opcodes:    
+                    if opcode.tag == 'replace':
+                        # Replace items in list a[i1:i2] with b[j1:j2]
+                        transformed.extend(opcode.new_values)
+                    elif opcode.tag == 'delete':
+                        # Delete items from list a[i1:i2], so we do nothing here
+                        continue
+                    elif opcode.tag == 'insert':
+                        # Insert items from list b[j1:j2] into the new list
+                        transformed.extend(opcode.new_values)
+                    elif opcode.tag == 'equal':
+                        # Items are the same in both lists, so we add them to the result
+                        transformed.extend(obj[opcode.t1_from_index:opcode.t1_to_index])
+                if is_obj_tuple:
+                    obj = tuple(obj)
+                    # Making sure that the object is re-instated inside the parent especially if it was immutable
+                    # and we had to turn it into a mutable one. In such cases the object has a new id.
+                    self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                                value=obj, action=parent_to_obj_action)
+                else:
+                    obj[:] = transformed
+
+
+
+                # obj = self.get_nested_obj(obj=self, elements=elements)
+                # for
+
 
     def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed', {})
@@ -741,6 +787,23 @@ class Delta:
                     r_diff[action][old_path] = {
                         'new_path': path, 'value': path_info['value'],
                     }
+            elif action == '_iterable_opcodes':
+                r_diff[action] = {}
+                for path, op_codes in info.items():
+                    r_diff[action][path] = []
+                    for op_code in op_codes:
+                        tag = op_code.tag
+                        tag = {'delete': 'insert', 'insert': 'delete'}.get(tag, tag)
+                        new_op_code = Opcode(
+                            tag=tag,
+                            t1_from_index=op_code.t2_from_index,
+                            t1_to_index=op_code.t2_to_index,
+                            t2_from_index=op_code.t1_from_index,
+                            t2_to_index=op_code.t1_to_index,
+                            new_values=op_code.old_values,
+                            old_values=op_code.new_values,
+                        )
+                        r_diff[action][path].append(new_op_code)
         return r_diff
 
     def dump(self, file):

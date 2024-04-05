@@ -495,21 +495,20 @@ class TestDeepHashPrep:
     burrito = Burrito()
     taco = Taco()
 
-    @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
-        (taco, burrito, [], False, False),
-        (taco, burrito, [(Taco, Burrito)], False, True),
-        ([taco], [burrito], [(Taco, Burrito)], False, True),
-        ([obj_a], [obj_c], [(ClassA, ClassB)], False, False),
-        ([obj_a], [obj_c], [(ClassA, ClassB)], True, True),
-        ([obj_b], [obj_c], [(ClassB, )], True, True),
+    @pytest.mark.parametrize("test_num, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
+        (1, taco, burrito, [], False, False),
+        (2, taco, burrito, [(Taco, Burrito)], False, True),
+        (3, [taco], [burrito], [(Taco, Burrito)], False, True),
+        (4, [obj_a], [obj_c], [(ClassA, ClassB)], False, True),
+        (5, [obj_a], [obj_c], [(ClassA, ClassB)], True, False),
+        (6, [obj_b], [obj_c], [(ClassB, )], True, False),
     ])
-    def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
-
+    def test_objects_with_same_content(self, test_num, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
         t1_result = DeepHashPrep(t1, ignore_type_in_groups=ignore_type_in_groups,
                                  ignore_type_subclasses=ignore_type_subclasses)
         t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups,
                                  ignore_type_subclasses=ignore_type_subclasses)
-        assert is_qual == (t1_result[t1] == t2_result[t2])
+        assert is_qual == (t1_result[t1] == t2_result[t2]), f"test_objects_with_same_content #{test_num} failed."
 
     def test_custom_object(self):
         cc_a = CustomClass2(prop1=["a"], prop2=["b"])

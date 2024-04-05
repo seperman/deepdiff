@@ -4,12 +4,13 @@ import json
 import sys
 import pytest
 import datetime
+import numpy as np
 from typing import NamedTuple, Optional
 from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3, py_current_version
+from deepdiff.helper import pypy3, py_current_version, np_ndarray
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
@@ -339,6 +340,7 @@ class TestDeepDiffPretty:
         (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
         (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
         (8, field_stats1, lambda x: SomeStats(**x)),
+        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array)
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         if test_num == 8 and py_current_version < 3.8:
@@ -348,4 +350,7 @@ class TestDeepDiffPretty:
         back = json_loads(serialized)
         if func_to_convert_back:
             back = func_to_convert_back(back)
-        assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"
+        if isinstance(back, np_ndarray):
+            assert np.array_equal(value, back), f"test_json_dumps_and_loads test #{test_num} failed"
+        else:
+            assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"

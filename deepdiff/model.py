@@ -152,9 +152,17 @@ class TextResult(ResultDict):
         self._from_tree_deep_distance(tree)
         self._from_tree_custom_results(tree)
 
-    def _from_tree_default(self, tree, report_type):
+    def _from_tree_default(self, tree, report_type, ignore_if_in_iterable_opcodes=False):
         if report_type in tree:
+                
             for change in tree[report_type]:  # report each change
+                # When we convert from diff to delta result, we care more about opcodes than iterable_item_added or removed
+                if (
+                    ignore_if_in_iterable_opcodes
+                    and report_type in {"iterable_item_added", "iterable_item_removed"}
+                    and change.up.path(force=FORCE_DEFAULT) in self["_iterable_opcodes"]
+                ):
+                    continue
                 # determine change direction (added or removed)
                 # Report t2 (the new one) whenever possible.
                 # In cases where t2 doesn't exist (i.e. stuff removed), report t1.
@@ -279,7 +287,7 @@ class TextResult(ResultDict):
 class DeltaResult(TextResult):
     ADD_QUOTES_TO_STRINGS = False
 
-    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False):
+    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False, _iterable_opcodes=None):
         self.ignore_order = ignore_order
         self.always_include_values = always_include_values
 
@@ -297,6 +305,7 @@ class DeltaResult(TextResult):
             "set_item_added": dict_(),
             "iterable_items_added_at_indexes": dict_(),
             "iterable_items_removed_at_indexes": dict_(),
+            "_iterable_opcodes": _iterable_opcodes or {},
         })
 
         if tree_results:
@@ -318,8 +327,8 @@ class DeltaResult(TextResult):
             self._from_tree_iterable_item_added_or_removed(
                 tree, 'iterable_item_removed', delta_report_key='iterable_items_removed_at_indexes')
         else:
-            self._from_tree_default(tree, 'iterable_item_added')
-            self._from_tree_default(tree, 'iterable_item_removed')
+            self._from_tree_default(tree, 'iterable_item_added', ignore_if_in_iterable_opcodes=True)
+            self._from_tree_default(tree, 'iterable_item_removed', ignore_if_in_iterable_opcodes=True)
             self._from_tree_iterable_item_moved(tree)
         self._from_tree_default(tree, 'attribute_added')
         self._from_tree_default(tree, 'attribute_removed')
@@ -407,9 +416,12 @@ class DeltaResult(TextResult):
     def _from_tree_iterable_item_moved(self, tree):
         if 'iterable_item_moved' in tree:
             for change in tree['iterable_item_moved']:
-                the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
-                self['iterable_item_moved'][change.path(
-                    force=FORCE_DEFAULT)] = the_changed
+                if (
+                    change.up.path(force=FORCE_DEFAULT) not in self["_iterable_opcodes"]
+                ):
+                    the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
+                    self['iterable_item_moved'][change.path(
+                        force=FORCE_DEFAULT)] = the_changed
 
 
 class DiffLevel:

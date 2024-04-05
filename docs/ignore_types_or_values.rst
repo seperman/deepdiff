@@ -108,6 +108,19 @@ ignore_type_in_groups: Tuple or List of Tuples, default = None
     2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
 
 
+Example: Ignore Enum to string comparison
+    >>> from deepdiff import DeepDiff
+    >>> from enum import Enum
+    >>> class MyEnum1(Enum):
+    ...     book = "book"
+    ...     cake = "cake"
+    ...
+    >>> DeepDiff("book", MyEnum1.book)
+    {'type_changes': {'root': {'old_type': <class 'str'>, 'new_type': <enum 'MyEnum1'>, 'old_value': 'book', 'new_value': <MyEnum1.book: 'book'>}}}
+    >>> DeepDiff("book", MyEnum1.book, ignore_type_in_groups=[(Enum, str)])
+    {}
+
+
 Example: Ignore Type Number - Dictionary that contains float and integer. Note that this is exactly the same as passing ignore_numeric_type_changes=True.
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint

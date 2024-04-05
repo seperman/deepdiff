@@ -7,9 +7,9 @@ import logging
 import warnings
 import string
 import time
+from typing import NamedTuple, Any, List, Optional
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
-from collections import namedtuple
 from itertools import repeat
 from ordered_set import OrderedSet
 from threading import Timer
@@ -171,7 +171,9 @@ booleans = (bool, np_bool_)
 
 basic_types = strings + numbers + uuids + booleans + (type(None), )
 
-IndexedHash = namedtuple('IndexedHash', 'indexes item')
+class IndexedHash(NamedTuple):
+    indexes: List
+    item: Any
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -721,3 +723,13 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
                 if not callable(value):
                     result[key] = value
     return result
+
+
+class Opcode(NamedTuple):
+    tag: str
+    t1_from_index: int
+    t1_to_index: int
+    t2_from_index: int
+    t2_to_index: int
+    old_values: Optional[List[Any]] = None
+    new_values: Optional[List[Any]] = None

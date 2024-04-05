@@ -45,7 +45,7 @@ from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
 from deepdiff.helper import (
-    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64
+    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64, np_ndarray, Opcode
 )
 from deepdiff.model import DeltaResult
 
@@ -96,6 +96,7 @@ SAFE_TO_IMPORT = {
     'collections.namedtuple',
     'collections.OrderedDict',
     're.Pattern',
+    'deepdiff.helper.Opcode',
 }
 
 
@@ -241,7 +242,29 @@ class SerializationMixin:
         if self.group_by is not None:
             raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
 
-        result = DeltaResult(tree_results=self.tree, ignore_order=self.ignore_order, always_include_values=always_include_values)
+        if directed:
+            _iterable_opcodes = {}
+            for path, op_codes in self._iterable_opcodes.items():
+                _iterable_opcodes[path] = []
+                for op_code in op_codes:
+                    new_op_code = Opcode(
+                        tag=op_code.tag,
+                        t1_from_index=op_code.t1_from_index,
+                        t1_to_index=op_code.t1_to_index,
+                        t2_from_index=op_code.t2_from_index,
+                        t2_to_index=op_code.t2_to_index,
+                        new_values=op_code.new_values,
+                    )
+                    _iterable_opcodes[path].append(new_op_code)
+        else:
+            _iterable_opcodes = self._iterable_opcodes
+
+        result = DeltaResult(
+            tree_results=self.tree,
+            ignore_order=self.ignore_order,
+            always_include_values=always_include_values,
+            _iterable_opcodes=_iterable_opcodes,
+        )
         result.remove_empty_keys()
         if report_repetition_required and self.ignore_order and not self.report_repetition:
             raise ValueError(DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT)
@@ -555,7 +578,9 @@ JSON_CONVERTOR = {
     np_float64: float,
     np_int32: int,
     np_int64: int,
+    np_ndarray: lambda x: x.tolist(),
     tuple: _serialize_tuple,
+    Mapping: dict,
 }
 
 if PydanticBaseModel:
