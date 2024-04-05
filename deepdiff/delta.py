@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import List, Dict, IO, Callable, Set, Union
+from typing import List, Dict, IO, Callable, Set, Union, Optional
 from functools import partial
 from collections.abc import Mapping
 from copy import deepcopy
@@ -67,22 +67,22 @@ class Delta:
 
     def __init__(
         self,
-        diff: Union[DeepDiff, Mapping, str, bytes]=None,
-        delta_path: str=None,
-        delta_file: IO=None,
-        delta_diff: dict=None,
-        flat_dict_list: List[Dict]=None,
-        flat_rows_list: List[FlatDeltaRow]=None,
+        diff: Union[DeepDiff, Mapping, str, bytes, None]=None,
+        delta_path: Optional[str]=None,
+        delta_file: Optional[IO]=None,
+        delta_diff: Optional[dict]=None,
+        flat_dict_list: Optional[List[Dict]]=None,
+        flat_rows_list: Optional[List[FlatDeltaRow]]=None,
         deserializer: Callable=pickle_load,
         log_errors: bool=True,
         mutate: bool=False,
         raise_errors: bool=False,
-        safe_to_import: Set[str]=None,
+        safe_to_import: Optional[Set[str]]=None,
         serializer: Callable=pickle_dump,
-        verify_symmetry: bool=None,
+        verify_symmetry: Optional[bool]=None,
         bidirectional: bool=False,
         always_include_values: bool=False,
-        iterable_compare_func_was_used: bool=None,
+        iterable_compare_func_was_used: Optional[bool]=None,
         force: bool=False,
     ):
         # for pickle deserializer:
