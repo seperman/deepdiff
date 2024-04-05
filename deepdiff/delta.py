@@ -963,13 +963,6 @@ class Delta:
 
         return result
 
-    def _flatten_iterable_opcodes(self):
-        result = []
-        for path, opcodes in self.diff['_iterable_opcodes']:
-            for opcode in opcodes:
-                if opcode.tag == '':
-                    pass
-
     def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
         """
         Returns a flat list of actions that is easily machine readable.

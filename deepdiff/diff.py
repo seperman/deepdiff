@@ -839,7 +839,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     notpresent,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i)
+                    child_relationship_param=i,
+                    child_relationship_param2=j,
+                    )
                 self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
 
             elif x is ListItemRemovedOrAdded:  # new item added
@@ -847,7 +849,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     notpresent,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=j)
+                    child_relationship_param=i,
+                    child_relationship_param2=j,
+                    )
                 self._report_result('iterable_item_added', change_level, local_tree=local_tree)
 
             else:  # check if item value has changed
@@ -898,8 +902,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i
-                    # child_relationship_param=j  # wrong
+                    child_relationship_param=i,
+                    child_relationship_param2=j,
                 )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
@@ -1339,11 +1343,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 index = t2_hashtable[hash_value].indexes[0] if other.item is notpresent else other.indexes[0]
+                index2 = t2_hashtable[hash_value].indexes[0]
                 change_level = level.branch_deeper(
                     other.item,
                     t2_hashtable[hash_value].item,
                     child_relationship_class=SubscriptableIterableRelationship,
-                    child_relationship_param=index)
+                    child_relationship_param=index,
+                    child_relationship_param2=index2,
+                )
                 if other.item is notpresent:
                     self._report_result('iterable_item_added', change_level, local_tree=local_tree)
                 else:
@@ -1355,12 +1362,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
+                index = t1_hashtable[hash_value].indexes[0]
+                index2 = t1_hashtable[hash_value].indexes[0] if other.item is notpresent else other.indexes[0]
                 change_level = level.branch_deeper(
                     t1_hashtable[hash_value].item,
                     other.item,
                     child_relationship_class=SubscriptableIterableRelationship,
-                    child_relationship_param=t1_hashtable[hash_value].indexes[
-                        0])
+                    child_relationship_param=index,
+                    child_relationship_param2=index2,
+                )
                 if other.item is notpresent:
                     self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
                 else:

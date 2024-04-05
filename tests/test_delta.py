@@ -2394,3 +2394,100 @@ class TestDeltaCompareFunc:
         # the path to the leaf node.
         delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)
         assert t1 + delta2 == t2
+
+    def test_flat_dict_and_deeply_nested_dict(self):
+        beforeImage = [
+            {
+                "usage": "Mailing",
+                "standardization": "YES",
+                "primaryIndicator": True,
+                "addressIdentifier": "Z8PDWBG42YC",
+                "addressLines": ["871 PHILLIPS FERRY RD"],
+            },
+            {
+                "usage": "Residence",
+                "standardization": "YES",
+                "primaryIndicator": False,
+                "addressIdentifier": "Z8PDWBG42YC",
+                "addressLines": ["871 PHILLIPS FERRY RD"],
+            },
+            {
+                "usage": "Mailing",
+                "standardization": None,
+                "primaryIndicator": False,
+                "addressIdentifier": "MHPP3BY0BYC",
+                "addressLines": ["871 PHILLIPS FERRY RD", "APT RV92"],
+            },
+        ]
+        allAfterImage = [
+            {
+                "usage": "Residence",
+                "standardization": "NO",
+                "primaryIndicator": False,
+                "addressIdentifier": "Z8PDWBG42YC",
+                "addressLines": ["871 PHILLIPS FERRY RD"],
+            },
+            {
+                "usage": "Mailing",
+                "standardization": None,
+                "primaryIndicator": False,
+                "addressIdentifier": "MHPP3BY0BYC",
+                "addressLines": ["871 PHILLIPS FERRY RD", "APT RV92"],
+            },
+            {
+                "usage": "Mailing",
+                "standardization": "NO",
+                "primaryIndicator": True,
+                "addressIdentifier": "Z8PDWBG42YC",
+                "addressLines": ["871 PHILLIPS FERRY RD"],
+            },
+        ]
+
+        diff = DeepDiff(
+            beforeImage,
+            allAfterImage,
+            ignore_order=True,
+            report_repetition=True,
+        )
+        reverse_diff = DeepDiff(
+            allAfterImage,
+            beforeImage,
+            ignore_order=True,
+            report_repetition=True,
+        )
+        delta = Delta(
+            diff, always_include_values=True, bidirectional=True
+        )
+        reverse_delta = Delta(
+            reverse_diff, always_include_values=True, bidirectional=True
+        )
+        allAfterImageAgain = beforeImage + delta
+        diff2 = DeepDiff(allAfterImage, allAfterImageAgain, ignore_order=True)
+        assert not diff2
+
+        from pprint import pprint
+        print("\ndelta.diff")
+        pprint(delta.diff)
+        print("\ndelta._get_reverse_diff()")
+        pprint(delta._get_reverse_diff())
+        print("\nreverse_delta.diff")
+        pprint(reverse_delta.diff)
+        # import pytest; pytest.set_trace()
+        beforeImageAgain = allAfterImage - delta
+        diff3 = DeepDiff(beforeImage, beforeImageAgain, ignore_order=True)
+        assert not diff3
+
+        # ------ now let's recreate the delta from flat dicts -------
+
+        flat_dict_list = delta.to_flat_dicts()
+
+        delta2 = Delta(
+            flat_dict_list=flat_dict_list,
+            always_include_values=True,
+            bidirectional=True,
+            raise_errors=False,
+            force=True,
+        )
+
+        assert allAfterImage == beforeImage + delta2
+        assert beforeImage == allAfterImage - delta2
