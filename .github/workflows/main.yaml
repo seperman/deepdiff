@@ -34,6 +34,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
           ${{ runner.os }}-
+    - name: Upgrade setuptools
+      if: matrix.python-version == 3.12
+      run: |
+        # workaround for 3.12, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
+        pip install --upgrade setuptools
     - name: Install dependencies py3.7
       if: matrix.python-version == 3.7
       run: pip install -r requirements-dev-3.7.txt

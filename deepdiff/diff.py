@@ -1153,7 +1153,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             pre_calced_distances = self._precalculate_numpy_arrays_distance(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
 
-        if hashes_added and hashes_removed and self.iterable_compare_func and len(hashes_added) > 1 and len(hashes_removed) > 1:
+        if hashes_added and hashes_removed \
+                and self.iterable_compare_func \
+                and len(hashes_added) > 0 and len(hashes_removed) > 0:
             pre_calced_distances = self._precalculate_distance_by_custom_compare_func(
                 hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type)
 
