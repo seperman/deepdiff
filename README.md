@@ -15,7 +15,7 @@
 - [Extract](https://zepworks.com/deepdiff/current/extract.html): Extract an item from a nested Python object using its path.
 - [commandline](https://zepworks.com/deepdiff/current/commandline.html): Use DeepDiff from commandline.
 
-Tested on Python 3.7+ and PyPy3.
+Tested on Python 3.8+ and PyPy3.
 
 - **[Documentation](https://zepworks.com/deepdiff/6.8.0/)**
 

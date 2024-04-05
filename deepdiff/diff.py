@@ -915,7 +915,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         opcodes = seq.get_opcodes()
         opcodes_with_values = []
-
         for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcodes:
             if tag == 'equal':
                 opcodes_with_values.append(Opcode(

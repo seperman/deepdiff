@@ -10,7 +10,7 @@ from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3, py_current_version, np_ndarray
+from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
@@ -354,3 +354,9 @@ class TestDeepDiffPretty:
             assert np.array_equal(value, back), f"test_json_dumps_and_loads test #{test_num} failed"
         else:
             assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"
+
+    def test_namedtuple_seriazliation(self):
+        op_code = Opcode(tag="replace", t1_from_index=0, t1_to_index=1, t2_from_index=10, t2_to_index=20)
+        serialized = json_dumps(op_code)
+        expected = '{"tag":"replace","t1_from_index":0,"t1_to_index":1,"t2_from_index":10,"t2_to_index":20,"old_values":null,"new_values":null}'
+        assert serialized == expected

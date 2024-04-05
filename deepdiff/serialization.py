@@ -45,7 +45,7 @@ from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
 from deepdiff.helper import (
-    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64, np_ndarray, Opcode
+    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64, np_ndarray, Opcode, py_current_version
 )
 from deepdiff.model import DeltaResult
 
