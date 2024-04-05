@@ -2373,4 +2373,15 @@ class TestDeltaCompareFunc:
         assert l2 == l1 + delta4
         assert l1 == l2 - delta4
 
-
+    def test_delta_flat_rows(self):
+        t1 = {"key1": "value1"}
+        t2 = {"field2": {"key2": "value2"}}
+        diff = DeepDiff(t1, t2, verbose_level=2)
+        delta = Delta(diff, bidirectional=True)
+        assert t1 + delta == t2
+        flat_rows = delta.to_flat_rows()
+        # we need to set force=True because when we create flat rows, if a nested
+        # dictionary with a single key is created, the path in the flat row will be
+        # the path to the leaf node.
+        delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)
+        assert t1 + delta2 == t2

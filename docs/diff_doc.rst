@@ -114,6 +114,10 @@ ignore_type_subclasses: Boolean, default = False
     :ref:`ignore_type_subclasses_label`
     ignore type (class) changes when dealing with the subclasses of classes that were marked to be ignored.
 
+.. Note::
+    ignore_type_subclasses was incorrectly doing the reverse of its job up until DeepDiff 6.7.1
+    Please make sure to flip it in your use cases, when upgrading from older versions to 6.7.2 or above.
+
 ignore_string_case: Boolean, default = False
     :ref:`ignore_string_case_label`
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.

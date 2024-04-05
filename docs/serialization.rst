@@ -106,12 +106,110 @@ Load the diff object from the json pickle dump.
 Take a look at the above :ref:`to_json_pickle_label` for an example.
 
 
+.. _delta_to_flat_rows_label:
+
+Delta Serialize To Flat Rows
+----------------------------
+
+Sometimes, it is desired to serialize a :ref:`delta_label` object to a list of flat rows. For example, to store them in relation databases. In that case, you can use the Delta.to_flat_rows to achieve the desired outcome. The rows are named tuples and can be converted to dictionaries using `._asdict()`
+
+    >>> from pprint import pprint
+    >>> from deepdiff import DeepDiff, Delta
+    >>> t1 = {"key1": "value1"}
+    >>> t2 = {"field2": {"key2": "value2"}}
+    >>> diff = DeepDiff(t1, t2, verbose_level=2)
+    >>> pprint(diff, indent=2)
+    { 'dictionary_item_added': {"root['field2']": {'key2': 'value2'}},
+      'dictionary_item_removed': {"root['key1']": 'value1'}}
+    >>> delta = Delta(diff, bidirectional=True)
+    >>> flat_rows = delta.to_flat_rows()
+    >>> pprint(flat_rows, indent=2)
+    [ FlatDeltaRow(path=['field2', 'key2'], action='dictionary_item_added', value='value2'),
+      FlatDeltaRow(path=['key1'], action='dictionary_item_removed', value='value1')]
+
+.. note::
+    When converting a delta to flat rows, nested dictionaries that have single keys in them are flattened too.
+    Notice that the diff object says
+
+        { 'dictionary_item_added': {"root['field2']": {'key2': 'value2'}}
+
+    but the flat row is:
+
+        FlatDeltaRow(path=['field2', 'key2'], action='dictionary_item_added', value='value2')
+
+    That means, when you recreate the delta from the flat rows, you need to set force=True to apply the delta:
+
+        >>> t1 + delta == t2
+        True
+        >>> t2 - delta == t1
+        True
+        >>> delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True)
+        >>> t1 + delta2 == t2
+        Expected the old value for root['field2']['key2'] to be None but it is not found. Error found on: 'field2'
+        False. You may want to set force=True, especially if this delta is created by passing flat_rows_list or flat_dict_list
+        >>> t1 + delta
+        {'field2': {'key2': 'value2'}}
+        >>> t1 + delta2
+        {}
+        >>> delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)  # We need to set force=True
+        >>> t1 + delta2
+        {'field2': {'key2': 'value2'}}
+        >>>
+
+
+
+Flat Row Specs:
+
+
+    class FlatDataAction(str, enum.Enum):
+        values_changed = 'values_changed'
+        type_changes = 'type_changes'
+        set_item_added = 'set_item_added'
+        set_item_removed = 'set_item_removed'
+        dictionary_item_added = 'dictionary_item_added'
+        dictionary_item_removed = 'dictionary_item_removed'
+        iterable_item_added = 'iterable_item_added'
+        iterable_item_removed = 'iterable_item_removed'
+        iterable_item_moved = 'iterable_item_moved'
+        iterable_items_inserted = 'iterable_items_inserted'  # opcode
+        iterable_items_deleted = 'iterable_items_deleted'  # opcode
+        iterable_items_replaced = 'iterable_items_replaced'  # opcode
+        iterable_items_equal = 'iterable_items_equal'  # opcode
+        attribute_removed = 'attribute_removed'
+        attribute_added = 'attribute_added'
+        unordered_iterable_item_added = 'unordered_iterable_item_added'
+        unordered_iterable_item_removed = 'unordered_iterable_item_removed'
+
+
+    UnkownValueCode = '*-UNKNOWN-*'
+
+
+    class FlatDeltaRow(NamedTuple):
+        path: List
+        action: FlatDataAction
+        value: Optional[Any] = UnkownValueCode
+        old_value: Optional[Any] = UnkownValueCode
+        type: Optional[Any] = UnkownValueCode
+        old_type: Optional[Any] = UnkownValueCode
+        new_path: Optional[List] = None
+        t1_from_index: Optional[int] = None
+        t1_to_index: Optional[int] = None
+        t2_from_index: Optional[int] = None
+        t2_to_index: Optional[int] = None
+
+
 .. _delta_to_flat_dicts_label:
 
 Delta Serialize To Flat Dictionaries
 ------------------------------------
 
 Sometimes, it is desired to serialize a :ref:`delta_label` object to a list of flat dictionaries. For example, to store them in relation databases. In that case, you can use the Delta.to_flat_dicts to achieve the desired outcome.
+
+Since None is a valid value, we use a special hard-coded string to signify "unkown": '*-UNKNOWN-*'
+
+.. note::
+    Many new keys are added to the flat dicts in DeepDiff 6.7.2
+    You may want to use :ref:`delta_to_flat_rows_label` instead of flat dicts.
 
 For example:
 
@@ -123,14 +221,31 @@ For example:
     >>> pprint(diff, indent=2)
     { 'dictionary_item_added': {"root['field2']": {'key2': 'value2'}},
       'dictionary_item_removed': {"root['key1']": 'value1'}}
-    >>>
-    >>> delta = Delta(diff, verify_symmetry=True)
+    >>> delta = Delta(diff, bidirectional=True)
     >>> flat_dicts = delta.to_flat_dicts()
     >>> pprint(flat_dicts, indent=2)
     [ { 'action': 'dictionary_item_added',
+        'new_path': None,
+        'old_type': '*-UNKNOWN-*',
+        'old_value': '*-UNKNOWN-*',
         'path': ['field2', 'key2'],
+        't1_from_index': None,
+        't1_to_index': None,
+        't2_from_index': None,
+        't2_to_index': None,
+        'type': '*-UNKNOWN-*',
         'value': 'value2'},
-      {'action': 'dictionary_item_removed', 'path': ['key1'], 'value': 'value1'}]
+      { 'action': 'dictionary_item_removed',
+        'new_path': None,
+        'old_type': '*-UNKNOWN-*',
+        'old_value': '*-UNKNOWN-*',
+        'path': ['key1'],
+        't1_from_index': None,
+        't1_to_index': None,
+        't2_from_index': None,
+        't2_to_index': None,
+        'type': '*-UNKNOWN-*',
+        'value': 'value1'}]
 
 
 Example 2:
@@ -141,11 +256,31 @@ Example 2:
     >>> pprint(diff, indent=2)
     {'iterable_item_added': {'root[2]': 'C', 'root[3]': 'D'}}
     >>>
-    >>> delta = Delta(diff, verify_symmetry=True)
+    >>> delta = Delta(diff, bidirectional=True)
     >>> flat_dicts = delta.to_flat_dicts()
     >>> pprint(flat_dicts, indent=2)
-    [ {'action': 'iterable_item_added', 'path': [2], 'value': 'C'},
-      {'action': 'iterable_item_added', 'path': [3], 'value': 'D'}]
+    [ { 'action': 'iterable_item_added',
+        'new_path': None,
+        'old_type': '*-UNKNOWN-*',
+        'old_value': '*-UNKNOWN-*',
+        'path': [2],
+        't1_from_index': None,
+        't1_to_index': None,
+        't2_from_index': None,
+        't2_to_index': None,
+        'type': '*-UNKNOWN-*',
+        'value': 'C'},
+      { 'action': 'iterable_item_added',
+        'new_path': None,
+        'old_type': '*-UNKNOWN-*',
+        'old_value': '*-UNKNOWN-*',
+        'path': [3],
+        't1_from_index': None,
+        't1_to_index': None,
+        't2_from_index': None,
+        't2_to_index': None,
+        'type': '*-UNKNOWN-*',
+        'value': 'D'}]
 
 
 .. _delta_from_flat_dicts_label:
@@ -157,8 +292,7 @@ Delta Load From Flat Dictionaries
     >>> t3 = ["A", "B"]
     >>> t4 = ["A", "B", "C", "D"]
     >>> diff = DeepDiff(t3, t4, verbose_level=2)
-    >>> delta = Delta(diff, verify_symmetry=True)
-    DeepDiff Deprecation: use bidirectional instead of verify_symmetry parameter.
+    >>> delta = Delta(diff, bidirectional=True)
     >>> flat_dicts = delta.to_flat_dicts()
     >>>
     >>> delta2 = Delta(flat_dict_list=flat_dicts)

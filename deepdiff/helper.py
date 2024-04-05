@@ -726,6 +726,19 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
     return result
 
 
+def named_tuple_repr(self):
+    fields = []
+    for field, value in self._asdict().items():
+        # Only include fields that do not have their default value
+        if field in self._field_defaults:
+            if value != self._field_defaults[field]:
+                fields.append(f"{field}={value!r}")
+        else:
+            fields.append(f"{field}={value!r}")
+
+    return f"{self.__class__.__name__}({', '.join(fields)})"
+
+
 class Opcode(NamedTuple):
     tag: str
     t1_from_index: int
@@ -735,6 +748,7 @@ class Opcode(NamedTuple):
     old_values: Optional[List[Any]] = None
     new_values: Optional[List[Any]] = None
 
+    __repr__ = __str__ = named_tuple_repr
 
 
 class FlatDataAction(str, enum.Enum):
@@ -772,3 +786,5 @@ class FlatDeltaRow(NamedTuple):
     t1_to_index: Optional[int] = None
     t2_from_index: Optional[int] = None
     t2_to_index: Optional[int] = None
+
+    __repr__ = __str__ = named_tuple_repr

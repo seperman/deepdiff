@@ -23,7 +23,7 @@ from deepdiff.anyset import AnySet
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}'
+VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}. You may want to set force=True, especially if this delta is created by passing flat_rows_list or flat_dict_list'
 ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_BIDIRECTIONAL_MSG = ('You have applied the delta to an object that has '

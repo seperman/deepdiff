@@ -214,6 +214,10 @@ Ignore Type Subclasses
 ignore_type_subclasses: Boolean, default = False
     Use ignore_type_subclasses=True so when ignoring type (class), the subclasses of that class are ignored too.
 
+.. Note::
+    ignore_type_subclasses was incorrectly doing the reverse of its job up until DeepDiff 6.7.1
+    Please make sure to flip it in your use cases, when upgrading from older versions to 6.7.2 or above.
+
     >>> from deepdiff import DeepDiff
     >>> class ClassA:
     ...     def __init__(self, x, y):
@@ -230,10 +234,10 @@ ignore_type_subclasses: Boolean, default = False
     >>> obj_a = ClassA(1, 2)
     >>> obj_c = ClassC(3)
     >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
     {'type_changes': {'root': {'old_type': <class '__main__.ClassA'>, 'new_type': <class '__main__.ClassC'>, 'old_value': <__main__.ClassA object at 0x10076a2e8>, 'new_value': <__main__.ClassC object at 0x10082f630>}}}
     >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
     {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
 
 
