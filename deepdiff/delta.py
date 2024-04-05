@@ -1,5 +1,6 @@
 import copy
 import logging
+from typing import List, Dict, IO, Callable, Set, Union
 from functools import partial
 from collections.abc import Mapping
 from copy import deepcopy
@@ -10,7 +11,7 @@ from deepdiff.helper import (
     strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
-    Opcode,
+    Opcode, FlatDeltaRow, UnkownValueCode,
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
@@ -60,32 +61,29 @@ class DeltaNumpyOperatorOverrideError(ValueError):
     pass
 
 
-class _ObjDoesNotExist:
-    pass
-
-
 class Delta:
 
     __doc__ = doc
 
     def __init__(
         self,
-        diff=None,
-        delta_path=None,
-        delta_file=None,
-        delta_diff=None,
-        flat_dict_list=None,
-        deserializer=pickle_load,
-        log_errors=True,
-        mutate=False,
-        raise_errors=False,
-        safe_to_import=None,
-        serializer=pickle_dump,
-        verify_symmetry=None,
-        bidirectional=False,
-        always_include_values=False,
-        iterable_compare_func_was_used=None,
-        force=False,
+        diff: Union[DeepDiff, Mapping, str, bytes]=None,
+        delta_path: str=None,
+        delta_file: IO=None,
+        delta_diff: dict=None,
+        flat_dict_list: List[Dict]=None,
+        flat_rows_list: List[FlatDeltaRow]=None,
+        deserializer: Callable=pickle_load,
+        log_errors: bool=True,
+        mutate: bool=False,
+        raise_errors: bool=False,
+        safe_to_import: Set[str]=None,
+        serializer: Callable=pickle_dump,
+        verify_symmetry: bool=None,
+        bidirectional: bool=False,
+        always_include_values: bool=False,
+        iterable_compare_func_was_used: bool=None,
+        force: bool=False,
     ):
         # for pickle deserializer:
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
@@ -143,6 +141,8 @@ class Delta:
         elif flat_dict_list:
             # Use copy to preserve original value of flat_dict_list in calling module
             self.diff = self._from_flat_dicts(copy.deepcopy(flat_dict_list))
+        elif flat_rows_list:
+            self.diff = self._from_flat_rows(copy.deepcopy(flat_rows_list))
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
@@ -842,7 +842,12 @@ class Delta:
                         row[new_key] = func(details[key])
                     else:
                         row[new_key] = details[key]
-            yield row
+            yield FlatDeltaRow(**row)
+
+    @staticmethod
+    def _from_flat_rows(flat_rows_list: List[FlatDeltaRow]):
+        flat_dict_list = (i._asdict() for i in flat_rows_list)
+        return Delta._from_flat_dicts(flat_dict_list)
 
     @staticmethod
     def _from_flat_dicts(flat_dict_list):
@@ -859,7 +864,7 @@ class Delta:
             action = flat_dict.get("action")
             path = flat_dict.get("path")
             value = flat_dict.get('value')
-            old_value = flat_dict.get('old_value', _ObjDoesNotExist)
+            old_value = flat_dict.get('old_value', UnkownValueCode)
             if not action:
                 raise ValueError("Flat dict need to include the 'action'.")
             if path is None:
@@ -888,13 +893,13 @@ class Delta:
             }:
                 result[action][path_str] = value
             elif action == 'values_changed':
-                if old_value is _ObjDoesNotExist:
+                if old_value == UnkownValueCode:
                     result[action][path_str] = {'new_value': value}
                 else:
                     result[action][path_str] = {'new_value': value, 'old_value': old_value}
             elif action == 'type_changes':
-                type_ = flat_dict.get('type', _ObjDoesNotExist)
-                old_type = flat_dict.get('old_type', _ObjDoesNotExist)
+                type_ = flat_dict.get('type', UnkownValueCode)
+                old_type = flat_dict.get('old_type', UnkownValueCode)
 
                 result[action][path_str] = {'new_value': value}
                 for elem, elem_value in [
@@ -902,7 +907,7 @@ class Delta:
                     ('old_type', old_type),
                     ('old_value', old_value),
                 ]:
-                    if elem_value is not _ObjDoesNotExist:
+                    if elem_value != UnkownValueCode:
                         result[action][path_str][elem] = elem_value
             elif action == 'iterable_item_moved':
                 result[action][path_str] = {
@@ -915,7 +920,14 @@ class Delta:
 
         return result
 
-    def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True):
+    def _flatten_iterable_opcodes(self):
+        result = []
+        for path, opcodes in self.diff['_iterable_opcodes']:
+            for opcode in opcodes:
+                if opcode.tag == '':
+                    pass
+
+    def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
         """
         Returns a flat list of actions that is easily machine readable.
 
@@ -969,6 +981,14 @@ class Delta:
             attribute_added
             attribute_removed
         """
+        return [
+            i._asdict() for i in self.to_flat_rows(include_action_in_path=False, report_type_changes=True)
+        ]
+
+    def to_flat_rows(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
+        """
+        Just like to_flat_dicts but returns FlatDeltaRow Named Tuples
+        """
         result = []
         if include_action_in_path:
             _parse_path = partial(parse_path, include_actions=True)
@@ -1013,16 +1033,12 @@ class Delta:
                             path2.append((index, 'GET'))
                         else:
                             path2.append(index)
-                        result.append(
-                            {'path': path2, 'value': value, 'action': new_action}
-                        )
+                        result.append(FlatDeltaRow(path=path2, value=value, action=new_action))
             elif action in {'set_item_added', 'set_item_removed'}:
                 for path, values in info.items():
                     path = _parse_path(path)
                     for value in values:
-                        result.append(
-                            {'path': path, 'value': value, 'action': action}
-                        )
+                        result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action == 'dictionary_item_added':
                 for path, value in info.items():
                     path = _parse_path(path)
@@ -1037,18 +1053,14 @@ class Delta:
                     elif isinstance(value, set) and len(value) == 1:
                         value = value.pop()
                         action = 'set_item_added'
-                    result.append(
-                        {'path': path, 'value': value, 'action': action}
-                    )
+                    result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action in {
                 'dictionary_item_removed', 'iterable_item_added',
                 'iterable_item_removed', 'attribute_removed', 'attribute_added'
             }:
                 for path, value in info.items():
                     path = _parse_path(path)
-                    result.append(
-                        {'path': path, 'value': value, 'action': action}
-                    )
+                    result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action == 'type_changes':
                 if not report_type_changes:
                     action = 'values_changed'
@@ -1060,6 +1072,8 @@ class Delta:
                     keys_and_funcs=keys_and_funcs,
                 ):
                     result.append(row)
+            elif action == '_iterable_opcodes':
+                result.extend(self._flatten_iterable_opcodes())
             else:
                 for row in self._get_flat_row(
                     action=action,

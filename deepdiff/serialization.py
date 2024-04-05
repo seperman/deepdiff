@@ -242,7 +242,7 @@ class SerializationMixin:
         if self.group_by is not None:
             raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
 
-        if directed:
+        if directed and not always_include_values:
             _iterable_opcodes = {}
             for path, op_codes in self._iterable_opcodes.items():
                 _iterable_opcodes[path] = []

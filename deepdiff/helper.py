@@ -7,6 +7,7 @@ import logging
 import warnings
 import string
 import time
+import enum
 from typing import NamedTuple, Any, List, Optional
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
@@ -733,3 +734,41 @@ class Opcode(NamedTuple):
     t2_to_index: int
     old_values: Optional[List[Any]] = None
     new_values: Optional[List[Any]] = None
+
+
+
+class FlatDataAction(str, enum.Enum):
+    values_changed = 'values_changed'
+    type_changes = 'type_changes'
+    set_item_added = 'set_item_added'
+    set_item_removed = 'set_item_removed'
+    dictionary_item_added = 'dictionary_item_added'
+    dictionary_item_removed = 'dictionary_item_removed'
+    iterable_item_added = 'iterable_item_added'
+    iterable_item_removed = 'iterable_item_removed'
+    iterable_item_moved = 'iterable_item_moved'
+    iterable_items_inserted = 'iterable_items_inserted'  # opcode
+    iterable_items_deleted = 'iterable_items_deleted'  # opcode
+    iterable_items_replaced = 'iterable_items_replaced'  # opcode
+    iterable_items_equal = 'iterable_items_equal'  # opcode
+    attribute_removed = 'attribute_removed'
+    attribute_added = 'attribute_added'
+    unordered_iterable_item_added = 'unordered_iterable_item_added'
+    unordered_iterable_item_removed = 'unordered_iterable_item_removed'
+
+
+UnkownValueCode = '*-UNKNOWN-*'
+
+
+class FlatDeltaRow(NamedTuple):
+    path: List
+    action: FlatDataAction
+    value: Optional[Any] = UnkownValueCode
+    old_value: Optional[Any] = UnkownValueCode
+    type: Optional[Any] = UnkownValueCode
+    old_type: Optional[Any] = UnkownValueCode
+    new_path: Optional[List] = None
+    t1_from_index: Optional[int] = None
+    t1_to_index: Optional[int] = None
+    t2_from_index: Optional[int] = None
+    t2_to_index: Optional[int] = None
