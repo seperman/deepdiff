@@ -771,7 +771,7 @@ class FlatDataAction(str, enum.Enum):
     unordered_iterable_item_removed = 'unordered_iterable_item_removed'
 
 
-UnkownValueCode = '*-UNKNOWN-*'
+UnkownValueCode = 'unknown___'
 
 
 class FlatDeltaRow(NamedTuple):
