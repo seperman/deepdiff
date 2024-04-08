@@ -23,6 +23,10 @@ Tested on Python 3.8+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 7-0-1
+
+- Fixes the translation between Difflib opcodes and Delta flat rows.
+
 DeepDiff 7-0-0
 
 - DeepDiff 7 comes with an improved delta object. [Delta to flat dictionaries](https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries) have undergone a major change. We have also introduced [Delta serialize to flat rows](https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-rows).

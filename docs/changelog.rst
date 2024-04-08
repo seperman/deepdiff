@@ -5,6 +5,11 @@ Changelog
 
 DeepDiff Changelog
 
+
+-  v7-0-1
+
+   - Fixes the translation between Difflib opcodes and Delta flat rows.
+
 -  v7-0-0
 
    -  When verbose=2, return ``new_path`` when the ``path`` and
