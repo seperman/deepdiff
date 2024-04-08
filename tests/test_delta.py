@@ -1020,10 +1020,12 @@ DELTA_IGNORE_ORDER_CASES = {
             },
             'values_changed': {
                 'root[6]': {
-                    'new_value': 7
+                    'new_value': 7,
+                    'new_path': 'root[0]',
                 },
                 'root[0]': {
-                    'new_value': 8
+                    'new_value': 8,
+                    'new_path': 'root[6]',
                 }
             }
         },

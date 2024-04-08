@@ -1280,7 +1280,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 other = get_other_pair(hash_value)
                 item_id = id(other.item)
                 indexes = t2_hashtable[hash_value].indexes if other.item is notpresent else other.indexes
-                index2 = t2_hashtable[hash_value].indexes[0]
+                # When we report repetitions, we want the child_relationship_param2 only if there is no repetition.
+                # Because when there is a repetition, we report it in a different way (iterable_items_added_at_indexes for example).
+                # When there is no repetition, we want child_relationship_param2 so that we report the "new_path" correctly.
+                if len(t2_hashtable[hash_value].indexes) == 1:
+                    index2 = t2_hashtable[hash_value].indexes[0]
+                else:
+                    index2 = None
                 for i in indexes:
                     change_level = level.branch_deeper(
                         other.item,
@@ -1299,7 +1305,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     return  # pragma: no cover. This is already covered for addition.
                 other = get_other_pair(hash_value, in_t1=False)
                 item_id = id(other.item)
-                index2 = None if other.item is notpresent else other.indexes[0]
+                # When we report repetitions, we want the child_relationship_param2 only if there is no repetition.
+                # Because when there is a repetition, we report it in a different way (iterable_items_added_at_indexes for example).
+                # When there is no repetition, we want child_relationship_param2 so that we report the "new_path" correctly.
+                if other.item is notpresent or len(other.indexes > 1):
+                    index2 = None
+                else:
+                    index2 = other.indexes[0]
                 for i in t1_hashtable[hash_value].indexes:
                     change_level = level.branch_deeper(
                         t1_hashtable[hash_value].item,

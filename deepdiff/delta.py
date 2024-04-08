@@ -944,14 +944,14 @@ class Delta:
                 result[action][path_str] = value
             elif action == 'values_changed':
                 if old_value == UnkownValueCode:
-                    result[action][path_str] = {'new_value': value, 'new_path': new_path}
+                    result[action][path_str] = {'new_value': value}
                 else:
-                    result[action][path_str] = {'new_value': value, 'old_value': old_value, 'new_path': new_path}
+                    result[action][path_str] = {'new_value': value, 'old_value': old_value}
             elif action == 'type_changes':
                 type_ = flat_dict.get('type', UnkownValueCode)
                 old_type = flat_dict.get('old_type', UnkownValueCode)
 
-                result[action][path_str] = {'new_value': value, 'new_path': new_path}
+                result[action][path_str] = {'new_value': value}
                 for elem, elem_value in [
                     ('new_type', type_),
                     ('old_type', old_type),
@@ -960,13 +960,9 @@ class Delta:
                     if elem_value != UnkownValueCode:
                         result[action][path_str][elem] = elem_value
             elif action == 'iterable_item_moved':
-                result[action][path_str] = {
-                    'new_path': stringify_path(
-                        flat_dict.get('new_path', ''),
-                        root_element=('root', GET)
-                    ),
-                    'value': value,
-                }
+                result[action][path_str] = {'value': value}
+            if new_path:
+                result[action][path_str]['new_path'] = new_path
 
         return result
 
