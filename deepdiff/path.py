@@ -261,7 +261,8 @@ def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
 
     result = _path_to_elements(path, root_element=root_element)
     result = iter(result)
-    next(result)  # We don't want the root item
+    if root_element:
+        next(result)  # We don't want the root item
     if include_actions is False:
         return [i[0] for i in result]
     return [{'element': i[0], 'action': i[1]} for i in result]

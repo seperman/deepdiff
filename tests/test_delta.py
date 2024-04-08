@@ -9,7 +9,7 @@ from decimal import Decimal
 from unittest import mock
 from ordered_set import OrderedSet
 from deepdiff import Delta, DeepDiff
-from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow
+from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow, FlatDataAction
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     ELEM_NOT_FOUND_TO_ADD_MSG,
@@ -2396,6 +2396,29 @@ class TestDeltaCompareFunc:
 
         assert l2 == l1 + delta4
         assert l1 == l2 - delta4
+
+        flat_rows = delta2.to_flat_rows()
+
+        expected_flat_rows = [
+            FlatDeltaRow(path=[3], action='values_changed', value='X', old_value='D', type=str, old_type=str, new_path=[2]),
+            FlatDeltaRow(path=[6], action='values_changed', value='Z', old_value='G', type=str, old_type=str),
+            FlatDeltaRow(path=[5], action='values_changed', value='Y', old_value='F', type=str, old_type=str),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_deleted, value=[], old_value=['A'], type=list, old_type=list, t1_from_index=0, t1_to_index=1, t2_from_index=0, t2_to_index=0),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_equal, value=None, old_value=None, type=type(None), old_type=type(None), t1_from_index=1, t1_to_index=3, t2_from_index=0, t2_to_index=2),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_replaced, value=['X'], old_value=['D', 'E', 'F', 'G'], type=list, old_type=list, t1_from_index=3, t1_to_index=7, t2_from_index=2, t2_to_index=3),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_equal, value=None, old_value=None, type=type(None), old_type=type(None), t1_from_index=7, t1_to_index=9, t2_from_index=3, t2_to_index=5),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_inserted, value=['Y', 'Z'], old_value=[], type=list, old_type=list, t1_from_index=9, t1_to_index=9, t2_from_index=5, t2_to_index=7)
+        ]
+
+        # The order of the first 3 items is not deterministic
+        assert not DeepDiff(expected_flat_rows[:3], flat_rows[:3], ignore_order=True)
+        assert expected_flat_rows[3:] == flat_rows[3:]
+
+        delta5 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)
+
+
+        assert l2 == l1 + delta5
+        assert l1 == l2 - delta5
 
     def test_delta_flat_rows(self):
         t1 = {"key1": "value1"}
