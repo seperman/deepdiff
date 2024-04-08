@@ -1,4 +1,4 @@
-# DeepDiff v 7.0.0
+# DeepDiff v 7.0.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,11 +17,15 @@
 
 Tested on Python 3.8+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/7.0.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/7.0.1/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
+
+DeepDiff 7-0-1
+
+- Fixes the translation between Difflib opcodes and Delta flat rows.
 
 DeepDiff 7-0-0
 

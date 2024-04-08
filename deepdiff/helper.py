@@ -110,6 +110,17 @@ py4 = py_major_version == 4
 NUMERICS = frozenset(string.digits)
 
 
+class EnumBase(str, enum.Enum):
+    def __repr__(self):
+        """
+        We need to add a single quotes so we can easily copy the value when we do ipdb.
+        """
+        return f"'{self.name}'"
+
+    def __str__(self):
+        return self.name
+
+
 def _int_or_zero(value):
     """
     Tries to extract some number from a string.
@@ -739,6 +750,13 @@ def named_tuple_repr(self):
     return f"{self.__class__.__name__}({', '.join(fields)})"
 
 
+class OpcodeTag(EnumBase):
+    insert = 'insert'
+    delete = 'delete'
+    equal = 'equal'
+    replace = 'replace'
+
+
 class Opcode(NamedTuple):
     tag: str
     t1_from_index: int
@@ -751,7 +769,7 @@ class Opcode(NamedTuple):
     __repr__ = __str__ = named_tuple_repr
 
 
-class FlatDataAction(str, enum.Enum):
+class FlatDataAction(EnumBase):
     values_changed = 'values_changed'
     type_changes = 'type_changes'
     set_item_added = 'set_item_added'
@@ -771,7 +789,17 @@ class FlatDataAction(str, enum.Enum):
     unordered_iterable_item_removed = 'unordered_iterable_item_removed'
 
 
-UnkownValueCode = '*-UNKNOWN-*'
+OPCODE_TAG_TO_FLAT_DATA_ACTION = {
+    OpcodeTag.insert: FlatDataAction.iterable_items_inserted,
+    OpcodeTag.delete: FlatDataAction.iterable_items_deleted,
+    OpcodeTag.replace: FlatDataAction.iterable_items_replaced,
+    OpcodeTag.equal: FlatDataAction.iterable_items_equal,
+}
+
+FLAT_DATA_ACTION_TO_OPCODE_TAG = {v: i for i, v in OPCODE_TAG_TO_FLAT_DATA_ACTION.items()}
+
+
+UnkownValueCode = 'unknown___'
 
 
 class FlatDeltaRow(NamedTuple):

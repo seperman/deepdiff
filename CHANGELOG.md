@@ -1,5 +1,8 @@
 # DeepDiff Change log
 
+
+- v7-0-1
+    - Fixes the translation between Difflib opcodes and Delta flat rows.
 - v7-0-0
     - When verbose=2, return `new_path` when the `path` and `new_path` are different (for example when ignore_order=True and the index of items have changed).
     - Dropping support for Python 3.7

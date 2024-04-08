@@ -11,7 +11,9 @@ from deepdiff.helper import (
     strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
-    Opcode, FlatDeltaRow, UnkownValueCode,
+    Opcode, FlatDeltaRow, UnkownValueCode, FlatDataAction,
+    OPCODE_TAG_TO_FLAT_DATA_ACTION,
+    FLAT_DATA_ACTION_TO_OPCODE_TAG,
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
@@ -877,8 +879,33 @@ class Delta:
     def to_dict(self):
         return dict(self.diff)
 
+    def _flatten_iterable_opcodes(self, _parse_path):
+        """
+        Converts op_codes to FlatDeltaRows
+        """
+        result = []
+        for path, op_codes in self.diff['_iterable_opcodes'].items():
+            for op_code in op_codes:
+                result.append(
+                    FlatDeltaRow(
+                        path=_parse_path(path),
+                        action=OPCODE_TAG_TO_FLAT_DATA_ACTION[op_code.tag],
+                        value=op_code.new_values,
+                        old_value=op_code.old_values,
+                        type=type(op_code.new_values),
+                        old_type=type(op_code.old_values),
+                        new_path=None,
+                        t1_from_index=op_code.t1_from_index,
+                        t1_to_index=op_code.t1_to_index,
+                        t2_from_index=op_code.t2_from_index,
+                        t2_to_index=op_code.t2_to_index,
+
+                    )
+                )
+        return result
+
     @staticmethod
-    def _get_flat_row(action, info, _parse_path, keys_and_funcs):
+    def _get_flat_row(action, info, _parse_path, keys_and_funcs, report_type_changes=True):
         for path, details in info.items():
             row = {'path': _parse_path(path), 'action': action}
             for key, new_key, func in keys_and_funcs:
@@ -887,6 +914,11 @@ class Delta:
                         row[new_key] = func(details[key])
                     else:
                         row[new_key] = details[key]
+            if report_type_changes:
+                if 'value' in row and 'type' not in row:
+                    row['type'] = type(row['value'])
+                if 'old_value' in row and 'old_type' not in row:
+                    row['old_type'] = type(row['old_value'])
             yield FlatDeltaRow(**row)
 
     @staticmethod
@@ -918,28 +950,44 @@ class Delta:
             if action in FLATTENING_NEW_ACTION_MAP:
                 action = FLATTENING_NEW_ACTION_MAP[action]
                 index = path.pop()
-            if action in {'attribute_added', 'attribute_removed'}:
+            if action in {
+                FlatDataAction.attribute_added,
+                FlatDataAction.attribute_removed,
+            }:
                 root_element = ('root', GETATTR)
             else:
                 root_element = ('root', GET)
-            path_str = stringify_path(path, root_element=root_element)  # We need the string path
+            if isinstance(path, str):
+                path_str = path
+            else:
+                path_str = stringify_path(path, root_element=root_element)  # We need the string path
             if new_path and new_path != path:
                 new_path = stringify_path(new_path, root_element=root_element)
             else:
                 new_path = None
             if action not in result:
                 result[action] = {}
-            if action in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
+            if action in {
+                'iterable_items_added_at_indexes',
+                'iterable_items_removed_at_indexes',
+            }:
                 if path_str not in result[action]:
                     result[action][path_str] = {}
                 result[action][path_str][index] = value
-            elif action in {'set_item_added', 'set_item_removed'}:
+            elif action in {
+                FlatDataAction.set_item_added,
+                FlatDataAction.set_item_removed
+            }:
                 if path_str not in result[action]:
                     result[action][path_str] = set()
                 result[action][path_str].add(value)
             elif action in {
-                'dictionary_item_added', 'dictionary_item_removed',
-                'attribute_removed', 'attribute_added', 'iterable_item_added', 'iterable_item_removed',
+                FlatDataAction.dictionary_item_added,
+                FlatDataAction.dictionary_item_removed,
+                FlatDataAction.attribute_removed,
+                FlatDataAction.attribute_added,
+                FlatDataAction.iterable_item_added,
+                FlatDataAction.iterable_item_removed,
             }:
                 result[action][path_str] = value
             elif action == 'values_changed':
@@ -959,8 +1007,29 @@ class Delta:
                 ]:
                     if elem_value != UnkownValueCode:
                         result[action][path_str][elem] = elem_value
-            elif action == 'iterable_item_moved':
+            elif action == FlatDataAction.iterable_item_moved:
                 result[action][path_str] = {'value': value}
+            elif action in {
+                FlatDataAction.iterable_items_inserted,
+                FlatDataAction.iterable_items_deleted,
+                FlatDataAction.iterable_items_replaced,
+                FlatDataAction.iterable_items_equal,
+            }:
+                if '_iterable_opcodes' not in result:
+                    result['_iterable_opcodes'] = {}
+                if path_str not in result['_iterable_opcodes']:
+                    result['_iterable_opcodes'][path_str] = []
+                result['_iterable_opcodes'][path_str].append(
+                    Opcode(
+                        tag=FLAT_DATA_ACTION_TO_OPCODE_TAG[action],
+                        t1_from_index=flat_dict.get('t1_from_index'),
+                        t1_to_index=flat_dict.get('t1_to_index'),
+                        t2_from_index=flat_dict.get('t2_from_index'),
+                        t2_to_index=flat_dict.get('t2_to_index'),
+                        new_values=flat_dict.get('value'),
+                        old_values=flat_dict.get('old_value'),
+                    )
+                )
             if new_path:
                 result[action][path_str]['new_path'] = new_path
 
@@ -1060,6 +1129,9 @@ class Delta:
             'iterable_items_removed_at_indexes': 'unordered_iterable_item_removed',
         }
         for action, info in self.diff.items():
+            if action == '_iterable_opcodes':
+                result.extend(self._flatten_iterable_opcodes(_parse_path=_parse_path))
+                continue
             if action.startswith('_'):
                 continue
             if action in FLATTENING_NEW_ACTION_MAP:
@@ -1072,12 +1144,20 @@ class Delta:
                             path2.append((index, 'GET'))
                         else:
                             path2.append(index)
-                        result.append(FlatDeltaRow(path=path2, value=value, action=new_action))
+                        if report_type_changes:
+                            row = FlatDeltaRow(path=path2, value=value, action=new_action, type=type(value))
+                        else:
+                            row = FlatDeltaRow(path=path2, value=value, action=new_action)
+                        result.append(row)
             elif action in {'set_item_added', 'set_item_removed'}:
                 for path, values in info.items():
                     path = _parse_path(path)
                     for value in values:
-                        result.append(FlatDeltaRow(path=path, value=value, action=action))
+                        if report_type_changes:
+                            row = FlatDeltaRow(path=path, value=value, action=action, type=type(value))
+                        else:
+                            row = FlatDeltaRow(path=path, value=value, action=action)
+                        result.append(row)
             elif action == 'dictionary_item_added':
                 for path, value in info.items():
                     path = _parse_path(path)
@@ -1092,14 +1172,22 @@ class Delta:
                     elif isinstance(value, set) and len(value) == 1:
                         value = value.pop()
                         action = 'set_item_added'
-                    result.append(FlatDeltaRow(path=path, value=value, action=action))
+                    if report_type_changes:
+                        row = FlatDeltaRow(path=path, value=value, action=action, type=type(value))
+                    else:
+                        row = FlatDeltaRow(path=path, value=value, action=action)
+                    result.append(row)
             elif action in {
                 'dictionary_item_removed', 'iterable_item_added',
                 'iterable_item_removed', 'attribute_removed', 'attribute_added'
             }:
                 for path, value in info.items():
                     path = _parse_path(path)
-                    result.append(FlatDeltaRow(path=path, value=value, action=action))
+                    if report_type_changes:
+                        row = FlatDeltaRow(path=path, value=value, action=action, type=type(value))
+                    else:
+                        row = FlatDeltaRow(path=path, value=value, action=action)
+                    result.append(row)
             elif action == 'type_changes':
                 if not report_type_changes:
                     action = 'values_changed'
@@ -1109,16 +1197,16 @@ class Delta:
                     info=info,
                     _parse_path=_parse_path,
                     keys_and_funcs=keys_and_funcs,
+                    report_type_changes=report_type_changes,
                 ):
                     result.append(row)
-            elif action == '_iterable_opcodes':
-                result.extend(self._flatten_iterable_opcodes())
             else:
                 for row in self._get_flat_row(
                     action=action,
                     info=info,
                     _parse_path=_parse_path,
                     keys_and_funcs=keys_and_funcs,
+                    report_type_changes=report_type_changes,
                 ):
                     result.append(row)
         return result

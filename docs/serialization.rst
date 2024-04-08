@@ -181,7 +181,7 @@ Flat Row Specs:
         unordered_iterable_item_removed = 'unordered_iterable_item_removed'
 
 
-    UnkownValueCode = '*-UNKNOWN-*'
+    UnkownValueCode = 'unknown___'
 
 
     class FlatDeltaRow(NamedTuple):
@@ -205,7 +205,7 @@ Delta Serialize To Flat Dictionaries
 
 Sometimes, it is desired to serialize a :ref:`delta_label` object to a list of flat dictionaries. For example, to store them in relation databases. In that case, you can use the Delta.to_flat_dicts to achieve the desired outcome.
 
-Since None is a valid value, we use a special hard-coded string to signify "unkown": '*-UNKNOWN-*'
+Since None is a valid value, we use a special hard-coded string to signify "unkown": 'unknown___'
 
 .. note::
     Many new keys are added to the flat dicts in DeepDiff 7.0.0
@@ -226,25 +226,25 @@ For example:
     >>> pprint(flat_dicts, indent=2)
     [ { 'action': 'dictionary_item_added',
         'new_path': None,
-        'old_type': '*-UNKNOWN-*',
-        'old_value': '*-UNKNOWN-*',
+        'old_type': 'unknown___',
+        'old_value': 'unknown___',
         'path': ['field2', 'key2'],
         't1_from_index': None,
         't1_to_index': None,
         't2_from_index': None,
         't2_to_index': None,
-        'type': '*-UNKNOWN-*',
+        'type': 'unknown___',
         'value': 'value2'},
       { 'action': 'dictionary_item_removed',
         'new_path': None,
-        'old_type': '*-UNKNOWN-*',
-        'old_value': '*-UNKNOWN-*',
+        'old_type': 'unknown___',
+        'old_value': 'unknown___',
         'path': ['key1'],
         't1_from_index': None,
         't1_to_index': None,
         't2_from_index': None,
         't2_to_index': None,
-        'type': '*-UNKNOWN-*',
+        'type': 'unknown___',
         'value': 'value1'}]
 
 
@@ -261,25 +261,25 @@ Example 2:
     >>> pprint(flat_dicts, indent=2)
     [ { 'action': 'iterable_item_added',
         'new_path': None,
-        'old_type': '*-UNKNOWN-*',
-        'old_value': '*-UNKNOWN-*',
+        'old_type': 'unknown___',
+        'old_value': 'unknown___',
         'path': [2],
         't1_from_index': None,
         't1_to_index': None,
         't2_from_index': None,
         't2_to_index': None,
-        'type': '*-UNKNOWN-*',
+        'type': 'unknown___',
         'value': 'C'},
       { 'action': 'iterable_item_added',
         'new_path': None,
-        'old_type': '*-UNKNOWN-*',
-        'old_value': '*-UNKNOWN-*',
+        'old_type': 'unknown___',
+        'old_value': 'unknown___',
         'path': [3],
         't1_from_index': None,
         't1_to_index': None,
         't2_from_index': None,
         't2_to_index': None,
-        'type': '*-UNKNOWN-*',
+        'type': 'unknown___',
         'value': 'D'}]
 
 

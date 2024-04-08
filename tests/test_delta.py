@@ -9,7 +9,7 @@ from decimal import Decimal
 from unittest import mock
 from ordered_set import OrderedSet
 from deepdiff import Delta, DeepDiff
-from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow
+from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow, FlatDataAction
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     ELEM_NOT_FOUND_TO_ADD_MSG,
@@ -73,8 +73,8 @@ class TestBasicsOfDelta:
 
         flat_result1 = delta.to_flat_rows()
         flat_expected1 = [
-            FlatDeltaRow(path=[3], value=5, action='iterable_item_added'),
-            FlatDeltaRow(path=[2], value=3, action='iterable_item_added'),
+            FlatDeltaRow(path=[3], value=5, action='iterable_item_added', type=int),
+            FlatDeltaRow(path=[2], value=3, action='iterable_item_added', type=int),
         ]
 
         assert flat_expected1 == flat_result1
@@ -291,9 +291,9 @@ class TestBasicsOfDelta:
 
         flat_result1 = delta.to_flat_rows()
         flat_expected1 = [
-            FlatDeltaRow(path=[4, 'b', 2], action='values_changed', value=2, old_value=5),
-            FlatDeltaRow(path=[4, 'b', 1], action='values_changed', value=3, old_value=2),
-            FlatDeltaRow(path=[4, 'b', 3], value=5, action='iterable_item_added'),
+            FlatDeltaRow(path=[4, 'b', 2], action='values_changed', value=2, old_value=5, type=int, old_type=int),
+            FlatDeltaRow(path=[4, 'b', 1], action='values_changed', value=3, old_value=2, type=int, old_type=int),
+            FlatDeltaRow(path=[4, 'b', 3], value=5, action='iterable_item_added', type=int),
         ]
 
         assert flat_expected1 == flat_result1
@@ -332,9 +332,9 @@ class TestBasicsOfDelta:
 
         flat_result2 = delta2.to_flat_rows()
         flat_expected2 = [
-            FlatDeltaRow(path=[2], action='values_changed', value=2, old_value=5),
-            FlatDeltaRow(path=[1], action='values_changed', value=3, old_value=2),
-            FlatDeltaRow(path=[3], value=5, action='iterable_item_added'),
+            FlatDeltaRow(path=[2], action='values_changed', value=2, old_value=5, type=int, old_type=int),
+            FlatDeltaRow(path=[1], action='values_changed', value=3, old_value=2, type=int, old_type=int),
+            FlatDeltaRow(path=[3], value=5, action='iterable_item_added', type=int),
         ]
 
         assert flat_expected2 == flat_result2
@@ -363,8 +363,8 @@ class TestBasicsOfDelta:
 
         flat_result = delta.to_flat_rows()
         flat_expected = [
-            FlatDeltaRow(path=[4, 'b', 2], value='to_be_removed', action='iterable_item_removed'),
-            FlatDeltaRow(path=[4, 'b', 3], value='to_be_removed2', action='iterable_item_removed'),
+            FlatDeltaRow(path=[4, 'b', 2], value='to_be_removed', action='iterable_item_removed', type=str),
+            FlatDeltaRow(path=[4, 'b', 3], value='to_be_removed2', action='iterable_item_removed', type=str),
         ]
 
         assert flat_expected == flat_result
@@ -567,7 +567,8 @@ class TestBasicsOfDelta:
                                              'professionalDesignation': '',
                                              'suffix': 'SR',
                                              'nameIdentifier': '00003'},
-                                   action='unordered_iterable_item_added'),
+                                   action='unordered_iterable_item_added',
+                                   type=dict),
                                   FlatDeltaRow(path=['individualNames', 1],
                                    value={'firstName': 'John',
                                              'lastName': 'Doe',
@@ -577,7 +578,9 @@ class TestBasicsOfDelta:
                                              'professionalDesignation': '',
                                              'suffix': 'SR',
                                              'nameIdentifier': '00002'},
-                                   action='unordered_iterable_item_removed')]
+                                   action='unordered_iterable_item_removed',
+                                   type=dict),
+                                  ]
 
         preserved_flat_dict_list = copy.deepcopy(flat_rows_list)  # Use this later for assert comparison
 
@@ -1405,13 +1408,13 @@ class TestDeltaOther:
 
         flat_result1 = delta1.to_flat_rows()
         flat_expected1 = [
-            {'path': [0], 'value': 7, 'action': 'unordered_iterable_item_added'},
-            {'path': [6], 'value': 8, 'action': 'unordered_iterable_item_added'},
-            {'path': [1], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [2], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [5], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [6], 'value': 6, 'action': 'unordered_iterable_item_removed'},
-            {'path': [0], 'value': 5, 'action': 'unordered_iterable_item_removed'},
+            {'path': [0], 'value': 7, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [6], 'value': 8, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [1], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [2], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [5], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [6], 'value': 6, 'action': 'unordered_iterable_item_removed', 'type': int},
+            {'path': [0], 'value': 5, 'action': 'unordered_iterable_item_removed', 'type': int},
         ]
         flat_expected1 = [FlatDeltaRow(**i) for i in flat_expected1]
         assert flat_expected1 == flat_result1
@@ -1422,11 +1425,11 @@ class TestDeltaOther:
 
         flat_result2 = delta2.to_flat_rows()
         flat_expected2 = [
-            {'path': [1], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [2], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [5], 'value': 4, 'action': 'unordered_iterable_item_added'},
-            {'path': [6], 'action': 'values_changed', 'value': 7},
-            {'path': [0], 'action': 'values_changed', 'value': 8},
+            {'path': [1], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [2], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [5], 'value': 4, 'action': 'unordered_iterable_item_added', 'type': int},
+            {'path': [6], 'action': 'values_changed', 'value': 7, 'type': int},
+            {'path': [0], 'action': 'values_changed', 'value': 8, 'type': int},
         ]
         flat_expected2 = [FlatDeltaRow(**i) for i in flat_expected2]
         assert flat_expected2 == flat_result2
@@ -1565,7 +1568,7 @@ class TestDeltaOther:
         assert [] == t4
 
         flat_result2 = delta2.to_flat_rows()
-        flat_expected2 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5}]
+        flat_expected2 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5, 'type': int}]
         flat_expected2 = [FlatDeltaRow(**i) for i in flat_expected2]
 
         assert flat_expected2 == flat_result2
@@ -1575,7 +1578,7 @@ class TestDeltaOther:
 
         delta3 = Delta(diff, raise_errors=False, bidirectional=True)
         flat_result3 = delta3.to_flat_rows()
-        flat_expected3 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5, 'old_value': 4}]
+        flat_expected3 = [{'path': [1, 2, 0], 'action': 'values_changed', 'value': 5, 'old_value': 4, 'type': int, 'old_type': int}]
         flat_expected3 = [FlatDeltaRow(**i) for i in flat_expected3]
 
         assert flat_expected3 == flat_result3
@@ -1685,7 +1688,7 @@ class TestDeltaOther:
         assert expected == result
 
         flat_result = delta.to_flat_rows()
-        flat_expected = [{'action': 'unordered_iterable_item_removed', 'path': [2], 'value': 'B'}]
+        flat_expected = [{'action': 'unordered_iterable_item_removed', 'path': [2], 'value': 'B', 'type': str}]
         flat_expected = [FlatDeltaRow(**i) for i in flat_expected]
 
         assert flat_expected == flat_result
@@ -1766,10 +1769,10 @@ class TestDeltaOther:
         delta = Delta(DeepDiff(t1, t2))
         flat_result = delta.to_flat_rows()
         flat_expected = [
-            {'path': [0, 1], 'value': 10, 'action': 'set_item_added'},
-            {'path': [0, 0], 'action': 'values_changed', 'value': 2},
-            {'path': [0, 1], 'value': 'A', 'action': 'set_item_removed'},
-            {'path': [0, 1], 'value': 'C', 'action': 'set_item_added'},
+            {'path': [0, 1], 'value': 10, 'action': 'set_item_added', 'type': int},
+            {'path': [0, 0], 'action': 'values_changed', 'value': 2, 'type': int},
+            {'path': [0, 1], 'value': 'A', 'action': 'set_item_removed', 'type': str},
+            {'path': [0, 1], 'value': 'C', 'action': 'set_item_added', 'type': str},
         ]
         flat_expected = [FlatDeltaRow(**i) for i in flat_expected]
 
@@ -1885,11 +1888,11 @@ class TestDeltaCompareFunc:
 
         flat_result = delta.to_flat_rows()
         flat_expected = [
-            {'path': [2], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed'},
-            {'path': [0], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed'},
-            {'path': [3], 'value': {'id': 3, 'val': 3}, 'action': 'iterable_item_removed'},
-        {'path': [0], 'action': 'iterable_item_moved', 'value': {'id': 1, 'val': 3}, 'new_path': [2]},
-            {'path': [3], 'action': 'iterable_item_moved', 'value': {'id': 3, 'val': 3}, 'new_path': [0]},
+            {'path': [2], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
+            {'path': [0], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
+            {'path': [3], 'value': {'id': 3, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
+            {'path': [0], 'action': 'iterable_item_moved', 'value': {'id': 1, 'val': 3}, 'new_path': [2], 'type': dict},
+            {'path': [3], 'action': 'iterable_item_moved', 'value': {'id': 3, 'val': 3}, 'new_path': [0], 'type': dict},
         ]
         flat_expected = [FlatDeltaRow(**i) for i in flat_expected]
 
@@ -2289,11 +2292,13 @@ class TestDeltaCompareFunc:
         expected_flat_dicts = [{
             'path': ['field_name1', 0],
             'value': 'xxx',
-            'action': 'iterable_item_removed'
+            'action': 'iterable_item_removed',
+            'type': str,
         }, {
             'path': ['field_name1', 1],
             'value': 'yyy',
-            'action': 'iterable_item_removed'
+            'action': 'iterable_item_removed',
+            'type': str,
         }]
         expected_flat_dicts = [FlatDeltaRow(**i) for i in expected_flat_dicts]
 
@@ -2318,11 +2323,13 @@ class TestDeltaCompareFunc:
         expected_flat_dicts = [{
             'path': ['field_name1', 0],
             'value': 'xxx',
-            'action': 'iterable_item_added'
+            'action': 'iterable_item_added',
+            'type': str,
         }, {
             'path': ['field_name1', 1],
             'value': 'yyy',
-            'action': 'iterable_item_added'
+            'action': 'iterable_item_added',
+            'type': str,
         }]
         expected_flat_dicts = [FlatDeltaRow(**i) for i in expected_flat_dicts]
 
@@ -2389,6 +2396,29 @@ class TestDeltaCompareFunc:
 
         assert l2 == l1 + delta4
         assert l1 == l2 - delta4
+
+        flat_rows = delta2.to_flat_rows()
+
+        expected_flat_rows = [
+            FlatDeltaRow(path=[3], action='values_changed', value='X', old_value='D', type=str, old_type=str, new_path=[2]),
+            FlatDeltaRow(path=[6], action='values_changed', value='Z', old_value='G', type=str, old_type=str),
+            FlatDeltaRow(path=[5], action='values_changed', value='Y', old_value='F', type=str, old_type=str),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_deleted, value=[], old_value=['A'], type=list, old_type=list, t1_from_index=0, t1_to_index=1, t2_from_index=0, t2_to_index=0),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_equal, value=None, old_value=None, type=type(None), old_type=type(None), t1_from_index=1, t1_to_index=3, t2_from_index=0, t2_to_index=2),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_replaced, value=['X'], old_value=['D', 'E', 'F', 'G'], type=list, old_type=list, t1_from_index=3, t1_to_index=7, t2_from_index=2, t2_to_index=3),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_equal, value=None, old_value=None, type=type(None), old_type=type(None), t1_from_index=7, t1_to_index=9, t2_from_index=3, t2_to_index=5),
+            FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_inserted, value=['Y', 'Z'], old_value=[], type=list, old_type=list, t1_from_index=9, t1_to_index=9, t2_from_index=5, t2_to_index=7)
+        ]
+
+        # The order of the first 3 items is not deterministic
+        assert not DeepDiff(expected_flat_rows[:3], flat_rows[:3], ignore_order=True)
+        assert expected_flat_rows[3:] == flat_rows[3:]
+
+        delta5 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)
+
+
+        assert l2 == l1 + delta5
+        assert l1 == l2 - delta5
 
     def test_delta_flat_rows(self):
         t1 = {"key1": "value1"}
