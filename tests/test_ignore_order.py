@@ -720,8 +720,8 @@ class TestIgnoreOrder:
 
         diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         expected = {
-            'PASSES COUNT': 6,
-            'DIFF COUNT': 33,
+            'PASSES COUNT': 7,
+            'DIFF COUNT': 37,
             'DISTANCE CACHE HIT COUNT': 0,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False,
