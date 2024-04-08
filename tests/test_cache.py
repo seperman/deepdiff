@@ -66,8 +66,8 @@ class TestCache:
 
         stats = diff.get_stats()
         expected_stats = {
-            'PASSES COUNT': 110,
-            'DIFF COUNT': 306,
+            'PASSES COUNT': 104,
+            'DIFF COUNT': 288,
             'DISTANCE CACHE HIT COUNT': 0,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False

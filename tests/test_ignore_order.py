@@ -648,8 +648,8 @@ class TestIgnoreOrder:
 
     @pytest.mark.parametrize('max_passes, expected', [
         (0, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
-        (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
-        (22, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
+        (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]], 'new_path': "root[1]['key3'][0]"}}}),
+        (22, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2, 'new_path': "root[1]['key3'][0][0][0][0][1]"}}})
     ])
     def test_ignore_order_max_passes(self, max_passes, expected):
         t1 = [
@@ -679,8 +679,8 @@ class TestIgnoreOrder:
 
     @pytest.mark.parametrize('max_diffs, expected', [
         (1, {}),
-        (65, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}}),
-        (80, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}}),
+        (65, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}}}),
+        (80, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2, 'new_path': "root[1]['key3'][0][0][0][0][1]"}}}),
     ])
     def test_ignore_order_max_diffs(self, max_diffs, expected):
         t1 = [
@@ -720,8 +720,8 @@ class TestIgnoreOrder:
 
         diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
         expected = {
-            'PASSES COUNT': 7,
-            'DIFF COUNT': 37,
+            'PASSES COUNT': 6,
+            'DIFF COUNT': 33,
             'DISTANCE CACHE HIT COUNT': 0,
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False,

@@ -189,7 +189,6 @@ class TextResult(ResultDict):
         if 'type_changes' in tree:
             for change in tree['type_changes']:
                 path = change.path(force=FORCE_DEFAULT)
-                new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
                 if type(change.t1) is type:
                     include_values = False
                     old_type = change.t1
@@ -202,8 +201,10 @@ class TextResult(ResultDict):
                     'old_type': old_type,
                     'new_type': new_type,
                 })
-                if path != new_path:
-                    remap_dict['new_path'] = new_path
+                if self.verbose_level > 1:
+                    new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
+                    if path != new_path:
+                        remap_dict['new_path'] = new_path
                 self['type_changes'][path] = remap_dict
                 if self.verbose_level and include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
@@ -212,10 +213,11 @@ class TextResult(ResultDict):
         if 'values_changed' in tree and self.verbose_level > 0:
             for change in tree['values_changed']:
                 path = change.path(force=FORCE_DEFAULT)
-                new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
-                if path != new_path:
-                    the_changed['new_path'] = new_path
+                if self.verbose_level > 1:
+                    new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
+                    if path != new_path:
+                        the_changed['new_path'] = new_path
                 self['values_changed'][path] = the_changed
                 if 'diff' in change.additional:
                     the_changed.update({'diff': change.additional['diff']})
@@ -717,8 +719,8 @@ class DiffLevel:
         # traverse all levels of this relationship
         while level and level is not self:
             # get this level's relationship object
-            if(use_t2):
-                next_rel = level.t2_child_rel
+            if use_t2:
+                next_rel = level.t2_child_rel or level.t1_child_rel
             else:
                 next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a formatted param from
 

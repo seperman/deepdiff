@@ -165,7 +165,7 @@ class TestDeepDistance:
         diff = DeepDiff(t1, t2, ignore_order=True, get_deep_distance=True,
                         cache_size=100, hasher=sha256hex)
         dist = diff['deep_distance']
-        assert str(dist)[:4] == '0.44'
+        assert str(dist)[:4] == '0.55'
 
     def test_get_distance_does_not_care_about_the_size_of_string(self):
         t1 = ["a", "b"]

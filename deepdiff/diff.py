@@ -587,7 +587,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 notpresent,
                 t2[key],
                 child_relationship_class=rel_class,
-                child_relationship_param=key)
+                child_relationship_param=key,
+                child_relationship_param2=key,
+            )
             self._report_result(item_added_key, change_level, local_tree=local_tree)
 
         for key in t_keys_removed:
@@ -599,7 +601,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t1[key],
                 notpresent,
                 child_relationship_class=rel_class,
-                child_relationship_param=key)
+                child_relationship_param=key,
+                child_relationship_param2=key,
+            )
             self._report_result(item_removed_key, change_level, local_tree=local_tree)
 
         for key in t_keys_intersect:  # key present in both dicts - need to compare values
@@ -618,7 +622,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 t1[key1],
                 t2[key2],
                 child_relationship_class=rel_class,
-                child_relationship_param=key)
+                child_relationship_param=key,
+                child_relationship_param2=key,
+                )
             self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
     def _diff_set(self, level, local_tree=None):
@@ -943,7 +949,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         x,
                         notpresent,
                         child_relationship_class=child_relationship_class,
-                        child_relationship_param=index + t1_from_index)
+                        child_relationship_param=index + t1_from_index,
+                        child_relationship_param2=index + t1_from_index,
+                    )
                     self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
             elif tag == 'insert':
                 for index, y in enumerate(level.t2[t2_from_index:t2_to_index]):
@@ -951,7 +959,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         notpresent,
                         y,
                         child_relationship_class=child_relationship_class,
-                        child_relationship_param=index + t2_from_index)
+                        child_relationship_param=index + t2_from_index,
+                        child_relationship_param2=index + t2_from_index,
+                    )
                     self._report_result('iterable_item_added', change_level, local_tree=local_tree)
         return opcodes_with_values
 
@@ -1501,7 +1511,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         t1_row,
                         t2_row,
                         child_relationship_class=NumpyArrayRelationship,
-                        child_relationship_param=t1_path)
+                        child_relationship_param=t1_path,
+                        child_relationship_param2=t2_path,
+                    )
 
                     self._diff_iterable_in_order(new_level, parents_ids, _original_type=_original_type, local_tree=local_tree)
 
