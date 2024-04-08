@@ -4,10 +4,13 @@ import json
 import sys
 import pytest
 import datetime
+import numpy as np
+from typing import NamedTuple, Optional
 from pickle import UnpicklingError
 from decimal import Decimal
+from collections import Counter
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3
+from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
@@ -21,6 +24,19 @@ logging.disable(logging.CRITICAL)
 
 t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+
+
+class SomeStats(NamedTuple):
+    counter: Optional[Counter]
+    context_aware_counter: Optional[Counter] = None
+    min_int: Optional[int] = 0
+    max_int: Optional[int] = 0
+
+
+field_stats1 = SomeStats(
+    counter=Counter(["a", "a", "b"]),
+    max_int=10
+)
 
 
 class TestSerialization:
@@ -323,10 +339,24 @@ class TestDeepDiffPretty:
         (5, {1, 2, 10}, set),
         (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
         (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
+        (8, field_stats1, lambda x: SomeStats(**x)),
+        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array)
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
+        if test_num == 8 and py_current_version < 3.8:
+            print(f"Skipping test_json_dumps_and_loads #{test_num} on Python {py_current_version}")
+            return
         serialized = json_dumps(value)
         back = json_loads(serialized)
         if func_to_convert_back:
             back = func_to_convert_back(back)
-        assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"
+        if isinstance(back, np_ndarray):
+            assert np.array_equal(value, back), f"test_json_dumps_and_loads test #{test_num} failed"
+        else:
+            assert value == back, f"test_json_dumps_and_loads test #{test_num} failed"
+
+    def test_namedtuple_seriazliation(self):
+        op_code = Opcode(tag="replace", t1_from_index=0, t1_to_index=1, t2_from_index=10, t2_to_index=20)
+        serialized = json_dumps(op_code)
+        expected = '{"tag":"replace","t1_from_index":0,"t1_to_index":1,"t2_from_index":10,"t2_to_index":20,"old_values":null,"new_values":null}'
+        assert serialized == expected

@@ -152,9 +152,17 @@ class TextResult(ResultDict):
         self._from_tree_deep_distance(tree)
         self._from_tree_custom_results(tree)
 
-    def _from_tree_default(self, tree, report_type):
+    def _from_tree_default(self, tree, report_type, ignore_if_in_iterable_opcodes=False):
         if report_type in tree:
+                
             for change in tree[report_type]:  # report each change
+                # When we convert from diff to delta result, we care more about opcodes than iterable_item_added or removed
+                if (
+                    ignore_if_in_iterable_opcodes
+                    and report_type in {"iterable_item_added", "iterable_item_removed"}
+                    and change.up.path(force=FORCE_DEFAULT) in self["_iterable_opcodes"]
+                ):
+                    continue
                 # determine change direction (added or removed)
                 # Report t2 (the new one) whenever possible.
                 # In cases where t2 doesn't exist (i.e. stuff removed), report t1.
@@ -180,6 +188,7 @@ class TextResult(ResultDict):
     def _from_tree_type_changes(self, tree):
         if 'type_changes' in tree:
             for change in tree['type_changes']:
+                path = change.path(force=FORCE_DEFAULT)
                 if type(change.t1) is type:
                     include_values = False
                     old_type = change.t1
@@ -190,19 +199,26 @@ class TextResult(ResultDict):
                     new_type = get_type(change.t2)
                 remap_dict = RemapDict({
                     'old_type': old_type,
-                    'new_type': new_type
+                    'new_type': new_type,
                 })
-                self['type_changes'][change.path(
-                    force=FORCE_DEFAULT)] = remap_dict
+                if self.verbose_level > 1:
+                    new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
+                    if path != new_path:
+                        remap_dict['new_path'] = new_path
+                self['type_changes'][path] = remap_dict
                 if self.verbose_level and include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
         if 'values_changed' in tree and self.verbose_level > 0:
             for change in tree['values_changed']:
+                path = change.path(force=FORCE_DEFAULT)
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
-                self['values_changed'][change.path(
-                    force=FORCE_DEFAULT)] = the_changed
+                if self.verbose_level > 1:
+                    new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
+                    if path != new_path:
+                        the_changed['new_path'] = new_path
+                self['values_changed'][path] = the_changed
                 if 'diff' in change.additional:
                     the_changed.update({'diff': change.additional['diff']})
 
@@ -279,7 +295,7 @@ class TextResult(ResultDict):
 class DeltaResult(TextResult):
     ADD_QUOTES_TO_STRINGS = False
 
-    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False):
+    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False, _iterable_opcodes=None):
         self.ignore_order = ignore_order
         self.always_include_values = always_include_values
 
@@ -297,6 +313,7 @@ class DeltaResult(TextResult):
             "set_item_added": dict_(),
             "iterable_items_added_at_indexes": dict_(),
             "iterable_items_removed_at_indexes": dict_(),
+            "_iterable_opcodes": _iterable_opcodes or {},
         })
 
         if tree_results:
@@ -318,8 +335,8 @@ class DeltaResult(TextResult):
             self._from_tree_iterable_item_added_or_removed(
                 tree, 'iterable_item_removed', delta_report_key='iterable_items_removed_at_indexes')
         else:
-            self._from_tree_default(tree, 'iterable_item_added')
-            self._from_tree_default(tree, 'iterable_item_removed')
+            self._from_tree_default(tree, 'iterable_item_added', ignore_if_in_iterable_opcodes=True)
+            self._from_tree_default(tree, 'iterable_item_removed', ignore_if_in_iterable_opcodes=True)
             self._from_tree_iterable_item_moved(tree)
         self._from_tree_default(tree, 'attribute_added')
         self._from_tree_default(tree, 'attribute_removed')
@@ -370,21 +387,27 @@ class DeltaResult(TextResult):
                     except Exception:
                         pass
 
+                path = change.path(force=FORCE_DEFAULT)
+                new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
                 remap_dict = RemapDict({
                     'old_type': old_type,
-                    'new_type': new_type
+                    'new_type': new_type,
                 })
-                self['type_changes'][change.path(
-                    force=FORCE_DEFAULT)] = remap_dict
+                if path != new_path:
+                    remap_dict['new_path'] = new_path
+                self['type_changes'][path] = remap_dict
                 if include_values or self.always_include_values:
                     remap_dict.update(old_value=change.t1, new_value=change.t2)
 
     def _from_tree_value_changed(self, tree):
         if 'values_changed' in tree:
             for change in tree['values_changed']:
+                path = change.path(force=FORCE_DEFAULT)
+                new_path = change.path(use_t2=True, force=FORCE_DEFAULT)
                 the_changed = {'new_value': change.t2, 'old_value': change.t1}
-                self['values_changed'][change.path(
-                    force=FORCE_DEFAULT)] = the_changed
+                if path != new_path:
+                    the_changed['new_path'] = new_path
+                self['values_changed'][path] = the_changed
                 # If we ever want to store the difflib results instead of the new_value
                 # these lines need to be uncommented and the Delta object needs to be able
                 # to use them.
@@ -407,9 +430,12 @@ class DeltaResult(TextResult):
     def _from_tree_iterable_item_moved(self, tree):
         if 'iterable_item_moved' in tree:
             for change in tree['iterable_item_moved']:
-                the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
-                self['iterable_item_moved'][change.path(
-                    force=FORCE_DEFAULT)] = the_changed
+                if (
+                    change.up.path(force=FORCE_DEFAULT) not in self["_iterable_opcodes"]
+                ):
+                    the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
+                    self['iterable_item_moved'][change.path(
+                        force=FORCE_DEFAULT)] = the_changed
 
 
 class DiffLevel:
@@ -693,8 +719,8 @@ class DiffLevel:
         # traverse all levels of this relationship
         while level and level is not self:
             # get this level's relationship object
-            if(use_t2):
-                next_rel = level.t2_child_rel
+            if use_t2:
+                next_rel = level.t2_child_rel or level.t1_child_rel
             else:
                 next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a formatted param from
 

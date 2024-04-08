@@ -10,7 +10,7 @@ if sys.version_info.major == 2:  # pragma: no cover
 if os.environ.get('USER', '') == 'vagrant':
     del os.link
 
-version = '6.7.1'
+version = '7.0.0'
 
 
 def get_reqs(filename):
@@ -43,7 +43,7 @@ setup(name='deepdiff',
       long_description=long_description,
       long_description_content_type='text/markdown',
       install_requires=reqs,
-      python_requires='>=3.7',
+      python_requires='>=3.8',
       extras_require={
           "cli": cli_reqs,
           "optimize": optimize_reqs,
@@ -52,11 +52,11 @@ setup(name='deepdiff',
           "Intended Audience :: Developers",
           "Operating System :: OS Independent",
           "Topic :: Software Development",
-          "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: 3.9",
           "Programming Language :: Python :: 3.10",
           "Programming Language :: Python :: 3.11",
+          "Programming Language :: Python :: 3.12",
           "Programming Language :: Python :: Implementation :: PyPy",
           "Development Status :: 5 - Production/Stable",
           "License :: OSI Approved :: MIT License"

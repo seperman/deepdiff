@@ -108,6 +108,19 @@ ignore_type_in_groups: Tuple or List of Tuples, default = None
     2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
 
 
+Example: Ignore Enum to string comparison
+    >>> from deepdiff import DeepDiff
+    >>> from enum import Enum
+    >>> class MyEnum1(Enum):
+    ...     book = "book"
+    ...     cake = "cake"
+    ...
+    >>> DeepDiff("book", MyEnum1.book)
+    {'type_changes': {'root': {'old_type': <class 'str'>, 'new_type': <enum 'MyEnum1'>, 'old_value': 'book', 'new_value': <MyEnum1.book: 'book'>}}}
+    >>> DeepDiff("book", MyEnum1.book, ignore_type_in_groups=[(Enum, str)])
+    {}
+
+
 Example: Ignore Type Number - Dictionary that contains float and integer. Note that this is exactly the same as passing ignore_numeric_type_changes=True.
     >>> from deepdiff import DeepDiff
     >>> from pprint import pprint
@@ -201,6 +214,10 @@ Ignore Type Subclasses
 ignore_type_subclasses: Boolean, default = False
     Use ignore_type_subclasses=True so when ignoring type (class), the subclasses of that class are ignored too.
 
+.. Note::
+    ignore_type_subclasses was incorrectly doing the reverse of its job up until DeepDiff 6.7.1
+    Please make sure to flip it in your use cases, when upgrading from older versions to 7.0.0 or above.
+
     >>> from deepdiff import DeepDiff
     >>> class ClassA:
     ...     def __init__(self, x, y):
@@ -217,10 +234,10 @@ ignore_type_subclasses: Boolean, default = False
     >>> obj_a = ClassA(1, 2)
     >>> obj_c = ClassC(3)
     >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
     {'type_changes': {'root': {'old_type': <class '__main__.ClassA'>, 'new_type': <class '__main__.ClassC'>, 'old_value': <__main__.ClassA object at 0x10076a2e8>, 'new_value': <__main__.ClassC object at 0x10082f630>}}}
     >>>
-    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
+    >>> DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
     {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
 
 

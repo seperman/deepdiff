@@ -181,6 +181,13 @@ Flat Dict List
 
 You can create a delta object from the list of flat dictionaries that are produced via :ref:`to_flat_dicts_label`. Read more on :ref:`delta_from_flat_dicts_label`.
 
+.. _flat_rows_list_label:
+
+Flat Rows List
+--------------
+
+You can create a delta object from the list of flat dictionaries that are produced via :ref:`to_flat_rows_label`. Read more on :ref:`delta_from_flat_rows_label`.
+
 
 .. _delta_deserializer_label:
 

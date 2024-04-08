@@ -1,5 +1,6 @@
 import pytest
 import re
+import datetime
 from unittest import mock
 from deepdiff.helper import number_to_string, CannotCompare
 from deepdiff import DeepDiff
@@ -149,7 +150,7 @@ class TestIgnoreOrder:
         result = {}
         assert result == ddiff
 
-    def test_list_difference_ignore_order_report_repetition(self):
+    def test_list_difference_ignore_order_report_repetition1(self):
         t1 = [1, 3, 1, 4]
         t2 = [4, 4, 1]
         ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
@@ -175,6 +176,59 @@ class TestIgnoreOrder:
             }
         }
         assert result == ddiff
+
+    @pytest.mark.skip
+    def test_list_difference_ignore_order_report_repetition2(self):
+        t1 = [1, 1, 1]
+        t2 = [2, 2]
+        ddiff = DeepDiff(t1, t2, ignore_order=True)
+        result = {'values_changed': {'root[0]': {'new_value': 2, 'old_value': 1}}}
+        assert result == ddiff
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
+        result2 = {
+            'iterable_item_removed': {
+                'root[0]': 1,
+                'root[1]': 1,
+                'root[2]': 1
+            },
+            'iterable_item_added': {
+                'root[0]': 2,
+                'root[1]': 2,
+            },
+        }
+        assert result2 == ddiff2
+
+    @pytest.mark.skip
+    def test_list_difference_ignore_order_report_repetition3(self):
+        t1 = [{"id": 1}, {"id": 1}, {"id": 1}]
+        t2 = [{"id": 1, "name": 1}]
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
+        result2 = {
+            'iterable_item_removed': {
+                'root[1]': {"id": 1},
+                'root[2]': {"id": 1},
+            },
+            'dictionary_item_added': ["root[0]['name']"]
+        }
+        assert result2 == ddiff2
+
+    @pytest.mark.skip
+    def test_list_difference_ignore_order_report_repetition4(self):
+        t1 = [{"id": 1}, {"id": 1}, {"id": 1}, {"name": "Joe"}, {"name": "Joe"}]
+        t2 = [{"id": 1, "name": 1}, {"id": 1, "name": "Joe"}]
+
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1)
+        result2 = {
+            'iterable_item_removed': {
+                'root[2]': {"id": 1},
+                'root[3]': {"name": "Joe"},
+                'root[4]': {"name": "Joe"},
+            },
+            'dictionary_item_added': ["root[0]['name']", "root[1]['name']"]
+        }
+        assert result2 == ddiff2
 
     def test_nested_list_ignore_order_report_repetition(self):
         t1 = [1, 2, [3, 4]]
@@ -594,8 +648,8 @@ class TestIgnoreOrder:
 
     @pytest.mark.parametrize('max_passes, expected', [
         (0, {'values_changed': {'root[0]': {'new_value': {'key5': 'CHANGE', 'key6': 'val6'}, 'old_value': {'key3': [[[[[1, 2, 4, 5]]]]], 'key4': [7, 8]}}, 'root[1]': {'new_value': {'key3': [[[[[1, 3, 5, 4]]]]], 'key4': [7, 8]}, 'old_value': {'key5': 'val5', 'key6': 'val6'}}}}),
-        (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]]}}}),
-        (22, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}})
+        (1, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0]": {'new_value': [[[[1, 3, 5, 4]]]], 'old_value': [[[[1, 2, 4, 5]]]], 'new_path': "root[1]['key3'][0]"}}}),
+        (22, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2, 'new_path': "root[1]['key3'][0][0][0][0][1]"}}})
     ])
     def test_ignore_order_max_passes(self, max_passes, expected):
         t1 = [
@@ -625,8 +679,8 @@ class TestIgnoreOrder:
 
     @pytest.mark.parametrize('max_diffs, expected', [
         (1, {}),
-        (65, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}}}),
-        (80, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5'}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2}}}),
+        (65, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}}}),
+        (80, {'values_changed': {"root[1]['key5']": {'new_value': 'CHANGE', 'old_value': 'val5', 'new_path': "root[0]['key5']"}, "root[0]['key3'][0][0][0][0][1]": {'new_value': 3, 'old_value': 2, 'new_path': "root[1]['key3'][0][0][0][0][1]"}}}),
     ])
     def test_ignore_order_max_diffs(self, max_diffs, expected):
         t1 = [
@@ -923,6 +977,16 @@ class TestIgnoreOrder:
         expected = {'values_changed': {'root[0]': {'new_value': {'x': 0.0011}, 'old_value': {'x': 0.001}}, 'root[1]': {'new_value': {'y': 2}, 'old_value': {'y': 2.00002}}}}
         assert expected == diff
 
+    def test_datetime_and_ignore_order(self):
+        diff = DeepDiff(
+            [{'due_date': datetime.date(2024, 2, 1)}],
+            [{'due_date': datetime.date(2024, 2, 2)}],
+            ignore_order=True,
+            ignore_numeric_type_changes=True
+        )
+        assert {} != diff
+
+
 
 class TestCompareFuncIgnoreOrder:
 
@@ -1071,6 +1135,121 @@ class TestCompareFuncIgnoreOrder:
         ddiff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, iterable_compare_func=compare_func)
         assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2
+
+    def test_ignore_order_with_compare_func_with_one_each_hashes_added_hashes_removed(self):
+        """
+        Scenario:
+        In this example which demonstrates the problem... We have two dictionaries containing lists for
+        individualNames.  Each list contains exactly 2 elements. The effective change is that we are
+        replacing the 2nd element in the list.
+        NOTE: This is considered a REPLACEMENT of the second element and not an UPDATE of the element
+        because we are providing a custom compare_func which will determine matching elements based on
+        the value of the nameIdentifier field.  If the custom compare_func is not used, then
+        deepdiff.diff will mistakenly treat the difference as being individual field updates for every
+        field in the second element of the list.
+
+        Intent:
+        Use our custom compare_func, since we have provided it.
+        We need to fall into self._precalculate_distance_by_custom_compare_func
+        To do this, we are proposing a change to deepdiff.diff line 1128:
+
+        Original:
+            if hashes_added and hashes_removed and self.iterable_compare_func and len(hashes_added) > 1 and len(hashes_removed) > 1:
+
+        Proposed/Updated:
+            if hashes_added and hashes_removed \
+            and self.iterable_compare_func \
+            and len(hashes_added) > 0 and len(hashes_removed) > 0:
+
+        NOTE: It is worth mentioning that deepdiff.diff line 1121, might also benefit by changing the length conditions
+        to evaluate for > 0 (rather than > 1).
+        """
+
+        t1 = {
+            "individualNames": [
+                {
+                    "firstName": "Johnathan",
+                    "lastName": "Doe",
+                    "prefix": "COLONEL",
+                    "middleName": "A",
+                    "primaryIndicator": True,
+                    "professionalDesignation": "PHD",
+                    "suffix": "SR",
+                    "nameIdentifier": "00001"
+                },
+                {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "prefix": "",
+                    "middleName": "",
+                    "primaryIndicator": False,
+                    "professionalDesignation": "",
+                    "suffix": "SR",
+                    "nameIdentifier": "00002"
+                }
+            ]
+        }
+
+        t2 = {
+            "individualNames": [
+                {
+                    "firstName": "Johnathan",
+                    "lastName": "Doe",
+                    "prefix": "COLONEL",
+                    "middleName": "A",
+                    "primaryIndicator": True,
+                    "professionalDesignation": "PHD",
+                    "suffix": "SR",
+                    "nameIdentifier": "00001"
+                },
+                {
+                    "firstName": "Johnny",
+                    "lastName": "Doe",
+                    "prefix": "",
+                    "middleName": "A",
+                    "primaryIndicator": False,
+                    "professionalDesignation": "",
+                    "suffix": "SR",
+                    "nameIdentifier": "00003"
+                }
+            ]
+        }
+        def compare_func(item1, item2, level=None):
+            print("*** inside compare ***")
+            it1_keys = item1.keys()
+
+            try:
+
+                # --- individualNames ---
+                if 'nameIdentifier' in it1_keys and 'lastName' in it1_keys:
+                    match_result = item1['nameIdentifier'] == item2['nameIdentifier']
+                    print("individualNames - matching result:", match_result)
+                    return match_result
+                else:
+                    print("Unknown list item...", "matching result:", item1 == item2)
+                    return item1 == item2
+            except Exception:
+                raise CannotCompare() from None
+        # ---------------------------- End of nested function
+
+        actual_diff = DeepDiff(t1, t2, report_repetition=True,
+                             ignore_order=True, iterable_compare_func=compare_func, cutoff_intersection_for_pairs=1)
+
+        old_invalid_diff = {
+            'values_changed': {"root['individualNames'][1]['firstName']": {'new_value': 'Johnny', 'old_value': 'John'},
+                               "root['individualNames'][1]['middleName']": {'new_value': 'A', 'old_value': ''},
+                               "root['individualNames'][1]['nameIdentifier']": {'new_value': '00003',
+                                                                                'old_value': '00002'}}}
+        new_expected_diff = {'iterable_item_added': {
+            "root['individualNames'][1]": {'firstName': 'Johnny', 'lastName': 'Doe', 'prefix': '', 'middleName': 'A',
+                                           'primaryIndicator': False, 'professionalDesignation': '', 'suffix': 'SR',
+                                           'nameIdentifier': '00003'}}, 'iterable_item_removed': {
+            "root['individualNames'][1]": {'firstName': 'John', 'lastName': 'Doe', 'prefix': '', 'middleName': '',
+                                           'primaryIndicator': False, 'professionalDesignation': '', 'suffix': 'SR',
+                                           'nameIdentifier': '00002'}}}
+
+        assert old_invalid_diff != actual_diff
+        assert new_expected_diff == actual_diff
 
 
 class TestDynamicIgnoreOrder:

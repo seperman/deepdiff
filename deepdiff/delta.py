@@ -1,5 +1,7 @@
+import copy
 import logging
-from functools import partial
+from typing import List, Dict, IO, Callable, Set, Union, Optional
+from functools import partial, cmp_to_key
 from collections.abc import Mapping
 from copy import deepcopy
 from ordered_set import OrderedSet
@@ -9,10 +11,11 @@ from deepdiff.helper import (
     strings, short_repr, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
+    Opcode, FlatDeltaRow, UnkownValueCode,
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
-    GET, GETATTR, parse_path, stringify_path, DEFAULT_FIRST_ELEMENT
+    GET, GETATTR, parse_path, stringify_path,
 )
 from deepdiff.anyset import AnySet
 
@@ -20,7 +23,7 @@ from deepdiff.anyset import AnySet
 logger = logging.getLogger(__name__)
 
 
-VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}'
+VERIFICATION_MSG = 'Expected the old value for {} to be {} but it is {}. Error found on: {}. You may want to set force=True, especially if this delta is created by passing flat_rows_list or flat_dict_list'
 ELEM_NOT_FOUND_TO_ADD_MSG = 'Key or index of {} is not found for {} for setting operation.'
 TYPE_CHANGE_FAIL_MSG = 'Unable to do the type change for {} from to type {} due to {}'
 VERIFY_BIDIRECTIONAL_MSG = ('You have applied the delta to an object that has '
@@ -58,38 +61,49 @@ class DeltaNumpyOperatorOverrideError(ValueError):
     pass
 
 
-class _ObjDoesNotExist:
-    pass
-
-
 class Delta:
 
     __doc__ = doc
 
     def __init__(
         self,
-        diff=None,
-        delta_path=None,
-        delta_file=None,
-        delta_diff=None,
-        flat_dict_list=None,
-        deserializer=pickle_load,
-        log_errors=True,
-        mutate=False,
-        raise_errors=False,
-        safe_to_import=None,
-        serializer=pickle_dump,
-        verify_symmetry=None,
-        bidirectional=False,
-        always_include_values=False,
-        iterable_compare_func_was_used=None,
-        force=False,
+        diff: Union[DeepDiff, Mapping, str, bytes, None]=None,
+        delta_path: Optional[str]=None,
+        delta_file: Optional[IO]=None,
+        delta_diff: Optional[dict]=None,
+        flat_dict_list: Optional[List[Dict]]=None,
+        flat_rows_list: Optional[List[FlatDeltaRow]]=None,
+        deserializer: Callable=pickle_load,
+        log_errors: bool=True,
+        mutate: bool=False,
+        raise_errors: bool=False,
+        safe_to_import: Optional[Set[str]]=None,
+        serializer: Callable=pickle_dump,
+        verify_symmetry: Optional[bool]=None,
+        bidirectional: bool=False,
+        always_include_values: bool=False,
+        iterable_compare_func_was_used: Optional[bool]=None,
+        force: bool=False,
     ):
+        # for pickle deserializer:
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
             _deserializer = deserializer
         else:
             def _deserializer(obj, safe_to_import=None):
-                return deserializer(obj)
+                result = deserializer(obj)
+                if result.get('_iterable_opcodes'):
+                    _iterable_opcodes = {}
+                    for path, op_codes in result['_iterable_opcodes'].items():
+                        _iterable_opcodes[path] = []
+                        for op_code in op_codes:
+                            _iterable_opcodes[path].append(
+                                Opcode(
+                                    **op_code
+                                )
+                            )
+                    result['_iterable_opcodes'] = _iterable_opcodes
+                return result
+
 
         self._reversed_diff = None
 
@@ -125,7 +139,10 @@ class Delta:
                 raise ValueError(BINIARY_MODE_NEEDED_MSG.format(e)) from None
             self.diff = _deserializer(content, safe_to_import=safe_to_import)
         elif flat_dict_list:
-            self.diff = self._from_flat_dicts(flat_dict_list)
+            # Use copy to preserve original value of flat_dict_list in calling module
+            self.diff = self._from_flat_dicts(copy.deepcopy(flat_dict_list))
+        elif flat_rows_list:
+            self.diff = self._from_flat_rows(copy.deepcopy(flat_rows_list))
         else:
             raise ValueError(DELTA_AT_LEAST_ONE_ARG_NEEDED)
 
@@ -165,6 +182,7 @@ class Delta:
         self._do_type_changes()
         # NOTE: the remove iterable action needs to happen BEFORE
         # all the other iterables to match the reverse of order of operations in DeepDiff
+        self._do_iterable_opcodes()
         self._do_iterable_item_removed()
         self._do_iterable_item_added()
         self._do_ignore_order()
@@ -381,12 +399,51 @@ class Delta:
         # We only care about the values in the elements not how to get the values.
         return [i[0] for i in elements] 
 
+    @staticmethod
+    def _sort_comparison(left, right):
+        """
+        We use sort comparison instead of _sort_key_for_item_added when we run into comparing element types that can not
+        be compared with each other, such as None to None. Or integer to string.
+        """
+        # Example elements: [(4.3, 'GET'), ('b', 'GETATTR'), ('a3', 'GET')]
+        # We only care about the values in the elements not how to get the values.
+        left_path = [i[0] for i in _path_to_elements(left[0], root_element=None)]
+        right_path = [i[0] for i in _path_to_elements(right[0], root_element=None)]
+        try:
+            if left_path < right_path:
+                return -1
+            elif left_path > right_path:
+                return 1
+            else:
+                return 0
+        except TypeError:
+            if len(left_path) > len(right_path):
+                left_path = left_path[:len(right_path)]
+            elif len(right_path) > len(left_path):
+                right_path = right_path[:len(left_path)]
+            for l_elem, r_elem in zip(left_path, right_path):
+                if type(l_elem) != type(r_elem) or type(l_elem) in None:
+                    l_elem = str(l_elem)
+                    r_elem = str(r_elem)
+                try:
+                    if l_elem < r_elem:
+                        return -1
+                    elif l_elem > r_elem:
+                        return 1
+                except TypeError:
+                    continue
+        return 0
+
+
     def _do_item_added(self, items, sort=True, insert=False):
         if sort:
             # sorting items by their path so that the items with smaller index
             # are applied first (unless `sort` is `False` so that order of
             # added items is retained, e.g. for dicts).
-            items = sorted(items.items(), key=self._sort_key_for_item_added)
+            try:
+                items = sorted(items.items(), key=self._sort_key_for_item_added)
+            except TypeError:
+                items = sorted(items.items(), key=cmp_to_key(self._sort_comparison))
         else:
             items = items.items()
 
@@ -450,6 +507,10 @@ class Delta:
                     obj=parent, path_for_err_reporting=path, expected_old_value=None,
                     elem=parent_to_obj_elem, action=parent_to_obj_action, next_element=next2_element)
             else:
+                # parent = self
+                # obj = self.root
+                # parent_to_obj_elem = 'root'
+                # parent_to_obj_action = GETATTR
                 parent = parent_to_obj_elem = parent_to_obj_action = None
                 obj = self
                 # obj = self.get_nested_obj(obj=self, elements=elements[:-1])
@@ -504,7 +565,11 @@ class Delta:
         """
         # Sorting the iterable_item_removed in reverse order based on the paths.
         # So that we delete a bigger index before a smaller index
-        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
+        try:
+            sorted_item = sorted(items.items(), key=self._sort_key_for_item_added, reverse=True)
+        except TypeError:
+            sorted_item = sorted(items.items(), key=cmp_to_key(self._sort_comparison), reverse=True)
+        for path, expected_old_value in sorted_item:
             elem_and_details = self._get_elements_and_details(path)
             if elem_and_details:
                 elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
@@ -516,10 +581,9 @@ class Delta:
             try:
                 if action == GET:
                     current_old_value = obj[elem]
-                    look_for_expected_old_value = current_old_value != expected_old_value
                 elif action == GETATTR:
                     current_old_value = getattr(obj, elem)
-                    look_for_expected_old_value = current_old_value != expected_old_value
+                look_for_expected_old_value = current_old_value != expected_old_value
             except (KeyError, IndexError, AttributeError, TypeError):
                 look_for_expected_old_value = True
 
@@ -547,25 +611,52 @@ class Delta:
                 closest_distance = dist
         return closest_elem
 
-    def _do_item_removedOLD(self, items):
-        """
-        Handle removing items.
-        """
-        # Sorting the iterable_item_removed in reverse order based on the paths.
-        # So that we delete a bigger index before a smaller index
-        for path, expected_old_value in sorted(items.items(), key=self._sort_key_for_item_added, reverse=True):
-            elem_and_details = self._get_elements_and_details(path)
-            if elem_and_details:
-                elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
-            else:
-                continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
-            current_old_value = self._get_elem_and_compare_to_old_value(
-                obj=obj, elem=elem, path_for_err_reporting=path, expected_old_value=expected_old_value, action=action)
-            if current_old_value is not_found:
-                continue
-            self._del_elem(parent, parent_to_obj_elem, parent_to_obj_action,
-                           obj, elements, path, elem, action)
-            self._do_verify_changes(path, expected_old_value, current_old_value)
+    def _do_iterable_opcodes(self):
+        _iterable_opcodes = self.diff.get('_iterable_opcodes', {})
+        if _iterable_opcodes:
+            for path, opcodes in _iterable_opcodes.items():
+                transformed = []
+                # elements = _path_to_elements(path)
+                elem_and_details = self._get_elements_and_details(path)
+                if elem_and_details:
+                    elements, parent, parent_to_obj_elem, parent_to_obj_action, obj, elem, action = elem_and_details
+                    if parent is None:
+                        parent = self
+                        obj = self.root
+                        parent_to_obj_elem = 'root'
+                        parent_to_obj_action = GETATTR
+                else:
+                    continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
+                # import pytest; pytest.set_trace()
+                obj = self.get_nested_obj(obj=self, elements=elements)
+                is_obj_tuple = isinstance(obj, tuple)
+                for opcode in opcodes:    
+                    if opcode.tag == 'replace':
+                        # Replace items in list a[i1:i2] with b[j1:j2]
+                        transformed.extend(opcode.new_values)
+                    elif opcode.tag == 'delete':
+                        # Delete items from list a[i1:i2], so we do nothing here
+                        continue
+                    elif opcode.tag == 'insert':
+                        # Insert items from list b[j1:j2] into the new list
+                        transformed.extend(opcode.new_values)
+                    elif opcode.tag == 'equal':
+                        # Items are the same in both lists, so we add them to the result
+                        transformed.extend(obj[opcode.t1_from_index:opcode.t1_to_index])
+                if is_obj_tuple:
+                    obj = tuple(obj)
+                    # Making sure that the object is re-instated inside the parent especially if it was immutable
+                    # and we had to turn it into a mutable one. In such cases the object has a new id.
+                    self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
+                                                value=obj, action=parent_to_obj_action)
+                else:
+                    obj[:] = transformed
+
+
+
+                # obj = self.get_nested_obj(obj=self, elements=elements)
+                # for
+
 
     def _do_iterable_item_removed(self):
         iterable_item_removed = self.diff.get('iterable_item_removed', {})
@@ -721,19 +812,21 @@ class Delta:
             elif action == 'values_changed':
                 r_diff[action] = {}
                 for path, path_info in info.items():
-                    r_diff[action][path] = {
+                    reverse_path = path_info['new_path'] if path_info.get('new_path') else path
+                    r_diff[action][reverse_path] = {
                         'new_value': path_info['old_value'], 'old_value': path_info['new_value']
                     } 
             elif action == 'type_changes':
                 r_diff[action] = {}
                 for path, path_info in info.items():
-                    r_diff[action][path] = {
+                    reverse_path = path_info['new_path'] if path_info.get('new_path') else path
+                    r_diff[action][reverse_path] = {
                         'old_type': path_info['new_type'], 'new_type': path_info['old_type'],
                     }
                     if 'new_value' in path_info:
-                        r_diff[action][path]['old_value'] = path_info['new_value']
+                        r_diff[action][reverse_path]['old_value'] = path_info['new_value']
                     if 'old_value' in path_info:
-                        r_diff[action][path]['new_value'] = path_info['old_value']
+                        r_diff[action][reverse_path]['new_value'] = path_info['old_value']
             elif action == 'iterable_item_moved':
                 r_diff[action] = {}
                 for path, path_info in info.items():
@@ -741,6 +834,23 @@ class Delta:
                     r_diff[action][old_path] = {
                         'new_path': path, 'value': path_info['value'],
                     }
+            elif action == '_iterable_opcodes':
+                r_diff[action] = {}
+                for path, op_codes in info.items():
+                    r_diff[action][path] = []
+                    for op_code in op_codes:
+                        tag = op_code.tag
+                        tag = {'delete': 'insert', 'insert': 'delete'}.get(tag, tag)
+                        new_op_code = Opcode(
+                            tag=tag,
+                            t1_from_index=op_code.t2_from_index,
+                            t1_to_index=op_code.t2_to_index,
+                            t2_from_index=op_code.t1_from_index,
+                            t2_to_index=op_code.t1_to_index,
+                            new_values=op_code.old_values,
+                            old_values=op_code.new_values,
+                        )
+                        r_diff[action][path].append(new_op_code)
         return r_diff
 
     def dump(self, file):
@@ -777,7 +887,12 @@ class Delta:
                         row[new_key] = func(details[key])
                     else:
                         row[new_key] = details[key]
-            yield row
+            yield FlatDeltaRow(**row)
+
+    @staticmethod
+    def _from_flat_rows(flat_rows_list: List[FlatDeltaRow]):
+        flat_dict_list = (i._asdict() for i in flat_rows_list)
+        return Delta._from_flat_dicts(flat_dict_list)
 
     @staticmethod
     def _from_flat_dicts(flat_dict_list):
@@ -794,7 +909,8 @@ class Delta:
             action = flat_dict.get("action")
             path = flat_dict.get("path")
             value = flat_dict.get('value')
-            old_value = flat_dict.get('old_value', _ObjDoesNotExist)
+            new_path = flat_dict.get('new_path')
+            old_value = flat_dict.get('old_value', UnkownValueCode)
             if not action:
                 raise ValueError("Flat dict need to include the 'action'.")
             if path is None:
@@ -807,6 +923,10 @@ class Delta:
             else:
                 root_element = ('root', GET)
             path_str = stringify_path(path, root_element=root_element)  # We need the string path
+            if new_path and new_path != path:
+                new_path = stringify_path(new_path, root_element=root_element)
+            else:
+                new_path = None
             if action not in result:
                 result[action] = {}
             if action in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
@@ -823,13 +943,13 @@ class Delta:
             }:
                 result[action][path_str] = value
             elif action == 'values_changed':
-                if old_value is _ObjDoesNotExist:
+                if old_value == UnkownValueCode:
                     result[action][path_str] = {'new_value': value}
                 else:
                     result[action][path_str] = {'new_value': value, 'old_value': old_value}
             elif action == 'type_changes':
-                type_ = flat_dict.get('type', _ObjDoesNotExist)
-                old_type = flat_dict.get('old_type', _ObjDoesNotExist)
+                type_ = flat_dict.get('type', UnkownValueCode)
+                old_type = flat_dict.get('old_type', UnkownValueCode)
 
                 result[action][path_str] = {'new_value': value}
                 for elem, elem_value in [
@@ -837,20 +957,16 @@ class Delta:
                     ('old_type', old_type),
                     ('old_value', old_value),
                 ]:
-                    if elem_value is not _ObjDoesNotExist:
+                    if elem_value != UnkownValueCode:
                         result[action][path_str][elem] = elem_value
             elif action == 'iterable_item_moved':
-                result[action][path_str] = {
-                    'new_path': stringify_path(
-                        flat_dict.get('new_path', ''),
-                        root_element=('root', GET)
-                    ),
-                    'value': value,
-                }
+                result[action][path_str] = {'value': value}
+            if new_path:
+                result[action][path_str]['new_path'] = new_path
 
         return result
 
-    def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True):
+    def to_flat_dicts(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
         """
         Returns a flat list of actions that is easily machine readable.
 
@@ -904,6 +1020,14 @@ class Delta:
             attribute_added
             attribute_removed
         """
+        return [
+            i._asdict() for i in self.to_flat_rows(include_action_in_path=False, report_type_changes=True)
+        ]
+
+    def to_flat_rows(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
+        """
+        Just like to_flat_dicts but returns FlatDeltaRow Named Tuples
+        """
         result = []
         if include_action_in_path:
             _parse_path = partial(parse_path, include_actions=True)
@@ -948,16 +1072,12 @@ class Delta:
                             path2.append((index, 'GET'))
                         else:
                             path2.append(index)
-                        result.append(
-                            {'path': path2, 'value': value, 'action': new_action}
-                        )
+                        result.append(FlatDeltaRow(path=path2, value=value, action=new_action))
             elif action in {'set_item_added', 'set_item_removed'}:
                 for path, values in info.items():
                     path = _parse_path(path)
                     for value in values:
-                        result.append(
-                            {'path': path, 'value': value, 'action': action}
-                        )
+                        result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action == 'dictionary_item_added':
                 for path, value in info.items():
                     path = _parse_path(path)
@@ -972,18 +1092,14 @@ class Delta:
                     elif isinstance(value, set) and len(value) == 1:
                         value = value.pop()
                         action = 'set_item_added'
-                    result.append(
-                        {'path': path, 'value': value, 'action': action}
-                    )
+                    result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action in {
                 'dictionary_item_removed', 'iterable_item_added',
                 'iterable_item_removed', 'attribute_removed', 'attribute_added'
             }:
                 for path, value in info.items():
                     path = _parse_path(path)
-                    result.append(
-                        {'path': path, 'value': value, 'action': action}
-                    )
+                    result.append(FlatDeltaRow(path=path, value=value, action=action))
             elif action == 'type_changes':
                 if not report_type_changes:
                     action = 'values_changed'
@@ -995,6 +1111,8 @@ class Delta:
                     keys_and_funcs=keys_and_funcs,
                 ):
                     result.append(row)
+            elif action == '_iterable_opcodes':
+                result.extend(self._flatten_iterable_opcodes())
             else:
                 for row in self._get_flat_row(
                     action=action,

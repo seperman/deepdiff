@@ -3,6 +3,7 @@ import datetime
 import logging
 import pytest
 from tests import CustomClass, CustomClassMisleadingRepr
+from deepdiff import DeepDiff
 from deepdiff.model import (DiffLevel, ChildRelationship, DictRelationship,
                             SubscriptableIterableRelationship,
                             AttributeRelationship)
@@ -169,6 +170,76 @@ class TestDiffLevel:
         path = down.path()
         assert path == 'root'
         assert down.path(output_format='list') == []
+
+    def test_t2_path_when_nested(self):
+        t1 = {
+            "type": "struct",
+            "fields": [
+                {"name": "Competition", "metadata": {}, "nullable": True, "type": "string"},
+                {"name": "TeamName", "metadata": {}, "nullable": True, "type": "string"},
+                {
+                    "name": "Contents",
+                    "metadata": {},
+                    "nullable": True,
+                    "type": {
+                        "type": "struct",
+                        "fields": [
+                            {"name": "Date", "metadata": {}, "nullable": True, "type": "string"},
+                            {"name": "Player1", "metadata": {}, "nullable": True, "type": "string"}
+                        ]
+                    }
+                }
+            ]
+        }
+
+        t2 = {
+            "type": "struct",
+            "fields": [
+                {"name": "Competition", "metadata": {}, "nullable": True, "type": "string"},
+                {"name": "GlobalId", "metadata": {}, "nullable": True, "type": "string"},
+                {"name": "TeamName", "metadata": {}, "nullable": True, "type": "string"},
+                {
+                    "name": "Contents",
+                    "metadata": {},
+                    "nullable": True,
+                    "type": {
+                        "type": "struct",
+                        "fields": [
+                            {"name": "Date", "metadata": {}, "nullable": True, "type": "string"},
+                            {"name": "Player1", "metadata": {}, "nullable": True, "type": "string"},
+                            {"name": "Player2", "metadata": {}, "nullable": True, "type": "string"}
+                        ]
+                    }
+                }
+            ]
+        }
+
+        diff = DeepDiff(t1=t1, t2=t2, ignore_order=True, verbose_level=2, view='tree')
+
+        expected_diff = {
+            "iterable_item_added": {
+                "root['fields'][1]": {
+                    "name": "GlobalId",
+                    "metadata": {},
+                    "nullable": True,
+                    "type": "string",
+                },
+                "root['fields'][2]['type']['fields'][2]": {
+                    "name": "Player2",
+                    "metadata": {},
+                    "nullable": True,
+                    "type": "string",
+                },
+            }
+        }
+
+        path = diff['iterable_item_added'][1].path()
+        assert "root['fields'][2]['type']['fields'][2]" == path
+
+        path_t2 = diff['iterable_item_added'][1].path(use_t2=True)
+        assert "root['fields'][3]['type']['fields'][2]" == path_t2
+
+
 
     def test_repr_short(self):
         level = self.lowest.verbose_level

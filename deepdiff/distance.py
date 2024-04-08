@@ -156,7 +156,7 @@ def _get_item_length(item, parents_ids=frozenset([])):
                 subitem = new_subitem
 
             # internal keys such as _numpy_paths should not count towards the distance
-            if isinstance(key, strings) and (key.startswith('_') or key == 'deep_distance'):
+            if isinstance(key, strings) and (key.startswith('_') or key == 'deep_distance' or key == 'new_path'):
                 continue
 
             item_id = id(subitem)

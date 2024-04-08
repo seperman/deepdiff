@@ -86,6 +86,27 @@ class TestDeepHash:
         b_hash = DeepHash(b)
         assert a_hash[a] == b_hash[b]
 
+    def test_date1(self):
+        date = datetime.date(2024, 2, 1)
+        date_hash = DeepHash(date)
+        assert 'd90e95901f85ca09b2536d3cb81a49747c3a4fb14906d6fa0d492713ebb4309c' == date_hash[date]
+
+    def test_date2(self):
+        item = {'due_date': datetime.date(2024, 2, 1)}
+
+        result = DeepHash(
+            item,
+            significant_digits=12,
+            number_format_notation='f',
+            ignore_numeric_type_changes=True,
+            ignore_type_in_groups=[{int, float, complex, datetime.datetime, datetime.date, datetime.timedelta, datetime.time}],
+            ignore_type_subclasses=False,
+            ignore_encoding_errors=False,
+            ignore_repetition=True,
+            number_to_string_func=number_to_string,
+        )
+        assert 'e0d7ec984a0eda44ceb1e3c595f9b805530d715c779483e63a72c67cbce68615' == result[item]
+
     def test_datetime_truncate(self):
         a = datetime.datetime(2020, 5, 17, 22, 15, 34, 913070)
         b = datetime.datetime(2020, 5, 17, 22, 15, 39, 296583)
@@ -474,21 +495,20 @@ class TestDeepHashPrep:
     burrito = Burrito()
     taco = Taco()
 
-    @pytest.mark.parametrize("t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
-        (taco, burrito, [], False, False),
-        (taco, burrito, [(Taco, Burrito)], False, True),
-        ([taco], [burrito], [(Taco, Burrito)], False, True),
-        ([obj_a], [obj_c], [(ClassA, ClassB)], False, False),
-        ([obj_a], [obj_c], [(ClassA, ClassB)], True, True),
-        ([obj_b], [obj_c], [(ClassB, )], True, True),
+    @pytest.mark.parametrize("test_num, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual", [
+        (1, taco, burrito, [], False, False),
+        (2, taco, burrito, [(Taco, Burrito)], False, True),
+        (3, [taco], [burrito], [(Taco, Burrito)], False, True),
+        (4, [obj_a], [obj_c], [(ClassA, ClassB)], False, True),
+        (5, [obj_a], [obj_c], [(ClassA, ClassB)], True, False),
+        (6, [obj_b], [obj_c], [(ClassB, )], True, False),
     ])
-    def test_objects_with_same_content(self, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
-
+    def test_objects_with_same_content(self, test_num, t1, t2, ignore_type_in_groups, ignore_type_subclasses, is_qual):
         t1_result = DeepHashPrep(t1, ignore_type_in_groups=ignore_type_in_groups,
                                  ignore_type_subclasses=ignore_type_subclasses)
         t2_result = DeepHashPrep(t2, ignore_type_in_groups=ignore_type_in_groups,
                                  ignore_type_subclasses=ignore_type_subclasses)
-        assert is_qual == (t1_result[t1] == t2_result[t2])
+        assert is_qual == (t1_result[t1] == t2_result[t2]), f"test_objects_with_same_content #{test_num} failed."
 
     def test_custom_object(self):
         cc_a = CustomClass2(prop1=["a"], prop2=["b"])

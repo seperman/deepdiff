@@ -1,4 +1,4 @@
-# DeepDiff v 6.7.1
+# DeepDiff v 7.0.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -15,9 +15,9 @@
 - [Extract](https://zepworks.com/deepdiff/current/extract.html): Extract an item from a nested Python object using its path.
 - [commandline](https://zepworks.com/deepdiff/current/commandline.html): Use DeepDiff from commandline.
 
-Tested on Python 3.7+ and PyPy3.
+Tested on Python 3.8+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/6.7.1/)**
+- **[Documentation](https://zepworks.com/deepdiff/7.0.0/)**
 
 ## What is new?
 
@@ -100,16 +100,6 @@ Please run `pytest --cov=deepdiff --runslow` to see the coverage report. Note th
 Or to see a more user friendly version, please run: `pytest --cov=deepdiff --cov-report term-missing --runslow`.
 
 Thank you!
-
-# Citing
-
-How to cite this library (APA style):
-
-    Dehpour, S. (2023). DeepDiff (Version 6.7.1) [Software]. Available from https://github.com/seperman/deepdiff.
-
-How to cite this library (Chicago style):
-
-    Dehpour, Sep. 2023. DeepDiff (version 6.7.1).
 
 # Authors
 

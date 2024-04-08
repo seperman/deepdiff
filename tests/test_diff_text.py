@@ -10,6 +10,7 @@ from decimal import Decimal
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, PydanticBaseModel
 from tests import CustomClass
+from deepdiff.helper import np_float64
 
 
 logging.disable(logging.CRITICAL)
@@ -291,6 +292,28 @@ class TestDeepDiffText:
 
         ddiff = DeepDiff(t1, t2)
         result = {'values_changed': {'root': {'new_value': 'hello', 'old_value': 'Hello'}}}
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_string_case=True)
+        result = {}
+        assert result == ddiff
+
+    def test_string_dict_key_ignore_case(self):
+        t1 = {'User': {'AboutMe': 1, 'ALIAS': 1}}
+        t2 = {'User': {'Alias': 1, 'AboutMe': 1}}
+        ddiff = DeepDiff(t1, t2)
+        result = {'dictionary_item_added': ["root['User']['Alias']"], 'dictionary_item_removed': ["root['User']['ALIAS']"]}
+        assert result == ddiff
+
+        ddiff = DeepDiff(t1, t2, ignore_string_case=True)
+        result = {}
+        assert result == ddiff
+
+    def test_string_list_ignore_case(self):
+        t1 = ['AboutMe', 'ALIAS']
+        t2 = ['aboutme', 'alias']
+        ddiff = DeepDiff(t1, t2)
+        result = {'values_changed': {'root[0]': {'new_value': 'aboutme', 'old_value': 'AboutMe'}, 'root[1]': {'new_value': 'alias', 'old_value': 'ALIAS'}}}
         assert result == ddiff
 
         ddiff = DeepDiff(t1, t2, ignore_string_case=True)
@@ -624,6 +647,27 @@ class TestDeepDiffText:
         }
         assert ddiff == result
 
+    def test_enum_ignore_type_change(self):
+
+        class MyEnum1(Enum):
+            book = "book"
+            cake = "cake"
+
+        class MyEnum2(str, Enum):
+            book = "book"
+            cake = "cake"
+
+        diff = DeepDiff("book", MyEnum1.book)
+        expected = {
+            'type_changes': {'root': {'old_type': str, 'new_type': MyEnum1, 'old_value': 'book', 'new_value': MyEnum1.book}}}
+        assert expected == diff
+
+        diff2 = DeepDiff("book", MyEnum1.book, ignore_type_in_groups=[(Enum, str)])
+        assert not diff2
+
+        diff3 = DeepDiff("book", MyEnum2.book, ignore_type_in_groups=[(Enum, str)])
+        assert not diff3
+
     def test_precompiled_regex(self):
 
         pattern_1 = re.compile('foo')
@@ -789,11 +833,11 @@ class TestDeepDiffText:
 
         obj_a = ClassA(1, 2)
         obj_c = ClassC(3)
-        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
+        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
         result = {'type_changes': {'root': {'old_type': ClassA, 'new_type': ClassC, 'old_value': obj_a, 'new_value': obj_c}}}
         assert result == ddiff
 
-        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=True)
+        ddiff = DeepDiff(obj_a, obj_c, ignore_type_in_groups=[(ClassA, ClassB)], ignore_type_subclasses=False)
         result = {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': ['root.y']}
         assert result == ddiff
 
@@ -1255,6 +1299,7 @@ class TestDeepDiffText:
                                  (Decimal('100000.1'), 100000.1, 5, {}),
                                  (Decimal('100000'), 100000.1, 0, {}),
                                  (Decimal('100000'), 100000.1, 1, {'values_changed': {'root': {'new_value': 100000.1, 'old_value': Decimal('100000')}}}),
+                                 (np_float64(123.93420232), 123.93420232, 0, {}),
                              ])
     def test_decimal_digits(self, t1, t2, significant_digits, expected_result):
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, significant_digits=significant_digits)
