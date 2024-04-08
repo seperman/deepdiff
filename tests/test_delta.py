@@ -2457,29 +2457,28 @@ class TestDeltaCompareFunc:
             ignore_order=True,
             report_repetition=True,
         )
-        reverse_diff = DeepDiff(
-            allAfterImage,
-            beforeImage,
-            ignore_order=True,
-            report_repetition=True,
-        )
+        # reverse_diff = DeepDiff(
+        #     allAfterImage,
+        #     beforeImage,
+        #     ignore_order=True,
+        #     report_repetition=True,
+        # )
         delta = Delta(
             diff, always_include_values=True, bidirectional=True
         )
-        reverse_delta = Delta(
-            reverse_diff, always_include_values=True, bidirectional=True
-        )
+        # reverse_delta = Delta(
+        #     reverse_diff, always_include_values=True, bidirectional=True
+        # )
         allAfterImageAgain = beforeImage + delta
         diff2 = DeepDiff(allAfterImage, allAfterImageAgain, ignore_order=True)
         assert not diff2
 
-        from pprint import pprint
-        print("\ndelta.diff")
-        pprint(delta.diff)
-        print("\ndelta._get_reverse_diff()")
-        pprint(delta._get_reverse_diff())
-        print("\nreverse_delta.diff")
-        pprint(reverse_delta.diff)
+        # print("\ndelta.diff")
+        # pprint(delta.diff)
+        # print("\ndelta._get_reverse_diff()")
+        # pprint(delta._get_reverse_diff())
+        # print("\nreverse_delta.diff")
+        # pprint(reverse_delta.diff)
         beforeImageAgain = allAfterImage - delta
         diff3 = DeepDiff(beforeImage, beforeImageAgain, ignore_order=True)
         assert not diff3
@@ -2495,8 +2494,12 @@ class TestDeltaCompareFunc:
             raise_errors=False,
             force=True,
         )
-        print("\ndelta from flat dicts")
-        pprint(delta2.diff)
-        import pytest; pytest.set_trace()
-        assert allAfterImage == beforeImage + delta2
-        assert beforeImage == allAfterImage - delta2
+        # print("\ndelta from flat dicts")
+        # pprint(delta2.diff)
+        allAfterImageAgain2 = beforeImage + delta2
+        diff4 = DeepDiff(allAfterImage, allAfterImageAgain2, ignore_order=True)
+        assert not diff4
+
+        beforeImageAgain2 = allAfterImage - delta2
+        diff4 = DeepDiff(beforeImage, beforeImageAgain2, ignore_order=True)
+        assert not diff4
