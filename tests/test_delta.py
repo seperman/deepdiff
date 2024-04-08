@@ -911,8 +911,9 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {
             'values_changed': {
                 'root[6]': {
-                    'new_value': 5
-                }
+                    'new_value': 5,
+                    'new_path': 'root[3]',
+                },
             },
             'iterable_items_removed_at_indexes': {
                 'root': {
@@ -935,8 +936,9 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {
             'values_changed': {
                 'root[3]': {
-                    'new_value': 4
-                }
+                    'new_value': 4,
+                    'new_path': 'root[6]',
+                },
             },
             'iterable_items_added_at_indexes': {
                 'root': {
@@ -959,10 +961,12 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {
             'values_changed': {
                 'root[4]': {
-                    'new_value': 7
+                    'new_value': 7,
+                    'new_path': 'root[0]'
                 },
                 'root[0]': {
-                    'new_value': 8
+                    'new_value': 8,
+                    'new_path': 'root[4]'
                 }
             }
         },
@@ -979,10 +983,12 @@ DELTA_IGNORE_ORDER_CASES = {
         'expected_delta_dict': {
             'values_changed': {
                 'root[6]': {
-                    'new_value': 7
+                    'new_value': 7,
+                    'new_path': 'root[0]'
                 },
                 'root[0]': {
-                    'new_value': 8
+                    'new_value': 8,
+                    'new_path': 'root[6]'
                 }
             },
             'iterable_items_added_at_indexes': {
@@ -2472,7 +2478,6 @@ class TestDeltaCompareFunc:
         pprint(delta._get_reverse_diff())
         print("\nreverse_delta.diff")
         pprint(reverse_delta.diff)
-        # import pytest; pytest.set_trace()
         beforeImageAgain = allAfterImage - delta
         diff3 = DeepDiff(beforeImage, beforeImageAgain, ignore_order=True)
         assert not diff3
@@ -2488,6 +2493,8 @@ class TestDeltaCompareFunc:
             raise_errors=False,
             force=True,
         )
-
+        print("\ndelta from flat dicts")
+        pprint(delta2.diff)
+        import pytest; pytest.set_trace()
         assert allAfterImage == beforeImage + delta2
         assert beforeImage == allAfterImage - delta2

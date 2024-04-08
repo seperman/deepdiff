@@ -812,19 +812,21 @@ class Delta:
             elif action == 'values_changed':
                 r_diff[action] = {}
                 for path, path_info in info.items():
-                    r_diff[action][path] = {
+                    reverse_path = path_info['new_path'] if path_info.get('new_path') else path
+                    r_diff[action][reverse_path] = {
                         'new_value': path_info['old_value'], 'old_value': path_info['new_value']
                     } 
             elif action == 'type_changes':
                 r_diff[action] = {}
                 for path, path_info in info.items():
-                    r_diff[action][path] = {
+                    reverse_path = path_info['new_path'] if path_info.get('new_path') else path
+                    r_diff[action][reverse_path] = {
                         'old_type': path_info['new_type'], 'new_type': path_info['old_type'],
                     }
                     if 'new_value' in path_info:
-                        r_diff[action][path]['old_value'] = path_info['new_value']
+                        r_diff[action][reverse_path]['old_value'] = path_info['new_value']
                     if 'old_value' in path_info:
-                        r_diff[action][path]['new_value'] = path_info['old_value']
+                        r_diff[action][reverse_path]['new_value'] = path_info['old_value']
             elif action == 'iterable_item_moved':
                 r_diff[action] = {}
                 for path, path_info in info.items():
@@ -907,6 +909,7 @@ class Delta:
             action = flat_dict.get("action")
             path = flat_dict.get("path")
             value = flat_dict.get('value')
+            new_path = flat_dict.get('new_path')
             old_value = flat_dict.get('old_value', UnkownValueCode)
             if not action:
                 raise ValueError("Flat dict need to include the 'action'.")
@@ -920,6 +923,10 @@ class Delta:
             else:
                 root_element = ('root', GET)
             path_str = stringify_path(path, root_element=root_element)  # We need the string path
+            if new_path and new_path != path:
+                new_path = stringify_path(new_path, root_element=root_element)
+            else:
+                new_path = None
             if action not in result:
                 result[action] = {}
             if action in {'iterable_items_added_at_indexes', 'iterable_items_removed_at_indexes'}:
@@ -937,14 +944,14 @@ class Delta:
                 result[action][path_str] = value
             elif action == 'values_changed':
                 if old_value == UnkownValueCode:
-                    result[action][path_str] = {'new_value': value}
+                    result[action][path_str] = {'new_value': value, 'new_path': new_path}
                 else:
-                    result[action][path_str] = {'new_value': value, 'old_value': old_value}
+                    result[action][path_str] = {'new_value': value, 'old_value': old_value, 'new_path': new_path}
             elif action == 'type_changes':
                 type_ = flat_dict.get('type', UnkownValueCode)
                 old_type = flat_dict.get('old_type', UnkownValueCode)
 
-                result[action][path_str] = {'new_value': value}
+                result[action][path_str] = {'new_value': value, 'new_path': new_path}
                 for elem, elem_value in [
                     ('new_type', type_),
                     ('old_type', old_type),
