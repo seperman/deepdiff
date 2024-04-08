@@ -84,6 +84,11 @@ Authors in order of the timeline of their contributions:
 -  `Alex Sauer-Budge <https://github.com/amsb>`__ for the bugfix for
    ``datetime.date``.
 - `William Jamieson <https://github.com/WilliamJamieson>`__ for `NumPy 2.0 compatibility <https://github.com/seperman/deepdiff/pull/422>`__
+-  `Leo Sin <https://github.com/leoslf>`__ for Supporting Python 3.12 in
+   the build process
+-  `sf-tcalhoun <https://github.com/sf-tcalhoun>`__ for fixing
+   “Instantiating a Delta with a flat_dict_list unexpectedly mutates the
+   flat_dict_list”
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de

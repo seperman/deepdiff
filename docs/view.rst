@@ -68,7 +68,7 @@ You can traverse through the tree elements!
 
 :up: Move up to the parent node aka parent level
 :down: Move down to the child node aka child level
-:path(): Get the path to the current node in string representation, path(output_format='list') gives you the path in list representation.
+:path(): Get the path to the current node in string representation, path(output_format='list') gives you the path in list representation. path(use_t2=True) gives you the path to t2.
 :t1: The first item in the current node that is being diffed
 :t2: The second item in the current node that is being diffed
 :additional: Additional information about the node i.e. repetition

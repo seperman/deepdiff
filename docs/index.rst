@@ -31,6 +31,24 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 7-0-0
+--------------
+
+-  DeepDiff 7 comes with an improved delta object. `Delta to flat
+   dictionaries <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries>`__
+   have undergone a major change. We have also introduced `Delta
+   serialize to flat
+   rows <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-rows>`__.
+-  Subtracting delta objects have dramatically improved at the cost of
+   holding more metadata about the original objects.
+-  When ``verbose=2``, and the “path” of an item has changed in a report
+   between t1 and t2, we include it as ``new_path``.
+-  ``path(use_t2=True)`` returns the correct path to t2 in any reported
+   change in the
+   ```tree view`` <https://zepworks.com/deepdiff/current/view.html#tree-view>`__
+-  Python 3.7 support is dropped and Python 3.12 is officially
+   supported.
+
 
 DeepDiff 6-7-1
 --------------

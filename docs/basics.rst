@@ -45,6 +45,17 @@ Set verbose level to 2 in order to see the added or removed items with their val
     { 'dictionary_item_added': {'root[5]': 5, 'root[6]': 6},
       'dictionary_item_removed': {'root[4]': 4}}
 
+Set verbose level to 2 includes new_path when the path has changed for a report between t1 and t2:
+    >>> t1 = [1, 3]
+    >>> t2 = [3, 2]
+    >>>
+    >>>
+    >>> diff = DeepDiff(t1, t2, ignore_order=True, verbose_level=2)
+    >>> pprint(diff)
+    {'values_changed': {'root[0]': {'new_path': 'root[1]',
+                                    'new_value': 2,
+                                    'old_value': 1}}}
+
 String difference
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":"world"}}
     >>> t2 = {1:1, 2:4, 3:3, 4:{"a":"hello", "b":"world!"}}

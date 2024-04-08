@@ -5,6 +5,30 @@ Changelog
 
 DeepDiff Changelog
 
+-  v7-0-0
+
+   -  When verbose=2, return ``new_path`` when the ``path`` and
+      ``new_path`` are different (for example when ignore_order=True and
+      the index of items have changed).
+   -  Dropping support for Python 3.7
+   -  Introducing serialize to flat rows for delta objects.
+   -  fixes the issue with hashing ``datetime.date`` objects where it
+      treated them as numbers instead of dates (fixes #445).
+   -  upgrading orjson to the latest version
+   -  Fix for bug when diffing two lists with ignore_order and providing
+      compare_func
+   -  Fixes “Wrong diff on list of strings” #438
+   -  Supporting Python 3.12 in the build process by `Leo
+      Sin <https://github.com/leoslf>`__
+   -  Fixes “Instantiating a Delta with a flat_dict_list unexpectedly
+      mutates the flat_dict_list” #457 by
+      `sf-tcalhoun <https://github.com/sf-tcalhoun>`__
+   -  Fixes “Error on Delta With None Key and Removed Item from List”
+      #441
+   -  Fixes “Error when comparing two nested dicts with 2 added fields”
+      #450
+   -  Fixes “Error when subtracting Delta from a dictionary” #443
+
 -  v6-7-1
 
    -  Support for subtracting delta objects when iterable_compare_func
