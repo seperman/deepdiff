@@ -463,6 +463,14 @@ class TestBasicsOfDelta:
         delta2 = Delta(diff=diff, bidirectional=True)
         assert t1 == t2 - delta2
 
+        delta3 = Delta(diff, always_include_values=True, bidirectional=True, raise_errors=True)
+        flat_rows_list = delta3.to_flat_rows()
+        delta4 = Delta(flat_rows_list=flat_rows_list,
+                      always_include_values=True, bidirectional=True, raise_errors=True)
+        assert t1 == t2 - delta4
+        assert t1 + delta4 == t2
+
+
     def test_delta_constr_flat_dict_list_param_preserve(self):
         """
         Issue: https://github.com/seperman/deepdiff/issues/457
@@ -817,6 +825,13 @@ DELTA_CASES = {
                 'root.item': 10
             }
         }
+    },
+    'delta_case14b_threshold_to_diff_deeper': {
+        't1': picklalbe_obj_without_item,
+        't2': PicklableClass(11),
+        'deepdiff_kwargs': {'threshold_to_diff_deeper': 0.33},
+        'to_delta_kwargs': {},
+        'expected_delta_dict': {'values_changed': {'root': {'new_value': PicklableClass(11)}}}
     },
     'delta_case15_diffing_simple_numbers': {
         't1': 1,
@@ -1451,6 +1466,7 @@ class TestDeltaOther:
             'ignore_string_type_changes': False,
             'ignore_type_in_groups': [],
             'report_repetition': True,
+            'use_enum_value': False,
             'exclude_paths': None,
             'include_paths': None,
             'exclude_regex_paths': None,

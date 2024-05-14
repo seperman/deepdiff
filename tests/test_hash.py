@@ -310,6 +310,8 @@ class TestDeepHashPrep:
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.A.value)
         assert DeepHashPrep(MyEnum.A) != DeepHashPrep(MyEnum.B)
 
+        assert DeepHashPrep(MyEnum.A, use_enum_value=True)[MyEnum.A] == 'int:1'
+
     def test_dict_hash(self):
         string1 = "a"
         string1_prepped = prep_str(string1)

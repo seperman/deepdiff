@@ -98,6 +98,7 @@ DEEPHASH_PARAM_KEYS = (
     'number_format_notation',
     'ignore_string_type_changes',
     'ignore_numeric_type_changes',
+    'use_enum_value',
     'ignore_type_in_groups',
     'ignore_type_subclasses',
     'ignore_string_case',
@@ -116,6 +117,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def __init__(self,
                  t1: Any,
                  t2: Any,
+                 _original_type=None,
                  cache_purge_level: int=1,
                  cache_size: int=0,
                  cache_tuning_sample_size: int=0,
@@ -126,9 +128,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_obj_callback: Optional[Callable]=None,
                  exclude_obj_callback_strict: Optional[Callable]=None,
                  exclude_paths: Union[str, List[str]]=None,
-                 include_obj_callback: Optional[Callable]=None,
-                 include_obj_callback_strict: Optional[Callable]=None,
-                 include_paths: Union[str, List[str]]=None,
                  exclude_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
                  exclude_types: Optional[List[Any]]=None,
                  get_deep_distance: bool=False,
@@ -146,8 +145,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_string_type_changes: bool=False,
                  ignore_type_in_groups: Optional[List[Tuple]]=None,
                  ignore_type_subclasses: bool=False,
+                 include_obj_callback: Optional[Callable]=None,
+                 include_obj_callback_strict: Optional[Callable]=None,
+                 include_paths: Union[str, List[str]]=None,
                  iterable_compare_func: Optional[Callable]=None,
-                 zip_ordered_iterables: bool=False,
                  log_frequency_in_sec: int=0,
                  math_epsilon: Optional[float]=None,
                  max_diffs: Optional[int]=None,
@@ -157,10 +158,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger: Callable=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
+                 threshold_to_diff_deeper: float = 0,
                  truncate_datetime: Optional[str]=None,
+                 use_enum_value: bool=False,
                  verbose_level: int=1,
                  view: str=TEXT_VIEW,
-                 _original_type=None,
+                 zip_ordered_iterables: bool=False,
                  _parameters=None,
                  _shared_parameters=None,
                  **kwargs):
@@ -175,7 +178,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, "
-                "math_epsilon, iterable_compare_func, _original_type, "
+                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, "
                 "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
@@ -193,6 +196,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_numeric_type_changes = ignore_numeric_type_changes
             if strings == ignore_type_in_groups or strings in ignore_type_in_groups:
                 ignore_string_type_changes = True
+            self.use_enum_value = use_enum_value
+            self.threshold_to_diff_deeper = threshold_to_diff_deeper
             self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
                 ignore_type_in_groups=ignore_type_in_groups,
@@ -513,6 +518,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
+            elif self.use_enum_value and isinstance(key, Enum):
+                clean_key = key.value
             elif isinstance(key, numbers):
                 type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
                 clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
@@ -577,6 +584,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
+
+        if self.threshold_to_diff_deeper:
+            len_keys_changed = (len(t_keys_added) + len(t_keys_removed))
+            if len_keys_changed and len(t_keys_intersect) / len_keys_changed < self.threshold_to_diff_deeper:
+                self._report_result('values_changed', level, local_tree=local_tree)
+                return
 
         for key in t_keys_added:
             if self._count_diff() is StopIteration:
@@ -861,31 +874,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('iterable_item_added', change_level, local_tree=local_tree)
 
             else:  # check if item value has changed
-
-                # if (i != j):
-                #     # Item moved
-                #     change_level = level.branch_deeper(
-                #         x,
-                #         y,
-                #         child_relationship_class=child_relationship_class,
-                #         child_relationship_param=i,
-                #         child_relationship_param2=j
-                #     )
-                #     self._report_result('iterable_item_moved', change_level)
-
-                # item_id = id(x)
-                # if parents_ids and item_id in parents_ids:
-                #     continue
-                # parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-
-                # # Go one level deeper
-                # next_level = level.branch_deeper(
-                #     x,
-                #     y,
-                #     child_relationship_class=child_relationship_class,
-                #     child_relationship_param=j)
-                # self._diff(next_level, parents_ids_added)
-
                 if (i != j and ((x == y) or self.iterable_compare_func)):
                     # Item moved
                     change_level = level.branch_deeper(
@@ -1604,6 +1592,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if self.type_check_func(level.t1, type_group) and self.type_check_func(level.t2, type_group):
                     report_type_change = False
                     break
+            if self.use_enum_value and isinstance(level.t1, Enum):
+                level.t1 = level.t1.value
+                report_type_change = False
+            if self.use_enum_value and isinstance(level.t2, Enum):
+                level.t2 = level.t2.value
+                report_type_change = False
             if report_type_change:
                 self._diff_types(level, local_tree=local_tree)
                 return

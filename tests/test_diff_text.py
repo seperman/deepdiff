@@ -16,6 +16,16 @@ from deepdiff.helper import np_float64
 logging.disable(logging.CRITICAL)
 
 
+class MyEnum1(Enum):
+    book = "book"
+    cake = "cake"
+
+class MyEnum2(str, Enum):
+    book = "book"
+    cake = "cake"
+
+
+
 class TestDeepDiffText:
     """DeepDiff Tests."""
 
@@ -649,14 +659,6 @@ class TestDeepDiffText:
 
     def test_enum_ignore_type_change(self):
 
-        class MyEnum1(Enum):
-            book = "book"
-            cake = "cake"
-
-        class MyEnum2(str, Enum):
-            book = "book"
-            cake = "cake"
-
         diff = DeepDiff("book", MyEnum1.book)
         expected = {
             'type_changes': {'root': {'old_type': str, 'new_type': MyEnum1, 'old_value': 'book', 'new_value': MyEnum1.book}}}
@@ -667,6 +669,14 @@ class TestDeepDiffText:
 
         diff3 = DeepDiff("book", MyEnum2.book, ignore_type_in_groups=[(Enum, str)])
         assert not diff3
+
+    def test_enum_use_enum_value1(self):
+        diff = DeepDiff("book", MyEnum2.book, use_enum_value=True)
+        assert not diff
+
+    def test_enum_use_enum_value_in_dict_key(self):
+        diff = DeepDiff({"book": 2}, {MyEnum2.book: 2}, use_enum_value=True)
+        assert not diff
 
     def test_precompiled_regex(self):
 
@@ -950,6 +960,9 @@ class TestDeepDiffText:
 
     def get_custom_object_with_added_removed_methods(self):
         class ClassA:
+            VAL = 1
+            VAL2 = 2
+
             def method_a(self):
                 pass
 
@@ -1000,13 +1013,20 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
-    def test_dictionary_with_string_keys(self):
+    def test_dictionary_with_string_keys1(self):
         t1 = {"veggie": "carrots"}
         t2 = {"meat": "carrots"}
 
         diff = DeepDiff(t1, t2)
         assert {'dictionary_item_added': ["root['meat']"],
                 'dictionary_item_removed': ["root['veggie']"]} == diff
+
+    def test_dictionary_with_string_keys_threshold_to_diff_deeper(self):
+        t1 = {"veggie": "carrots"}
+        t2 = {"meat": "carrots"}
+
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0.33)
+        assert {'values_changed': {'root': {'new_value': {'meat': 'carrots'}, 'old_value': {'veggie': 'carrots'}}}} == diff
 
     def test_dictionary_with_numeric_keys(self):
         t1 = {Decimal('10.01'): "carrots"}

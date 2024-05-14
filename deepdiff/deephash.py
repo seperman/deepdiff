@@ -139,6 +139,7 @@ class DeepHash(Base):
                  ignore_numeric_type_changes=False,
                  ignore_type_subclasses=False,
                  ignore_string_case=False,
+                 use_enum_value=False,
                  exclude_obj_callback=None,
                  number_to_string_func=None,
                  ignore_private_variables=True,
@@ -154,7 +155,7 @@ class DeepHash(Base):
                  "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func, ignore_private_variables, parent "
+                 "number_to_string_func, ignore_private_variables, parent, use_enum_value "
                  "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
             self.hashes = hashes
@@ -170,6 +171,7 @@ class DeepHash(Base):
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED_KEY] = []
+        self.use_enum_value = use_enum_value
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.truncate_datetime = get_truncate_datetime(truncate_datetime)
@@ -206,10 +208,10 @@ class DeepHash(Base):
     sha1hex = sha1hex
 
     def __getitem__(self, obj, extract_index=0):
-        return self._getitem(self.hashes, obj, extract_index=extract_index)
+        return self._getitem(self.hashes, obj, extract_index=extract_index, use_enum_value=self.use_enum_value)
 
     @staticmethod
-    def _getitem(hashes, obj, extract_index=0):
+    def _getitem(hashes, obj, extract_index=0, use_enum_value=False):
         """
         extract_index is zero for hash and 1 for count and None to get them both.
         To keep it backward compatible, we only get the hash by default so it is set to zero by default.
@@ -220,6 +222,8 @@ class DeepHash(Base):
             key = BoolObj.TRUE
         elif obj is False:
             key = BoolObj.FALSE
+        elif use_enum_value and isinstance(obj, Enum):
+            key = obj.value
 
         result_n_count = (None, 0)
 
@@ -256,14 +260,14 @@ class DeepHash(Base):
         return self.get_key(self.hashes, key, default=default, extract_index=extract_index)
 
     @staticmethod
-    def get_key(hashes, key, default=None, extract_index=0):
+    def get_key(hashes, key, default=None, extract_index=0, use_enum_value=False):
         """
         get_key method for the hashes dictionary.
         It can extract the hash for a given key that is already calculated when extract_index=0
         or the count of items that went to building the object whenextract_index=1.
         """
         try:
-            result = DeepHash._getitem(hashes, key, extract_index=extract_index)
+            result = DeepHash._getitem(hashes, key, extract_index=extract_index, use_enum_value=use_enum_value)
         except KeyError:
             result = default
         return result
@@ -481,6 +485,8 @@ class DeepHash(Base):
         if isinstance(obj, bool):
             obj = self._prep_bool(obj)
             result = None
+        elif self.use_enum_value and isinstance(obj, Enum):
+            obj = obj.value
         else:
             result = not_hashed
         try:
