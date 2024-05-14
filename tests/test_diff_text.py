@@ -5,6 +5,7 @@ import logging
 import re
 import uuid
 from enum import Enum
+from dataclasses import dataclass
 from typing import List
 from decimal import Decimal
 from deepdiff import DeepDiff
@@ -24,6 +25,11 @@ class MyEnum2(str, Enum):
     book = "book"
     cake = "cake"
 
+
+@dataclass(frozen=True)
+class MyDataClass:
+    val: int
+    val2: int
 
 
 class TestDeepDiffText:
@@ -2073,3 +2079,32 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
+
+    def test_dataclass1(self):
+
+
+        t1 = MyDataClass(1, 4)
+        t2 = MyDataClass(2, 4)
+
+        diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
+        assert {'values_changed': {'root.val': {'new_value': 2, 'old_value': 1}}} == diff
+
+    def test_dataclass2(self):
+
+        @dataclass(frozen=True)
+        class MyDataClass:
+            val: int
+            val2: int
+
+        t1 = {
+            MyDataClass(1, 4): 10,
+            MyDataClass(2, 4): 20,
+        }
+
+        t2 = {
+            MyDataClass(1, 4): 10,
+            MyDataClass(2, 4): 10,
+        }
+
+        diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
+        assert {'values_changed': {'root[MyDataClass(val=2,val2=4)]': {'new_value': 10, 'old_value': 20}}} == diff

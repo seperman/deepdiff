@@ -905,6 +905,9 @@ class ChildRelationship:
             result = stringify_element(param, quote_str=self.quote_str)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
+        elif hasattr(param, '__dataclass_fields__'):
+            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]
+            result = f"{param.__class__.__name__}({','.join(attrs_to_values)})"
         else:
             candidate = repr(param)
             try:
