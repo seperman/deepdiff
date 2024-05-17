@@ -104,7 +104,7 @@ class TestDeepDiffText:
     def test_item_added_and_removed(self):
         t1 = {1: 1, 2: 2, 3: [3], 4: 4}
         t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
-        ddiff = DeepDiff(t1, t2)
+        ddiff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         result = {
             'dictionary_item_added': ["root[5]", "root[6]"],
             'dictionary_item_removed': ["root[4]"],
@@ -1023,7 +1023,7 @@ class TestDeepDiffText:
         t1 = {"veggie": "carrots"}
         t2 = {"meat": "carrots"}
 
-        diff = DeepDiff(t1, t2)
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         assert {'dictionary_item_added': ["root['meat']"],
                 'dictionary_item_removed': ["root['veggie']"]} == diff
 
@@ -1037,8 +1037,11 @@ class TestDeepDiffText:
     def test_dictionary_with_numeric_keys(self):
         t1 = {Decimal('10.01'): "carrots"}
         t2 = {10.01: "carrots"}
-        diff = DeepDiff(t1, t2)
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff
+
+        diff2 = DeepDiff(t1, t2)
+        assert {'values_changed': {'root': {'new_value': {10.01: 'carrots'}, 'old_value': {Decimal('10.01'): 'carrots'}}}} == diff2
 
     def test_loop(self):
         class LoopTest:
@@ -1331,6 +1334,33 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, significant_digits=significant_digits)
         assert expected_result == ddiff
 
+    @pytest.mark.parametrize('test_num, t1, t2, log_scale_similarity_threshold, expected', [
+        (
+            1,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.01,  # threshold
+            {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}, "root['bar']": {'new_value': 298, 'old_value': 306}}},  # expected
+        ),
+        (
+            2,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.1,  # threshold
+            {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}}},  # expected
+        ),
+        (
+            2,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.3,  # threshold
+            {},  # expected
+        ),
+    ])
+    def test_log_scale(self, test_num, t1, t2, log_scale_similarity_threshold, expected):
+        diff = DeepDiff(t1, t2, use_log_scale=True, log_scale_similarity_threshold=log_scale_similarity_threshold)
+        assert expected == diff, f"test_log_scale #{test_num} failed."
+
     def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.0]
@@ -1348,7 +1378,7 @@ class TestDeepDiffText:
         t1 = {Decimal('10.01'): "carrots"}
         t2 = {10.01: "carrots"}
 
-        diff1 = DeepDiff(t1, t2)
+        diff1 = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
 
         diff2 = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
 

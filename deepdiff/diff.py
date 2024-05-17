@@ -27,7 +27,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, Lis
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
                              PydanticBaseModel, Opcode, SetOrdered)
 from deepdiff.serialization import SerializationMixin
-from deepdiff.distance import DistanceMixin
+from deepdiff.distance import DistanceMixin, logarithmic_similarity
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, REPORT_KEYS,
@@ -157,7 +157,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger: Callable=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
-                 threshold_to_diff_deeper: float = 0,
+                 use_log_scale: bool=False,
+                 log_scale_similarity_threshold: int=0.1,
+                 threshold_to_diff_deeper: float = 0.33,
                  truncate_datetime: Optional[str]=None,
                  use_enum_value: bool=False,
                  verbose_level: int=1,
@@ -178,7 +180,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, "
                 "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, "
-                "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, "
+                "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, use_log_scale, log_scale_similarity_threshold "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -196,6 +198,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if strings == ignore_type_in_groups or strings in ignore_type_in_groups:
                 ignore_string_type_changes = True
             self.use_enum_value = use_enum_value
+            self.log_scale_similarity_threshold = log_scale_similarity_threshold
+            self.use_log_scale = use_log_scale
             self.threshold_to_diff_deeper = threshold_to_diff_deeper
             self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -583,9 +587,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t_keys_union = t2_keys | t1_keys
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
-
         if self.threshold_to_diff_deeper:
-            if len(t_keys_union) and len(t_keys_intersect) / len(t_keys_union) < self.threshold_to_diff_deeper:
+            if len(t_keys_union) > 1 and len(t_keys_intersect) / len(t_keys_union) < self.threshold_to_diff_deeper:
                 self._report_result('values_changed', level, local_tree=local_tree)
                 return
 
@@ -1145,7 +1148,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         pairs = dict_()
 
         pre_calced_distances = None
-
         if hashes_added and hashes_removed and np and len(hashes_added) > 1 and len(hashes_removed) > 1:
             # pre-calculates distances ONLY for 1D arrays whether an _original_type
             # was explicitly passed or a homogeneous array is detected.
@@ -1233,7 +1235,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_hashtable = {k: v for k, v in full_t1_hashtable.items() if k in hashes_removed}
             t2_hashtable = {k: v for k, v in full_t2_hashtable.items() if k in hashes_added}
-
         if self._stats[PASSES_COUNT] < self.max_passes and get_pairs:
             self._stats[PASSES_COUNT] += 1
             pairs = self._get_most_in_common_pairs_in_iterables(
@@ -1403,7 +1404,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_type = t2_type = ''
 
-        if self.math_epsilon is not None:
+        if self.use_log_scale:
+            if not logarithmic_similarity(level.t1, level.t2, threshold=self.log_scale_similarity_threshold):
+                self._report_result('values_changed', level, local_tree=local_tree)
+        elif self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
                 self._report_result('values_changed', level, local_tree=local_tree)
         elif self.significant_digits is None:

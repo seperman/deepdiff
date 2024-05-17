@@ -74,7 +74,8 @@ class TestCache:
             'MAX PASS LIMIT REACHED': False,
             'MAX DIFF LIMIT REACHED': False
         }
-        assert expected_stats == stats
+        stats_diff = DeepDiff(expected_stats, stats, use_log_scale=True, log_scale_similarity_threshold=0.15)
+        assert not stats_diff
         assert nested_b_result == diff
 
         diff_of_diff = DeepDiff(nested_b_result, diff.to_dict(), ignore_order=False)

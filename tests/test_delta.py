@@ -448,7 +448,7 @@ class TestBasicsOfDelta:
             }
         }
 
-        diff = DeepDiff(t1, t2)
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         delta_dict = diff._to_delta_dict()
         assert expected_delta_dict == delta_dict
         delta = Delta(diff, bidirectional=False, raise_errors=True)
@@ -828,9 +828,9 @@ DELTA_CASES = {
     'delta_case14b_threshold_to_diff_deeper': {
         't1': picklalbe_obj_without_item,
         't2': PicklableClass(11),
-        'deepdiff_kwargs': {'threshold_to_diff_deeper': 0.33},
+        'deepdiff_kwargs': {'threshold_to_diff_deeper': 0.5},
         'to_delta_kwargs': {},
-        'expected_delta_dict': {'values_changed': {'root': {'new_value': PicklableClass(11)}}}
+        'expected_delta_dict': {'attribute_added': {'root.item': 11}}
     },
     'delta_case15_diffing_simple_numbers': {
         't1': 1,

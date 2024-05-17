@@ -1,3 +1,5 @@
+import numpy as np
+import math
 import datetime
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
@@ -31,7 +33,7 @@ class DistanceMixin:
         """
 
         _distance = get_numeric_types_distance(
-            self.t1, self.t2, max_=self.cutoff_distance_for_pairs)
+            self.t1, self.t2, max_=self.cutoff_distance_for_pairs, use_log_scale=self.use_log_scale, log_scale_similarity_threshold=self.log_scale_similarity_threshold)
 
         if _distance is not not_found:
             return _distance
@@ -122,7 +124,10 @@ class DistanceMixin:
 
         distances = _get_numpy_array_distance(
             pairs_transposed[0], pairs_transposed[1],
-            max_=self.cutoff_distance_for_pairs)
+            max_=self.cutoff_distance_for_pairs,
+            use_log_scale=self.use_log_scale,
+            log_scale_similarity_threshold=self.log_scale_similarity_threshold,
+        )
 
         i = 0
         for added_hash in hashes_added:
@@ -186,7 +191,7 @@ def _get_item_length(item, parents_ids=frozenset([])):
     return length
 
 
-def _get_numbers_distance(num1, num2, max_=1):
+def _get_numbers_distance(num1, num2, max_=1, use_log_scale=False, log_scale_similarity_threshold=0.1):
     """
     Get the distance of 2 numbers. The output is a number between 0 to the max.
     The reason is the
@@ -194,6 +199,11 @@ def _get_numbers_distance(num1, num2, max_=1):
     """
     if num1 == num2:
         return 0
+    if use_log_scale:
+        distance = logarithmic_distance(num1, num2)
+        if distance < logarithmic_distance:
+            return 0
+        return distance
     if not isinstance(num1, float):
         num1 = float(num1)
     if not isinstance(num2, float):
@@ -218,8 +228,42 @@ def _numpy_div(a, b, replace_inf_with=1):
     result[a == b] = 0
     return result
 
+# To deal with numbers close to zero
+MATH_LOG_OFFSET = 1e-10
 
-def _get_numpy_array_distance(num1, num2, max_=1):
+def numpy_apply_log_keep_sign(array, offset=MATH_LOG_OFFSET):
+    # Calculate the absolute value and add the offset
+    abs_plus_offset = np.abs(array) + offset
+    
+    # Calculate the logarithm
+    log_values = np.log(abs_plus_offset)
+    
+    # Apply the original signs to the log values
+    signed_log_values = np.copysign(log_values, array)
+    
+    return signed_log_values
+
+
+def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1):
+    """
+    A threshold of 0.1 translates to about 10.5% difference.
+    A threshold of 0.5 translates to about 65% difference.
+    A threshold of 0.05 translates to about 5.1% difference.
+    """
+    return logarithmic_distance(a, b) < threshold
+
+
+def logarithmic_distance(a: numbers, b: numbers):
+    # Apply logarithm to the absolute values and consider the sign
+    a = float(a)
+    b = float(b)
+    log_a = math.copysign(math.log(abs(a) + MATH_LOG_OFFSET), a)
+    log_b = math.copysign(math.log(abs(b) + MATH_LOG_OFFSET), b)
+
+    return abs(log_a - log_b)
+
+
+def _get_numpy_array_distance(num1, num2, max_=1, use_log_scale=False, log_scale_similarity_threshold=0.1):
     """
     Get the distance of 2 numbers. The output is a number between 0 to the max.
     The reason is the
@@ -229,24 +273,32 @@ def _get_numpy_array_distance(num1, num2, max_=1):
     # getting the pairs of items during the ingore_order=True
     # calculations, we need to make the divisor of comparison very big
     # so that any 2 numbers can be chosen as pairs.
+    if use_log_scale:
+        num1 = numpy_apply_log_keep_sign(num1)
+        num2 = numpy_apply_log_keep_sign(num2)
+
     divisor = (num1 + num2) / max_
     result = _numpy_div((num1 - num2), divisor, replace_inf_with=max_)
-    return np.clip(np.absolute(result), 0, max_)
+
+    distance_array = np.clip(np.absolute(result), 0, max_)
+    if use_log_scale:
+        distance_array[distance_array < log_scale_similarity_threshold] = 0
+    return distance_array
 
 
-def _get_datetime_distance(date1, date2, max_):
+def _get_datetime_distance(date1, date2, max_, use_log_scale, log_scale_similarity_threshold):
     return _get_numbers_distance(date1.timestamp(), date2.timestamp(), max_)
 
 
-def _get_date_distance(date1, date2, max_):
+def _get_date_distance(date1, date2, max_, use_log_scale, log_scale_similarity_threshold):
     return _get_numbers_distance(date1.toordinal(), date2.toordinal(), max_)
 
 
-def _get_timedelta_distance(timedelta1, timedelta2, max_):
+def _get_timedelta_distance(timedelta1, timedelta2, max_, use_log_scale, log_scale_similarity_threshold):
     return _get_numbers_distance(timedelta1.total_seconds(), timedelta2.total_seconds(), max_)
 
 
-def _get_time_distance(time1, time2, max_):
+def _get_time_distance(time1, time2, max_, use_log_scale, log_scale_similarity_threshold):
     return _get_numbers_distance(time_to_seconds(time1), time_to_seconds(time2), max_)
 
 
@@ -259,8 +311,8 @@ TYPES_TO_DIST_FUNC = [
 ]
 
 
-def get_numeric_types_distance(num1, num2, max_):
+def get_numeric_types_distance(num1, num2, max_, use_log_scale=False, log_scale_similarity_threshold=0.1):
     for type_, func in TYPES_TO_DIST_FUNC:
         if isinstance(num1, type_) and isinstance(num2, type_):
-            return func(num1, num2, max_)
+            return func(num1, num2, max_, use_log_scale, log_scale_similarity_threshold)
     return not_found
