@@ -45,23 +45,23 @@ jobs:
       if: ${{ matrix.numpy-version }}
       run: pip install -I --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple "numpy>=0.0.dev0" 
     - name: Lint with flake8
-      if: matrix.python-version == 3.11
+      if: matrix.python-version == 3.12
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 deepdiff --count --exit-zero --max-complexity=26 --max-line-lengt=250 --statistics
     - name: Test with pytest and get the coverage
-      if: matrix.python-version == 3.11
+      if: matrix.python-version == 3.12
       run: |
-        pytest --cov-report=xml --cov=deepdiff tests/ --runslow
+        pytest --benchmark-disable --cov-report=xml --cov=deepdiff tests/ --runslow
     - name: Test with pytest and no coverage report
-      if: matrix.python-version != 3.11
+      if: matrix.python-version != 3.12
       run: |
-        pytest
+        pytest --benchmark-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
-      if: matrix.python-version == 3.11
+      if: matrix.python-version == 3.12
       with:
         file: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
