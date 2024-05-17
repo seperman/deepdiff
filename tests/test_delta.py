@@ -8,7 +8,7 @@ import sys
 from decimal import Decimal
 from unittest import mock
 from deepdiff import Delta, DeepDiff
-from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow, FlatDataAction, SortedSet
+from deepdiff.helper import np, number_to_string, TEXT_VIEW, DELTA_VIEW, CannotCompare, FlatDeltaRow, FlatDataAction, SetOrdered
 from deepdiff.path import GETATTR, GET
 from deepdiff.delta import (
     ELEM_NOT_FOUND_TO_ADD_MSG,
@@ -1779,8 +1779,8 @@ class TestDeltaOther:
         assert flat_expected2 == flat_result2
 
     def test_delta_set_in_objects(self):
-        t1 = [[1, SortedSet(['A', 'B'])], {1}]
-        t2 = [[2, SortedSet([10, 'C', 'B'])], {1}]
+        t1 = [[1, SetOrdered(['A', 'B'])], {1}]
+        t2 = [[2, SetOrdered([10, 'C', 'B'])], {1}]
         delta = Delta(DeepDiff(t1, t2))
         flat_result = delta.to_flat_rows()
         flat_expected = [
@@ -1792,7 +1792,7 @@ class TestDeltaOther:
         flat_expected = [FlatDeltaRow(**i) for i in flat_expected]
 
         # Sorting because otherwise the order is not deterministic for sets,
-        # even though we are using SortedSet here. It still is converted to set at some point and loses its order.
+        # even though we are using SetOrdered here. It still is converted to set at some point and loses its order.
         flat_result.sort(key=lambda x: str(x.value))
         assert flat_expected == flat_result
 

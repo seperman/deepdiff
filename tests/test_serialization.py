@@ -10,7 +10,7 @@ from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode, SortedSet
+from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode, SetOrdered
 from deepdiff.serialization import (
     pickle_load, pickle_dump, ForbiddenModule, ModuleNotFoundError,
     MODULE_NOT_FOUND_MSG, FORBIDDEN_MODULE_MSG, pretty_print_diff,
@@ -132,7 +132,7 @@ class TestLoadContet:
 class TestPickling:
 
     def test_serialize(self):
-        obj = [1, 2, 3, None, {10: 11E2}, frozenset(['a', 'c']), SortedSet([2, 1]),
+        obj = [1, 2, 3, None, {10: 11E2}, frozenset(['a', 'c']), SetOrdered([2, 1]),
                datetime.datetime(2022, 4, 10, 0, 40, 41, 357857), datetime.time(11), Decimal('11.2'), 123.11]
         serialized = pickle_dump(obj)
         loaded = pickle_load(serialized)

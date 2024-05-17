@@ -202,15 +202,15 @@ def extract(obj, path):
         Note that even if DeepDiff tried gives you a path to an item in a set,
         there is no such thing in Python and hence you will get an error trying
         to extract that item from a set.
-        If you want to be able to get items from sets, use the SortedSet module
+        If you want to be able to get items from sets, use the SetOrdered module
         to generate the sets.
-        In fact Deepdiff uses SortedSet as a dependency.
+        In fact Deepdiff uses SetOrdered as a dependency.
 
         >>> from deepdiff import grep, extract
         >>> obj = {"a", "b"}
         >>> obj | grep("b")
         Set item detected in the path.'set' objects do NOT support indexing. But DeepSearch will still report a path.
-        {'matched_values': SortedSet(['root[0]'])}
+        {'matched_values': SetOrdered(['root[0]'])}
         >>> extract(obj, 'root[0]')
         Traceback (most recent call last):
           File "<stdin>", line 1, in <module>
@@ -219,8 +219,8 @@ def extract(obj, path):
           File "deepdiff/deepdiff/path.py", line 84, in _get_nested_obj
             obj = obj[elem]
         TypeError: 'set' object is not subscriptable
-        >>> from orderly_set import SortedSet
-        >>> obj = SortedSet(["a", "b"])
+        >>> from orderly_set import SetOrdered
+        >>> obj = SetOrdered(["a", "b"])
         >>> extract(obj, 'root[0]')
         'a'
 

@@ -45,7 +45,16 @@ from copy import deepcopy
 from functools import partial
 from collections.abc import Mapping
 from deepdiff.helper import (
-    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64, np_ndarray, Opcode, py_current_version
+    strings,
+    get_type,
+    TEXT_VIEW,
+    np_float32,
+    np_float64,
+    np_int32,
+    np_int64,
+    np_ndarray,
+    Opcode,
+    SetOrdered,
 )
 from deepdiff.model import DeltaResult
 
@@ -92,9 +101,10 @@ SAFE_TO_IMPORT = {
     'datetime.timedelta',
     'decimal.Decimal',
     'uuid.UUID',
-    'orderly_set.sets.SortedSet',
+    'orderly_set.sets.OrderedSet',
     'orderly_set.sets.OrderlySet',
-    'deepdiff.helper.SortedSet',
+    'orderly_set.sets.StableSetEq',
+    'deepdiff.helper.SetOrdered',
     'collections.namedtuple',
     'collections.OrderedDict',
     're.Pattern',
@@ -123,7 +133,7 @@ TYPE_STR_TO_TYPE = {
     'time': datetime.time,
     'timedelta': datetime.timedelta,
     'Decimal': decimal.Decimal,
-    'SortedSet': orderly_set.SortedSet,
+    'SetOrdered': SetOrdered,
     'namedtuple': collections.namedtuple,
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,    
@@ -570,7 +580,8 @@ def _serialize_tuple(value):
 
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
-    orderly_set.SortedSet: lambda x: x._get_sorted(),
+    SetOrdered: list,
+    orderly_set.StableSetEq: list,
     set: list,
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),

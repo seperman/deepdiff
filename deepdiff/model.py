@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from copy import copy
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
-    dict_, SortedSet)
+    dict_, SetOrdered)
 from deepdiff.path import stringify_element
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class ResultDict(RemapDict):
 class TreeResult(ResultDict):
     def __init__(self):
         for key in REPORT_KEYS:
-            self[key] = SortedSet()
+            self[key] = SetOrdered()
 
     def mutual_add_removes_to_become_value_changes(self):
         """
@@ -68,7 +68,7 @@ class TreeResult(ResultDict):
             mutual_paths = set(added_paths) & set(removed_paths)
 
             if mutual_paths and 'values_changed' not in self:
-                self['values_changed'] = SortedSet()
+                self['values_changed'] = SetOrdered()
             for path in mutual_paths:
                 level_before = removed_paths[path]
                 self['iterable_item_removed'].remove(level_before)
@@ -84,11 +84,11 @@ class TreeResult(ResultDict):
 
     def __getitem__(self, item):
         if item not in self:
-            self[item] = SortedSet()
+            self[item] = SetOrdered()
         return self.get(item)
 
     def __len__(self):
-        return sum([len(i) for i in self.values() if isinstance(i, SortedSet)])
+        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)])
 
 
 class TextResult(ResultDict):
@@ -108,8 +108,8 @@ class TextResult(ResultDict):
             "iterable_item_moved": dict_(),
             "attribute_added": self.__set_or_dict(),
             "attribute_removed": self.__set_or_dict(),
-            "set_item_removed": SortedSet(),
-            "set_item_added": SortedSet(),
+            "set_item_removed": SetOrdered(),
+            "set_item_added": SetOrdered(),
             "repetition_change": dict_()
         })
 
@@ -117,7 +117,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else SortedSet()
+        return {} if self.verbose_level >= 2 else SetOrdered()
 
     def _from_tree_results(self, tree):
         """
@@ -162,7 +162,7 @@ class TextResult(ResultDict):
 
                 # do the reporting
                 report = self[report_type]
-                if isinstance(report, SortedSet):
+                if isinstance(report, SetOrdered):
                     report.add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(report, dict):
                     report[change.path(force=FORCE_DEFAULT)] = item
@@ -264,7 +264,7 @@ class TextResult(ResultDict):
     def _from_tree_custom_results(self, tree):
         for k, _level_list in tree.items():
             if k not in REPORT_KEYS:
-                if not isinstance(_level_list, SortedSet):
+                if not isinstance(_level_list, SetOrdered):
                     continue
 
                 # if len(_level_list) == 0:

@@ -25,7 +25,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, Lis
                              np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
-                             PydanticBaseModel, Opcode, SortedSet)
+                             PydanticBaseModel, Opcode, SetOrdered)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin
 from deepdiff.model import (
@@ -566,16 +566,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             rel_class = DictRelationship
 
         if self.ignore_private_variables:
-            t1_keys = SortedSet([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
-            t2_keys = SortedSet([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
+            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
+            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
         else:
-            t1_keys = SortedSet(t1.keys())
-            t2_keys = SortedSet(t2.keys())
+            t1_keys = SetOrdered(t1.keys())
+            t2_keys = SetOrdered(t2.keys())
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
-            t1_keys = SortedSet(t1_clean_to_keys.keys())
-            t2_keys = SortedSet(t2_clean_to_keys.keys())
+            t1_keys = SetOrdered(t1_clean_to_keys.keys())
+            t2_keys = SetOrdered(t2_clean_to_keys.keys())
         else:
             t1_clean_to_keys = t2_clean_to_keys = None
 
@@ -1140,7 +1140,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         # It also includes a "max" key that is just the value of the biggest current distance in the
         # most_in_common_pairs dictionary.
         def defaultdict_orderedset():
-            return defaultdict(SortedSet)
+            return defaultdict(SetOrdered)
         most_in_common_pairs = defaultdict(defaultdict_orderedset)
         pairs = dict_()
 
@@ -1183,7 +1183,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 pairs_of_item[_distance].add(removed_hash)
         used_to_hashes = set()
 
-        distances_to_from_hashes = defaultdict(SortedSet)
+        distances_to_from_hashes = defaultdict(SetOrdered)
         for from_hash, distances_to_to_hashes in most_in_common_pairs.items():
             # del distances_to_to_hashes['max']
             for dist in distances_to_to_hashes:
@@ -1215,8 +1215,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         full_t1_hashtable = self._create_hashtable(level, 't1')
         full_t2_hashtable = self._create_hashtable(level, 't2')
-        t1_hashes = SortedSet(full_t1_hashtable.keys())
-        t2_hashes = SortedSet(full_t2_hashtable.keys())
+        t1_hashes = SetOrdered(full_t1_hashtable.keys())
+        t2_hashes = SetOrdered(full_t2_hashtable.keys())
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
@@ -1628,7 +1628,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(level.t1, tuple):
             self._diff_tuple(level, parents_ids, local_tree=local_tree)
 
-        elif isinstance(level.t1, (set, frozenset, SortedSet)):
+        elif isinstance(level.t1, (set, frozenset, SetOrdered)):
             self._diff_set(level, local_tree=local_tree)
 
         elif isinstance(level.t1, np_ndarray):
@@ -1750,19 +1750,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 'iterable_item_added': {'root[3][1]': 4},
                 'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
             >>> ddiff.affected_paths
-            SortedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            SetOrdered(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
             >>> ddiff.affected_root_keys
-            SortedSet([3, 4, 5, 6, 2])
+            SetOrdered([3, 4, 5, 6, 2])
 
         """
-        result = SortedSet()
+        result = SetOrdered()
         for key in REPORT_KEYS:
             value = self.get(key)
             if value:
-                if isinstance(value, SortedSet):
+                if isinstance(value, SetOrdered):
                     result |= value
                 else:
-                    result |= SortedSet(value.keys())
+                    result |= SetOrdered(value.keys())
         return result
 
     @property
@@ -1782,18 +1782,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 'iterable_item_added': {'root[3][1]': 4},
                 'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
             >>> ddiff.affected_paths
-            SortedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            SetOrdered(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
             >>> ddiff.affected_root_keys
-            SortedSet([3, 4, 5, 6, 2])
+            SetOrdered([3, 4, 5, 6, 2])
         """
-        result = SortedSet()
+        result = SetOrdered()
         for key in REPORT_KEYS:
             value = self.tree.get(key)
             if value:
-                if isinstance(value, SortedSet):
-                    result |= SortedSet([i.get_root_key() for i in value])
+                if isinstance(value, SetOrdered):
+                    result |= SetOrdered([i.get_root_key() for i in value])
                 else:
-                    result |= SortedSet([i.get_root_key() for i in value.keys()])
+                    result |= SetOrdered([i.get_root_key() for i in value.keys()])
         return result
 
 

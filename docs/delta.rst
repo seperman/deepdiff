@@ -429,7 +429,7 @@ At the time of writing this document, this list consists of:
  'datetime.timedelta',
  'decimal.Decimal',
  'ordered_set.OrderedSet',
- 'orderly_set.sets.SortedSet',
+ 'orderly_set.sets.SetOrdered',
  're.Pattern',
  'uuid.UUID'}
 
