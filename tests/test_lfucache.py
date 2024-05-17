@@ -11,7 +11,10 @@ class TestLFUcache:
         (['a', 'a', 'b', 'a', 'c', 'b', 'd', 'e', 'c', 'b'], 3, [('b', 3), ('d', 1), ('e', 1)], '1.666'),
         (['a', 'a', 'b', 'a', 'c', 'b', 'd', 'e', 'c', 'b', 'b', 'c', 'd', 'b'], 3, [('b', 5), ('c', 3), ('d', 2)], '3.333'),
     ])
-    def test_lfu(self, items, size, expected_results, expected_freq):
+    def test_lfu(self, items, size, expected_results, expected_freq, benchmark):
+        benchmark(self._test_lfu, items, size, expected_results, expected_freq)
+
+    def _test_lfu(self, items, size, expected_results, expected_freq):
         lfucache = LFUCache(size)
         for item in items:
             lfucache.set(item, value='{}_cached'.format(item))

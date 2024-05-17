@@ -4,7 +4,6 @@ from typing import List, Dict, IO, Callable, Set, Union, Optional
 from functools import partial, cmp_to_key
 from collections.abc import Mapping
 from copy import deepcopy
-from ordered_set import OrderedSet
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
@@ -14,6 +13,7 @@ from deepdiff.helper import (
     Opcode, FlatDeltaRow, UnkownValueCode, FlatDataAction,
     OPCODE_TAG_TO_FLAT_DATA_ACTION,
     FLAT_DATA_ACTION_TO_OPCODE_TAG,
+    SortedSet,
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
@@ -744,7 +744,7 @@ class Delta:
         """
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', dict_())
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', dict_())
-        paths = OrderedSet(fixed_indexes.keys()) | OrderedSet(remove_indexes.keys())
+        paths = SortedSet(fixed_indexes.keys()) | SortedSet(remove_indexes.keys())
         for path in paths:
             # In the case of ignore_order reports, we are pointing to the container object.
             # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.

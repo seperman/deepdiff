@@ -19,3 +19,4 @@ wheel==0.43.0
 tomli==2.0.1
 tomli-w==1.0.0
 pydantic==2.6.4
+pytest-benchmark==4.0.0

@@ -7,7 +7,7 @@ from decimal import Decimal
 from deepdiff.helper import (
     short_repr, number_to_string, get_numpy_ndarray_rows,
     cartesian_product_of_shape, literal_eval_extended,
-    not_found, OrderedSetPlus, diff_numpy_array, cartesian_product_numpy,
+    not_found, diff_numpy_array, cartesian_product_numpy,
     get_truncate_datetime, datetime_normalize,
     detailed__dict__, ENUM_INCLUDE_KEYS, add_root_to_paths,
     get_semvar_as_integer,
@@ -224,14 +224,6 @@ class TestHelper:
 
     def test_not_found_inequality(self):
         assert not_found != not_found
-
-    def test_ordered_set_plus_lpop(self):
-        obj = OrderedSetPlus([1, 1, 2])
-        assert 1 == obj.lpop()
-        assert 2 == obj.lpop()
-        with pytest.raises(KeyError) as excinfo:
-            obj.lpop()
-        assert str(excinfo.value) == "'lpop from an empty set'"
 
     @pytest.mark.parametrize('array1, array2, expected', [
         (np.array([3, 1, 2, 4, 3]), np.array([5, 2, 4]), [3, 1, 3]),

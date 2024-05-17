@@ -98,7 +98,7 @@ class DistanceMixin:
             self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
 
         # We only want to deal with 1D arrays.
-        if isinstance(t2_hashtable[hashes_added[0]].item, (np_ndarray, list)):
+        if isinstance(t2_hashtable[next(iter(hashes_added))].item, (np_ndarray, list)):
             return
 
         pre_calced_distances = dict_()

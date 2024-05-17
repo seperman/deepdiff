@@ -1,5 +1,4 @@
-from ordered_set import OrderedSet
-from deepdiff.helper import strings, numbers
+from deepdiff.helper import strings, numbers, SortedSet
 
 
 DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 12
@@ -31,7 +30,7 @@ class Base:
 
         result = []
         for item_group in ignore_type_in_groups:
-            new_item_group = OrderedSet()
+            new_item_group = SortedSet()
             for item in item_group:
                 item = type(item) if item is None or not isinstance(item, type) else item
                 new_item_group.add(item)
@@ -39,10 +38,10 @@ class Base:
         ignore_type_in_groups = result
 
         if ignore_string_type_changes and self.strings not in ignore_type_in_groups:
-            ignore_type_in_groups.append(OrderedSet(self.strings))
+            ignore_type_in_groups.append(SortedSet(self.strings))
 
         if ignore_numeric_type_changes and self.numbers not in ignore_type_in_groups:
-            ignore_type_in_groups.append(OrderedSet(self.numbers))
+            ignore_type_in_groups.append(SortedSet(self.numbers))
 
         if not ignore_type_subclasses:
             # is_instance method needs tuples. When we look for subclasses, we need them to be tuples

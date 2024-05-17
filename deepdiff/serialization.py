@@ -9,7 +9,7 @@ import re  # NOQA
 import builtins  # NOQA
 import datetime  # NOQA
 import decimal  # NOQA
-import ordered_set  # NOQA
+import orderly_set  # NOQA
 import collections  # NOQA
 try:
     import yaml
@@ -92,7 +92,9 @@ SAFE_TO_IMPORT = {
     'datetime.timedelta',
     'decimal.Decimal',
     'uuid.UUID',
-    'ordered_set.OrderedSet',
+    'orderly_set.sets.SortedSet',
+    'orderly_set.sets.OrderlySet',
+    'deepdiff.helper.SortedSet',
     'collections.namedtuple',
     'collections.OrderedDict',
     're.Pattern',
@@ -121,7 +123,7 @@ TYPE_STR_TO_TYPE = {
     'time': datetime.time,
     'timedelta': datetime.timedelta,
     'Decimal': decimal.Decimal,
-    'OrderedSet': ordered_set.OrderedSet,
+    'SortedSet': orderly_set.SortedSet,
     'namedtuple': collections.namedtuple,
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,    
@@ -568,7 +570,7 @@ def _serialize_tuple(value):
 
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
-    ordered_set.OrderedSet: list,
+    orderly_set.SortedSet: lambda x: x._get_sorted(),
     set: list,
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),
