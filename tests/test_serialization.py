@@ -359,3 +359,13 @@ class TestDeepDiffPretty:
         serialized = json_dumps(op_code)
         expected = '{"tag":"replace","t1_from_index":0,"t1_to_index":1,"t2_from_index":10,"t2_to_index":20,"old_values":null,"new_values":null}'
         assert serialized == expected
+
+    def test_reversed_list(self):
+        items = reversed([1, 2, 3])
+
+        serialized = json_dumps(items)
+        serialized2 = json_dumps(items)
+
+        assert '[3,2,1]' == serialized
+        assert '[3,2,1]' == serialized2, "We should have copied the original list. If this returns empty, it means we exhausted the original list."
+

@@ -41,7 +41,7 @@ try:
 except ImportError:  # pragma: no cover.
     PydanticBaseModel = None
 
-from copy import deepcopy
+from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
 from deepdiff.helper import (
@@ -611,6 +611,9 @@ def json_convertor_default(default_mapping=None):
         for original_type, convert_to in _convertor_mapping.items():
             if isinstance(obj, original_type):
                 return convert_to(obj)
+        # This is to handle reverse() which creates a generator of type list_reverseiterator
+        if obj.__class__.__name__ == 'list_reverseiterator':
+            return list(copy(obj))
         raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
 
     return _convertor
