@@ -14,9 +14,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         architecture: ["x64"]
-        include:
-          - python-version: "3.8"
-            numpy-version: "1.26.4"
     steps:
     - uses: actions/checkout@v2
     - name: Setup Python ${{ matrix.python-version }} on ${{ matrix.architecture }}
@@ -24,7 +21,19 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.architecture }}
+    - name: Cache pip 3.8
+      if: matrix.python-version == 3.8
+      uses: actions/cache@v2
+      with:
+        # This path is specific to Ubuntu
+        path: ~/.cache/pip
+        # Look to see if there is a cache hit for the corresponding requirements file
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}-${{ hashFiles('requirements-dev3.8.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          ${{ runner.os }}-
     - name: Cache pip
+      if: matrix.python-version != 3.8
       uses: actions/cache@v2
       with:
         # This path is specific to Ubuntu
@@ -40,10 +49,11 @@ jobs:
         # workaround for 3.12, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
     - name: Install dependencies
+      if: matrix.python-version != 3.8
       run: pip install -r requirements-dev.txt
-    - name: Install Numpy Old
-      if: ${{ matrix.numpy-version }}
-      run: pip install -I --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple "numpy>=0.0.dev0" 
+    - name: Install dependencies
+      if: matrix.python-version == 3.8
+      run: pip install -r requirements-dev3.8.txt
     - name: Lint with flake8
       if: matrix.python-version == 3.12
       run: |
