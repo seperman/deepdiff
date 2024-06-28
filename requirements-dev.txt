@@ -20,3 +20,5 @@ tomli==2.0.1
 tomli-w==1.0.0
 pydantic==2.7.4
 pytest-benchmark==4.0.0
+pandas>=1.6
+polars=>0.19.11
