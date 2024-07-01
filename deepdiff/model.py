@@ -1,10 +1,9 @@
 import logging
 from collections.abc import Mapping
 from copy import copy
-from ordered_set import OrderedSet
 from deepdiff.helper import (
     RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
-    dict_)
+    dict_, SetOrdered)
 from deepdiff.path import stringify_element
 
 logger = logging.getLogger(__name__)
@@ -48,20 +47,10 @@ class ResultDict(RemapDict):
             del self[k]
 
 
-class PrettyOrderedSet(OrderedSet):
-    """
-    From the perspective of the users of the library, they are dealing with lists.
-    Behind the scene, we have ordered sets.
-    """
-
-    def __repr__(self):
-        return '[{}]'.format(", ".join(map(str, self)))
-
-
 class TreeResult(ResultDict):
     def __init__(self):
         for key in REPORT_KEYS:
-            self[key] = PrettyOrderedSet()
+            self[key] = SetOrdered()
 
     def mutual_add_removes_to_become_value_changes(self):
         """
@@ -79,7 +68,7 @@ class TreeResult(ResultDict):
             mutual_paths = set(added_paths) & set(removed_paths)
 
             if mutual_paths and 'values_changed' not in self:
-                self['values_changed'] = PrettyOrderedSet()
+                self['values_changed'] = SetOrdered()
             for path in mutual_paths:
                 level_before = removed_paths[path]
                 self['iterable_item_removed'].remove(level_before)
@@ -95,11 +84,11 @@ class TreeResult(ResultDict):
 
     def __getitem__(self, item):
         if item not in self:
-            self[item] = PrettyOrderedSet()
+            self[item] = SetOrdered()
         return self.get(item)
 
     def __len__(self):
-        return sum([len(i) for i in self.values() if isinstance(i, PrettyOrderedSet)])
+        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)])
 
 
 class TextResult(ResultDict):
@@ -119,8 +108,8 @@ class TextResult(ResultDict):
             "iterable_item_moved": dict_(),
             "attribute_added": self.__set_or_dict(),
             "attribute_removed": self.__set_or_dict(),
-            "set_item_removed": PrettyOrderedSet(),
-            "set_item_added": PrettyOrderedSet(),
+            "set_item_removed": SetOrdered(),
+            "set_item_added": SetOrdered(),
             "repetition_change": dict_()
         })
 
@@ -128,7 +117,7 @@ class TextResult(ResultDict):
             self._from_tree_results(tree_results)
 
     def __set_or_dict(self):
-        return {} if self.verbose_level >= 2 else PrettyOrderedSet()
+        return {} if self.verbose_level >= 2 else SetOrdered()
 
     def _from_tree_results(self, tree):
         """
@@ -173,7 +162,7 @@ class TextResult(ResultDict):
 
                 # do the reporting
                 report = self[report_type]
-                if isinstance(report, PrettyOrderedSet):
+                if isinstance(report, SetOrdered):
                     report.add(change.path(force=FORCE_DEFAULT))
                 elif isinstance(report, dict):
                     report[change.path(force=FORCE_DEFAULT)] = item
@@ -275,7 +264,7 @@ class TextResult(ResultDict):
     def _from_tree_custom_results(self, tree):
         for k, _level_list in tree.items():
             if k not in REPORT_KEYS:
-                if not isinstance(_level_list, PrettyOrderedSet):
+                if not isinstance(_level_list, SetOrdered):
                     continue
 
                 # if len(_level_list) == 0:
@@ -905,6 +894,9 @@ class ChildRelationship:
             result = stringify_element(param, quote_str=self.quote_str)
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
+        elif hasattr(param, '__dataclass_fields__'):
+            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]
+            result = f"{param.__class__.__name__}({','.join(attrs_to_values)})"
         else:
             candidate = repr(param)
             try:

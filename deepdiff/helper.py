@@ -1,6 +1,7 @@
 import sys
 import re
 import os
+import math
 import datetime
 import uuid
 import logging
@@ -12,7 +13,10 @@ from typing import NamedTuple, Any, List, Optional
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
-from ordered_set import OrderedSet
+# from orderly_set import OrderlySet as SetOrderedBase  # median: 0.806 s, some tests are failing
+# from orderly_set import SetOrdered as SetOrderedBase  # median 1.011 s, didn't work for tests
+from orderly_set import StableSetEq as SetOrderedBase  # median: 1.0867 s for cache test, 5.63s for all tests
+# from orderly_set import OrderedSet as SetOrderedBase  # median  1.1256 s for cache test, 5.63s for all tests
 from threading import Timer
 
 
@@ -22,6 +26,11 @@ class np_type:
 
 class pydantic_base_model_type:
     pass
+
+
+class SetOrdered(SetOrderedBase):
+    def __repr__(self):
+        return str(list(self))
 
 
 try:
@@ -318,7 +327,7 @@ def add_root_to_paths(paths):
     """
     if paths is None:
         return
-    result = OrderedSet()
+    result = SetOrdered()
     for path in paths:
         if path.startswith('root'):
             result.add(path)
@@ -522,31 +531,6 @@ class _NotFound:
 not_found = _NotFound()
 
 warnings.simplefilter('once', DeepDiffDeprecationWarning)
-
-
-class OrderedSetPlus(OrderedSet):
-
-    def lpop(self):
-        """
-        Remove and return the first element from the set.
-        Raises KeyError if the set is empty.
-        Example:
-            >>> oset = OrderedSet([1, 2, 3])
-            >>> oset.lpop()
-            1
-        """
-        if not self.items:
-            raise KeyError('lpop from an empty set')
-
-        elem = self.items[0]
-        del self.items[0]
-        del self.map[elem]
-        return elem
-
-    def __repr__(self):
-        return str(list(self))
-
-    __str__ = __repr__
 
 
 class RepeatedTimer:

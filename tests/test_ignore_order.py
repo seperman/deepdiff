@@ -28,7 +28,7 @@ class TestIgnoreOrder:
                                  ({"a": Decimal(10), "b": 12, 11.0: None}, {b"b": 12, "a": 10.0, Decimal(11): None}, {}),
                              ])
     def test_type_change_numeric_when_ignore_order(self, t1, t2, expected_result):
-        ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, ignore_numeric_type_changes=True, ignore_string_type_changes=True, threshold_to_diff_deeper=0)
         assert expected_result == ddiff
 
     def test_ignore_order_depth1(self):
@@ -318,7 +318,7 @@ class TestIgnoreOrder:
             self):
         t1 = [1, {"a": 2}, {"a": 2}, {"b": [3, 4, {1: 1}]}, "B"]
         t2 = [{"b": [3, 4, {1: 1}]}, {1: 1}]
-        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, report_repetition=True, threshold_to_diff_deeper=0)
         result = {
             'iterable_item_added': {
                 'root[1]': {
@@ -567,6 +567,22 @@ class TestIgnoreOrder:
         result = {}
         assert result == ddiff
 
+    @pytest.mark.parametrize('log_scale_similarity_threshold, expected', [
+        (
+            0.1,
+            {}
+        ),
+        (
+            0.01,
+            {'values_changed': {'root[1][2]': {'new_value': Decimal('268'), 'old_value': Decimal('290.2')}}}
+        ),
+    ])
+    def test_decimal_log_scale_ignore_order1(self, log_scale_similarity_threshold, expected):
+        t1 = [{1: Decimal('10.143')}, {2: Decimal('290.2')}]
+        t2 = [{2: Decimal('268')}, {1: Decimal('10.23')}]
+        ddiff = DeepDiff(t1, t2, ignore_order=True, use_log_scale=True, log_scale_similarity_threshold=log_scale_similarity_threshold, cutoff_intersection_for_pairs=1)
+        assert expected == ddiff
+
     @pytest.mark.parametrize("t1, t2, significant_digits, ignore_order", [
         (100000, 100021, 3, False),
         ([10, 12, 100000], [50, 63, 100021], 3, False),
@@ -674,7 +690,7 @@ class TestIgnoreOrder:
             },
         ]
 
-        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1)
+        ddiff = DeepDiff(t1, t2, ignore_order=True, max_passes=max_passes, verbose_level=2, cache_size=5000, cutoff_intersection_for_pairs=1, threshold_to_diff_deeper=0)
         assert expected == ddiff
 
     @pytest.mark.parametrize('max_diffs, expected', [
@@ -1123,7 +1139,7 @@ class TestCompareFuncIgnoreOrder:
             }
         }
 
-        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order=True)
+        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order=True, threshold_to_diff_deeper=0)
         assert expected == ddiff
 
         def compare_func(x, y, level=None):
@@ -1132,7 +1148,7 @@ class TestCompareFuncIgnoreOrder:
             except Exception:
                 raise CannotCompare() from None
 
-        ddiff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, iterable_compare_func=compare_func)
+        ddiff2 = DeepDiff(t1, t2, ignore_order=True, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, iterable_compare_func=compare_func, threshold_to_diff_deeper=0)
         assert expected_with_compare_func == ddiff2
         assert ddiff != ddiff2
 
@@ -1307,7 +1323,7 @@ class TestDynamicIgnoreOrder:
         def ignore_order_func(level):
             return "order_does_not_matter" in level.path()
 
-        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order_func=ignore_order_func)
+        ddiff = DeepDiff(t1, t2, cutoff_intersection_for_pairs=1, cutoff_distance_for_pairs=1, ignore_order_func=ignore_order_func, threshold_to_diff_deeper=0)
 
         expected = {
             'type_changes': {

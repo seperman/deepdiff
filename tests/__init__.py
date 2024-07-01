@@ -65,5 +65,13 @@ class PicklableClass:
         return (self.__class__, (item, ))
 
     def __eq__(self, other):
-        both_no_items_attr = (not hasattr(self, 'item')) and (not hasattr(other, 'item'))
-        return both_no_items_attr or self.item == other.item
+        if hasattr(self, 'item') and hasattr(other, 'item'):
+            return self.item == other.item
+        if not hasattr(self, 'item') and not hasattr(other, 'item'):
+            return True
+        return False
+
+    def __str__(self):
+        return f"<Picklable: {self.item if hasattr(self, 'item') else 'delete'}>"
+
+    __repr__ = __str__

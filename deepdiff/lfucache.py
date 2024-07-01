@@ -5,17 +5,16 @@ https://github.com/luxigner/lfu_cache
 Modified by Sep Dehpour
 """
 from collections import defaultdict
-from ordered_set import OrderedSet
 from threading import Lock
 from statistics import mean
-from deepdiff.helper import not_found, dict_
+from deepdiff.helper import not_found, dict_, SetOrdered
 
 
 class CacheNode:
     def __init__(self, key, report_type, value, freq_node, pre, nxt):
         self.key = key
         if report_type:
-            self.content = defaultdict(OrderedSet)
+            self.content = defaultdict(SetOrdered)
             self.content[report_type].add(value)
         else:
             self.content = value
