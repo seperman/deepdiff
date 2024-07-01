@@ -14,6 +14,17 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
                              get_truncate_datetime, dict_, add_root_to_paths)
 from deepdiff.base import Base
+
+try:
+    import pandas
+except ImportError:
+    pandas = False
+
+try:
+    import polars
+except ImportError:
+    polars = False
+
 logger = logging.getLogger(__name__)
 
 UNPROCESSED_KEY = object()
@@ -448,7 +459,6 @@ class DeepHash(Base):
         type_ = obj.__class__.__name__
         return KEY_TO_VAL_STR.format(type_, obj)
 
-
     def _prep_number(self, obj):
         type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
         if self.significant_digits is not None:
@@ -479,7 +489,7 @@ class DeepHash(Base):
         return result, counts
 
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
-        """The main diff method"""
+        """The main hash method"""
         counts = 1
 
         if isinstance(obj, bool):
@@ -528,6 +538,19 @@ class DeepHash(Base):
 
         elif isinstance(obj, tuple):
             result, counts = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
+
+        elif (pandas and isinstance(obj, pandas.DataFrame)):
+            def gen():
+                yield ('dtype', obj.dtypes)
+                yield ('index', obj.index)
+                yield from obj.items()  # which contains (column name, series tuples)
+            result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
+        elif (polars and isinstance(obj, polars.DataFrame)):
+            def gen():
+                yield from obj.columns
+                yield from list(obj.schema.items())
+                yield from obj.rows()
+            result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
             result, counts = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)

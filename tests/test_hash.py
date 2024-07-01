@@ -744,6 +744,96 @@ class TestDeepHashPrep:
         except Exception as e:
             assert str(e).strip("'") == HASH_LOOKUP_ERR_MSG.format(t1[0])
 
+    def test_pandas(self):
+        import pandas as pd
+        df = pd.DataFrame({"a": [1]})
+        equal_df = pd.DataFrame({"a": [1]})
+        df_same_column_names = pd.DataFrame({"a": [1, 2]})
+        other_df = pd.DataFrame({"b": [1]})
+        df_hash = DeepHashPrep(df)[df]
+        equal_df_hash = DeepHashPrep(equal_df)[equal_df]
+        df_same_column_names_hash = DeepHashPrep(df_same_column_names)[df_same_column_names]
+        other_df_hash = DeepHashPrep(other_df)[other_df]
+        assert df_hash == equal_df_hash
+        assert df_hash != df_same_column_names_hash
+        assert df_hash != other_df_hash
+
+        df_mixed = pd.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 2)]})
+        df_mixed_2 = pd.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 2)]})
+        df_mixed_3 = pd.DataFrame({'a': [1], 'b': ['one'], 'c': [(1, 2)]})
+        df_mixed_4 = pd.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 3)]})
+        df_mixed_hash = DeepHashPrep(df_mixed)[df_mixed]
+        df_mixed_2_hash = DeepHashPrep(df_mixed_2)[df_mixed_2]
+        df_mixed_3_hash = DeepHashPrep(df_mixed_3)[df_mixed_3]
+        df_mixed_4_hash = DeepHashPrep(df_mixed_4)[df_mixed_4]
+        assert df_mixed_hash == df_mixed_2_hash
+        assert df_mixed_hash != df_mixed_3_hash
+        assert df_mixed_hash != df_mixed_4_hash
+
+        df_u8 = pd.DataFrame({'a': np.array([1], dtype=np.uint8)})
+        df_u16 = pd.DataFrame({'a': np.array([1], dtype=np.uint16)})
+        df_float = pd.DataFrame({'a': np.array([1], dtype=np.float32)})
+        df_u8_hash = DeepHashPrep(df_u8)[df_u8]
+        df_u16_hash = DeepHashPrep(df_u16)[df_u16]
+        df_float_hash = DeepHashPrep(df_float)[df_float]
+        assert df_u8_hash != df_float_hash
+        assert df_u8_hash != df_u16_hash
+
+        df_index = pd.DataFrame({'a': [1, 2, 3]}, index=[1, 2, 3])
+        df_index_diff = pd.DataFrame({'a': [1, 2, 3]}, index=[1, 2, 4])
+        df_index_hash = DeepHashPrep(df_index)[df_index]
+        df_index_diff_hash = DeepHashPrep(df_index_diff)[df_index_diff]
+        assert df_index_hash != df_index_diff_hash
+
+    def test_polars(self):
+        import polars as pl
+        df = pl.DataFrame({"a": [1]})
+        equal_df = pl.DataFrame({"a": [1]})
+        df_same_column_names = pl.DataFrame({"a": [1, 2]})
+        other_df = pl.DataFrame({"b": [1]})
+        df_hash = DeepHashPrep(df)[df]
+        equal_df_hash = DeepHashPrep(equal_df)[equal_df]
+        df_same_column_names_hash = DeepHashPrep(df_same_column_names)[df_same_column_names]
+        other_df_hash = DeepHashPrep(other_df)[other_df]
+        assert df_hash == equal_df_hash
+        assert df_hash != df_same_column_names_hash
+        assert df_hash != other_df_hash
+
+        df_mixed = pl.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 2)]})
+        df_mixed_2 = pl.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 2)]})
+        df_mixed_3 = pl.DataFrame({'a': [1], 'b': ['one'], 'c': [(1, 2)]})
+        df_mixed_4 = pl.DataFrame({'a': [1], 'b': ['two'], 'c': [(1, 3)]})
+        df_mixed_hash = DeepHashPrep(df_mixed)[df_mixed]
+        df_mixed_2_hash = DeepHashPrep(df_mixed_2)[df_mixed_2]
+        df_mixed_3_hash = DeepHashPrep(df_mixed_3)[df_mixed_3]
+        df_mixed_4_hash = DeepHashPrep(df_mixed_4)[df_mixed_4]
+        assert df_mixed_hash == df_mixed_2_hash
+        assert df_mixed_hash != df_mixed_3_hash
+        assert df_mixed_hash != df_mixed_4_hash
+
+        df_u8 = pl.DataFrame({'a': np.array([1], dtype=np.uint8)})
+        df_u16 = pl.DataFrame({'a': np.array([1], dtype=np.uint16)})
+        df_float = pl.DataFrame({'a': np.array([1], dtype=np.float32)})
+        df_u8_hash = DeepHashPrep(df_u8)[df_u8]
+        df_u16_hash = DeepHashPrep(df_u16)[df_u16]
+        df_float_hash = DeepHashPrep(df_float)[df_float]
+        assert df_u8_hash != df_float_hash
+        assert df_u8_hash != df_u16_hash
+
+        lazy_1 = pl.DataFrame({"foo": ["a", "b", "c"], "bar": [0, 1, 2]}).lazy()
+        lazy_2 = pl.DataFrame({"foo": ["a", "b", "c"], "bar": [0, 1, 2]}).lazy()
+        lazy_3 = pl.DataFrame({"foo": ["a", "b", "c"], "bar": [0, 1, 2], "foobar": 5}).lazy()
+        with pytest.raises(TypeError):
+            DeepHashPrep(lazy_1)[lazy_1]  # lazy dfs can not be compared
+        df_1 = lazy_1.collect()
+        df_2 = lazy_2.collect()
+        df_3 = lazy_3.collect()
+        df_1_hash = DeepHashPrep(df_1)[df_1]
+        df_2_hash = DeepHashPrep(df_2)[df_2]
+        df_3_hash = DeepHashPrep(df_3)[df_3]
+        assert df_1_hash == df_2_hash
+        assert df_1_hash != df_3_hash
+
 
 class TestDeepHashSHA:
     """DeepHash with SHA Tests."""
