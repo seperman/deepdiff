@@ -862,30 +862,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
             else:  # check if item value has changed
 
-                # if (i != j):
-                #     # Item moved
-                #     change_level = level.branch_deeper(
-                #         x,
-                #         y,
-                #         child_relationship_class=child_relationship_class,
-                #         child_relationship_param=i,
-                #         child_relationship_param2=j
-                #     )
-                #     self._report_result('iterable_item_moved', change_level)
-
-                # item_id = id(x)
-                # if parents_ids and item_id in parents_ids:
-                #     continue
-                # parents_ids_added = add_to_frozen_set(parents_ids, item_id)
-
-                # # Go one level deeper
-                # next_level = level.branch_deeper(
-                #     x,
-                #     y,
-                #     child_relationship_class=child_relationship_class,
-                #     child_relationship_param=j)
-                # self._diff(next_level, parents_ids_added)
-
                 if (i != j and ((x == y) or self.iterable_compare_func)):
                     # Item moved
                     change_level = level.branch_deeper(
@@ -896,7 +872,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         child_relationship_param2=j
                     )
                     self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
-                    continue
 
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -904,12 +879,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 parents_ids_added = add_to_frozen_set(parents_ids, item_id)
 
                 # Go one level deeper
+                # Intentionally setting j as the first child relationship param in cases of a moved item.
+                # If the item was moved using an iterable_compare_func then we want to make sure that the index
+                # is relative to t2.
                 next_level = level.branch_deeper(
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i,
-                    child_relationship_param2=j,
+                    child_relationship_param=j,
+                    child_relationship_param2=i
                 )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
