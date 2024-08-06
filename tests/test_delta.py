@@ -1879,7 +1879,14 @@ class TestDeltaCompareFunc:
                         "val": 3
                     }
                 }
-            }
+            },
+            'values_changed': {
+                "root[2]['val']": {
+                    'new_value': 3,
+                    'old_value': 1,
+                    'new_path': "root[0]['val']"
+                }
+            },
         }
         assert expected == ddiff
         delta = Delta(ddiff)
@@ -1888,6 +1895,7 @@ class TestDeltaCompareFunc:
 
         flat_result = delta.to_flat_rows()
         flat_expected = [
+            {'path': [2, 'val'], 'value': 3, 'action': 'values_changed', 'type': int, 'new_path': [0, 'val']},
             {'path': [2], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
             {'path': [0], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
             {'path': [3], 'value': {'id': 3, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
@@ -1930,6 +1938,12 @@ class TestDeltaCompareFunc:
                         'val': 3
                     }
                 }
+            },
+            'values_changed': {
+                "root[2]['val']": {
+                    'new_value': 3,
+                    'new_path': "root[0]['val']"
+                }
             }
         }
         assert expected_delta_dict == delta_again.diff
@@ -1961,7 +1975,14 @@ class TestDeltaCompareFunc:
                         'val': 1
                     }
                 }
-            }
+            },
+            'values_changed': {
+                "root[0]['val']": {
+                    'new_value': 1,
+                    'old_value': 3,
+                    'new_path': "root[2]['val']"
+                }
+            },
         }
         assert expected == ddiff
         delta = Delta(ddiff)
