@@ -7,7 +7,7 @@ class TestAnySet:
         result = AnySet(items)
         expected = ({1, 2, 4}, {})
         assert expected == result
-        assert repr(result) == r'< AnySet OrderedSet([1, 2, 4]), {} >'
+        assert repr(result) == r'< AnySet SetOrdered([1, 2, 4]), {} >'
 
     def test_anyset_init2(self):
         items = [1, 2, {1}, 4, 4, {1}]

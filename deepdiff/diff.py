@@ -16,24 +16,23 @@ from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
 from itertools import zip_longest
-from ordered_set import OrderedSet
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
-                             np_ndarray, np_floating, get_numpy_ndarray_rows, OrderedSetPlus, RepeatedTimer,
+                             np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
-                             PydanticBaseModel, Opcode,)
+                             PydanticBaseModel, Opcode, SetOrdered)
 from deepdiff.serialization import SerializationMixin
-from deepdiff.distance import DistanceMixin
+from deepdiff.distance import DistanceMixin, logarithmic_similarity
 from deepdiff.model import (
     RemapDict, ResultDict, TextResult, TreeResult, DiffLevel,
     DictRelationship, AttributeRelationship, REPORT_KEYS,
     SubscriptableIterableRelationship, NonSubscriptableIterableRelationship,
-    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD, PrettyOrderedSet,
+    SetRelationship, NumpyArrayRelationship, CUSTOM_FIELD,
     FORCE_DEFAULT,
 )
 from deepdiff.deephash import DeepHash, combine_hashes_lists
@@ -98,6 +97,7 @@ DEEPHASH_PARAM_KEYS = (
     'number_format_notation',
     'ignore_string_type_changes',
     'ignore_numeric_type_changes',
+    'use_enum_value',
     'ignore_type_in_groups',
     'ignore_type_subclasses',
     'ignore_string_case',
@@ -116,6 +116,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def __init__(self,
                  t1: Any,
                  t2: Any,
+                 _original_type=None,
                  cache_purge_level: int=1,
                  cache_size: int=0,
                  cache_tuning_sample_size: int=0,
@@ -126,9 +127,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  exclude_obj_callback: Optional[Callable]=None,
                  exclude_obj_callback_strict: Optional[Callable]=None,
                  exclude_paths: Union[str, List[str]]=None,
-                 include_obj_callback: Optional[Callable]=None,
-                 include_obj_callback_strict: Optional[Callable]=None,
-                 include_paths: Union[str, List[str]]=None,
                  exclude_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
                  exclude_types: Optional[List[Any]]=None,
                  get_deep_distance: bool=False,
@@ -146,8 +144,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  ignore_string_type_changes: bool=False,
                  ignore_type_in_groups: Optional[List[Tuple]]=None,
                  ignore_type_subclasses: bool=False,
+                 include_obj_callback: Optional[Callable]=None,
+                 include_obj_callback_strict: Optional[Callable]=None,
+                 include_paths: Union[str, List[str]]=None,
                  iterable_compare_func: Optional[Callable]=None,
-                 zip_ordered_iterables: bool=False,
                  log_frequency_in_sec: int=0,
                  math_epsilon: Optional[float]=None,
                  max_diffs: Optional[int]=None,
@@ -157,10 +157,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger: Callable=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
+                 use_log_scale: bool=False,
+                 log_scale_similarity_threshold: int=0.1,
+                 threshold_to_diff_deeper: float = 0.33,
                  truncate_datetime: Optional[str]=None,
+                 use_enum_value: bool=False,
                  verbose_level: int=1,
                  view: str=TEXT_VIEW,
-                 _original_type=None,
+                 zip_ordered_iterables: bool=False,
                  _parameters=None,
                  _shared_parameters=None,
                  **kwargs):
@@ -175,8 +179,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, "
-                "math_epsilon, iterable_compare_func, _original_type, "
-                "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, "
+                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, "
+                "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, use_log_scale, log_scale_similarity_threshold "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
         if _parameters:
@@ -193,6 +197,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.ignore_numeric_type_changes = ignore_numeric_type_changes
             if strings == ignore_type_in_groups or strings in ignore_type_in_groups:
                 ignore_string_type_changes = True
+            self.use_enum_value = use_enum_value
+            self.log_scale_similarity_threshold = log_scale_similarity_threshold
+            self.use_log_scale = use_log_scale
+            self.threshold_to_diff_deeper = threshold_to_diff_deeper
             self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
                 ignore_type_in_groups=ignore_type_in_groups,
@@ -513,6 +521,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
+            elif self.use_enum_value and isinstance(key, Enum):
+                clean_key = key.value
             elif isinstance(key, numbers):
                 type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
                 clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
@@ -560,23 +570,27 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             rel_class = DictRelationship
 
         if self.ignore_private_variables:
-            t1_keys = OrderedSet([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
-            t2_keys = OrderedSet([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
+            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
+            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
         else:
-            t1_keys = OrderedSet(t1.keys())
-            t2_keys = OrderedSet(t2.keys())
+            t1_keys = SetOrdered(t1.keys())
+            t2_keys = SetOrdered(t2.keys())
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
-            t1_keys = OrderedSet(t1_clean_to_keys.keys())
-            t2_keys = OrderedSet(t2_clean_to_keys.keys())
+            t1_keys = SetOrdered(t1_clean_to_keys.keys())
+            t2_keys = SetOrdered(t2_clean_to_keys.keys())
         else:
             t1_clean_to_keys = t2_clean_to_keys = None
 
-        t_keys_intersect = t2_keys.intersection(t1_keys)
-
+        t_keys_intersect = t2_keys & t1_keys
+        t_keys_union = t2_keys | t1_keys
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
+        if self.threshold_to_diff_deeper:
+            if len(t_keys_union) > 1 and len(t_keys_intersect) / len(t_keys_union) < self.threshold_to_diff_deeper:
+                self._report_result('values_changed', level, local_tree=local_tree)
+                return
 
         for key in t_keys_added:
             if self._count_diff() is StopIteration:
@@ -863,7 +877,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 self._report_result('iterable_item_added', change_level, local_tree=local_tree)
 
             else:  # check if item value has changed
-
                 if (i != j and ((x == y) or self.iterable_compare_func)):
                     # Item moved
                     change_level = level.branch_deeper(
@@ -1138,12 +1151,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         # It also includes a "max" key that is just the value of the biggest current distance in the
         # most_in_common_pairs dictionary.
         def defaultdict_orderedset():
-            return defaultdict(OrderedSetPlus)
+            return defaultdict(SetOrdered)
         most_in_common_pairs = defaultdict(defaultdict_orderedset)
         pairs = dict_()
 
         pre_calced_distances = None
-
         if hashes_added and hashes_removed and np and len(hashes_added) > 1 and len(hashes_removed) > 1:
             # pre-calculates distances ONLY for 1D arrays whether an _original_type
             # was explicitly passed or a homogeneous array is detected.
@@ -1181,7 +1193,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 pairs_of_item[_distance].add(removed_hash)
         used_to_hashes = set()
 
-        distances_to_from_hashes = defaultdict(OrderedSetPlus)
+        distances_to_from_hashes = defaultdict(SetOrdered)
         for from_hash, distances_to_to_hashes in most_in_common_pairs.items():
             # del distances_to_to_hashes['max']
             for dist in distances_to_to_hashes:
@@ -1190,11 +1202,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         for dist in sorted(distances_to_from_hashes.keys()):
             from_hashes = distances_to_from_hashes[dist]
             while from_hashes:
-                from_hash = from_hashes.lpop()
+                from_hash = from_hashes.pop()
                 if from_hash not in used_to_hashes:
                     to_hashes = most_in_common_pairs[from_hash][dist]
                     while to_hashes:
-                        to_hash = to_hashes.lpop()
+                        to_hash = to_hashes.pop()
                         if to_hash not in used_to_hashes:
                             used_to_hashes.add(from_hash)
                             used_to_hashes.add(to_hash)
@@ -1213,8 +1225,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         full_t1_hashtable = self._create_hashtable(level, 't1')
         full_t2_hashtable = self._create_hashtable(level, 't2')
-        t1_hashes = OrderedSetPlus(full_t1_hashtable.keys())
-        t2_hashes = OrderedSetPlus(full_t2_hashtable.keys())
+        t1_hashes = SetOrdered(full_t1_hashtable.keys())
+        t2_hashes = SetOrdered(full_t2_hashtable.keys())
         hashes_added = t2_hashes - t1_hashes
         hashes_removed = t1_hashes - t2_hashes
 
@@ -1231,7 +1243,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_hashtable = {k: v for k, v in full_t1_hashtable.items() if k in hashes_removed}
             t2_hashtable = {k: v for k, v in full_t2_hashtable.items() if k in hashes_added}
-
         if self._stats[PASSES_COUNT] < self.max_passes and get_pairs:
             self._stats[PASSES_COUNT] += 1
             pairs = self._get_most_in_common_pairs_in_iterables(
@@ -1401,7 +1412,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         else:
             t1_type = t2_type = ''
 
-        if self.math_epsilon is not None:
+        if self.use_log_scale:
+            if not logarithmic_similarity(level.t1, level.t2, threshold=self.log_scale_similarity_threshold):
+                self._report_result('values_changed', level, local_tree=local_tree)
+        elif self.math_epsilon is not None:
             if not is_close(level.t1, level.t2, abs_tol=self.math_epsilon):
                 self._report_result('values_changed', level, local_tree=local_tree)
         elif self.significant_digits is None:
@@ -1588,6 +1602,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 if self.type_check_func(level.t1, type_group) and self.type_check_func(level.t2, type_group):
                     report_type_change = False
                     break
+            if self.use_enum_value and isinstance(level.t1, Enum):
+                level.t1 = level.t1.value
+                report_type_change = False
+            if self.use_enum_value and isinstance(level.t2, Enum):
+                level.t2 = level.t2.value
+                report_type_change = False
             if report_type_change:
                 self._diff_types(level, local_tree=local_tree)
                 return
@@ -1620,7 +1640,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(level.t1, tuple):
             self._diff_tuple(level, parents_ids, local_tree=local_tree)
 
-        elif isinstance(level.t1, (set, frozenset, OrderedSet)):
+        elif isinstance(level.t1, (set, frozenset, SetOrdered)):
             self._diff_set(level, local_tree=local_tree)
 
         elif isinstance(level.t1, np_ndarray):
@@ -1742,19 +1762,19 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 'iterable_item_added': {'root[3][1]': 4},
                 'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
             >>> ddiff.affected_paths
-            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            SetOrdered(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
             >>> ddiff.affected_root_keys
-            OrderedSet([3, 4, 5, 6, 2])
+            SetOrdered([3, 4, 5, 6, 2])
 
         """
-        result = OrderedSet()
+        result = SetOrdered()
         for key in REPORT_KEYS:
             value = self.get(key)
             if value:
-                if isinstance(value, PrettyOrderedSet):
+                if isinstance(value, SetOrdered):
                     result |= value
                 else:
-                    result |= OrderedSet(value.keys())
+                    result |= SetOrdered(value.keys())
         return result
 
     @property
@@ -1774,18 +1794,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 'iterable_item_added': {'root[3][1]': 4},
                 'values_changed': {'root[2]': {'new_value': 4, 'old_value': 2}}}
             >>> ddiff.affected_paths
-            OrderedSet(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
+            SetOrdered(['root[3][1]', 'root[4]', 'root[5]', 'root[6]', 'root[2]'])
             >>> ddiff.affected_root_keys
-            OrderedSet([3, 4, 5, 6, 2])
+            SetOrdered([3, 4, 5, 6, 2])
         """
-        result = OrderedSet()
+        result = SetOrdered()
         for key in REPORT_KEYS:
             value = self.tree.get(key)
             if value:
-                if isinstance(value, PrettyOrderedSet):
-                    result |= OrderedSet([i.get_root_key() for i in value])
+                if isinstance(value, SetOrdered):
+                    result |= SetOrdered([i.get_root_key() for i in value])
                 else:
-                    result |= OrderedSet([i.get_root_key() for i in value.keys()])
+                    result |= SetOrdered([i.get_root_key() for i in value.keys()])
         return result
 
 

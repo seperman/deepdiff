@@ -47,6 +47,7 @@ def cli():
 @click.option('--log-frequency-in-sec', required=False, default=0, type=int, show_default=True)
 @click.option('--max-passes', required=False, default=10000000, type=int, show_default=True)
 @click.option('--max_diffs', required=False, default=None, type=int, show_default=True)
+@click.option('--threshold-to-diff-deeper', required=False, default=0.33, type=float, show_default=False)
 @click.option('--number-format-notation', required=False, type=click.Choice(['f', 'e'], case_sensitive=True), show_default=True, default="f")
 @click.option('--progress-logger', required=False, type=click.Choice(['info', 'error'], case_sensitive=True), show_default=True, default="info")
 @click.option('--report-repetition', is_flag=True, show_default=True)

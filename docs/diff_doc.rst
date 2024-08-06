@@ -46,10 +46,6 @@ exclude_paths: list, default = None
     :ref:`exclude_paths_label`
     List of paths to exclude from the report. If only one item, you can path it as a string.
 
-include_paths: list, default = None
-    :ref:`include_paths_label`
-    List of the only paths to include in the report. If only one item, you can path it as a string.
-
 exclude_regex_paths: list, default = None
     :ref:`exclude_regex_paths_label`
     List of string regex paths or compiled regex paths objects to exclude from the report. If only one item, you can pass it as a string or regex compiled object.
@@ -66,6 +62,10 @@ exclude_obj_callback: function, default = None
 exclude_obj_callback_strict: function, default = None
     :ref:`exclude_obj_callback_strict_label`
     A function that works the same way as exclude_obj_callback, but excludes elements from the result only if the function returns True for both elements.
+
+include_paths: list, default = None
+    :ref:`include_paths_label`
+    List of the only paths to include in the report. If only one item is in the list, you can pass it as a string.
 
 include_obj_callback: function, default = None
     :ref:`include_obj_callback_label`
