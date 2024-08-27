@@ -89,6 +89,10 @@ Authors in order of the timeline of their contributions:
 -  `sf-tcalhoun <https://github.com/sf-tcalhoun>`__ for fixing
    “Instantiating a Delta with a flat_dict_list unexpectedly mutates the
    flat_dict_list”
+-  `dtorres-sf <https://github.com/dtorres-sf>`__ for fixing iterable
+   moved items when iterable_compare_func is used.
+-  `Florian Finkernagel <https://github.com/TyberiusPrime>`__ for pandas
+and polars support.
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de

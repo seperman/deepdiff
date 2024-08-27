@@ -31,23 +31,35 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 8-0-0
+--------------
+
+    - With the introduction of `threshold_to_diff_deeper`, the values returned are different than in previous versions of DeepDiff. You can still get the older values by setting `threshold_to_diff_deeper=0`. However to signify that enough has changed in this release that the users need to update the parameters passed to DeepDiff, we will be doing a major version update.
+    - `use_enum_value=True` makes it so when diffing enum, we use the enum's value. It makes it so comparing an enum to a string or any other value is not reported as a type change.
+    - `threshold_to_diff_deeper=float` is a number between 0 and 1. When comparing dictionaries that have a small intersection of keys, we will report the dictionary as a `new_value` instead of reporting individual keys changed. If you set it to zero, you get the same results as DeepDiff 7.0.1 and earlier, which means this feature is disabled. The new default is 0.33 which means if less that one third of keys between dictionaries intersect, report it as a new object.
+    - Deprecated `ordered-set` and switched to `orderly-set`. The `ordered-set` package was not being maintained anymore and starting Python 3.6, there were better options for sets that ordered. I forked one of the new implementations, modified it, and published it as `orderly-set`.
+    - Added `use_log_scale:bool` and `log_scale_similarity_threshold:float`. They can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
+    - json serialization of reversed lists.
+    - Fix for iterable moved items when `iterable_compare_func` is used.
+    - Pandas and Polars support 
+
+
 DeepDiff 7-0-0
 --------------
 
--  DeepDiff 7 comes with an improved delta object. `Delta to flat
-   dictionaries <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries>`__
-   have undergone a major change. We have also introduced `Delta
-   serialize to flat
-   rows <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-rows>`__.
--  Subtracting delta objects have dramatically improved at the cost of
-   holding more metadata about the original objects.
--  When ``verbose=2``, and the “path” of an item has changed in a report
-   between t1 and t2, we include it as ``new_path``.
--  ``path(use_t2=True)`` returns the correct path to t2 in any reported
-   change in the
-   ```tree view`` <https://zepworks.com/deepdiff/current/view.html#tree-view>`__
--  Python 3.7 support is dropped and Python 3.12 is officially
-   supported.
+    -  DeepDiff 7 comes with an improved delta object. `Delta to flat
+       dictionaries <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-dictionaries>`__
+       have undergone a major change. We have also introduced `Delta
+       serialize to flat
+       rows <https://zepworks.com/deepdiff/current/serialization.html#delta-serialize-to-flat-rows>`__.
+    -  Subtracting delta objects have dramatically improved at the cost of
+       holding more metadata about the original objects.
+    -  When ``verbose=2``, and the “path” of an item has changed in a report
+       between t1 and t2, we include it as ``new_path``.
+    -  ``path(use_t2=True)`` returns the correct path to t2 in any reported
+       change in the `tree view <https://zepworks.com/deepdiff/current/view.html#tree-view>`__
+    -  Python 3.7 support is dropped and Python 3.12 is officially
+       supported.
 
 
 DeepDiff 6-7-1
@@ -57,7 +69,7 @@ DeepDiff 6-7-1
       is used.
    -  Better handling of force adding a delta to an object.
    -  Fix for
-      ```Can't compare dicts with both single and double quotes in keys`` <https://github.com/seperman/deepdiff/issues/430>`__
+      `Can't compare dicts with both single and double quotes in keys <https://github.com/seperman/deepdiff/issues/430>`__
    -  Updated docs for Inconsistent Behavior with math_epsilon and
       ignore_order = True
 

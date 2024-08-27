@@ -5,6 +5,14 @@ Changelog
 
 DeepDiff Changelog
 
+   - With the introduction of `threshold_to_diff_deeper`, the values returned are different than in previous versions of DeepDiff. You can still get the older values by setting `threshold_to_diff_deeper=0`. However to signify that enough has changed in this release that the users need to update the parameters passed to DeepDiff, we will be doing a major version update.
+   - `use_enum_value=True` makes it so when diffing enum, we use the enum's value. It makes it so comparing an enum to a string or any other value is not reported as a type change.
+   - `threshold_to_diff_deeper=float` is a number between 0 and 1. When comparing dictionaries that have a small intersection of keys, we will report the dictionary as a `new_value` instead of reporting individual keys changed. If you set it to zero, you get the same results as DeepDiff 7.0.1 and earlier, which means this feature is disabled. The new default is 0.33 which means if less that one third of keys between dictionaries intersect, report it as a new object.
+   - Deprecated `ordered-set` and switched to `orderly-set`. The `ordered-set` package was not being maintained anymore and starting Python 3.6, there were better options for sets that ordered. I forked one of the new implementations, modified it, and published it as `orderly-set`.
+   - Added `use_log_scale:bool` and `log_scale_similarity_threshold:float`. They can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
+   - json serialization of reversed lists.
+   - Fix for iterable moved items when `iterable_compare_func` is used.
+   - Pandas and Polars support 
 
 -  v7-0-1
 

@@ -61,3 +61,5 @@ Authors in order of the timeline of their contributions:
 - [William Jamieson](https://github.com/WilliamJamieson) for [NumPy 2.0 compatibility](https://github.com/seperman/deepdiff/pull/422)
 - [Leo Sin](https://github.com/leoslf) for Supporting Python 3.12 in the build process
 - [sf-tcalhoun](https://github.com/sf-tcalhoun) for fixing "Instantiating a Delta with a flat_dict_list unexpectedly mutates the flat_dict_list"
+- [dtorres-sf](https://github.com/dtorres-sf) for fixing iterable moved items when iterable_compare_func is used.
+- [Florian Finkernagel](https://github.com/TyberiusPrime) for pandas and polars support.

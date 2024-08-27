@@ -108,6 +108,8 @@ ignore_type_in_groups: Tuple or List of Tuples, default = None
     2. or ignore_type_in_groups=[(str, bytes), (typeA, typeB)]
 
 
+Note: The example below shows you have to use this feature. For enum types, however, you can just use :ref:`use_enum_value_label`
+
 Example: Ignore Enum to string comparison
     >>> from deepdiff import DeepDiff
     >>> from enum import Enum

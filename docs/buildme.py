@@ -5,12 +5,9 @@ Then run ./buildme.py
 It will remove the contents of the BUILD_PATH folder and recreate it.
 """
 import os
-import time
 import datetime
 import shutil
 from dotenv import load_dotenv
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 from sphinx.cmd.build import main as sphinx_main
 
 CACHE_PATH = '/tmp/sphinx_doctree'
@@ -27,45 +24,15 @@ def delete_dir_contents(directory):
         shutil.rmtree(directory)
 
 
-class MyHandler(FileSystemEventHandler):
-
-    def __init__(self):
-        self.last_modified = datetime.datetime.now()
-
-    def on_any_event(self, event):
-        load_dotenv(override=True)
-        build_path = os.environ.get('BUILD_PATH', '_build')
-        doc_version = os.environ.get('DOC_VERSION', '')
-        if not build_path.endswith('/'):
-            build_path = build_path + '/'
-        build_path += doc_version
-        if event is None:
-            print('initial build')
-        else:
-            print(f'event type: {event.event_type}  path : {event.src_path}')
-        if event is not None and (
-                datetime.datetime.now() - self.last_modified < datetime.timedelta(seconds=2)):
-            return
-        else:
-            self.last_modified = datetime.datetime.now()
-        argv = ['-b', 'html', '-d', CACHE_PATH, '.', build_path]
-        ensure_dir(build_path)
-        delete_dir_contents(build_path)
-        delete_dir_contents('/tmp/sphinx_doctree')  # Disable this for faster build time but it might not properly invalidate the cache
-        sphinx_main(argv)
-        print('waiting for file changes. Press Ctrl+c to cancel.')
-
-
 if __name__ == "__main__":
-    event_handler = MyHandler()
-    event_handler.on_any_event(event=None)
-    observer = Observer()
-    observer.schedule(event_handler, path='.', recursive=True)
-    observer.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    load_dotenv(override=True)
+    build_path = os.environ.get('BUILD_PATH', '_build')
+    doc_version = os.environ.get('DOC_VERSION', '')
+    if not build_path.endswith('/'):
+        build_path = build_path + '/'
+    build_path += doc_version
+    argv = ['-b', 'html', '-d', CACHE_PATH, '.', build_path]
+    ensure_dir(build_path)
+    delete_dir_contents(build_path)
+    delete_dir_contents('/tmp/sphinx_doctree')  # Disable this for faster build time but it might not properly invalidate the cache
+    sphinx_main(argv)

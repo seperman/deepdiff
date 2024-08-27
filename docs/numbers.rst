@@ -158,12 +158,15 @@ use_log_scale: Boolean, default=False
     >>>
     >>> DeepDiff(t1, t2)
     {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}, "root['bar']": {'new_value': 298, 'old_value': 306}}}
+
     >>> DeepDiff(t1, t2, use_log_scale=True, log_scale_similarity_threshold=0.01)
     {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}, "root['bar']": {'new_value': 298, 'old_value': 306}}}
+
     >>> DeepDiff(t1, t2, use_log_scale=True, log_scale_similarity_threshold=0.1)
     {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}}}
+
     >>> DeepDiff(t1, t2, use_log_scale=True, log_scale_similarity_threshold=0.3)
-    {
+    {}
 
 
 .. _log_scale_similarity_threshold_label:
@@ -172,7 +175,7 @@ Log Scale Similarity Threshold
 ------------
 
 log_scale_similarity_threshold: float, default = 0.1
-    :ref:`use_log_scale_label` along with log_scale_similarity_threshold can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits. See above example.
+    :ref:`use_log_scale_label` along with log_scale_similarity_threshold can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits. See the example above.
 
 
 Performance Improvement of Numbers diffing
