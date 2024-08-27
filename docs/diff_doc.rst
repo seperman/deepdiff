@@ -151,6 +151,9 @@ log_frequency_in_sec: Integer, default = 0
     If you set it to 20, it will log every 20 seconds. This is useful only when running DeepDiff
     on massive objects that will take a while to run. If you are only dealing with small objects, keep it at 0 to disable progress logging.
 
+log_scale_similarity_threshold: float, default = 0.1
+    :ref:`use_log_scale_label` along with :ref:`log_scale_similarity_threshold_label` can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
+
 max_passes: Integer, default = 10000000
     :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
 
@@ -178,6 +181,15 @@ significant_digits : int >= 0, default=None
 
 truncate_datetime: string, default = None
     :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
+
+threshold_to_diff_deeper: float, default = 0.33
+    :ref:`threshold_to_diff_deeper_label` is a number between 0 and 1. When comparing dictionaries that have a small intersection of keys, we will report the dictionary as a new_value instead of reporting individual keys changed. If you set it to zero, you get the same results as DeepDiff 7.0.1 and earlier, which means this feature is disabled. The new default is 0.33 which means if less that one third of keys between dictionaries intersect, report it as a new object.
+
+use_enum_value: Boolean, default=False
+    :ref:`use_enum_value_label` makes it so when diffing enum, we use the enum's value. It makes it so comparing an enum to a string or any other value is not reported as a type change.
+
+use_log_scale: Boolean, default=False
+    :ref:`use_log_scale_label` along with :ref:`log_scale_similarity_threshold_label` can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
 
 verbose_level: 2 >= int >= 0, default = 1
     Higher verbose level shows you more details.

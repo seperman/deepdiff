@@ -158,7 +158,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
                  use_log_scale: bool=False,
-                 log_scale_similarity_threshold: int=0.1,
+                 log_scale_similarity_threshold: float=0.1,
                  threshold_to_diff_deeper: float = 0.33,
                  truncate_datetime: Optional[str]=None,
                  use_enum_value: bool=False,

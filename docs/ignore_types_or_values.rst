@@ -362,4 +362,26 @@ truncate_datetime: string, default = None
     {}
 
 
+.. _use_enum_value_label:
+
+Use Enum Value
+--------------
+
+use_enum_value: Boolean, default=False
+    Makes it so when diffing enum, we use the enum's value. It makes it so comparing an enum to a string or any other value is not reported as a type change.
+
+    >>> from enum import Enum
+    >>> from deepdiff import DeepDiff
+
+    >>>
+    >>> class MyEnum2(str, Enum):
+    ...     book = "book"
+    ...     cake = "cake"
+    ...
+    >>> DeepDiff("book", MyEnum2.book)
+    {'type_changes': {'root': {'old_type': <class 'str'>, 'new_type': <enum 'MyEnum2'>, 'old_value': 'book', 'new_value': <MyEnum2.book: 'book'>}}}
+    >>> DeepDiff("book", MyEnum2.book, use_enum_value=True)
+    {}
+
+
 Back to :doc:`/index`
