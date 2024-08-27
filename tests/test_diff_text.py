@@ -1744,6 +1744,15 @@ class TestDeepDiffText:
         assert {"root[4]"} == diff.affected_paths
         assert {4} == diff.affected_root_keys
 
+    # TODO: we need to support reporting that items have been swapped
+    # def test_item_moved(self):
+    #     # currently all the items in the list need to be hashables
+    #     t1 = [1, 2, 3, 4]
+    #     t2 = [4, 2, 3, 1]
+    #     diff = DeepDiff(t1, t2)
+    #     result = {}  # it should show that those items are swapped.
+    #     assert result == diff
+
     def test_list_item_values_replace_in_the_middle(self):
         t1 = [0, 1, 2, 3, 'bye', 5, 6, 7, 8, 'a', 'b', 'c']
         t2 = [0, 1, 2, 3, 'see', 'you', 'later', 5, 6, 7, 8, 'a', 'b', 'c']

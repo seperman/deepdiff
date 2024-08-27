@@ -845,7 +845,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         t1_from_index=None, t1_to_index=None,
         t2_from_index=None, t2_to_index=None,
     ):
-
         for (i, j), (x, y) in self._get_matching_pairs(
             level, 
             t1_from_index=t1_from_index, t1_to_index=t1_to_index,
@@ -894,6 +893,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         # is relative to t2.
                         reference_param1 = j
                         reference_param2 = i
+                    else:
+                        continue
 
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -918,6 +919,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         opcodes = seq.get_opcodes()
         opcodes_with_values = []
+
+        # TODO: this logic should be revisted so we detect reverse operations
+        # like when a replacement happens at index X and a reverse replacement happens at index Y
+        # in those cases we have a "iterable_item_moved" operation.
         for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcodes:
             if tag == 'equal':
                 opcodes_with_values.append(Opcode(

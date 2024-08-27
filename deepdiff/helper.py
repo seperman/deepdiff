@@ -739,6 +739,7 @@ class OpcodeTag(EnumBase):
     delete = 'delete'
     equal = 'equal'
     replace = 'replace'
+    # swapped = 'swapped'  # in the future we should support reporting of items swapped with each other
 
 
 class Opcode(NamedTuple):
