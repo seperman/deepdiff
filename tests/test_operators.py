@@ -164,7 +164,7 @@ class TestOperators:
 
         assert {} == ddiff
 
-        ddiff2 = DeepDiff(custom2, custom3, custom_operators=[
+        ddiff2 = DeepDiff(custom2, custom3, threshold_to_diff_deeper=0, custom_operators=[
             ListMatchOperator(types=[CustomClass])
         ])
 

@@ -5,6 +5,7 @@ import logging
 import re
 import uuid
 from enum import Enum
+from dataclasses import dataclass
 from typing import List
 from decimal import Decimal
 from deepdiff import DeepDiff
@@ -14,6 +15,21 @@ from deepdiff.helper import np_float64
 
 
 logging.disable(logging.CRITICAL)
+
+
+class MyEnum1(Enum):
+    book = "book"
+    cake = "cake"
+
+class MyEnum2(str, Enum):
+    book = "book"
+    cake = "cake"
+
+
+@dataclass(frozen=True)
+class MyDataClass:
+    val: int
+    val2: int
 
 
 class TestDeepDiffText:
@@ -88,7 +104,7 @@ class TestDeepDiffText:
     def test_item_added_and_removed(self):
         t1 = {1: 1, 2: 2, 3: [3], 4: 4}
         t2 = {1: 1, 2: 4, 3: [3, 4], 5: 5, 6: 6}
-        ddiff = DeepDiff(t1, t2)
+        ddiff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         result = {
             'dictionary_item_added': ["root[5]", "root[6]"],
             'dictionary_item_removed': ["root[4]"],
@@ -649,14 +665,6 @@ class TestDeepDiffText:
 
     def test_enum_ignore_type_change(self):
 
-        class MyEnum1(Enum):
-            book = "book"
-            cake = "cake"
-
-        class MyEnum2(str, Enum):
-            book = "book"
-            cake = "cake"
-
         diff = DeepDiff("book", MyEnum1.book)
         expected = {
             'type_changes': {'root': {'old_type': str, 'new_type': MyEnum1, 'old_value': 'book', 'new_value': MyEnum1.book}}}
@@ -667,6 +675,14 @@ class TestDeepDiffText:
 
         diff3 = DeepDiff("book", MyEnum2.book, ignore_type_in_groups=[(Enum, str)])
         assert not diff3
+
+    def test_enum_use_enum_value1(self):
+        diff = DeepDiff("book", MyEnum2.book, use_enum_value=True)
+        assert not diff
+
+    def test_enum_use_enum_value_in_dict_key(self):
+        diff = DeepDiff({"book": 2}, {MyEnum2.book: 2}, use_enum_value=True)
+        assert not diff
 
     def test_precompiled_regex(self):
 
@@ -950,6 +966,9 @@ class TestDeepDiffText:
 
     def get_custom_object_with_added_removed_methods(self):
         class ClassA:
+            VAL = 1
+            VAL2 = 2
+
             def method_a(self):
                 pass
 
@@ -1000,19 +1019,29 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
-    def test_dictionary_with_string_keys(self):
+    def test_dictionary_with_string_keys1(self):
         t1 = {"veggie": "carrots"}
         t2 = {"meat": "carrots"}
 
-        diff = DeepDiff(t1, t2)
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         assert {'dictionary_item_added': ["root['meat']"],
                 'dictionary_item_removed': ["root['veggie']"]} == diff
+
+    def test_dictionary_with_string_keys_threshold_to_diff_deeper(self):
+        t1 = {"veggie": "carrots"}
+        t2 = {"meat": "carrots"}
+
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0.33)
+        assert {'values_changed': {'root': {'new_value': {'meat': 'carrots'}, 'old_value': {'veggie': 'carrots'}}}} == diff
 
     def test_dictionary_with_numeric_keys(self):
         t1 = {Decimal('10.01'): "carrots"}
         t2 = {10.01: "carrots"}
-        diff = DeepDiff(t1, t2)
+        diff = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
         assert {'dictionary_item_added': ["root[10.01]"], 'dictionary_item_removed': ["root[Decimal('10.01')]"]} == diff
+
+        diff2 = DeepDiff(t1, t2)
+        assert {'values_changed': {'root': {'new_value': {10.01: 'carrots'}, 'old_value': {Decimal('10.01'): 'carrots'}}}} == diff2
 
     def test_loop(self):
         class LoopTest:
@@ -1305,6 +1334,33 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t1, t2, ignore_numeric_type_changes=True, ignore_string_type_changes=True, significant_digits=significant_digits)
         assert expected_result == ddiff
 
+    @pytest.mark.parametrize('test_num, t1, t2, log_scale_similarity_threshold, expected', [
+        (
+            1,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.01,  # threshold
+            {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}, "root['bar']": {'new_value': 298, 'old_value': 306}}},  # expected
+        ),
+        (
+            2,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.1,  # threshold
+            {'values_changed': {"root['foo']": {'new_value': 140, 'old_value': 110}}},  # expected
+        ),
+        (
+            2,
+            {'foo': 110, 'bar': 306},  # t1
+            {'foo': 140, 'bar': 298},  # t2
+            0.3,  # threshold
+            {},  # expected
+        ),
+    ])
+    def test_log_scale(self, test_num, t1, t2, log_scale_similarity_threshold, expected):
+        diff = DeepDiff(t1, t2, use_log_scale=True, log_scale_similarity_threshold=log_scale_similarity_threshold)
+        assert expected == diff, f"test_log_scale #{test_num} failed."
+
     def test_ignore_type_in_groups(self):
         t1 = [1, 2, 3]
         t2 = [1.0, 2.0, 3.0]
@@ -1322,7 +1378,7 @@ class TestDeepDiffText:
         t1 = {Decimal('10.01'): "carrots"}
         t2 = {10.01: "carrots"}
 
-        diff1 = DeepDiff(t1, t2)
+        diff1 = DeepDiff(t1, t2, threshold_to_diff_deeper=0)
 
         diff2 = DeepDiff(t1, t2, ignore_numeric_type_changes=True)
 
@@ -1687,6 +1743,15 @@ class TestDeepDiffText:
         assert result == diff
         assert {"root[4]"} == diff.affected_paths
         assert {4} == diff.affected_root_keys
+
+    # TODO: we need to support reporting that items have been swapped
+    # def test_item_moved(self):
+    #     # currently all the items in the list need to be hashables
+    #     t1 = [1, 2, 3, 4]
+    #     t2 = [4, 2, 3, 1]
+    #     diff = DeepDiff(t1, t2)
+    #     result = {}  # it should show that those items are swapped.
+    #     assert result == diff
 
     def test_list_item_values_replace_in_the_middle(self):
         t1 = [0, 1, 2, 3, 'bye', 5, 6, 7, 8, 'a', 'b', 'c']
@@ -2053,3 +2118,32 @@ class TestDeepDiffText:
         diff = DeepDiff(t1, t2)
         expected = {'values_changed': {'root.stuff[0].thing': {'new_value': 2, 'old_value': 1}}}
         assert expected == diff
+
+    def test_dataclass1(self):
+
+
+        t1 = MyDataClass(1, 4)
+        t2 = MyDataClass(2, 4)
+
+        diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
+        assert {'values_changed': {'root.val': {'new_value': 2, 'old_value': 1}}} == diff
+
+    def test_dataclass2(self):
+
+        @dataclass(frozen=True)
+        class MyDataClass:
+            val: int
+            val2: int
+
+        t1 = {
+            MyDataClass(1, 4): 10,
+            MyDataClass(2, 4): 20,
+        }
+
+        t2 = {
+            MyDataClass(1, 4): 10,
+            MyDataClass(2, 4): 10,
+        }
+
+        diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
+        assert {'values_changed': {'root[MyDataClass(val=2,val2=4)]': {'new_value': 10, 'old_value': 20}}} == diff

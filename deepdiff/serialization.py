@@ -9,7 +9,7 @@ import re  # NOQA
 import builtins  # NOQA
 import datetime  # NOQA
 import decimal  # NOQA
-import ordered_set  # NOQA
+import orderly_set  # NOQA
 import collections  # NOQA
 try:
     import yaml
@@ -41,11 +41,20 @@ try:
 except ImportError:  # pragma: no cover.
     PydanticBaseModel = None
 
-from copy import deepcopy
+from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
 from deepdiff.helper import (
-    strings, get_type, TEXT_VIEW, np_float32, np_float64, np_int32, np_int64, np_ndarray, Opcode, py_current_version
+    strings,
+    get_type,
+    TEXT_VIEW,
+    np_float32,
+    np_float64,
+    np_int32,
+    np_int64,
+    np_ndarray,
+    Opcode,
+    SetOrdered,
 )
 from deepdiff.model import DeltaResult
 
@@ -92,7 +101,10 @@ SAFE_TO_IMPORT = {
     'datetime.timedelta',
     'decimal.Decimal',
     'uuid.UUID',
-    'ordered_set.OrderedSet',
+    'orderly_set.sets.OrderedSet',
+    'orderly_set.sets.OrderlySet',
+    'orderly_set.sets.StableSetEq',
+    'deepdiff.helper.SetOrdered',
     'collections.namedtuple',
     'collections.OrderedDict',
     're.Pattern',
@@ -121,7 +133,7 @@ TYPE_STR_TO_TYPE = {
     'time': datetime.time,
     'timedelta': datetime.timedelta,
     'Decimal': decimal.Decimal,
-    'OrderedSet': ordered_set.OrderedSet,
+    'SetOrdered': SetOrdered,
     'namedtuple': collections.namedtuple,
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,    
@@ -568,7 +580,8 @@ def _serialize_tuple(value):
 
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
-    ordered_set.OrderedSet: list,
+    SetOrdered: list,
+    orderly_set.StableSetEq: list,
     set: list,
     type: lambda x: x.__name__,
     bytes: lambda x: x.decode('utf-8'),
@@ -598,6 +611,9 @@ def json_convertor_default(default_mapping=None):
         for original_type, convert_to in _convertor_mapping.items():
             if isinstance(obj, original_type):
                 return convert_to(obj)
+        # This is to handle reverse() which creates a generator of type list_reverseiterator
+        if obj.__class__.__name__ == 'list_reverseiterator':
+            return list(copy(obj))
         raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
 
     return _convertor

@@ -1,6 +1,5 @@
-from ordered_set import OrderedSet
 from deepdiff.deephash import DeepHash
-from deepdiff.helper import dict_
+from deepdiff.helper import dict_, SetOrdered
 
 
 class AnySet:
@@ -11,7 +10,7 @@ class AnySet:
     However one the AnySet object is deleted, all those traces will be gone too.
     """
     def __init__(self, items=None):
-        self._set = OrderedSet()
+        self._set = SetOrdered()
         self._hashes = dict_()
         self._hash_to_objects = dict_()
         if items:

@@ -266,5 +266,23 @@ zip_ordered_iterables: Boolean, default = False
                         'root[3]': {'new_value': 'd', 'old_value': 'e'}}}
 
 
+.. _threshold_to_diff_deeper_label:
+
+Threshold To Diff Deeper
+------------------------
+
+threshold_to_diff_deeper: float, default = 0.33
+    threshold_to_diff_deeper is a number between 0 and 1. When comparing dictionaries that have a small intersection of keys, we will report the dictionary as a new_value instead of reporting individual keys changed. If you set it to zero, you get the same results as DeepDiff 7.0.1 and earlier, which means this feature is disabled. The new default is 0.33 which means if less that one third of keys between dictionaries intersect, report it as a new object.
+
+
+    >>> from deepdiff import DeepDiff
+    >>> t1 = {"veggie": "carrots"}
+    >>> t2 = {"meat": "carrots"}
+    >>>
+    >>> DeepDiff(t1, t2, threshold_to_diff_deeper=0)
+    {'dictionary_item_added': ["root['meat']"], 'dictionary_item_removed': ["root['veggie']"]}
+    >>> DeepDiff(t1, t2, threshold_to_diff_deeper=0.33)
+    {'values_changed': {'root': {'new_value': {'meat': 'carrots'}, 'old_value': {'veggie': 'carrots'}}}}
+
 
 Back to :doc:`/index`
