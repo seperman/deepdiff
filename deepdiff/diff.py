@@ -854,13 +854,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if self._count_diff() is StopIteration:
                 return  # pragma: no cover. This is already covered for addition.
 
+            reference_param1 = i
+            reference_param2 = j
             if y is ListItemRemovedOrAdded:  # item removed completely
                 change_level = level.branch_deeper(
                     x,
                     notpresent,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i,
-                    child_relationship_param2=j,
+                    child_relationship_param=reference_param1,
+                    child_relationship_param2=reference_param2,
                     )
                 self._report_result('iterable_item_removed', change_level, local_tree=local_tree)
 
@@ -869,8 +871,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     notpresent,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i,
-                    child_relationship_param2=j,
+                    child_relationship_param=reference_param1,
+                    child_relationship_param2=reference_param2,
                     )
                 self._report_result('iterable_item_added', change_level, local_tree=local_tree)
 
@@ -881,11 +883,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                         x,
                         y,
                         child_relationship_class=child_relationship_class,
-                        child_relationship_param=i,
-                        child_relationship_param2=j
+                        child_relationship_param=reference_param1,
+                        child_relationship_param2=reference_param2
                     )
                     self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
-                    continue
+
+                    if self.iterable_compare_func:
+                        # Intentionally setting j as the first child relationship param in cases of a moved item.
+                        # If the item was moved using an iterable_compare_func then we want to make sure that the index
+                        # is relative to t2.
+                        reference_param1 = j
+                        reference_param2 = i
 
                 item_id = id(x)
                 if parents_ids and item_id in parents_ids:
@@ -897,8 +905,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     x,
                     y,
                     child_relationship_class=child_relationship_class,
-                    child_relationship_param=i,
-                    child_relationship_param2=j,
+                    child_relationship_param=reference_param1,
+                    child_relationship_param2=reference_param2
                 )
                 self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
