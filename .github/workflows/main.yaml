@@ -70,8 +70,10 @@ jobs:
       run: |
         pytest --benchmark-disable
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       if: matrix.python-version == 3.12
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         file: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
