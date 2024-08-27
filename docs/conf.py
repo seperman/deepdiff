@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DeepDiff'
-copyright = '2015-2023, Sep Dehpour'
+copyright = '2015-2024, Sep Dehpour'
 author = 'Sep Dehpour'
 
 # The version info for the project you're documenting, acts as replacement for

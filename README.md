@@ -33,7 +33,7 @@ With the introduction of `threshold_to_diff_deeper`, the values returned are dif
 - [x] Added `use_log_scale:bool` and `log_scale_similarity_threshold:float`. They can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
 - [x] json serialization of reversed lists.
 - [x] Fix for iterable moved items when `iterable_compare_func` is used.
-- [x] Pandas and Polars support 
+- [x] Pandas and Polars support.
 
 DeepDiff 7-0-1
 

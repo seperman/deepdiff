@@ -60,6 +60,24 @@ Bump up these 2 parameters to 1 and you get what you want:
                                              'old_value': 'somevalue1'}}}
 
 
+Q: The report of changes in a nested dictionary is too granular
+---------------------------------------------------------------
+
+**Answer**
+
+Use :ref:`threshold_to_diff_deeper_label`
+
+    >>> from deepdiff import DeepDiff
+    >>> t1 = {"veggie": "carrots"}
+    >>> t2 = {"meat": "carrots"}
+    >>>
+    >>> DeepDiff(t1, t2, threshold_to_diff_deeper=0)
+    {'dictionary_item_added': ["root['meat']"], 'dictionary_item_removed': ["root['veggie']"]}
+    >>> DeepDiff(t1, t2, threshold_to_diff_deeper=0.33)
+    {'values_changed': {'root': {'new_value': {'meat': 'carrots'}, 'old_value': {'veggie': 'carrots'}}}}
+
+
+
 Q: TypeError: Object of type type is not JSON serializable
 ----------------------------------------------------------
 
@@ -106,6 +124,28 @@ Use parse_path:
     ['joe', 'age']
     >>> parse_path("root['joe'].age", include_actions=True)
     [{'element': 'joe', 'action': 'GET'}, {'element': 'age', 'action': 'GETATTR'}]
+
+Or use the tree view so you can use path(output_format='list'):
+
+    >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
+    >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}
+    >>> ddiff = DeepDiff(t1, t2, view='tree')
+    >>> ddiff
+    {'iterable_item_removed': [<root[4]['b'][2] t1:3, t2:not present>, <root[4]['b'][3] t1:4, t2:not present>]}
+    >>> # Note that the iterable_item_removed is a set. In this case it has 2 items in it.
+    >>> # One way to get one item from the set is to convert it to a list
+    >>> # And then get the first item of the list:
+    >>> removed = list(ddiff['iterable_item_removed'])[0]
+    >>> removed
+    <root[4]['b'][2] t1:3, t2:not present>
+    >>>
+    >>> parent = removed.up
+    >>> parent
+    <root[4]['b'] t1:[1, 2, 3, 4], t2:[1, 2]>
+    >>> parent.path()  # gives you the string representation of the path
+    "root[4]['b']"
+    >>> parent.path(output_format='list')  # gives you the list of keys and attributes that make up the path
+    [4, 'b']
 
 
 ---------
