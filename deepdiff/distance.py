@@ -1,4 +1,3 @@
-import numpy as np
 import math
 import datetime
 from deepdiff.deephash import DeepHash
