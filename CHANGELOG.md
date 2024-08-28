@@ -1,6 +1,9 @@
 # DeepDiff Change log
 
 
+- v8-0-1
+    - Bugfix. Numpy should be optional.
+
 - v8-0-0
 
     - With the introduction of `threshold_to_diff_deeper`, the values returned are different than in previous versions of DeepDiff. You can still get the older values by setting `threshold_to_diff_deeper=0`. However to signify that enough has changed in this release that the users need to update the parameters passed to DeepDiff, we will be doing a major version update.

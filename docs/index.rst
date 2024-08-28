@@ -31,6 +31,10 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 8-0-1
+
+    - Bugfix. Numpy should be optional.
+
 DeepDiff 8-0-0
 --------------
 
