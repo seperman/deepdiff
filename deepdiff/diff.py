@@ -421,7 +421,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 else:
                     all_slots.extend(slots)
 
-        return {i: getattr(object, unmangle(i), None) for i in all_slots}
+        return {i: getattr(object, key) for i in all_slots if hasattr(object, key := unmangle(i))}
 
     def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
         t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
