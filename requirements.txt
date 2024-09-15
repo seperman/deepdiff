@@ -1,1 +1,1 @@
-orderly-set==5.2.2
+orderly-set>=5.2.2,<6
