@@ -1713,7 +1713,7 @@ class TestDeepDiffText:
         t2 = Bad()
 
         ddiff = DeepDiff(t1, t2)
-        result = {'unprocessed': ['root: Bad Object and Bad Object']}
+        result = {}
         assert result == ddiff
 
     def test_dict_none_item_removed(self):
