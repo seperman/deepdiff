@@ -63,3 +63,4 @@ Authors in order of the timeline of their contributions:
 - [sf-tcalhoun](https://github.com/sf-tcalhoun) for fixing "Instantiating a Delta with a flat_dict_list unexpectedly mutates the flat_dict_list"
 - [dtorres-sf](https://github.com/dtorres-sf) for fixing iterable moved items when iterable_compare_func is used.
 - [Florian Finkernagel](https://github.com/TyberiusPrime) for pandas and polars support.
+- Mathis Chenuet [artemisart](https://github.com/artemisart) for fixing slots classes comparison.
