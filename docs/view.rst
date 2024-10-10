@@ -299,6 +299,29 @@ Use the pretty method for human readable output. This is regardless of what view
     Item root[4] removed from set.
     Item root[1] removed from set.
 
+The pretty method has an optional parameter ``prefix`` that allows a prefix string before every output line (*e.g.* for logging):
+    >>> from deepdiff import DeepDiff
+    >>> t1={1,2,4}
+    >>> t2={2,3}
+    >>> print(DeepDiff(t1, t2).pretty(prefix='Diff: '))
+    Diff: Item root[3] added to set.
+    Diff: Item root[4] removed from set.
+    Diff: Item root[1] removed from set.
+
+The ``prefix`` may also be a callable function. This function must accept ``**kwargs``; as of this version, the only parameter is ``diff`` but the signature allows for future expansion.
+The ``diff`` given will be the ``DeepDiff`` that ``pretty`` was called on; this allows interesting capabilities such as:
+    >>> from deepdiff import DeepDiff
+    >>> t1={1,2,4}
+    >>> t2={2,3}
+    >>> def callback(**kwargs):
+    ...     """Helper function using a hidden variable on the diff that tracks which count prints next"""
+    ...     kwargs['diff']._diff_count = 1 + getattr(kwargs['diff'], '_diff_count', 0)
+    ...     return f"Diff #{kwargs['diff']._diff_count}: "
+    ...
+    >>> print(DeepDiff(t1, t2).pretty(prefix=callback))
+    Diff #1: Item root[3] added to set.
+    Diff #2: Item root[4] removed from set.
+    Diff #3: Item root[1] removed from set.
 
 
 Text view vs. Tree view vs. vs. pretty() method

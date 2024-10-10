@@ -3,6 +3,7 @@
 
 - v8-0-1
     - Bugfix. Numpy should be optional.
+    - Added `prefix` option to `pretty()`
 
 - v8-0-0
 
