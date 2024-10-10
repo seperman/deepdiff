@@ -330,6 +330,49 @@ class TestDeepDiffPretty:
         result = ddiff.pretty()
         assert result == expected
 
+    @pytest.mark.parametrize("expected, verbose_level",
+                             (
+                                 ('\t\tItem root[5] added to dictionary.'
+                                  '\n\t\tItem root[3] removed from dictionary.'
+                                  '\n\t\tType of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\n\t\tValue of root[4] changed from 4 to 5.', 0),
+                                 ('\t\tItem root[5] (5) added to dictionary.'
+                                  '\n\t\tItem root[3] (3) removed from dictionary.'
+                                  '\n\t\tType of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\n\t\tValue of root[4] changed from 4 to 5.', 2),
+                             ), ids=("verbose=0", "verbose=2")
+                             )
+    def test_pretty_form_method_prefixed_simple(self, expected, verbose_level):
+        t1 = {2: 2, 3: 3, 4: 4}
+        t2 = {2: 'b', 4: 5, 5: 5}
+        ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
+        result = ddiff.pretty(prefix="\t\t")
+        assert result == expected
+
+    @pytest.mark.parametrize("expected, verbose_level",
+                             (
+                                 ('Diff #1: Item root[5] added to dictionary.'
+                                  '\nDiff #2: Item root[3] removed from dictionary.'
+                                  '\nDiff #3: Type of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\nDiff #4: Value of root[4] changed from 4 to 5.', 0),
+                                 ('Diff #1: Item root[5] (5) added to dictionary.'
+                                  '\nDiff #2: Item root[3] (3) removed from dictionary.'
+                                  '\nDiff #3: Type of root[2] changed from int to str and value changed from 2 to "b".'
+                                  '\nDiff #4: Value of root[4] changed from 4 to 5.', 2),
+                             ), ids=("verbose=0", "verbose=2")
+                             )
+    def test_pretty_form_method_prefixed_callback(self, expected, verbose_level):
+        def prefix_callback(**kwargs):
+            """Helper function using a hidden variable on the diff that tracks which count prints next"""
+            kwargs['diff']._diff_count = 1 + getattr(kwargs['diff'], '_diff_count', 0)
+            return f"Diff #{kwargs['diff']._diff_count}: "
+
+        t1 = {2: 2, 3: 3, 4: 4}
+        t2 = {2: 'b', 4: 5, 5: 5}
+        ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
+        result = ddiff.pretty(prefix=prefix_callback)
+        assert result == expected
+
     @pytest.mark.parametrize('test_num, value, func_to_convert_back', [
         (1, {'10': None}, None),
         (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}, None),
