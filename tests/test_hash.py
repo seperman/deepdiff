@@ -187,6 +187,12 @@ class TestDeepHash:
         a_hash = DeepHash(a)[a]
         assert not( a_hash is unprocessed)
 
+    # https://github.com/seperman/deepdiff/issues/494
+    def test_numpy_bool(self):
+        a = {'b': np.array([True], dtype='bool')}
+        a_hash = DeepHash(a)[a]
+        assert not( a_hash is unprocessed)
+
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
 

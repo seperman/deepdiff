@@ -24,6 +24,11 @@ try:
     import polars
 except ImportError:
     polars = False
+try:
+    import numpy as np
+    booleanTypes = (bool, np.bool_)
+except ImportError:
+    booleanTypes = bool
 
 logger = logging.getLogger(__name__)
 
@@ -492,7 +497,7 @@ class DeepHash(Base):
         """The main hash method"""
         counts = 1
 
-        if isinstance(obj, bool):
+        if isinstance(obj, booleanTypes):
             obj = self._prep_bool(obj)
             result = None
         elif self.use_enum_value and isinstance(obj, Enum):
