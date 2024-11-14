@@ -421,7 +421,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 else:
                     all_slots.extend(slots)
 
-        return {i: getattr(object, unmangle(i)) for i in all_slots}
+        return {i: getattr(object, key) for i in all_slots if hasattr(object, key := unmangle(i))}
 
     def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
         t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
@@ -510,6 +510,32 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return skip
 
+    def _skip_this_key(self, level, key):
+        # if include_paths is not set, than treet every path as included
+        if self.include_paths is None:
+            return False
+        if "{}['{}']".format(level.path(), key) in self.include_paths:
+            return False
+        if level.path() in self.include_paths:
+            # matches e.g. level+key root['foo']['bar']['veg'] include_paths ["root['foo']['bar']"]
+            return False
+        for prefix in self.include_paths:
+            if "{}['{}']".format(level.path(), key) in prefix:
+                # matches as long the prefix is longer than this object key
+                # eg.: level+key root['foo']['bar'] matches prefix root['foo']['bar'] from include paths
+                #      level+key root['foo'] matches prefix root['foo']['bar'] from include_paths
+                #      level+key root['foo']['bar'] DOES NOT match root['foo'] from include_paths This needs to be handled afterwards
+                return False
+        # check if a higher level is included as a whole (=without any sublevels specified)
+        # matches e.g. level+key root['foo']['bar']['veg'] include_paths ["root['foo']"]
+        # but does not match, if it is level+key root['foo']['bar']['veg'] include_paths ["root['foo']['bar']['fruits']"]
+        up = level.up
+        while up is not None:
+            if up.path() in self.include_paths:
+                return False
+            up = up.up
+        return True
+
     def _get_clean_to_keys_mapping(self, keys, level):
         """
         Get a dictionary of cleaned value of keys to the keys themselves.
@@ -570,11 +596,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             rel_class = DictRelationship
 
         if self.ignore_private_variables:
-            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
-            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
+            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__')) and not self._skip_this_key(level, key)])
+            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__')) and not self._skip_this_key(level, key)])
         else:
-            t1_keys = SetOrdered(t1.keys())
-            t2_keys = SetOrdered(t2.keys())
+            t1_keys = SetOrdered([key for key in t1 if not self._skip_this_key(level, key)])
+            t2_keys = SetOrdered([key for key in t2 if not self._skip_this_key(level, key)])
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
