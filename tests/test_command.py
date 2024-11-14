@@ -12,7 +12,7 @@ class TestCommands:
 
     @pytest.mark.parametrize('name1, name2, expected_in_stdout, expected_exit_code', [
         ('t1.json', 't2.json', """dictionary_item_added": [\n    "root[0][\'key3\']""", 0),
-        ('t1_corrupt.json', 't2.json', "Expecting property name enclosed in double quotes", 1),
+        ('t1_corrupt.json', 't2.json', "Error when loading t1: Illegal trailing comma before end of object: line 3 column 21 (char 45)\n", 1),
         ('t1.json', 't2_json.csv', '"old_value": "value2"', 0),
         ('t2_json.csv', 't1.json', '"old_value": "value3"', 0),
         ('t1.csv', 't2.csv', '"new_value": "James"', 0),

@@ -1570,6 +1570,59 @@ class TestDeepDiffText:
             }
         } == ddiff
 
+    def test_include_path5(self):
+        diff = DeepDiff(
+            {
+                'name': 'Testname',
+                'code': 'bla',
+                'noneCode': 'blu',
+            }, {
+                'uid': '12345',
+                'name': 'Testname2',
+            },
+        )
+
+        diff2 = DeepDiff(
+            {
+                'name': 'Testname',
+                'code': 'bla',
+                'noneCode': 'blu',
+            }, {
+                'uid': '12345',
+                'name': 'Testname2',
+            },
+            include_paths = "root['name']"
+        )
+        expected = {'values_changed': {'root': {'new_value': {'uid': '12345', 'name': 'Testname2'}, 'old_value': {'name': 'Testname', 'code': 'bla', 'noneCode': 'blu'}}}}
+        expected2 = {'values_changed': {"root['name']": {'new_value': 'Testname2', 'old_value': 'Testname'}}}
+
+        assert expected == diff
+        assert expected2 == diff2
+
+    def test_include_path6(self):
+        t1 = [1, 2, 3, [4, 5, {6: 7}]]
+        t2 = [1, 2, 3, [4, 5, {6: 1000}]]
+        diff = DeepDiff(
+            t1,
+            t2,
+        )
+
+        diff2 = DeepDiff(
+            t1,
+            t2,
+            include_paths = "root[3]"
+        )
+
+        diff3 = DeepDiff(
+            t1,
+            t2,
+            include_paths = "root[4]"
+        )
+        expected = {'values_changed': {'root[3][2][6]': {'new_value': 1000, 'old_value': 7}}}
+        assert expected == diff
+        assert diff == diff2
+        assert not diff3
+
     def test_skip_path4(self):
         t1 = {
             "for life": "vegan",
