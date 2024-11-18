@@ -2436,9 +2436,9 @@ class TestDeltaCompareFunc:
         flat_rows = delta2.to_flat_rows()
 
         expected_flat_rows = [
-            FlatDeltaRow(path=[3], action='values_changed', value='X', old_value='D', type=str, old_type=str, new_path=[2]),
-            FlatDeltaRow(path=[6], action='values_changed', value='Z', old_value='G', type=str, old_type=str),
-            FlatDeltaRow(path=[5], action='values_changed', value='Y', old_value='F', type=str, old_type=str),
+            FlatDeltaRow(path=[3], action=FlatDataAction.values_changed, value='X', old_value='D', type=str, old_type=str, new_path=[2]),
+            FlatDeltaRow(path=[6], action=FlatDataAction.values_changed, value='Z', old_value='G', type=str, old_type=str),
+            FlatDeltaRow(path=[5], action=FlatDataAction.values_changed, value='Y', old_value='F', type=str, old_type=str),
             FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_deleted, value=[], old_value=['A'], type=list, old_type=list, t1_from_index=0, t1_to_index=1, t2_from_index=0, t2_to_index=0),
             FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_equal, value=None, old_value=None, type=type(None), old_type=type(None), t1_from_index=1, t1_to_index=3, t2_from_index=0, t2_to_index=2),
             FlatDeltaRow(path=[], action=FlatDataAction.iterable_items_replaced, value=['X'], old_value=['D', 'E', 'F', 'G'], type=list, old_type=list, t1_from_index=3, t1_to_index=7, t2_from_index=2, t2_to_index=3),

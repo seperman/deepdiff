@@ -98,11 +98,24 @@ class Delta:
                     for path, op_codes in result['_iterable_opcodes'].items():
                         _iterable_opcodes[path] = []
                         for op_code in op_codes:
-                            _iterable_opcodes[path].append(
-                                Opcode(
-                                    **op_code
+                            if isinstance(op_code, list):
+                                # Handle list format: [tag, t1_from, t1_to, t2_from, t2_to, old_values, new_values]
+                                _iterable_opcodes[path].append(
+                                    Opcode(
+                                        tag=op_code[0],
+                                        t1_from_index=op_code[1],
+                                        t1_to_index=op_code[2], 
+                                        t2_from_index=op_code[3],
+                                        t2_to_index=op_code[4],
+                                        old_values=op_code[5],
+                                        new_values=op_code[6]
+                                    )
                                 )
-                            )
+                            else:
+                                # Handle dict format
+                                _iterable_opcodes[path].append(
+                                    Opcode(**op_code)
+                                )
                     result['_iterable_opcodes'] = _iterable_opcodes
                 return result
 
