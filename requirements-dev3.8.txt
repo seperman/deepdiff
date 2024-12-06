@@ -14,7 +14,7 @@ sphinx-sitemap==2.6.0
 sphinxemoji==0.2.0
 flake8==7.1.0
 python-dateutil==2.9.0.post0
-orjson==3.10.5
+orjson==3.10.12
 wheel==0.43.0
 tomli==2.0.1
 tomli-w==1.0.0
