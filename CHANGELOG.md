@@ -1,9 +1,14 @@
 # DeepDiff Change log
 
 
+- v8-1-0
+    - Fixed slots-classes comparison.
+    - Added `prefix` option to `pretty()`
+    - Relax `orderly-set` dependency.
+    - Fixes hashing of numpy boolean values.
+
 - v8-0-1
     - Bugfix. Numpy should be optional.
-    - Added `prefix` option to `pretty()`
 
 - v8-0-0
 
