@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
         architecture: ["x64"]
     steps:
     - uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
           ${{ runner.os }}-pip-
           ${{ runner.os }}-
     - name: Upgrade setuptools
-      if: matrix.python-version == 3.13
+      if: matrix.python-version => 3.12
       run: |
         # workaround for 3.13, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
