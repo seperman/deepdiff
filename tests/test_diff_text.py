@@ -2147,3 +2147,25 @@ class TestDeepDiffText:
 
         diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
         assert {'values_changed': {'root[MyDataClass(val=2,val2=4)]': {'new_value': 10, 'old_value': 20}}} == diff
+
+
+    def test_group_by_with_none_key_and_ignore_case(self):
+        """Test that group_by works with None keys when ignore_string_case is True"""
+        dict1 = [{'txt_field': 'FULL_NONE', 'group_id': None}, {'txt_field': 'FULL', 'group_id': 'a'}]
+        dict2 = [{'txt_field': 'PARTIAL_NONE', 'group_id': None}, {'txt_field': 'PARTIAL', 'group_id': 'a'}]
+
+        diff = DeepDiff(
+            dict1,
+            dict2,
+            ignore_order=True,
+            group_by='group_id',
+            ignore_string_case=True
+        )
+
+        expected = {'values_changed': {"root[None]['txt_field']":
+                                           {'new_value': 'partial_none', 'old_value': 'full_none'},
+                                       "root['a']['txt_field']":
+                                           {'new_value': 'partial', 'old_value': 'full'}
+                                        }
+                    }
+        assert expected == diff
