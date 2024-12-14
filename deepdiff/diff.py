@@ -80,6 +80,9 @@ VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
 PURGE_LEVEL_RANGE_MSG = 'cache_purge_level should be 0, 1, or 2.'
 _ENABLE_CACHE_EVERY_X_DIFF = '_ENABLE_CACHE_EVERY_X_DIFF'
 
+model_fields_set = frozenset(["model_fields_set"])
+
+
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
@@ -437,13 +440,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             local_tree=local_tree,
         )
 
-    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None):
+    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None, is_pydantic_object=False):
         """Difference of 2 objects"""
         processing_error = False
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
+            elif is_pydantic_object:
+                t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables, ignore_keys=model_fields_set)
+                t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables, ignore_keys=model_fields_set)
             elif all('__dict__' in dir(t) for t in level):
                 t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
                 t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
@@ -1678,7 +1684,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._diff_numpy_array(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, PydanticBaseModel):
-            self._diff_obj(level, parents_ids, local_tree=local_tree)
+            self._diff_obj(level, parents_ids, local_tree=local_tree, is_pydantic_object=True)
 
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
