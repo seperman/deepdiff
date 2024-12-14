@@ -88,7 +88,13 @@ class TreeResult(ResultDict):
         return self.get(item)
 
     def __len__(self):
-        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)]) + len([i for i in self.values() if isinstance(i, int)])
+        length = 0
+        for value in self.values():
+            if isinstance(value, SetOrdered):
+                length += len(value)
+            elif isinstance(value, int):
+                length += 1
+        return length
 
 
 class TextResult(ResultDict):
