@@ -41,7 +41,7 @@ class ResultDict(RemapDict):
         Remove empty keys from this object. Should always be called after the result is final.
         :return:
         """
-        empty_keys = [k for k, v in self.items() if not v]
+        empty_keys = [k for k, v in self.items() if not isinstance(v, (int)) and not v]
 
         for k in empty_keys:
             del self[k]
@@ -88,7 +88,7 @@ class TreeResult(ResultDict):
         return self.get(item)
 
     def __len__(self):
-        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)])
+        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)]) + len([i for i in self.values() if isinstance(i, int)])
 
 
 class TextResult(ResultDict):
