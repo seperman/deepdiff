@@ -616,11 +616,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_clean_to_keys = t2_clean_to_keys = None
 
         t_keys_intersect = t2_keys & t1_keys
-        t_keys_union = t2_keys | t1_keys
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
+
         if self.threshold_to_diff_deeper:
-            if len(t_keys_union) > 1 and len(t_keys_intersect) / len(t_keys_union) < self.threshold_to_diff_deeper:
+            if self.exclude_paths:
+                t_keys_union = {f"{level.path()}[{repr(key)}]" for key in (t2_keys | t1_keys)}
+                t_keys_union -= self.exclude_paths
+                t_keys_union_len = len(t_keys_union)
+            else:
+                t_keys_union_len = len(t2_keys | t1_keys)
+            if t_keys_union_len > 1 and len(t_keys_intersect) / t_keys_union_len < self.threshold_to_diff_deeper:
                 self._report_result('values_changed', level, local_tree=local_tree)
                 return
 

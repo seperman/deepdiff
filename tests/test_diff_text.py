@@ -1533,6 +1533,10 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t2, t1, exclude_paths={"root['ingredients']"})
         assert {} == ddiff
 
+    def test_exclude_path_when_prefix_of_exclude_path_matches1(self):
+        diff = DeepDiff({}, {'foo': '', 'bar': ''}, exclude_paths=['foo', 'bar'])
+        assert not diff
+
     def test_include_path3(self):
         t1 = {
             "for life": "vegan",
