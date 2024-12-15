@@ -807,6 +807,24 @@ class TestDeepDiffText:
         result = {'attribute_removed': ['root.y']}
         assert result == ddiff
 
+    def test_custom_objects_slot_in_group_change(self):
+        class ClassA:
+            __slots__ = ('x', 'y')
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class ClassB(ClassA):
+            pass
+
+        t1 = ClassA(1, 1)
+        t2 = ClassB(1, 1)
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(ClassA, ClassB)])
+        result = {}
+        assert result == ddiff
+
+
     def test_custom_class_changes_none_when_ignore_type(self):
         ddiff1 = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float)])
         result = {
@@ -2226,3 +2244,10 @@ class TestDeepDiffText:
                                         }
                     }
         assert expected == diff
+
+    def test_affected_root_keys_when_dict_empty(self):
+        diff = DeepDiff({}, {1:1, 2:2}, threshold_to_diff_deeper=0)
+        assert [1, 2] == diff.affected_root_keys
+
+        diff2 = DeepDiff({}, {1:1, 2:2})
+        assert [] == diff2.affected_root_keys

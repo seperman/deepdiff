@@ -665,7 +665,9 @@ class DiffLevel:
         else:
             next_rel = root_level.t1_child_rel or root_level.t2_child_rel  # next relationship object to get a formatted param from
 
-        return next_rel.param
+        if next_rel:
+            return next_rel.param
+        return notpresent
 
     def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str'):
         """
