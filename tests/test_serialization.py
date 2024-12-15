@@ -47,6 +47,14 @@ class TestSerialization:
         jsoned = ddiff.to_json()
         assert "world" in jsoned
 
+    def test_serialization_text_force_builtin_json(self):
+        ddiff = DeepDiff(t1, t2)
+        with pytest.raises(TypeError) as excinfo:
+            jsoned = ddiff.to_json(sort_keys=True)
+        assert str(excinfo.value).startswith("orjson does not accept the sort_keys parameter.")
+        jsoned = ddiff.to_json(sort_keys=True, force_use_builtin_json=True)
+        assert "world" in jsoned
+
     def test_deserialization(self):
         ddiff = DeepDiff(t1, t2)
         jsoned = ddiff.to_json_pickle()
