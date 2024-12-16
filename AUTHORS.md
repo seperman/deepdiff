@@ -63,3 +63,12 @@ Authors in order of the timeline of their contributions:
 - [sf-tcalhoun](https://github.com/sf-tcalhoun) for fixing "Instantiating a Delta with a flat_dict_list unexpectedly mutates the flat_dict_list"
 - [dtorres-sf](https://github.com/dtorres-sf) for fixing iterable moved items when iterable_compare_func is used.
 - [Florian Finkernagel](https://github.com/TyberiusPrime) for pandas and polars support.
+- Mathis Chenuet [artemisart](https://github.com/artemisart) for fixing slots classes comparison and PR review.
+- Sherjeel Shabih  [sherjeelshabih](https://github.com/sherjeelshabih) for fixing the issue where the key deep_distance is not returned when both compared items are equal #510
+- [Aaron D. Marasco](https://github.com/AaronDMarasco) for adding `prefix` option to `pretty()`
+- [Juergen Skrotzky](https://github.com/Jorgen-VikingGod) for adding empty `py.typed`
+- [Mate Valko](https://github.com/vmatt) for fixing the issue so we lower only if clean_key is instance of str via #504 
+- [jlaba](https://github.com/jlaba) for fixing #493 include_paths, when only certain keys are included via #499 
+- [Doron Behar](https://github.com/doronbehar) for fixing DeepHash for numpy booleans via #496 
+- [Aaron D. Marasco](https://github.com/AaronDMarasco) for adding print() options which allows a user-defined string (or callback function) to prefix every output when using the pretty() call.
+- [David Hotham](https://github.com/dimbleby) for relaxing orderly-set dependency via #486 

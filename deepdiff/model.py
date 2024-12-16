@@ -41,7 +41,7 @@ class ResultDict(RemapDict):
         Remove empty keys from this object. Should always be called after the result is final.
         :return:
         """
-        empty_keys = [k for k, v in self.items() if not v]
+        empty_keys = [k for k, v in self.items() if not isinstance(v, (int)) and not v]
 
         for k in empty_keys:
             del self[k]
@@ -88,7 +88,13 @@ class TreeResult(ResultDict):
         return self.get(item)
 
     def __len__(self):
-        return sum([len(i) for i in self.values() if isinstance(i, SetOrdered)])
+        length = 0
+        for value in self.values():
+            if isinstance(value, SetOrdered):
+                length += len(value)
+            elif isinstance(value, int):
+                length += 1
+        return length
 
 
 class TextResult(ResultDict):
@@ -659,7 +665,9 @@ class DiffLevel:
         else:
             next_rel = root_level.t1_child_rel or root_level.t2_child_rel  # next relationship object to get a formatted param from
 
-        return next_rel.param
+        if next_rel:
+            return next_rel.param
+        return notpresent
 
     def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str'):
         """

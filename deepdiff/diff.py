@@ -80,6 +80,9 @@ VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
 PURGE_LEVEL_RANGE_MSG = 'cache_purge_level should be 0, 1, or 2.'
 _ENABLE_CACHE_EVERY_X_DIFF = '_ENABLE_CACHE_EVERY_X_DIFF'
 
+model_fields_set = frozenset(["model_fields_set"])
+
+
 # What is the threshold to consider 2 items to be pairs. Only used when ignore_order = True.
 CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT = 0.3
 
@@ -421,7 +424,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 else:
                     all_slots.extend(slots)
 
-        return {i: getattr(object, unmangle(i)) for i in all_slots}
+        return {i: getattr(object, key) for i in all_slots if hasattr(object, key := unmangle(i))}
 
     def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
         t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
@@ -437,13 +440,16 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             local_tree=local_tree,
         )
 
-    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None):
+    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None, is_pydantic_object=False):
         """Difference of 2 objects"""
         processing_error = False
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
                 t2 = level.t2._asdict()
+            elif is_pydantic_object:
+                t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables, ignore_keys=model_fields_set)
+                t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables, ignore_keys=model_fields_set)
             elif all('__dict__' in dir(t) for t in level):
                 t1 = detailed__dict__(level.t1, ignore_private_variables=self.ignore_private_variables)
                 t2 = detailed__dict__(level.t2, ignore_private_variables=self.ignore_private_variables)
@@ -510,6 +516,32 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
         return skip
 
+    def _skip_this_key(self, level, key):
+        # if include_paths is not set, than treet every path as included
+        if self.include_paths is None:
+            return False
+        if "{}['{}']".format(level.path(), key) in self.include_paths:
+            return False
+        if level.path() in self.include_paths:
+            # matches e.g. level+key root['foo']['bar']['veg'] include_paths ["root['foo']['bar']"]
+            return False
+        for prefix in self.include_paths:
+            if "{}['{}']".format(level.path(), key) in prefix:
+                # matches as long the prefix is longer than this object key
+                # eg.: level+key root['foo']['bar'] matches prefix root['foo']['bar'] from include paths
+                #      level+key root['foo'] matches prefix root['foo']['bar'] from include_paths
+                #      level+key root['foo']['bar'] DOES NOT match root['foo'] from include_paths This needs to be handled afterwards
+                return False
+        # check if a higher level is included as a whole (=without any sublevels specified)
+        # matches e.g. level+key root['foo']['bar']['veg'] include_paths ["root['foo']"]
+        # but does not match, if it is level+key root['foo']['bar']['veg'] include_paths ["root['foo']['bar']['fruits']"]
+        up = level.up
+        while up is not None:
+            if up.path() in self.include_paths:
+                return False
+            up = up.up
+        return True
+
     def _get_clean_to_keys_mapping(self, keys, level):
         """
         Get a dictionary of cleaned value of keys to the keys themselves.
@@ -530,7 +562,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
-            if self.ignore_string_case:
+            if self.ignore_string_case and isinstance(clean_key, str):
                 clean_key = clean_key.lower()
             if clean_key in result:
                 logger.warning(('{} and {} in {} become the same key when ignore_numeric_type_changes'
@@ -570,11 +602,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             rel_class = DictRelationship
 
         if self.ignore_private_variables:
-            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__'))])
-            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__'))])
+            t1_keys = SetOrdered([key for key in t1 if not(isinstance(key, str) and key.startswith('__')) and not self._skip_this_key(level, key)])
+            t2_keys = SetOrdered([key for key in t2 if not(isinstance(key, str) and key.startswith('__')) and not self._skip_this_key(level, key)])
         else:
-            t1_keys = SetOrdered(t1.keys())
-            t2_keys = SetOrdered(t2.keys())
+            t1_keys = SetOrdered([key for key in t1 if not self._skip_this_key(level, key)])
+            t2_keys = SetOrdered([key for key in t2 if not self._skip_this_key(level, key)])
         if self.ignore_string_type_changes or self.ignore_numeric_type_changes or self.ignore_string_case:
             t1_clean_to_keys = self._get_clean_to_keys_mapping(keys=t1_keys, level=level)
             t2_clean_to_keys = self._get_clean_to_keys_mapping(keys=t2_keys, level=level)
@@ -584,11 +616,17 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             t1_clean_to_keys = t2_clean_to_keys = None
 
         t_keys_intersect = t2_keys & t1_keys
-        t_keys_union = t2_keys | t1_keys
         t_keys_added = t2_keys - t_keys_intersect
         t_keys_removed = t1_keys - t_keys_intersect
+
         if self.threshold_to_diff_deeper:
-            if len(t_keys_union) > 1 and len(t_keys_intersect) / len(t_keys_union) < self.threshold_to_diff_deeper:
+            if self.exclude_paths:
+                t_keys_union = {f"{level.path()}[{repr(key)}]" for key in (t2_keys | t1_keys)}
+                t_keys_union -= self.exclude_paths
+                t_keys_union_len = len(t_keys_union)
+            else:
+                t_keys_union_len = len(t2_keys | t1_keys)
+            if t_keys_union_len > 1 and len(t_keys_intersect) / t_keys_union_len < self.threshold_to_diff_deeper:
                 self._report_result('values_changed', level, local_tree=local_tree)
                 return
 
@@ -1652,7 +1690,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self._diff_numpy_array(level, parents_ids, local_tree=local_tree)
 
         elif isinstance(level.t1, PydanticBaseModel):
-            self._diff_obj(level, parents_ids, local_tree=local_tree)
+            self._diff_obj(level, parents_ids, local_tree=local_tree, is_pydantic_object=True)
 
         elif isinstance(level.t1, Iterable):
             self._diff_iterable(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
@@ -1808,9 +1846,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             value = self.tree.get(key)
             if value:
                 if isinstance(value, SetOrdered):
-                    result |= SetOrdered([i.get_root_key() for i in value])
+                    values_list = value
                 else:
-                    result |= SetOrdered([i.get_root_key() for i in value.keys()])
+                    values_list = value.keys()
+                for item in values_list:
+                    root_key = item.get_root_key()
+                    if root_key is not notpresent:
+                        result.add(root_key)
         return result
 
 

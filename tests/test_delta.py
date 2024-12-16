@@ -595,6 +595,7 @@ class TestBasicsOfDelta:
         delta = Delta(flat_rows_list=flat_rows_list,
                       always_include_values=True, bidirectional=True, raise_errors=True)
 
+        flat_rows_list_again = delta.to_flat_rows()
         # if the flat_rows_list is (unexpectedly) mutated, it will be missing the list index number on the path value.
         old_mutated_list_missing_indexes_on_path = [FlatDeltaRow(path=['individualNames'],
                                          value={'firstName': 'Johnny',
@@ -620,6 +621,7 @@ class TestBasicsOfDelta:
         # Verify that our fix in the delta constructor worked...
         assert flat_rows_list != old_mutated_list_missing_indexes_on_path
         assert flat_rows_list == preserved_flat_dict_list
+        assert flat_rows_list == flat_rows_list_again
 
 
 picklalbe_obj_without_item = PicklableClass(11)
@@ -873,6 +875,13 @@ DELTA_CASES = {
         'deepdiff_kwargs': {},
         'to_delta_kwargs': {'directed': True},
         'expected_delta_dict': {'values_changed': {'root["a\'][\'b\'][\'c"]': {'new_value': 2}}}
+    },
+    'delta_case21_empty_list_add': {
+        't1': {'car_model': [], 'car_model_version_id': 0},
+        't2': {'car_model': ['Super Duty F-250'], 'car_model_version_id': 1},
+        'deepdiff_kwargs': {},
+        'to_delta_kwargs': {'directed': True},
+        'expected_delta_dict': {'iterable_item_added': {"root['car_model'][0]": 'Super Duty F-250'}, 'values_changed': {"root['car_model_version_id']": {'new_value': 1}}},
     },
 }
 
@@ -2468,6 +2477,33 @@ class TestDeltaCompareFunc:
         # the path to the leaf node.
         delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True, force=True)
         assert t1 + delta2 == t2
+
+    def test_delta_bool(self):
+        flat_rows_list = [FlatDeltaRow(path=['dollar_to_cent'], action='values_changed', value=False, old_value=True, type=bool, old_type=bool)]
+        value = {'dollar_to_cent': False}
+        delta = Delta(flat_rows_list=flat_rows_list, bidirectional=True, force=True)
+        assert {'dollar_to_cent': True} == value - delta
+
+    def test_detla_add_to_empty_iterable_and_flatten(self):
+        t1 = {'models': [], 'version_id': 0}
+        t2 = {'models': ['Super Duty F-250'], 'version_id': 1}
+        t3 = {'models': ['Super Duty F-250', 'Focus'], 'version_id': 1}
+        diff = DeepDiff(t1, t2, verbose_level=2)
+        delta = Delta(diff, bidirectional=True)
+        assert t1 + delta == t2
+        flat_rows = delta.to_flat_rows()
+        delta2 = Delta(flat_rows_list=flat_rows, bidirectional=True)  # , force=True
+        assert t1 + delta2 == t2
+        assert t2 - delta2 == t1
+
+        diff3 = DeepDiff(t2, t3)
+        delta3 = Delta(diff3, bidirectional=True)
+        flat_dicts3 = delta3.to_flat_dicts()
+
+        delta3_again = Delta(flat_dict_list=flat_dicts3, bidirectional=True)
+        assert t2 + delta3_again == t3
+        assert t3 - delta3_again == t2
+
 
     def test_flat_dict_and_deeply_nested_dict(self):
         beforeImage = [

@@ -44,6 +44,7 @@ except ImportError:  # pragma: no cover.
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
+from typing import Callable, Optional, Union
 from deepdiff.helper import (
     strings,
     get_type,
@@ -179,7 +180,7 @@ class SerializationMixin:
         else:
             logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
-    def to_json(self, default_mapping=None, **kwargs):
+    def to_json(self, default_mapping: Optional[dict]=None, force_use_builtin_json=False, **kwargs):
         """
         Dump json of the text view.
         **Parameters**
@@ -189,6 +190,11 @@ class SerializationMixin:
         by default DeepDiff converts certain data types. For example Decimals into floats so they can be exported into json.
         If you have a certain object type that the json serializer can not serialize it, please pass the appropriate type
         conversion through this dictionary.
+
+        force_use_builtin_json: Boolean, default = False
+            When True, we use Python's builtin Json library for serialization,
+            even if Orjson is installed.
+
 
         kwargs: Any other kwargs you pass will be passed on to Python's json.dumps()
 
@@ -212,7 +218,12 @@ class SerializationMixin:
             '{"type_changes": {"root": {"old_type": "A", "new_type": "B", "old_value": "obj A", "new_value": "obj B"}}}'
         """
         dic = self.to_dict(view_override=TEXT_VIEW)
-        return json_dumps(dic, default_mapping=default_mapping, **kwargs)
+        return json_dumps(
+            dic,
+            default_mapping=default_mapping,
+            force_use_builtin_json=force_use_builtin_json,
+            **kwargs,
+        )
 
     def to_dict(self, view_override=None):
         """
@@ -296,10 +307,12 @@ class SerializationMixin:
 
         return deepcopy(dict(result))
 
-    def pretty(self):
+    def pretty(self, prefix: Optional[Union[str, Callable]]=None):
         """
         The pretty human readable string output for the diff object
         regardless of what view was used to generate the diff.
+
+        prefix can be a callable or a string or None.
 
         Example:
             >>> t1={1,2,4}
@@ -310,12 +323,16 @@ class SerializationMixin:
             Item root[1] removed from set.
         """
         result = []
+        if prefix is None:
+            prefix = ''
         keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
         for key in keys:
             for item_key in self.tree[key]:
                 result += [pretty_print_diff(item_key)]
 
-        return '\n'.join(result)
+        if callable(prefix):
+            return "\n".join(f"{prefix(diff=self)}{r}" for r in result)
+        return "\n".join(f"{prefix}{r}" for r in result)
 
 
 class _RestrictedUnpickler(pickle.Unpickler):
@@ -633,14 +650,26 @@ class JSONDecoder(json.JSONDecoder):
         return obj
 
 
-def json_dumps(item, default_mapping=None, **kwargs):
+def json_dumps(item, default_mapping=None, force_use_builtin_json: bool=False, **kwargs):
     """
     Dump json with extra details that are not normally json serializable
+
+    parameters
+    ----------
+
+    force_use_builtin_json: Boolean, default = False
+        When True, we use Python's builtin Json library for serialization,
+        even if Orjson is installed.
     """
-    if orjson:
+    if orjson and not force_use_builtin_json:
         indent = kwargs.pop('indent', None)
         if indent:
             kwargs['option'] = orjson.OPT_INDENT_2
+        if 'sort_keys' in kwargs:
+            raise TypeError(
+                "orjson does not accept the sort_keys parameter. "
+                "If you need to pass sort_keys, set force_use_builtin_json=True "
+                "to use Python's built-in json library instead of orjson.")
         return orjson.dumps(
             item,
             default=json_convertor_default(default_mapping=default_mapping),

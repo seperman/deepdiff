@@ -12,7 +12,7 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
-                             get_truncate_datetime, dict_, add_root_to_paths)
+                             get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
 from deepdiff.base import Base
 
 try:
@@ -24,6 +24,11 @@ try:
     import polars
 except ImportError:
     polars = False
+try:
+    import numpy as np
+    booleanTypes = (bool, np.bool_)
+except ImportError:
+    booleanTypes = bool
 
 logger = logging.getLogger(__name__)
 
@@ -326,13 +331,15 @@ class DeepHash(Base):
     def items(self):
         return ((i, v[0]) for i, v in self.hashes.items())
 
-    def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False):
+    def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False, is_pydantic_object=False):
         """prepping objects"""
         original_type = type(obj) if not isinstance(obj, type) else obj
 
         obj_to_dict_strategies = []
         if is_namedtuple:
             obj_to_dict_strategies.append(lambda o: o._asdict())
+        elif is_pydantic_object:
+            obj_to_dict_strategies.append(lambda o: {k: v for (k, v) in o.__dict__.items() if v !="model_fields_set"})
         else:
             obj_to_dict_strategies.append(lambda o: o.__dict__)
 
@@ -492,7 +499,7 @@ class DeepHash(Base):
         """The main hash method"""
         counts = 1
 
-        if isinstance(obj, bool):
+        if isinstance(obj, booleanTypes):
             obj = self._prep_bool(obj)
             result = None
         elif self.use_enum_value and isinstance(obj, Enum):
@@ -557,6 +564,8 @@ class DeepHash(Base):
 
         elif obj == BoolObj.TRUE or obj == BoolObj.FALSE:
             result = 'bool:true' if obj is BoolObj.TRUE else 'bool:false'
+        elif isinstance(obj, PydanticBaseModel):
+            result, counts = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids, is_pydantic_object=True)
         else:
             result, counts = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 

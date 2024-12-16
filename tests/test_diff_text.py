@@ -807,6 +807,24 @@ class TestDeepDiffText:
         result = {'attribute_removed': ['root.y']}
         assert result == ddiff
 
+    def test_custom_objects_slot_in_group_change(self):
+        class ClassA:
+            __slots__ = ('x', 'y')
+
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+
+        class ClassB(ClassA):
+            pass
+
+        t1 = ClassA(1, 1)
+        t2 = ClassB(1, 1)
+        ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(ClassA, ClassB)])
+        result = {}
+        assert result == ddiff
+
+
     def test_custom_class_changes_none_when_ignore_type(self):
         ddiff1 = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float)])
         result = {
@@ -1533,6 +1551,10 @@ class TestDeepDiffText:
         ddiff = DeepDiff(t2, t1, exclude_paths={"root['ingredients']"})
         assert {} == ddiff
 
+    def test_exclude_path_when_prefix_of_exclude_path_matches1(self):
+        diff = DeepDiff({}, {'foo': '', 'bar': ''}, exclude_paths=['foo', 'bar'])
+        assert not diff
+
     def test_include_path3(self):
         t1 = {
             "for life": "vegan",
@@ -1569,6 +1591,59 @@ class TestDeepDiffText:
                 }
             }
         } == ddiff
+
+    def test_include_path5(self):
+        diff = DeepDiff(
+            {
+                'name': 'Testname',
+                'code': 'bla',
+                'noneCode': 'blu',
+            }, {
+                'uid': '12345',
+                'name': 'Testname2',
+            },
+        )
+
+        diff2 = DeepDiff(
+            {
+                'name': 'Testname',
+                'code': 'bla',
+                'noneCode': 'blu',
+            }, {
+                'uid': '12345',
+                'name': 'Testname2',
+            },
+            include_paths = "root['name']"
+        )
+        expected = {'values_changed': {'root': {'new_value': {'uid': '12345', 'name': 'Testname2'}, 'old_value': {'name': 'Testname', 'code': 'bla', 'noneCode': 'blu'}}}}
+        expected2 = {'values_changed': {"root['name']": {'new_value': 'Testname2', 'old_value': 'Testname'}}}
+
+        assert expected == diff
+        assert expected2 == diff2
+
+    def test_include_path6(self):
+        t1 = [1, 2, 3, [4, 5, {6: 7}]]
+        t2 = [1, 2, 3, [4, 5, {6: 1000}]]
+        diff = DeepDiff(
+            t1,
+            t2,
+        )
+
+        diff2 = DeepDiff(
+            t1,
+            t2,
+            include_paths = "root[3]"
+        )
+
+        diff3 = DeepDiff(
+            t1,
+            t2,
+            include_paths = "root[4]"
+        )
+        expected = {'values_changed': {'root[3][2][6]': {'new_value': 1000, 'old_value': 7}}}
+        assert expected == diff
+        assert diff == diff2
+        assert not diff3
 
     def test_skip_path4(self):
         t1 = {
@@ -1713,7 +1788,7 @@ class TestDeepDiffText:
         t2 = Bad()
 
         ddiff = DeepDiff(t1, t2)
-        result = {'unprocessed': ['root: Bad Object and Bad Object']}
+        result = {}
         assert result == ddiff
 
     def test_dict_none_item_removed(self):
@@ -2147,3 +2222,32 @@ class TestDeepDiffText:
 
         diff = DeepDiff(t1, t2, exclude_regex_paths=["any"])
         assert {'values_changed': {'root[MyDataClass(val=2,val2=4)]': {'new_value': 10, 'old_value': 20}}} == diff
+
+
+    def test_group_by_with_none_key_and_ignore_case(self):
+        """Test that group_by works with None keys when ignore_string_case is True"""
+        dict1 = [{'txt_field': 'FULL_NONE', 'group_id': None}, {'txt_field': 'FULL', 'group_id': 'a'}]
+        dict2 = [{'txt_field': 'PARTIAL_NONE', 'group_id': None}, {'txt_field': 'PARTIAL', 'group_id': 'a'}]
+
+        diff = DeepDiff(
+            dict1,
+            dict2,
+            ignore_order=True,
+            group_by='group_id',
+            ignore_string_case=True
+        )
+
+        expected = {'values_changed': {"root[None]['txt_field']":
+                                           {'new_value': 'partial_none', 'old_value': 'full_none'},
+                                       "root['a']['txt_field']":
+                                           {'new_value': 'partial', 'old_value': 'full'}
+                                        }
+                    }
+        assert expected == diff
+
+    def test_affected_root_keys_when_dict_empty(self):
+        diff = DeepDiff({}, {1:1, 2:2}, threshold_to_diff_deeper=0)
+        assert [1, 2] == diff.affected_root_keys
+
+        diff2 = DeepDiff({}, {1:1, 2:2})
+        assert [] == diff2.affected_root_keys
