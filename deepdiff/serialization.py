@@ -44,7 +44,7 @@ except ImportError:  # pragma: no cover.
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
-from typing import Callable
+from typing import Callable, Optional, Union
 from deepdiff.helper import (
     strings,
     get_type,
@@ -180,7 +180,7 @@ class SerializationMixin:
         else:
             logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
-    def to_json(self, default_mapping: dict | None=None, force_use_builtin_json=False, **kwargs):
+    def to_json(self, default_mapping: Optional[dict]=None, force_use_builtin_json=False, **kwargs):
         """
         Dump json of the text view.
         **Parameters**
@@ -307,7 +307,7 @@ class SerializationMixin:
 
         return deepcopy(dict(result))
 
-    def pretty(self, prefix: str | Callable=None):
+    def pretty(self, prefix: Optional[Union[str, Callable]]=None):
         """
         The pretty human readable string output for the diff object
         regardless of what view was used to generate the diff.
