@@ -50,7 +50,7 @@ DeepDiff 8-1-0
     - to_dict() method chokes on standard json.dumps() kwargs
     - Fixes accessing the affected_root_keys property on the diff object
       returned by DeepDiff fails when one of the dicts is empty
-    - In version 8.1.0, accessing the affected_root_keys property on the
+    - Fixes accessing the affected_root_keys property on the
       diff object returned by DeepDiff fails when one of the dicts is empty
      
 

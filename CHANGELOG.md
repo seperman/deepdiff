@@ -15,7 +15,7 @@
     - Fixes to_json() method chokes on standard json.dumps() kwargs such as sort_keys
     - to_dict() method chokes on standard json.dumps() kwargs  #490
     - Fixes accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty
-    - In version 8.1.0, accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty #508
+    - Fixes accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty #508
 
 
 - v8-0-1
