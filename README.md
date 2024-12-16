@@ -31,9 +31,7 @@ DeepDiff 8-1-0
 - Fixes __slots__ comparison when the attribute doesn't exist.
 - Relaxing orderly-set reqs
 - Added Python 3.13 support
-- Only lower if clean_key is instance of str
 - Only lower if clean_key is instance of str #504
-- Fixes issue where the key deep_distance is not returned when both compared items are equal
 - Fixes issue where the key deep_distance is not returned when both compared items are equal #510
 - Fixes exclude_paths fails to work in certain cases
 - exclude_paths fails to work #509

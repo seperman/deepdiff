@@ -31,33 +31,32 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
-DeepDiff v8-1-0
+DeepDiff 8-1-0
+--------------
 
-  - Removing deprecated lines from setup.py
-  - Added ``prefix`` option to ``pretty()``
-  - Fixes hashing of numpy boolean values.
-  - Fixes **slots** comparison when the attribute doesn’t exist.
-  - Relaxing orderly-set reqs
-  - Added Python 3.13 support
-  - Only lower if clean_key is instance of str
-  - Only lower if clean_key is instance of str #504
-  - Fixes issue where the key deep_distance is not returned when both
-    compared items are equal
-  - Fixes issue where the key deep_distance is not returned when both
-    compared items are equal #510
-  - Fixes exclude_paths fails to work in certain cases
-  - exclude_paths fails to work #509
-  - Fixes to_json() method chokes on standard json.dumps() kwargs such
-    as sort_keys
-  - to_dict() method chokes on standard json.dumps() kwargs #490
-  - Fixes accessing the affected_root_keys property on the diff object
-    returned by DeepDiff fails when one of the dicts is empty
-  - In version 8.1.0, accessing the affected_root_keys property on the
-    diff object returned by DeepDiff fails when one of the dicts is
-    empty #508
+    - Removing deprecated lines from setup.py
+    - Added ``prefix`` option to ``pretty()``
+    - Fixes hashing of numpy boolean values.
+    - Fixes **slots** comparison when the attribute doesn’t exist.
+    - Relaxing orderly-set reqs
+    - Added Python 3.13 support
+    - Only lower if clean_key is instance of str
+    - Fixes issue where the key deep_distance is not returned when both
+      compared items are equal
+    - Fixes exclude_paths fails to work in certain cases
+    - exclude_paths fails to work
+    - Fixes to_json() method chokes on standard json.dumps() kwargs such as
+      sort_keys
+    - to_dict() method chokes on standard json.dumps() kwargs
+    - Fixes accessing the affected_root_keys property on the diff object
+      returned by DeepDiff fails when one of the dicts is empty
+    - In version 8.1.0, accessing the affected_root_keys property on the
+      diff object returned by DeepDiff fails when one of the dicts is empty
+     
 
 
 DeepDiff 8-0-1
+--------------
 
     - Bugfix. Numpy should be optional.
 
