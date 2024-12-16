@@ -1,4 +1,4 @@
-# DeepDiff v 8.0.1
+# DeepDiff v 8.1.0
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,7 +17,7 @@
 
 Tested on Python 3.8+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/8.0.1/)**
+- **[Documentation](https://zepworks.com/deepdiff/8.1.0/)**
 
 ## What is new?
 
@@ -40,7 +40,7 @@ DeepDiff 8-1-0
 - Fixes to_json() method chokes on standard json.dumps() kwargs such as sort_keys
 - to_dict() method chokes on standard json.dumps() kwargs  #490
 - Fixes accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty
-- In version 8.0.1, accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty #508
+- In version 8.1.0, accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty #508
 
 DeepDiff 8-0-1
 

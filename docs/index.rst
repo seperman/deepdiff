@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 8.0.1 documentation!
+DeepDiff 8.1.0 documentation!
 =============================
 
 *******
@@ -52,7 +52,7 @@ DeepDiff v8-1-0
   - to_dict() method chokes on standard json.dumps() kwargs #490
   - Fixes accessing the affected_root_keys property on the diff object
     returned by DeepDiff fails when one of the dicts is empty
-  - In version 8.0.1, accessing the affected_root_keys property on the
+  - In version 8.1.0, accessing the affected_root_keys property on the
     diff object returned by DeepDiff fails when one of the dicts is
     empty #508
 
