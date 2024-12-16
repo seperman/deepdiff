@@ -21,3 +21,4 @@ pydantic==2.10.3
 pytest-benchmark==5.1.0
 pandas==2.2.3
 polars==1.16.0
+setuptools==75.6.0
