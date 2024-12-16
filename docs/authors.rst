@@ -93,6 +93,24 @@ Authors in order of the timeline of their contributions:
    moved items when iterable_compare_func is used.
 -  `Florian Finkernagel <https://github.com/TyberiusPrime>`__ for pandas
 and polars support.
+- Mathis Chenuet `artemisart <https://github.com/artemisart>`__ for
+  fixing slots classes comparison and PR review.
+- Sherjeel Shabih `sherjeelshabih <https://github.com/sherjeelshabih>`__
+  for fixing the issue where the key deep_distance is not returned when
+  both compared items are equal #510
+- `Juergen Skrotzky <https://github.com/Jorgen-VikingGod>`__ for adding
+  empty ``py.typed``
+- `Mate Valko <https://github.com/vmatt>`__ for fixing the issue so we
+  lower only if clean_key is instance of str via #504
+- `jlaba <https://github.com/jlaba>`__ for fixing #493 include_paths,
+  when only certain keys are included via #499
+- `Doron Behar <https://github.com/doronbehar>`__ for fixing DeepHash
+  for numpy booleans via #496
+- `Aaron D. Marasco <https://github.com/AaronDMarasco>`__ for adding
+  print() options which allows a user-defined string (or callback
+  function) to prefix every output when using the pretty() call.
+- `David Hotham <https://github.com/dimbleby>`__ for relaxing
+  orderly-set dependency via #486
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de

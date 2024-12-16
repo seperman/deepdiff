@@ -44,6 +44,7 @@ except ImportError:  # pragma: no cover.
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
+from typing import Callable
 from deepdiff.helper import (
     strings,
     get_type,
@@ -306,10 +307,12 @@ class SerializationMixin:
 
         return deepcopy(dict(result))
 
-    def pretty(self, prefix=None):
+    def pretty(self, prefix: str | Callable=None):
         """
         The pretty human readable string output for the diff object
         regardless of what view was used to generate the diff.
+
+        prefix can be a callable or a string or None.
 
         Example:
             >>> t1={1,2,4}
