@@ -44,7 +44,7 @@ jobs:
           ${{ runner.os }}-pip-
           ${{ runner.os }}-
     - name: Upgrade setuptools
-      if: matrix.python-version => 3.12
+      if: matrix.python-version >= 3.12
       run: |
         # workaround for 3.13, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
