@@ -11,36 +11,6 @@ import datetime  # NOQA
 import decimal  # NOQA
 import orderly_set  # NOQA
 import collections  # NOQA
-try:
-    import yaml
-except ImportError:  # pragma: no cover.
-    yaml = None  # pragma: no cover.
-try:
-    if sys.version_info >= (3, 11):
-        import tomllib as tomli
-    else:
-        import tomli
-except ImportError:  # pragma: no cover.
-    tomli = None  # pragma: no cover.
-try:
-    import tomli_w
-except ImportError:  # pragma: no cover.
-    tomli_w = None  # pragma: no cover.
-try:
-    import clevercsv
-    csv = None
-except ImportError:  # pragma: no cover.
-    import csv
-    clevercsv = None  # pragma: no cover.
-try:
-    import orjson
-except ImportError:  # pragma: no cover.
-    orjson = None
-try:
-    from pydantic import BaseModel as PydanticBaseModel
-except ImportError:  # pragma: no cover.
-    PydanticBaseModel = None
-
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
@@ -56,16 +26,17 @@ from deepdiff.helper import (
     np_ndarray,
     Opcode,
     SetOrdered,
+    pydantic_base_model_type,
+    PydanticBaseModel,
 )
 from deepdiff.model import DeltaResult
 
-logger = logging.getLogger(__name__)
-
 try:
-    import jsonpickle
-except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
-    jsonpickle = None  # pragma: no cover. Json pickle is getting deprecated.
+    import orjson
+except ImportError:  # pragma: no cover.
+    orjson = None
 
+logger = logging.getLogger(__name__)
 
 class UnsupportedFormatErr(TypeError):
     pass
@@ -162,10 +133,11 @@ class SerializationMixin:
         :ref:`to_json_pickle_label`
         Get the json pickle of the diff object. Unless you need all the attributes and functionality of DeepDiff, running to_json() is the safer option that json pickle.
         """
-        if jsonpickle:
+        try:
+            import jsonpickle
             copied = self.copy()
             return jsonpickle.encode(copied)
-        else:
+        except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
             logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
     @classmethod
@@ -175,9 +147,10 @@ class SerializationMixin:
         Load DeepDiff object with all the bells and whistles from the json pickle dump.
         Note that json pickle dump comes from to_json_pickle
         """
-        if jsonpickle:
+        try:
+            import jsonpickle
             return jsonpickle.decode(value)
-        else:
+        except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
             logger.error('jsonpickle library needs to be installed in order to run from_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
 
     def to_json(self, default_mapping: Optional[dict]=None, force_use_builtin_json=False, **kwargs):
@@ -483,19 +456,27 @@ def load_path_content(path, file_type=None):
     """
     Loads and deserializes the content of the path.
     """
+
     if file_type is None:
         file_type = path.split('.')[-1]
     if file_type == 'json':
         with open(path, 'r') as the_file:
             content = json_loads(the_file.read())
     elif file_type in {'yaml', 'yml'}:
-        if yaml is None:  # pragma: no cover.
-            raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
+        try:
+            import yaml
+        except ImportError:  # pragma: no cover.
+            raise ImportError('Pyyaml needs to be installed.') from None  # pragma: no cover.
         with open(path, 'r') as the_file:
             content = yaml.safe_load(the_file)
     elif file_type == 'toml':
-        if tomli is None:  # pragma: no cover.
-            raise ImportError('On python<=3.10 tomli needs to be installed.')  # pragma: no cover.
+        try:
+            if sys.version_info >= (3, 11):
+                import tomllib as tomli
+            else:
+                import tomli
+        except ImportError:  # pragma: no cover.
+            raise ImportError('On python<=3.10 tomli needs to be installed.') from None  # pragma: no cover.
         with open(path, 'rb') as the_file:
             content = tomli.load(the_file)
     elif file_type == 'pickle':
@@ -503,11 +484,14 @@ def load_path_content(path, file_type=None):
             content = the_file.read()
             content = pickle_load(content)
     elif file_type in {'csv', 'tsv'}:
-        if clevercsv:  # pragma: no cover.
+        try:
+            import clevercsv
             content = clevercsv.read_dicts(path)
-        else:
+        except ImportError:  # pragma: no cover.
+            import csv
             with open(path, 'r') as the_file:
                 content = list(csv.DictReader(the_file))
+
         logger.info(f"NOTE: CSV content was empty in {path}")
 
         # Everything in csv is string but we try to automatically convert any numbers we find
@@ -554,22 +538,28 @@ def _save_content(content, path, file_type, keep_backup=True):
             content = json_dumps(content)
             the_file.write(content)
     elif file_type in {'yaml', 'yml'}:
-        if yaml is None:  # pragma: no cover.
-            raise ImportError('Pyyaml needs to be installed.')  # pragma: no cover.
+        try:
+            import yaml
+        except ImportError:  # pragma: no cover.
+            raise ImportError('Pyyaml needs to be installed.') from None  # pragma: no cover.
         with open(path, 'w') as the_file:
             content = yaml.safe_dump(content, stream=the_file)
     elif file_type == 'toml':
-        if tomli_w is None:  # pragma: no cover.
-            raise ImportError('Tomli-w needs to be installed.')  # pragma: no cover.
+        try:
+            import tomli_w
+        except ImportError:  # pragma: no cover.
+            raise ImportError('Tomli-w needs to be installed.') from None  # pragma: no cover.
         with open(path, 'wb') as the_file:
             content = tomli_w.dump(content, the_file)
     elif file_type == 'pickle':
         with open(path, 'wb') as the_file:
             content = pickle_dump(content, file_obj=the_file)
     elif file_type in {'csv', 'tsv'}:
-        if clevercsv:  # pragma: no cover.
+        try:
+            import clevercsv
             dict_writer = clevercsv.DictWriter
-        else:
+        except ImportError:  # pragma: no cover.
+            import csv
             dict_writer = csv.DictWriter
         with open(path, 'w', newline='') as csvfile:
             fieldnames = list(content[0].keys())
@@ -613,7 +603,7 @@ JSON_CONVERTOR = {
     Mapping: dict,
 }
 
-if PydanticBaseModel:
+if PydanticBaseModel is not pydantic_base_model_type:
     JSON_CONVERTOR[PydanticBaseModel] = lambda x: x.dict()
 
 

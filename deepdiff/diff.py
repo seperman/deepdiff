@@ -11,11 +11,12 @@ import types
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, IO, Callable, Set, Union, Any, Pattern, Tuple, Optional
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
 from itertools import zip_longest
+from functools import lru_cache
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
@@ -1123,6 +1124,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return local_hashes
 
     @staticmethod
+    @lru_cache(maxsize=2028)
     def _get_distance_cache_key(added_hash, removed_hash):
         key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
         if isinstance(key1, int):
