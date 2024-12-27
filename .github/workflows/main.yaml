@@ -23,7 +23,7 @@ jobs:
         architecture: ${{ matrix.architecture }}
     - name: Cache pip 3.8
       if: matrix.python-version == 3.8
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
@@ -34,7 +34,7 @@ jobs:
           ${{ runner.os }}-
     - name: Cache pip
       if: matrix.python-version != 3.8
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
