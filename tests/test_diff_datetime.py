@@ -22,6 +22,9 @@ class TestDiffDatetime:
         res_ignore = DeepDiff(d1, d2, ignore_order=True)
         assert res_ignore == expected
 
+        res_truncate = DeepDiff(d1, d2, truncate_datetime='second')
+        assert res_truncate == {}
+
 
     def test_datetime_diff(self):
         """Testing for the correct setting and usage of epsilon."""
