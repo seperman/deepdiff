@@ -623,10 +623,10 @@ def datetime_normalize(truncate_datetime, obj):
             obj = obj.replace(minute=0, second=0, microsecond=0)
         elif truncate_datetime == 'day':
             obj = obj.replace(hour=0, minute=0, second=0, microsecond=0)
-    if isinstance(obj, datetime.datetime):
-        obj = obj.replace(tzinfo=datetime.timezone.utc)
-    elif isinstance(obj, datetime.time):
-        obj = time_to_seconds(obj)
+        if isinstance(obj, datetime.datetime):
+            obj = obj.replace(tzinfo=datetime.timezone.utc)
+        elif isinstance(obj, datetime.time):
+            obj = time_to_seconds(obj)
     return obj
 
 

@@ -1,8 +1,28 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from deepdiff import DeepDiff
 
 
 class TestDiffDatetime:
+    def test_datetime_within_array_with_timezone_diff(self):
+        """Testing for the correct setting and usage of epsilon."""
+        d1 = [datetime(2020, 8, 31, 13, 14, 1)]
+        d2 = [datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)]
+
+        res = DeepDiff(d1, d2)
+        expected = {
+            "values_changed": {
+                "root[0]": {
+                    "new_value": datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc),
+                    "old_value": datetime(2020, 8, 31, 13, 14, 1),
+                }
+            }
+        }
+        assert res == expected
+
+        res_ignore = DeepDiff(d1, d2, ignore_order=True)
+        assert res_ignore == expected
+
+
     def test_datetime_diff(self):
         """Testing for the correct setting and usage of epsilon."""
         d1 = {"a": datetime(2023, 7, 5, 10, 11, 12)}
