@@ -23,7 +23,7 @@ jobs:
         architecture: ${{ matrix.architecture }}
     - name: Cache pip 3.8
       if: matrix.python-version == 3.8
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
@@ -36,7 +36,7 @@ jobs:
       if: matrix.python-version != 3.8
       env:
         PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
