@@ -14,6 +14,7 @@
 
 import sys
 import os
+import datetime
 from dotenv import load_dotenv
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -52,8 +53,10 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+
+year = datetime.datetime.now().year
 project = 'DeepDiff'
-copyright = '2015-2024, Sep Dehpour'
+copyright = '2015-{}, Sep Dehpour'.format(year)
 author = 'Sep Dehpour'
 
 # The version info for the project you're documenting, acts as replacement for
