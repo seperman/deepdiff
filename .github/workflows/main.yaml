@@ -48,6 +48,7 @@ jobs:
       run: |
         # workaround for 3.13, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
+        pip install maturin
     - name: Install dependencies
       if: matrix.python-version > 3.9
       run: pip install -r requirements-dev.txt
