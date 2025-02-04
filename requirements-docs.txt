@@ -1,0 +1,3 @@
+Sphinx==6.2.1 # We use the html style that is not supported in Sphinx 7 anymore.
+sphinx-sitemap==2.6.0
+sphinxemoji==0.3.1
