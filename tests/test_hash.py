@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import re
 import pytest
-from pathlib import Path
+import pytz
 import logging
 import datetime
+from pathlib import Path
 from collections import namedtuple
 from functools import partial
 from enum import Enum
@@ -895,6 +896,16 @@ class TestDeepHashSHA:
         }
         result = DeepHash(obj, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
         assert expected_result == result
+
+    def test_datetime_hash(self):
+        dt_utc = datetime.datetime(2025, 2, 3, 12, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+        # Convert it to another timezone (e.g., New York)
+        dt_ny = dt_utc.astimezone(pytz.timezone('America/New_York'))
+        assert dt_utc == dt_ny
+
+        result_utc = DeepHash(dt_utc, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
+        result_ny = DeepHash(dt_ny, ignore_string_type_changes=True, hasher=DeepHash.sha1hex)
+        assert result_utc[dt_utc] == result_ny[dt_ny]
 
     def test_dict1(self):
         string1 = "a"

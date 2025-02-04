@@ -8,6 +8,7 @@
 import difflib
 import logging
 import types
+import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
@@ -1487,7 +1488,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if t1_s != t2_s:
                 self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_datetimes(self, level, local_tree=None):
+    def _diff_datetime(self, level, local_tree=None):
+        """Diff DateTimes"""
+        level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
+        level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+
+        if level.t1 != level.t2:
+            self._report_result('values_changed', level, local_tree=local_tree)
+
+    def _diff_time(self, level, local_tree=None):
         """Diff DateTimes"""
         if self.truncate_datetime:
             level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
@@ -1670,8 +1679,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
-        elif isinstance(level.t1, datetimes):
-            self._diff_datetimes(level, local_tree=local_tree)
+        elif isinstance(level.t1, datetime.datetime):
+            self._diff_datetime(level, local_tree=local_tree)
+
+        elif isinstance(level.t1, (datetime.date, datetime.timedelta, datetime.time)):
+            self._diff_time(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
             self._diff_uuids(level, local_tree=local_tree)
