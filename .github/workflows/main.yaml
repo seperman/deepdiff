@@ -23,7 +23,7 @@ jobs:
         architecture: ${{ matrix.architecture }}
     - name: Cache pip 3.8
       if: matrix.python-version == 3.8
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
@@ -34,7 +34,9 @@ jobs:
           ${{ runner.os }}-
     - name: Cache pip
       if: matrix.python-version != 3.8
-      uses: actions/cache@v4
+      env:
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+      uses: actions/cache@v5
       with:
         # This path is specific to Ubuntu
         path: ~/.cache/pip
@@ -48,7 +50,6 @@ jobs:
       run: |
         # workaround for 3.13, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
-        pip install maturin
     - name: Install dependencies
       if: matrix.python-version > 3.9
       run: pip install -r requirements-dev.txt
