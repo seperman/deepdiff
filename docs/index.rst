@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-DeepDiff 8.1.1 documentation!
+DeepDiff 8.2.0 documentation!
 =============================
 
 *******
