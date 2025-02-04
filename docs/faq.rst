@@ -148,6 +148,28 @@ Or use the tree view so you can use path(output_format='list'):
     [4, 'b']
 
 
+Q: Why my datetimes are reported in UTC?
+
+**Answer**
+
+DeepDiff converts all datetimes into UTC. If a datetime is timezone naive, we assume it is in UTC too.
+That is different than what Python does. Python assumes your timezone naive datetime is in your local timezone.
+
+    >>> from deepdiff import DeepDiff
+    >>> from datetime import datetime, timezone
+    >>> d1 = datetime(2020, 8, 31, 13, 14, 1)
+    >>> d2 = datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)
+    >>> d1 == d2
+    False
+    >>> DeepDiff(d1, d2)
+    {}
+
+    >>> d3 = d2.astimezone(pytz.timezone('America/New_York'))
+    >>> DeepDiff(d1, d3)
+    {}
+    >>> d1 == d3
+    False
+
 ---------
 
 .. admonition:: A message from `Sep <https://github.com/seperman>`__, the creator of DeepDiff

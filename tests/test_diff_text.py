@@ -1446,7 +1446,8 @@ class TestDeepDiffText:
         t1 = [1, 2, 3, 'a', now]
         t2 = [1, 2, 3, 'a', 'now']
         ddiff = DeepDiff(t1, t2, ignore_type_in_groups=[(str, bytes, datetime.datetime)])
-        result = {'values_changed': {'root[4]': {'new_value': 'now', 'old_value': now}}}
+        now_utc = now.replace(tzinfo=datetime.timezone.utc)
+        result = {'values_changed': {'root[4]': {'new_value': 'now', 'old_value': now_utc}}}
         assert result == ddiff
 
     def test_ignore_type_in_groups_float_vs_decimal(self):
@@ -2146,20 +2147,20 @@ class TestDeepDiffText:
         assert d == {
             "values_changed": {
                 "root[0]": {
-                    "new_value": datetime.datetime(2011, 12, 31, 0, 0),
-                    "old_value": datetime.datetime(2014, 12, 31, 0, 0),
+                    "new_value": datetime.datetime(2011, 12, 31, 0, 0, tzinfo=datetime.timezone.utc),
+                    "old_value": datetime.datetime(2014, 12, 31, 0, 0, tzinfo=datetime.timezone.utc),
                 },
                 "root[1]": {
-                    "new_value": datetime.datetime(2012, 1, 31, 0, 0),
-                    "old_value": datetime.datetime(2015, 1, 31, 0, 0),
+                    "new_value": datetime.datetime(2012, 1, 31, 0, 0, tzinfo=datetime.timezone.utc),
+                    "old_value": datetime.datetime(2015, 1, 31, 0, 0, tzinfo=datetime.timezone.utc),
                 },
                 "root[2]": {
-                    "new_value": datetime.datetime(2012, 3, 31, 0, 0),
-                    "old_value": datetime.datetime(2015, 3, 31, 0, 0),
+                    "new_value": datetime.datetime(2012, 3, 31, 0, 0, tzinfo=datetime.timezone.utc),
+                    "old_value": datetime.datetime(2015, 3, 31, 0, 0, tzinfo=datetime.timezone.utc),
                 },
                 "root[3]": {
-                    "new_value": datetime.datetime(2012, 5, 31, 0, 0),
-                    "old_value": datetime.datetime(2015, 5, 31, 0, 0),
+                    "new_value": datetime.datetime(2012, 5, 31, 0, 0, tzinfo=datetime.timezone.utc),
+                    "old_value": datetime.datetime(2015, 5, 31, 0, 0, tzinfo=datetime.timezone.utc),
                 },
             },
             "iterable_item_removed": {"root[4]": datetime.datetime(2015, 7, 31, 0, 0)},

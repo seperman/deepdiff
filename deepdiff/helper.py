@@ -1,7 +1,6 @@
 import sys
 import re
 import os
-import math
 import datetime
 import uuid
 import logging
@@ -624,10 +623,27 @@ def datetime_normalize(truncate_datetime, obj):
         elif truncate_datetime == 'day':
             obj = obj.replace(hour=0, minute=0, second=0, microsecond=0)
     if isinstance(obj, datetime.datetime):
-        obj = obj.replace(tzinfo=datetime.timezone.utc)
+        if has_timezone(obj):
+            obj = obj.astimezone(datetime.timezone.utc)
+        else:
+            obj = obj.replace(tzinfo=datetime.timezone.utc)
     elif isinstance(obj, datetime.time):
         obj = time_to_seconds(obj)
     return obj
+
+
+def has_timezone(dt):
+    """
+    Function to check if a datetime object has a timezone
+
+    Checking dt.tzinfo.utcoffset(dt) ensures that the datetime object is truly timezone-aware
+    because some datetime objects may have a tzinfo attribute that is not None but still
+    doesn't provide a valid offset.
+
+    Certain tzinfo objects, such as pytz.timezone(None), can exist but do not provide meaningful UTC offset information.
+    If tzinfo is present but calling .utcoffset(dt) returns None, the datetime is not truly timezone-aware.
+    """
+    return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
 
 def get_truncate_datetime(truncate_datetime):

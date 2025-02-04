@@ -8,14 +8,16 @@
 import difflib
 import logging
 import types
+import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, IO, Callable, Set, Union, Any, Pattern, Tuple, Optional
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
 from itertools import zip_longest
+from functools import lru_cache
 from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
@@ -1123,6 +1125,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         return local_hashes
 
     @staticmethod
+    @lru_cache(maxsize=2028)
     def _get_distance_cache_key(added_hash, removed_hash):
         key1, key2 = (added_hash, removed_hash) if added_hash > removed_hash else (removed_hash, added_hash)
         if isinstance(key1, int):
@@ -1485,7 +1488,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             if t1_s != t2_s:
                 self._report_result('values_changed', level, local_tree=local_tree)
 
-    def _diff_datetimes(self, level, local_tree=None):
+    def _diff_datetime(self, level, local_tree=None):
+        """Diff DateTimes"""
+        level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
+        level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+
+        if level.t1 != level.t2:
+            self._report_result('values_changed', level, local_tree=local_tree)
+
+    def _diff_time(self, level, local_tree=None):
         """Diff DateTimes"""
         if self.truncate_datetime:
             level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
@@ -1668,8 +1679,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         elif isinstance(level.t1, strings):
             self._diff_str(level, local_tree=local_tree)
 
-        elif isinstance(level.t1, datetimes):
-            self._diff_datetimes(level, local_tree=local_tree)
+        elif isinstance(level.t1, datetime.datetime):
+            self._diff_datetime(level, local_tree=local_tree)
+
+        elif isinstance(level.t1, (datetime.date, datetime.timedelta, datetime.time)):
+            self._diff_time(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
             self._diff_uuids(level, local_tree=local_tree)

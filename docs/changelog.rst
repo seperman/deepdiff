@@ -6,6 +6,12 @@ Changelog
 DeepDiff Changelog
 
 
+- v8-2-0
+    - Small optimizations so we don't load functions that are not needed
+    - Updated the minimum version of Orderly-set 
+    - Normalize all datetimes into UTC. Assume timezone naive datetimes are UTC. 
+
+
 - v8-1-0
 
     - Removing deprecated lines from setup.py

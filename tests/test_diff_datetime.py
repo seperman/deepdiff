@@ -1,4 +1,5 @@
-from datetime import date, datetime, time
+import pytz
+from datetime import date, datetime, time, timezone
 from deepdiff import DeepDiff
 
 
@@ -19,8 +20,8 @@ class TestDiffDatetime:
         expected = {
             "values_changed": {
                 "root['a']": {
-                    "new_value": datetime(2023, 7, 5, 11, 11, 12),
-                    "old_value": datetime(2023, 7, 5, 10, 11, 12),
+                    "new_value": datetime(2023, 7, 5, 11, 11, 12, tzinfo=timezone.utc),
+                    "old_value": datetime(2023, 7, 5, 10, 11, 12, tzinfo=timezone.utc),
                 }
             }
         }
@@ -73,3 +74,28 @@ class TestDiffDatetime:
             }
         }
         assert res == expected
+
+    def test_diffs_datetimes_different_timezones(self):
+        dt_utc = datetime(2025, 2, 3, 12, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+        # Convert it to another timezone (e.g., New York)
+        dt_ny = dt_utc.astimezone(pytz.timezone('America/New_York'))
+        assert dt_utc == dt_ny
+        diff = DeepDiff(dt_utc, dt_ny)
+        assert not diff
+
+        t1 = [dt_utc, dt_ny]
+        t2 = [dt_ny, dt_utc]
+        assert not DeepDiff(t1, t2)
+        assert not DeepDiff(t1, t2, ignore_order=True)
+
+        t2 = [dt_ny, dt_utc, dt_ny]
+        assert not DeepDiff(t1, t2, ignore_order=True)
+
+    def test_datetime_within_array_with_timezone_diff(self):
+        d1 = [datetime(2020, 8, 31, 13, 14, 1)]
+        d2 = [datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)]
+
+        assert d1 != d2, "Python doesn't think these are the same datetimes"
+        assert not DeepDiff(d1, d2)
+        assert not DeepDiff(d1, d2, ignore_order=True)
+        assert not DeepDiff(d1, d2, truncate_datetime='second')
