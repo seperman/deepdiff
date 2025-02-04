@@ -148,6 +148,19 @@ Object attribute added:
      'values_changed': {'root.b': {'new_value': 2, 'old_value': 1}}}
 
 
+Datetime
+    DeepDiff converts all datetimes into UTC. If a datetime is timezone naive, we assume it is in UTC too.
+    That is different than what Python does. Python assumes your timezone naive datetime is in your local timezone.
+    >>> from deepdiff import DeepDiff
+    >>> from datetime import datetime, timezone
+    >>> d1 = datetime(2020, 8, 31, 13, 14, 1)
+    >>> d2 = datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)
+    >>> d1 == d2
+    False
+    >>> DeepDiff(d1, d2)
+    {}
+
+
 .. note::
     All the examples above use the default :ref:`text_view_label`.
     If you want traversing functionality in the results, use the :ref:`tree_view_label`.

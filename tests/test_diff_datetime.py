@@ -95,6 +95,7 @@ class TestDiffDatetime:
         d1 = [datetime(2020, 8, 31, 13, 14, 1)]
         d2 = [datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)]
 
+        assert d1 != d2, "Python doesn't think these are the same datetimes"
         assert not DeepDiff(d1, d2)
         assert not DeepDiff(d1, d2, ignore_order=True)
         assert not DeepDiff(d1, d2, truncate_datetime='second')
