@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         architecture: ["x64"]
     steps:
     - uses: actions/checkout@v2
@@ -48,7 +48,7 @@ jobs:
     - name: Upgrade setuptools
       if: matrix.python-version >= 3.12
       run: |
-        # workaround for 3.13, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
+        # workaround for 3.12, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
     - name: Install dependencies
       if: matrix.python-version > 3.9
@@ -57,23 +57,23 @@ jobs:
       if: matrix.python-version <= 3.9
       run: pip install -r requirements-dev3.8.txt
     - name: Lint with flake8
-      if: matrix.python-version == 3.13
+      if: matrix.python-version == 3.12
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 deepdiff --count --exit-zero --max-complexity=26 --max-line-lengt=250 --statistics
     - name: Test with pytest and get the coverage
-      if: matrix.python-version == 3.13
+      if: matrix.python-version == 3.12
       run: |
         pytest --benchmark-disable --cov-report=xml --cov=deepdiff tests/ --runslow
     - name: Test with pytest and no coverage report
-      if: matrix.python-version != 3.13
+      if: matrix.python-version != 3.12
       run: |
         pytest --benchmark-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
-      if: matrix.python-version == 3.13
+      if: matrix.python-version == 3.12
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
