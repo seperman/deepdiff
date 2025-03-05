@@ -18,7 +18,7 @@ from collections import defaultdict
 from inspect import getmembers
 from itertools import zip_longest
 from functools import lru_cache
-from deepdiff.helper import (strings, bytes_type, numbers, uuids, datetimes, ListItemRemovedOrAdded, notpresent,
+from deepdiff.helper import (strings, bytes_type, numbers, uuids, ListItemRemovedOrAdded, notpresent,
                              IndexedHash, unprocessed, add_to_frozen_set, basic_types,
                              convert_item_or_items_into_set_else_none, get_type,
                              convert_item_or_items_into_compiled_regexes_else_none,

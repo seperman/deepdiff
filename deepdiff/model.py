@@ -62,24 +62,26 @@ class TreeResult(ResultDict):
 
         This function should only be run on the Tree Result.
         """
-        if self.get('iterable_item_added') and self.get('iterable_item_removed'):
-            added_paths = {i.path(): i for i in self['iterable_item_added']}
-            removed_paths = {i.path(): i for i in self['iterable_item_removed']}
+        iterable_item_added = self.get('iterable_item_added')
+        iterable_item_removed = self.get('iterable_item_removed')
+        if iterable_item_added is not None and iterable_item_removed is not None:
+            added_paths = {i.path(): i for i in iterable_item_added}
+            removed_paths = {i.path(): i for i in iterable_item_removed}
             mutual_paths = set(added_paths) & set(removed_paths)
 
-            if mutual_paths and 'values_changed' not in self:
+            if mutual_paths and 'values_changed' not in self or self['values_changed'] is None:
                 self['values_changed'] = SetOrdered()
             for path in mutual_paths:
                 level_before = removed_paths[path]
-                self['iterable_item_removed'].remove(level_before)
+                iterable_item_removed.remove(level_before)
                 level_after = added_paths[path]
-                self['iterable_item_added'].remove(level_after)
+                iterable_item_added.remove(level_after)
                 level_before.t2 = level_after.t2
-                self['values_changed'].add(level_before)
+                self['values_changed'].add(level_before)  # type: ignore
                 level_before.report_type = 'values_changed'
-        if 'iterable_item_removed' in self and not self['iterable_item_removed']:
+        if 'iterable_item_removed' in self and not iterable_item_removed:
             del self['iterable_item_removed']
-        if 'iterable_item_added' in self and not self['iterable_item_added']:
+        if 'iterable_item_added' in self and not iterable_item_added:
             del self['iterable_item_added']
 
     def __getitem__(self, item):
@@ -242,7 +244,7 @@ class TextResult(ResultDict):
                     item = "'%s'" % item
                 if is_dict:
                     if path not in set_item_info:
-                        set_item_info[path] = set()
+                        set_item_info[path] = set()  # type: ignore
                     set_item_info[path].add(item)
                 else:
                     set_item_info.add("{}[{}]".format(path, str(item)))
@@ -619,12 +621,12 @@ class DiffLevel:
         :param param: A ChildRelationship subclass-dependent parameter describing how to get from parent to child,
                       e.g. the key in a dict
         """
-        if self.down.t1 is not notpresent:
+        if self.down.t1 is not notpresent:  # type: ignore
             self.t1_child_rel = ChildRelationship.create(
-                klass=klass, parent=self.t1, child=self.down.t1, param=param)
-        if self.down.t2 is not notpresent:
+                klass=klass, parent=self.t1, child=self.down.t1, param=param)  # type: ignore
+        if self.down.t2 is not notpresent:  # type: ignore
             self.t2_child_rel = ChildRelationship.create(
-                klass=klass, parent=self.t2, child=self.down.t2, param=param if param2 is None else param2)
+                klass=klass, parent=self.t2, child=self.down.t2, param=param if param2 is None else param2)  # type: ignore
 
     @property
     def all_up(self):
@@ -739,15 +741,15 @@ class DiffLevel:
                     result = None
                     break
             elif output_format == 'list':
-                result.append(next_rel.param)
+                result.append(next_rel.param)  # type: ignore
 
             # Prepare processing next level
             level = level.down
 
         if output_format == 'str':
             if get_parent_too:
-                self._path[cache_key] = (parent, param, result)
-                output = (self._format_result(root, parent), param, self._format_result(root, result))
+                self._path[cache_key] = (parent, param, result)  # type: ignore
+                output = (self._format_result(root, parent), param, self._format_result(root, result))  # type: ignore
             else:
                 self._path[cache_key] = result
                 output = self._format_result(root, result)
@@ -907,7 +909,7 @@ class ChildRelationship:
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
         elif hasattr(param, '__dataclass_fields__'):
-            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]
+            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]  # type: ignore
             result = f"{param.__class__.__name__}({','.join(attrs_to_values)})"
         else:
             candidate = repr(param)
