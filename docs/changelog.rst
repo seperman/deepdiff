@@ -5,6 +5,10 @@ Changelog
 
 DeepDiff Changelog
 
+- v8-3-0
+    - Fixed some static typing issues
+    - Added the summarize module for better repr of nested values
+
 
 - v8-2-0
     - Small optimizations so we don't load functions that are not needed

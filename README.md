@@ -23,6 +23,11 @@ Tested on Python 3.8+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 8-3-0
+
+- Fixed some static typing issues
+- Added the summarize module for better repr of nested values
+
 DeepDiff 8-2-0
 
 - Small optimizations so we don't load functions that are not needed
