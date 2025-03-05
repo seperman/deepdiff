@@ -69,3 +69,5 @@ temp*
 
 # env file
 .env
+
+pyrightconfig.json

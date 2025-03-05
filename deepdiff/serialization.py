@@ -537,7 +537,7 @@ def _save_content(content, path, file_type, keep_backup=True):
     if file_type == 'json':
         with open(path, 'w') as the_file:
             content = json_dumps(content)
-            the_file.write(content)
+            the_file.write(content)  # type: ignore
     elif file_type in {'yaml', 'yml'}:
         try:
             import yaml
@@ -557,7 +557,7 @@ def _save_content(content, path, file_type, keep_backup=True):
             content = pickle_dump(content, file_obj=the_file)
     elif file_type in {'csv', 'tsv'}:
         try:
-            import clevercsv
+            import clevercsv  # type: ignore
             dict_writer = clevercsv.DictWriter
         except ImportError:  # pragma: no cover.
             import csv
@@ -642,7 +642,13 @@ class JSONDecoder(json.JSONDecoder):
         return obj
 
 
-def json_dumps(item, default_mapping=None, force_use_builtin_json: bool=False, **kwargs):
+def json_dumps(
+    item,
+    default_mapping=None,
+    force_use_builtin_json: bool = False,
+    return_bytes: bool = False,
+    **kwargs,
+) -> str | bytes:
     """
     Dump json with extra details that are not normally json serializable
 
@@ -655,22 +661,29 @@ def json_dumps(item, default_mapping=None, force_use_builtin_json: bool=False, *
     """
     if orjson and not force_use_builtin_json:
         indent = kwargs.pop('indent', None)
+        kwargs['option'] = orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
         if indent:
-            kwargs['option'] = orjson.OPT_INDENT_2
+            kwargs['option'] |= orjson.OPT_INDENT_2
         if 'sort_keys' in kwargs:
             raise TypeError(
                 "orjson does not accept the sort_keys parameter. "
                 "If you need to pass sort_keys, set force_use_builtin_json=True "
                 "to use Python's built-in json library instead of orjson.")
-        return orjson.dumps(
-            item,
-            default=json_convertor_default(default_mapping=default_mapping),
-            **kwargs).decode(encoding='utf-8')
-    else:
-        return json.dumps(
+        result = orjson.dumps(
             item,
             default=json_convertor_default(default_mapping=default_mapping),
             **kwargs)
+        if return_bytes:
+            return result
+        return result.decode(encoding='utf-8')
+    else:
+        result = json.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs)
+        if return_bytes:
+            return result.encode(encoding='utf-8')
+        return result
 
 
 json_loads = partial(json.loads, cls=JSONDecoder)
