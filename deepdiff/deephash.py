@@ -11,8 +11,10 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
+                             number_to_string, datetime_normalize, KEY_TO_VAL_STR,
                              get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
+
+from deepdiff.summarize import summarize
 from deepdiff.base import Base
 
 try:
@@ -315,9 +317,10 @@ class DeepHash(Base):
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
-        return short_repr(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
+        return summarize(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
-    __str__ = __repr__
+    def __str__(self):
+        return str(self._get_objects_to_hashes_dict(extract_index=0))
 
     def __bool__(self):
         return bool(self.hashes)

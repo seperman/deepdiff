@@ -28,6 +28,7 @@ from deepdiff.helper import (
     SetOrdered,
     pydantic_base_model_type,
     PydanticBaseModel,
+    NotPresent,
 )
 from deepdiff.model import DeltaResult
 
@@ -601,6 +602,7 @@ JSON_CONVERTOR = {
     np_ndarray: lambda x: x.tolist(),
     tuple: _serialize_tuple,
     Mapping: dict,
+    NotPresent: str,
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:

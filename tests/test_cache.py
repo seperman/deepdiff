@@ -56,6 +56,7 @@ class TestCache:
         #         'MAX DIFF LIMIT REACHED': False
         #     }
         # assert expected_stats == stats
+        import pytest; pytest.set_trace()
         assert nested_a_result == diff
         diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff

@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from copy import copy
 from deepdiff.helper import (
-    RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
+    RemapDict, strings, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_, SetOrdered)
 from deepdiff.path import stringify_element
 
@@ -580,12 +580,14 @@ class DiffLevel:
 
     def __repr__(self):
         if self.verbose_level:
+            from deepdiff.summarize import summarize
+
             if self.additional:
-                additional_repr = short_repr(self.additional, max_length=35)
+                additional_repr = summarize(self.additional, max_length=35)
                 result = "<{} {}>".format(self.path(), additional_repr)
             else:
-                t1_repr = short_repr(self.t1)
-                t2_repr = short_repr(self.t2)
+                t1_repr = summarize(self.t1, max_length=35)
+                t2_repr = summarize(self.t2, max_length=35)
                 result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
         else:
             result = "<{}>".format(self.path())
@@ -857,10 +859,12 @@ class ChildRelationship:
         self.param = param
 
     def __repr__(self):
+        from deepdiff.summarize import summarize
+
         name = "<{} parent:{}, child:{}, param:{}>"
-        parent = short_repr(self.parent)
-        child = short_repr(self.child)
-        param = short_repr(self.param)
+        parent = summarize(self.parent, max_length=35)
+        child = summarize(self.child, max_length=35)
+        param = summarize(self.param, max_length=15)
         return name.format(self.__class__.__name__, parent, child, param)
 
     def get_param_repr(self, force=None):

@@ -81,7 +81,7 @@ class TestAttributeRelationship:
 class TestDiffLevel:
     def setup_class(cls):
         # Test data
-        cls.custom1 = CustomClass(a='very long text here', b=37)
+        cls.custom1 = CustomClass(a='very long text here, much longer than you can ever imagine. The longest text here.', b=37)
         cls.custom2 = CustomClass(a=313, b=37)
         cls.t1 = {42: 'answer', 'vegan': 'for life', 1337: cls.custom1}
         cls.t2 = {
@@ -257,7 +257,7 @@ class TestDiffLevel:
             item_repr = repr(self.lowest)
         finally:
             self.lowest.verbose_level = level
-        assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
+        assert item_repr == '<root[1337].a t1:"very long text here, much lon....", t2:313>'
 
     def test_repr_very_long(self):
         level = self.lowest.verbose_level
@@ -266,7 +266,7 @@ class TestDiffLevel:
             item_repr = repr(self.lowest)
         finally:
             self.lowest.verbose_level = level
-        assert item_repr == "<root[1337].a t1:'very long t...', t2:313>"
+        assert item_repr == '<root[1337].a t1:"very long text here, much lon....", t2:313>'
 
     def test_repetition_attribute_and_repr(self):
         t1 = [1, 1]
@@ -275,7 +275,7 @@ class TestDiffLevel:
         node = DiffLevel(t1, t2)
         node.additional['repetition'] = some_repetition
         assert node.repetition == some_repetition
-        assert repr(node) == "<root {'repetition': 'some repetition'}>"
+        assert repr(node) == '<root {"repetition":"some repetition"}>'
 
 
 class TestChildRelationship:
@@ -286,14 +286,14 @@ class TestChildRelationship:
     def test_rel_repr_short(self):
         rel = WorkingChildRelationship(parent="that parent", child="this child", param="some param")
         rel_repr = repr(rel)
-        expected = "<WorkingChildRelationship parent:'that parent', child:'this child', param:'some param'>"
+        expected = '<WorkingChildRelationship parent:"that parent", child:"this child", param:"some param">'
         assert rel_repr == expected
 
     def test_rel_repr_long(self):
         rel = WorkingChildRelationship(
-            parent="that parent who has a long path",
+            parent="that parent who has a long path, still going on. Yes, a very long path indeed.",
             child="this child",
             param="some param")
         rel_repr = repr(rel)
-        expected = "<WorkingChildRelationship parent:'that parent...', child:'this child', param:'some param'>"
+        expected = '<WorkingChildRelationship parent:"that parent who has a long pa....", child:"this child", param:"some param">'
         assert rel_repr == expected

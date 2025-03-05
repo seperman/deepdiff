@@ -7,7 +7,7 @@ from copy import deepcopy
 from deepdiff import DeepDiff
 from deepdiff.serialization import pickle_load, pickle_dump
 from deepdiff.helper import (
-    strings, short_repr, numbers,
+    strings, numbers,
     np_ndarray, np_array_factory, numpy_dtypes, get_doc,
     not_found, numpy_dtype_string_to_type, dict_,
     Opcode, FlatDeltaRow, UnkownValueCode, FlatDataAction,
@@ -20,7 +20,7 @@ from deepdiff.path import (
     GET, GETATTR, parse_path, stringify_path,
 )
 from deepdiff.anyset import AnySet
-
+from deepdiff.summarize import summarize
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ class Delta:
         self.reset()
 
     def __repr__(self):
-        return "<Delta: {}>".format(short_repr(self.diff, max_length=100))
+        return "<Delta: {}>".format(summarize(self.diff, max_length=100))
 
     def reset(self):
         self.post_process_paths_to_convert = dict_()

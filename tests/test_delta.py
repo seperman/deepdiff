@@ -170,8 +170,9 @@ class TestBasicsOfDelta:
         diff = DeepDiff(t1, t2)
         delta = Delta(diff)
         options = {
-            "<Delta: {'iterable_item_added': {'root[2]': 3, 'root[3]': 5}}>",
-            "<Delta: {'iterable_item_added': {'root[3]': 5, 'root[2]': 3}}>"}
+            '<Delta: {"iterable_item_added":{"root[2]":3,"root[3]":5}}>',
+            '<Delta: {"iterable_item_added":{"root[3]":5,"root[2]":3}}>',
+        }
         assert repr(delta) in options
 
     def test_get_elem_and_compare_to_old_value(self):

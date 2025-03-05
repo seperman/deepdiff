@@ -56,7 +56,7 @@ class TestDeepHash:
     def test_deephash_repr(self):
         obj = "a"
         result = DeepHash(obj)
-        assert "{'a': '980410da9522db17c3ab8743541f192a5ab27772a6154dbc7795ee909e653a5c'}" == repr(result)
+        assert '{"a":"980410da9522db17c3ab8743541f192a5ab27772a6154dbc7795ee909e653a5c"}' == repr(result)
 
     def test_deephash_values(self):
         obj = "a"
