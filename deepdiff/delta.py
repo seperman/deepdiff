@@ -171,7 +171,7 @@ class Delta:
         self.post_process_paths_to_convert = dict_()
 
     def __add__(self, other):
-        if isinstance(other, numbers) and self._numpy_paths:
+        if isinstance(other, numbers) and self._numpy_paths:  # type: ignore
             raise DeltaNumpyOperatorOverrideError(DELTA_NUMPY_OPERATOR_OVERRIDE_MSG)
         if self.mutate:
             self.root = other
@@ -240,7 +240,7 @@ class Delta:
             if action == GET:
                 current_old_value = obj[elem]
             elif action == GETATTR:
-                current_old_value = getattr(obj, elem)
+                current_old_value = getattr(obj, elem)  # type: ignore
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_GET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError, TypeError) as e:
@@ -261,7 +261,7 @@ class Delta:
                     else:
                         obj[elem] = _forced_old_value
                 elif action == GETATTR:
-                    setattr(obj, elem, _forced_old_value)
+                    setattr(obj, elem, _forced_old_value)  # type: ignore
                 return _forced_old_value
             current_old_value = not_found
             if isinstance(path_for_err_reporting, (list, tuple)):
@@ -289,7 +289,7 @@ class Delta:
                     else:
                         self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path_for_err_reporting))
             elif action == GETATTR:
-                setattr(obj, elem, value)
+                setattr(obj, elem, value)  # type: ignore
             else:
                 raise DeltaError(INVALID_ACTION_WHEN_CALLING_SIMPLE_SET_ELEM.format(action))
         except (KeyError, IndexError, AttributeError, TypeError) as e:
@@ -457,8 +457,8 @@ class Delta:
                 continue  # pragma: no cover. Due to cPython peephole optimizer, this line doesn't get covered. https://github.com/nedbat/coveragepy/issues/198
 
             # Insert is only true for iterables, make sure it is a valid index.
-            if(insert and elem < len(obj)):
-                obj.insert(elem, None)
+            if(insert and elem < len(obj)):  # type: ignore
+                obj.insert(elem, None)  # type: ignore
 
             self._set_new_value(parent, parent_to_obj_elem, parent_to_obj_action,
                                 obj, elements, path, elem, action, new_value)
@@ -482,7 +482,7 @@ class Delta:
     def _do_pre_process(self):
         if self._numpy_paths and ('iterable_item_added' in self.diff or 'iterable_item_removed' in self.diff):
             preprocess_paths = dict_()
-            for path, type_ in self._numpy_paths.items():
+            for path, type_ in self._numpy_paths.items():  # type: ignore
                 preprocess_paths[path] = {'old_type': np_ndarray, 'new_type': list}
                 try:
                     type_ = numpy_dtype_string_to_type(type_)
@@ -507,7 +507,7 @@ class Delta:
                 parent_to_obj_elem, parent_to_obj_action = elements[-2]
                 obj = self._get_elem_and_compare_to_old_value(
                     obj=parent, path_for_err_reporting=path, expected_old_value=None,
-                    elem=parent_to_obj_elem, action=parent_to_obj_action, next_element=next2_element)
+                    elem=parent_to_obj_elem, action=parent_to_obj_action, next_element=next2_element)  # type: ignore
             else:
                 # parent = self
                 # obj = self.root
@@ -516,7 +516,7 @@ class Delta:
                 parent = parent_to_obj_elem = parent_to_obj_action = None
                 obj = self
                 # obj = self.get_nested_obj(obj=self, elements=elements[:-1])
-            elem, action = elements[-1]
+            elem, action = elements[-1]  # type: ignore
         except Exception as e:
             self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
             return None
@@ -550,7 +550,7 @@ class Delta:
                     else:
                         new_value = new_type(current_old_value)
                 except Exception as e:
-                    self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[elem], value.get('new_type', 'unknown'), e))
+                    self._raise_or_log(TYPE_CHANGE_FAIL_MSG.format(obj[elem], value.get('new_type', 'unknown'), e))  # type: ignore
                     continue
             else:
                 new_value = value['new_value']
@@ -582,7 +582,7 @@ class Delta:
             current_old_value = not_found
             try:
                 if action == GET:
-                    current_old_value = obj[elem]
+                    current_old_value = obj[elem]  # type: ignore
                 elif action == GETATTR:
                     current_old_value = getattr(obj, elem)
                 look_for_expected_old_value = current_old_value != expected_old_value
@@ -644,15 +644,15 @@ class Delta:
                         transformed.extend(opcode.new_values)
                     elif opcode.tag == 'equal':
                         # Items are the same in both lists, so we add them to the result
-                        transformed.extend(obj[opcode.t1_from_index:opcode.t1_to_index])
+                        transformed.extend(obj[opcode.t1_from_index:opcode.t1_to_index])  # type: ignore
                 if is_obj_tuple:
-                    obj = tuple(obj)
+                    obj = tuple(obj)  # type: ignore
                     # Making sure that the object is re-instated inside the parent especially if it was immutable
                     # and we had to turn it into a mutable one. In such cases the object has a new id.
                     self._simple_set_elem_value(obj=parent, path_for_err_reporting=path, elem=parent_to_obj_elem,
                                                 value=obj, action=parent_to_obj_action)
                 else:
-                    obj[:] = transformed
+                    obj[:] = transformed  # type: ignore
 
 
 
@@ -745,7 +745,7 @@ class Delta:
         fixed_indexes = self.diff.get('iterable_items_added_at_indexes', dict_())
         remove_indexes = self.diff.get('iterable_items_removed_at_indexes', dict_())
         paths = SetOrdered(fixed_indexes.keys()) | SetOrdered(remove_indexes.keys())
-        for path in paths:
+        for path in paths:  # type: ignore
             # In the case of ignore_order reports, we are pointing to the container object.
             # Thus we add a [0] to the elements so we can get the required objects and discard what we don't need.
             elem_and_details = self._get_elements_and_details("{}[0]".format(path))
@@ -1021,7 +1021,7 @@ class Delta:
                     result['_iterable_opcodes'][path_str] = []
                 result['_iterable_opcodes'][path_str].append(
                     Opcode(
-                        tag=FLAT_DATA_ACTION_TO_OPCODE_TAG[action],
+                        tag=FLAT_DATA_ACTION_TO_OPCODE_TAG[action],  # type: ignore
                         t1_from_index=flat_dict.get('t1_from_index'),
                         t1_to_index=flat_dict.get('t1_to_index'),
                         t2_from_index=flat_dict.get('t2_from_index'),
@@ -1091,7 +1091,7 @@ class Delta:
         """
         return [
             i._asdict() for i in self.to_flat_rows(include_action_in_path=False, report_type_changes=True)
-        ]
+        ]  # type: ignore
 
     def to_flat_rows(self, include_action_in_path=False, report_type_changes=True) -> List[FlatDeltaRow]:
         """
@@ -1141,13 +1141,13 @@ class Delta:
                     for index, value in index_to_value.items():
                         path2 = path.copy()
                         if include_action_in_path:
-                            path2.append((index, 'GET'))
+                            path2.append((index, 'GET'))  # type: ignore
                         else:
                             path2.append(index)
                         if report_type_changes:
-                            row = FlatDeltaRow(path=path2, value=value, action=new_action, type=type(value))
+                            row = FlatDeltaRow(path=path2, value=value, action=new_action, type=type(value))  # type: ignore
                         else:
-                            row = FlatDeltaRow(path=path2, value=value, action=new_action)
+                            row = FlatDeltaRow(path=path2, value=value, action=new_action)  # type: ignore
                         result.append(row)
             elif action in {'set_item_added', 'set_item_removed'}:
                 for path, values in info.items():
@@ -1167,15 +1167,15 @@ class Delta:
                         value = value[new_key]
                     elif isinstance(value, (list, tuple)) and len(value) == 1:
                         value = value[0]
-                        path.append(0)
+                        path.append(0)  # type: ignore
                         action = 'iterable_item_added'
                     elif isinstance(value, set) and len(value) == 1:
                         value = value.pop()
                         action = 'set_item_added'
                     if report_type_changes:
-                        row = FlatDeltaRow(path=path, value=value, action=action, type=type(value))
+                        row = FlatDeltaRow(path=path, value=value, action=action, type=type(value))  # type: ignore
                     else:
-                        row = FlatDeltaRow(path=path, value=value, action=action)
+                        row = FlatDeltaRow(path=path, value=value, action=action)  # type: ignore
                     result.append(row)
             elif action in {
                 'dictionary_item_removed', 'iterable_item_added',

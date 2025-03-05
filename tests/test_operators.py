@@ -31,7 +31,7 @@ class TestOperators:
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
 
-            def give_up_diffing(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance) -> bool:
                 l2_distance = self._l2_distance(level.t1, level.t2)
                 if l2_distance > self.distance_threshold:
                     diff_instance.custom_report_result('distance_too_far', level, {
@@ -77,7 +77,7 @@ class TestOperators:
                     (c1["x"] - c2["x"]) ** 2 + (c1["y"] - c2["y"]) ** 2
                 )
 
-            def give_up_diffing(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance) -> bool:
                 l2_distance = self._l2_distance(level.t1, level.t2)
                 if l2_distance > self.distance_threshold:
                     diff_instance.custom_report_result('distance_too_far', level, {
@@ -122,7 +122,7 @@ class TestOperators:
             def __init__(self, regex_paths):
                 super().__init__(regex_paths)
 
-            def give_up_diffing(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance) -> bool:
                 if level.t1 == level.t2:
                     diff_instance.custom_report_result('unexpected:still', level, {
                         "old": level.t1,
@@ -154,9 +154,10 @@ class TestOperators:
 
         class ListMatchOperator(BaseOperator):
 
-            def give_up_diffing(self, level, diff_instance):
+            def give_up_diffing(self, level, diff_instance) -> bool:
                 if set(level.t1.dict['list']) == set(level.t2.dict['list']):
                     return True
+                return False
 
         ddiff = DeepDiff(custom1, custom2, custom_operators=[
             ListMatchOperator(types=[CustomClass])
@@ -260,6 +261,7 @@ class TestOperators:
             def match(self, level) -> bool:
                 if type(level.t1) in self.types:
                     return True
+                return False
 
             def give_up_diffing(self, level, diff_instance) -> bool:
                 relative = abs(abs(level.t1 - level.t2) / level.t1)

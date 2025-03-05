@@ -23,17 +23,17 @@ class CacheNode:
         self.nxt = nxt  # next CacheNode
 
     def free_myself(self):
-        if self.freq_node.cache_head == self.freq_node.cache_tail:
-            self.freq_node.cache_head = self.freq_node.cache_tail = None
-        elif self.freq_node.cache_head == self:
-            self.nxt.pre = None
-            self.freq_node.cache_head = self.nxt
-        elif self.freq_node.cache_tail == self:
-            self.pre.nxt = None
-            self.freq_node.cache_tail = self.pre
+        if self.freq_node.cache_head == self.freq_node.cache_tail:  # type: ignore
+            self.freq_node.cache_head = self.freq_node.cache_tail = None  # type: ignore
+        elif self.freq_node.cache_head == self:  # type: ignore
+            self.nxt.pre = None  # type: ignore
+            self.freq_node.cache_head = self.nxt  # type: ignore
+        elif self.freq_node.cache_tail == self:  # type: ignore
+            self.pre.nxt = None  # type: ignore
+            self.freq_node.cache_tail = self.pre  # type: ignore
         else:
-            self.pre.nxt = self.nxt
-            self.nxt.pre = self.pre
+            self.pre.nxt = self.nxt  # type: ignore
+            self.nxt.pre = self.pre  # type: ignore
 
         self.pre = None
         self.nxt = None
@@ -77,8 +77,8 @@ class FreqNode:
             return cache_head
         else:
             cache_head = self.cache_head
-            self.cache_head.nxt.pre = None
-            self.cache_head = self.cache_head.nxt
+            self.cache_head.nxt.pre = None  # type: ignore
+            self.cache_head = self.cache_head.nxt  # type: ignore
             return cache_head
 
     def append_cache_to_tail(self, cache_node):
@@ -89,7 +89,7 @@ class FreqNode:
         else:
             cache_node.pre = self.cache_tail
             cache_node.nxt = None
-            self.cache_tail.nxt = cache_node
+            self.cache_tail.nxt = cache_node  # type: ignore
             self.cache_tail = cache_node
 
     def insert_after_me(self, freq_node):
@@ -172,12 +172,12 @@ class LFUCache:
 
     def dump_cache(self):
         head_freq_node = self.freq_link_head
-        self.cache.pop(head_freq_node.cache_head.key)
-        head_freq_node.pop_head_cache()
+        self.cache.pop(head_freq_node.cache_head.key)  # type: ignore
+        head_freq_node.pop_head_cache()  # type: ignore
 
-        if head_freq_node.count_caches() == 0:
-            self.freq_link_head = head_freq_node.nxt
-            head_freq_node.remove()
+        if head_freq_node.count_caches() == 0:  # type: ignore
+            self.freq_link_head = head_freq_node.nxt  # type: ignore
+            head_freq_node.remove()  # type: ignore
 
     def create_cache_node(self, key, report_type, value):
         cache_node = CacheNode(

@@ -107,8 +107,8 @@ def prepare_string_for_hashing(
                 break
             except UnicodeDecodeError as er:
                 err = er
-        if not encoded:
-            obj_decoded = obj.decode('utf-8', errors='ignore')
+        if not encoded and err is not None:
+            obj_decoded = obj.decode('utf-8', errors='ignore')  # type: ignore
             start = max(err.start - 20, 0)
             start_prefix = ''
             if start > 0:
@@ -379,7 +379,7 @@ class DeepHash(Base):
                         skip = False
                         break
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):  # type: ignore
             skip = True
         elif self.exclude_types_tuple and isinstance(obj, self.exclude_types_tuple):
             skip = True
@@ -540,7 +540,7 @@ class DeepHash(Base):
         elif isinstance(obj, datetime.date):
             result = self._prep_date(obj)
 
-        elif isinstance(obj, numbers):
+        elif isinstance(obj, numbers):  # type: ignore
             result = self._prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
@@ -549,17 +549,17 @@ class DeepHash(Base):
         elif isinstance(obj, tuple):
             result, counts = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
 
-        elif (pandas and isinstance(obj, pandas.DataFrame)):
-            def gen():
-                yield ('dtype', obj.dtypes)
-                yield ('index', obj.index)
-                yield from obj.items()  # which contains (column name, series tuples)
+        elif (pandas and isinstance(obj, pandas.DataFrame)):  # type: ignore
+            def gen():  # type: ignore
+                yield ('dtype', obj.dtypes)  # type: ignore
+                yield ('index', obj.index)  # type: ignore
+                yield from obj.items()  # type: ignore  # which contains (column name, series tuples)
             result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
-        elif (polars and isinstance(obj, polars.DataFrame)):
+        elif (polars and isinstance(obj, polars.DataFrame)):  # type: ignore
             def gen():
-                yield from obj.columns
-                yield from list(obj.schema.items())
-                yield from obj.rows()
+                yield from obj.columns  # type: ignore
+                yield from list(obj.schema.items())  # type: ignore
+                yield from obj.rows()  # type: ignore
             result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):
