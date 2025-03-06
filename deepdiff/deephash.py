@@ -11,8 +11,10 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              convert_item_or_items_into_set_else_none, get_doc,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
-                             number_to_string, datetime_normalize, KEY_TO_VAL_STR, short_repr,
+                             number_to_string, datetime_normalize, KEY_TO_VAL_STR,
                              get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
+
+from deepdiff.summarize import summarize
 from deepdiff.base import Base
 
 try:
@@ -105,8 +107,8 @@ def prepare_string_for_hashing(
                 break
             except UnicodeDecodeError as er:
                 err = er
-        if not encoded:
-            obj_decoded = obj.decode('utf-8', errors='ignore')
+        if not encoded and err is not None:
+            obj_decoded = obj.decode('utf-8', errors='ignore')  # type: ignore
             start = max(err.start - 20, 0)
             start_prefix = ''
             if start > 0:
@@ -315,9 +317,10 @@ class DeepHash(Base):
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
-        return short_repr(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
+        return summarize(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
-    __str__ = __repr__
+    def __str__(self):
+        return str(self._get_objects_to_hashes_dict(extract_index=0))
 
     def __bool__(self):
         return bool(self.hashes)
@@ -376,7 +379,7 @@ class DeepHash(Base):
                         skip = False
                         break
         elif self.exclude_regex_paths and any(
-                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):
+                [exclude_regex_path.search(parent) for exclude_regex_path in self.exclude_regex_paths]):  # type: ignore
             skip = True
         elif self.exclude_types_tuple and isinstance(obj, self.exclude_types_tuple):
             skip = True
@@ -537,7 +540,7 @@ class DeepHash(Base):
         elif isinstance(obj, datetime.date):
             result = self._prep_date(obj)
 
-        elif isinstance(obj, numbers):
+        elif isinstance(obj, numbers):  # type: ignore
             result = self._prep_number(obj)
 
         elif isinstance(obj, MutableMapping):
@@ -546,17 +549,17 @@ class DeepHash(Base):
         elif isinstance(obj, tuple):
             result, counts = self._prep_tuple(obj=obj, parent=parent, parents_ids=parents_ids)
 
-        elif (pandas and isinstance(obj, pandas.DataFrame)):
-            def gen():
-                yield ('dtype', obj.dtypes)
-                yield ('index', obj.index)
-                yield from obj.items()  # which contains (column name, series tuples)
+        elif (pandas and isinstance(obj, pandas.DataFrame)):  # type: ignore
+            def gen():  # type: ignore
+                yield ('dtype', obj.dtypes)  # type: ignore
+                yield ('index', obj.index)  # type: ignore
+                yield from obj.items()  # type: ignore  # which contains (column name, series tuples)
             result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
-        elif (polars and isinstance(obj, polars.DataFrame)):
+        elif (polars and isinstance(obj, polars.DataFrame)):  # type: ignore
             def gen():
-                yield from obj.columns
-                yield from list(obj.schema.items())
-                yield from obj.rows()
+                yield from obj.columns  # type: ignore
+                yield from list(obj.schema.items())  # type: ignore
+                yield from obj.rows()  # type: ignore
             result, counts = self._prep_iterable(obj=gen(), parent=parent, parents_ids=parents_ids)
 
         elif isinstance(obj, Iterable):

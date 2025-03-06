@@ -31,6 +31,13 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 8-3-0
+--------------
+
+    - Fixed some static typing issues
+    - Added the summarize module for better repr of nested values
+
+
 DeepDiff 8-2-0
 --------------
 

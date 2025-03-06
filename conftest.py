@@ -46,6 +46,12 @@ def nested_a_result():
         return json.load(the_file)
 
 
+@pytest.fixture(scope='function')
+def compounds():
+    with open(os.path.join(FIXTURES_DIR, 'compounds.json')) as the_file:
+        return json.load(the_file)
+
+
 @pytest.fixture(scope='class')
 def nested_a_affected_paths():
     return {

@@ -28,6 +28,7 @@ from deepdiff.helper import (
     SetOrdered,
     pydantic_base_model_type,
     PydanticBaseModel,
+    NotPresent,
 )
 from deepdiff.model import DeltaResult
 
@@ -135,7 +136,7 @@ class SerializationMixin:
         """
         try:
             import jsonpickle
-            copied = self.copy()
+            copied = self.copy()  # type: ignore
             return jsonpickle.encode(copied)
         except ImportError:  # pragma: no cover. Json pickle is getting deprecated.
             logger.error('jsonpickle library needs to be installed in order to run to_json_pickle')  # pragma: no cover. Json pickle is getting deprecated.
@@ -209,8 +210,8 @@ class SerializationMixin:
             The options are the text or tree.
         """
 
-        view = view_override if view_override else self.view
-        return dict(self._get_view_results(view))
+        view = view_override if view_override else self.view  # type: ignore
+        return dict(self._get_view_results(view))  # type: ignore
 
     def _to_delta_dict(self, directed=True, report_repetition_required=True, always_include_values=False):
         """
@@ -235,12 +236,12 @@ class SerializationMixin:
         was set to be True in the diff object.
 
         """
-        if self.group_by is not None:
+        if self.group_by is not None:  # type: ignore
             raise ValueError(DELTA_ERROR_WHEN_GROUP_BY)
 
         if directed and not always_include_values:
-            _iterable_opcodes = {}
-            for path, op_codes in self._iterable_opcodes.items():
+            _iterable_opcodes = {}  # type: ignore
+            for path, op_codes in self._iterable_opcodes.items():  # type: ignore
                 _iterable_opcodes[path] = []
                 for op_code in op_codes:
                     new_op_code = Opcode(
@@ -253,29 +254,29 @@ class SerializationMixin:
                     )
                     _iterable_opcodes[path].append(new_op_code)
         else:
-            _iterable_opcodes = self._iterable_opcodes
+            _iterable_opcodes = self._iterable_opcodes  # type: ignore
 
         result = DeltaResult(
-            tree_results=self.tree,
-            ignore_order=self.ignore_order,
+            tree_results=self.tree,  # type: ignore
+            ignore_order=self.ignore_order,  # type: ignore
             always_include_values=always_include_values,
             _iterable_opcodes=_iterable_opcodes,
         )
         result.remove_empty_keys()
-        if report_repetition_required and self.ignore_order and not self.report_repetition:
+        if report_repetition_required and self.ignore_order and not self.report_repetition:  # type: ignore
             raise ValueError(DELTA_IGNORE_ORDER_NEEDS_REPETITION_REPORT)
         if directed:
             for report_key, report_value in result.items():
                 if isinstance(report_value, Mapping):
                     for path, value in report_value.items():
                         if isinstance(value, Mapping) and 'old_value' in value:
-                            del value['old_value']
-        if self._numpy_paths:
+                            del value['old_value']  # type: ignore
+        if self._numpy_paths:  # type: ignore
             # Note that keys that start with '_' are considered internal to DeepDiff
             # and will be omitted when counting distance. (Look inside the distance module.)
-            result['_numpy_paths'] = self._numpy_paths
+            result['_numpy_paths'] = self._numpy_paths  # type: ignore
 
-        if self.iterable_compare_func:
+        if self.iterable_compare_func:  # type: ignore
             result['_iterable_compare_func_was_used'] = True
 
         return deepcopy(dict(result))
@@ -298,9 +299,9 @@ class SerializationMixin:
         result = []
         if prefix is None:
             prefix = ''
-        keys = sorted(self.tree.keys())  # sorting keys to guarantee constant order across python versions.
+        keys = sorted(self.tree.keys())  # type: ignore # sorting keys to guarantee constant order across python versions.
         for key in keys:
-            for item_key in self.tree[key]:
+            for item_key in self.tree[key]:  # type: ignore
                 result += [pretty_print_diff(item_key)]
 
         if callable(prefix):
@@ -485,7 +486,7 @@ def load_path_content(path, file_type=None):
             content = pickle_load(content)
     elif file_type in {'csv', 'tsv'}:
         try:
-            import clevercsv
+            import clevercsv  # type: ignore
             content = clevercsv.read_dicts(path)
         except ImportError:  # pragma: no cover.
             import csv
@@ -536,7 +537,7 @@ def _save_content(content, path, file_type, keep_backup=True):
     if file_type == 'json':
         with open(path, 'w') as the_file:
             content = json_dumps(content)
-            the_file.write(content)
+            the_file.write(content)  # type: ignore
     elif file_type in {'yaml', 'yml'}:
         try:
             import yaml
@@ -556,7 +557,7 @@ def _save_content(content, path, file_type, keep_backup=True):
             content = pickle_dump(content, file_obj=the_file)
     elif file_type in {'csv', 'tsv'}:
         try:
-            import clevercsv
+            import clevercsv  # type: ignore
             dict_writer = clevercsv.DictWriter
         except ImportError:  # pragma: no cover.
             import csv
@@ -601,6 +602,7 @@ JSON_CONVERTOR = {
     np_ndarray: lambda x: x.tolist(),
     tuple: _serialize_tuple,
     Mapping: dict,
+    NotPresent: str,
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:
@@ -631,7 +633,7 @@ class JSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def object_hook(self, obj):  # type: ignore
         if 'old_type' in obj and 'new_type' in obj:
             for type_key in ('old_type', 'new_type'):
                 type_str = obj[type_key]
@@ -640,7 +642,13 @@ class JSONDecoder(json.JSONDecoder):
         return obj
 
 
-def json_dumps(item, default_mapping=None, force_use_builtin_json: bool=False, **kwargs):
+def json_dumps(
+    item,
+    default_mapping=None,
+    force_use_builtin_json: bool = False,
+    return_bytes: bool = False,
+    **kwargs,
+) -> Union[str, bytes]:
     """
     Dump json with extra details that are not normally json serializable
 
@@ -653,22 +661,29 @@ def json_dumps(item, default_mapping=None, force_use_builtin_json: bool=False, *
     """
     if orjson and not force_use_builtin_json:
         indent = kwargs.pop('indent', None)
+        kwargs['option'] = orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
         if indent:
-            kwargs['option'] = orjson.OPT_INDENT_2
+            kwargs['option'] |= orjson.OPT_INDENT_2
         if 'sort_keys' in kwargs:
             raise TypeError(
                 "orjson does not accept the sort_keys parameter. "
                 "If you need to pass sort_keys, set force_use_builtin_json=True "
                 "to use Python's built-in json library instead of orjson.")
-        return orjson.dumps(
-            item,
-            default=json_convertor_default(default_mapping=default_mapping),
-            **kwargs).decode(encoding='utf-8')
-    else:
-        return json.dumps(
+        result = orjson.dumps(
             item,
             default=json_convertor_default(default_mapping=default_mapping),
             **kwargs)
+        if return_bytes:
+            return result
+        return result.decode(encoding='utf-8')
+    else:
+        result = json.dumps(
+            item,
+            default=json_convertor_default(default_mapping=default_mapping),
+            **kwargs)
+        if return_bytes:
+            return result.encode(encoding='utf-8')
+        return result
 
 
 json_loads = partial(json.loads, cls=JSONDecoder)

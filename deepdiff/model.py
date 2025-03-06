@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from copy import copy
 from deepdiff.helper import (
-    RemapDict, strings, short_repr, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
+    RemapDict, strings, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_, SetOrdered)
 from deepdiff.path import stringify_element
 
@@ -62,24 +62,26 @@ class TreeResult(ResultDict):
 
         This function should only be run on the Tree Result.
         """
-        if self.get('iterable_item_added') and self.get('iterable_item_removed'):
-            added_paths = {i.path(): i for i in self['iterable_item_added']}
-            removed_paths = {i.path(): i for i in self['iterable_item_removed']}
+        iterable_item_added = self.get('iterable_item_added')
+        iterable_item_removed = self.get('iterable_item_removed')
+        if iterable_item_added is not None and iterable_item_removed is not None:
+            added_paths = {i.path(): i for i in iterable_item_added}
+            removed_paths = {i.path(): i for i in iterable_item_removed}
             mutual_paths = set(added_paths) & set(removed_paths)
 
-            if mutual_paths and 'values_changed' not in self:
+            if mutual_paths and 'values_changed' not in self or self['values_changed'] is None:
                 self['values_changed'] = SetOrdered()
             for path in mutual_paths:
                 level_before = removed_paths[path]
-                self['iterable_item_removed'].remove(level_before)
+                iterable_item_removed.remove(level_before)
                 level_after = added_paths[path]
-                self['iterable_item_added'].remove(level_after)
+                iterable_item_added.remove(level_after)
                 level_before.t2 = level_after.t2
-                self['values_changed'].add(level_before)
+                self['values_changed'].add(level_before)  # type: ignore
                 level_before.report_type = 'values_changed'
-        if 'iterable_item_removed' in self and not self['iterable_item_removed']:
+        if 'iterable_item_removed' in self and not iterable_item_removed:
             del self['iterable_item_removed']
-        if 'iterable_item_added' in self and not self['iterable_item_added']:
+        if 'iterable_item_added' in self and not iterable_item_added:
             del self['iterable_item_added']
 
     def __getitem__(self, item):
@@ -242,7 +244,7 @@ class TextResult(ResultDict):
                     item = "'%s'" % item
                 if is_dict:
                     if path not in set_item_info:
-                        set_item_info[path] = set()
+                        set_item_info[path] = set()  # type: ignore
                     set_item_info[path].add(item)
                 else:
                     set_item_info.add("{}[{}]".format(path, str(item)))
@@ -580,12 +582,14 @@ class DiffLevel:
 
     def __repr__(self):
         if self.verbose_level:
+            from deepdiff.summarize import summarize
+
             if self.additional:
-                additional_repr = short_repr(self.additional, max_length=35)
+                additional_repr = summarize(self.additional, max_length=35)
                 result = "<{} {}>".format(self.path(), additional_repr)
             else:
-                t1_repr = short_repr(self.t1)
-                t2_repr = short_repr(self.t2)
+                t1_repr = summarize(self.t1, max_length=35)
+                t2_repr = summarize(self.t2, max_length=35)
                 result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
         else:
             result = "<{}>".format(self.path())
@@ -617,12 +621,12 @@ class DiffLevel:
         :param param: A ChildRelationship subclass-dependent parameter describing how to get from parent to child,
                       e.g. the key in a dict
         """
-        if self.down.t1 is not notpresent:
+        if self.down.t1 is not notpresent:  # type: ignore
             self.t1_child_rel = ChildRelationship.create(
-                klass=klass, parent=self.t1, child=self.down.t1, param=param)
-        if self.down.t2 is not notpresent:
+                klass=klass, parent=self.t1, child=self.down.t1, param=param)  # type: ignore
+        if self.down.t2 is not notpresent:  # type: ignore
             self.t2_child_rel = ChildRelationship.create(
-                klass=klass, parent=self.t2, child=self.down.t2, param=param if param2 is None else param2)
+                klass=klass, parent=self.t2, child=self.down.t2, param=param if param2 is None else param2)  # type: ignore
 
     @property
     def all_up(self):
@@ -737,15 +741,15 @@ class DiffLevel:
                     result = None
                     break
             elif output_format == 'list':
-                result.append(next_rel.param)
+                result.append(next_rel.param)  # type: ignore
 
             # Prepare processing next level
             level = level.down
 
         if output_format == 'str':
             if get_parent_too:
-                self._path[cache_key] = (parent, param, result)
-                output = (self._format_result(root, parent), param, self._format_result(root, result))
+                self._path[cache_key] = (parent, param, result)  # type: ignore
+                output = (self._format_result(root, parent), param, self._format_result(root, result))  # type: ignore
             else:
                 self._path[cache_key] = result
                 output = self._format_result(root, result)
@@ -857,10 +861,12 @@ class ChildRelationship:
         self.param = param
 
     def __repr__(self):
+        from deepdiff.summarize import summarize
+
         name = "<{} parent:{}, child:{}, param:{}>"
-        parent = short_repr(self.parent)
-        child = short_repr(self.child)
-        param = short_repr(self.param)
+        parent = summarize(self.parent, max_length=35)
+        child = summarize(self.child, max_length=35)
+        param = summarize(self.param, max_length=15)
         return name.format(self.__class__.__name__, parent, child, param)
 
     def get_param_repr(self, force=None):
@@ -903,7 +909,7 @@ class ChildRelationship:
         elif isinstance(param, tuple):  # Currently only for numpy ndarrays
             result = ']['.join(map(repr, param))
         elif hasattr(param, '__dataclass_fields__'):
-            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]
+            attrs_to_values = [f"{key}={value}" for key, value in [(i, getattr(param, i)) for i in param.__dataclass_fields__]]  # type: ignore
             result = f"{param.__class__.__name__}({','.join(attrs_to_values)})"
         else:
             candidate = repr(param)

@@ -19,3 +19,4 @@ pytest-benchmark==5.1.0
 pandas==2.2.3
 polars==1.21.0
 setuptools==75.8.0
+types-setuptools==75.8.0

@@ -12,10 +12,7 @@ from typing import NamedTuple, Any, List, Optional
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
-# from orderly_set import OrderlySet as SetOrderedBase  # median: 0.806 s, some tests are failing
-# from orderly_set import SetOrdered as SetOrderedBase  # median 1.011 s, didn't work for tests
 from orderly_set import StableSetEq as SetOrderedBase  # median: 1.0867 s for cache test, 5.63s for all tests
-# from orderly_set import OrderedSet as SetOrderedBase  # median  1.1256 s for cache test, 5.63s for all tests
 from threading import Timer
 
 
@@ -91,14 +88,14 @@ numpy_complex_numbers = (
 )
 
 numpy_dtypes = set(numpy_numbers)
-numpy_dtypes.add(np_bool_)
+numpy_dtypes.add(np_bool_)  # type: ignore
 
 numpy_dtype_str_to_type = {
     item.__name__: item for item in numpy_dtypes
 }
 
 try:
-    from pydantic.main import BaseModel as PydanticBaseModel
+    from pydantic.main import BaseModel as PydanticBaseModel  # type: ignore
 except ImportError:
     PydanticBaseModel = pydantic_base_model_type
 
@@ -367,7 +364,7 @@ def get_type(obj):
     Get the type of object or if it is a class, return the class itself.
     """
     if isinstance(obj, np_ndarray):
-        return obj.dtype.type
+        return obj.dtype.type  # type: ignore
     return obj if type(obj) is type else type(obj)
 
 
@@ -409,7 +406,7 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
     except KeyError:
         raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
 
-    if not isinstance(number, numbers):
+    if not isinstance(number, numbers):  # type: ignore
         return number
     elif isinstance(number, Decimal):
         with localcontext() as ctx:
@@ -423,32 +420,31 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
                 # For example '999.99999999' will become '1000.000000' after quantize
                 ctx.prec += 1
                 number = number.quantize(Decimal('0.' + '0' * significant_digits))
-    elif isinstance(number, only_complex_number):
+    elif isinstance(number, only_complex_number):  # type: ignore
         # Case for complex numbers.
         number = number.__class__(
-            "{real}+{imag}j".format(
+            "{real}+{imag}j".format(  # type: ignore
                 real=number_to_string(
-                    number=number.real,
+                    number=number.real,  # type: ignore
                     significant_digits=significant_digits,
                     number_format_notation=number_format_notation
                 ),
                 imag=number_to_string(
-                    number=number.imag,
+                    number=number.imag,  # type: ignore
                     significant_digits=significant_digits,
                     number_format_notation=number_format_notation
                 )
-            )
+            )  # type: ignore
         )
     else:
-        # import pytest; pytest.set_trace()
-        number = round(number=number, ndigits=significant_digits)
+        number = round(number=number, ndigits=significant_digits)  # type: ignore
 
         if significant_digits == 0:
             number = int(number)
 
     if number == 0.0:
         # Special case for 0: "-0.xx" should compare equal to "0.xx"
-        number = abs(number)
+        number = abs(number)  # type: ignore
 
     # Cast number to string
     result = (using % significant_digits).format(number)
@@ -565,7 +561,8 @@ class RepeatedTimer:
 
     def stop(self):
         duration = self._get_duration_sec()
-        self._timer.cancel()
+        if self._timer is not None:
+            self._timer.cancel()
         self.is_running = False
         return duration
 
@@ -661,8 +658,8 @@ def cartesian_product_numpy(*arrays):
     https://stackoverflow.com/a/49445693/1497443
     """
     la = len(arrays)
-    dtype = np.result_type(*arrays)
-    arr = np.empty((la, *map(len, arrays)), dtype=dtype)
+    dtype = np.result_type(*arrays)  # type: ignore
+    arr = np.empty((la, *map(len, arrays)), dtype=dtype)  # type: ignore
     idx = slice(None), *repeat(None, la)
     for i, a in enumerate(arrays):
         arr[i, ...] = a[idx[:la - i]]
@@ -676,7 +673,7 @@ def diff_numpy_array(A, B):
     By Divakar
     https://stackoverflow.com/a/52417967/1497443
     """
-    return A[~np.isin(A, B)]
+    return A[~np.isin(A, B)]  # type: ignore
 
 
 PYTHON_TYPE_TO_NUMPY_TYPE = {
@@ -754,7 +751,7 @@ class OpcodeTag(EnumBase):
     insert = 'insert'
     delete = 'delete'
     equal = 'equal'
-    replace = 'replace'
+    replace = 'replace'  # type: ignore
     # swapped = 'swapped'  # in the future we should support reporting of items swapped with each other
 
 
