@@ -1,3 +1,4 @@
+from copy import deepcopy
 from deepdiff.summarize import summarize, _truncate
 
 
@@ -105,18 +106,22 @@ class TestSummarize:
                 }
             ]
         }
-        summary = summarize(data, max_length=200)
+        data_copy = deepcopy(data)
+        summary = summarize(data_copy, max_length=200)
         assert len(summary) <= 200
         # Check that some expected keys are in the summary
         assert '"RecordType"' in summary
         assert '"RecordNumber"' in summary
         assert '"RecordTitle"' in summary
         assert '{"RecordType":,"RecordNumber":,"RecordTitle":","Section":[{"TOCHeading":","Description":"St...d","Section":[{"TOCHeading":","Description":"A t,"DisplayControls":{"Information":[{}]},...]},...]}' == summary
+        assert data_copy == data, "We should not have modified the original data"
 
     def test_nested_structure_summary2(self, compounds):
         summary = summarize(compounds, max_length=200)
         assert len(summary) <= 200
+        data_copy = deepcopy(compounds)
         assert '{"RecordType":,"RecordNumber":,"RecordTitle":,"Section":[{"TOCHeading":,"Description":"Stru,"Section":[{"TOCHeading":"2D S,"DisplayControls":{}},...]},...],"Reference":[{},...]}' == summary
+        assert data_copy == compounds, "We should not have modified the original data"
 
     def test_list_summary(self):
         data = [1, 2, 3, 4]
