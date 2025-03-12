@@ -12,7 +12,7 @@ import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
@@ -131,7 +131,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  encodings: Optional[List[str]]=None,
                  exclude_obj_callback: Optional[Callable]=None,
                  exclude_obj_callback_strict: Optional[Callable]=None,
-                 exclude_paths: Union[str, List[str], None]=None,
+                 exclude_paths: Union[str, List[str], Set[str], FrozenSet[str], None]=None,
                  exclude_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
                  exclude_types: Optional[List[Any]]=None,
                  get_deep_distance: bool=False,

@@ -785,6 +785,7 @@ class FlatDataAction(EnumBase):
     attribute_added = 'attribute_added'
     unordered_iterable_item_added = 'unordered_iterable_item_added'
     unordered_iterable_item_removed = 'unordered_iterable_item_removed'
+    initiated = "initiated"
 
 
 OPCODE_TAG_TO_FLAT_DATA_ACTION = {
@@ -797,7 +798,7 @@ OPCODE_TAG_TO_FLAT_DATA_ACTION = {
 FLAT_DATA_ACTION_TO_OPCODE_TAG = {v: i for i, v in OPCODE_TAG_TO_FLAT_DATA_ACTION.items()}
 
 
-UnkownValueCode = 'unknown___'
+UnkownValueCode: str = 'unknown___'
 
 
 class FlatDeltaRow(NamedTuple):
