@@ -202,7 +202,7 @@ class SerializationMixin:
             **kwargs,
         )
 
-    def to_dict(self, view_override=None):
+    def to_dict(self, view_override: Optional[str]=None) -> dict:
         """
         convert the result to a python dictionary. You can override the view type by passing view_override.
 
@@ -216,7 +216,12 @@ class SerializationMixin:
         view = view_override if view_override else self.view  # type: ignore
         return dict(self._get_view_results(view))  # type: ignore
 
-    def _to_delta_dict(self, directed=True, report_repetition_required=True, always_include_values=False):
+    def _to_delta_dict(
+        self,
+        directed: bool = True,
+        report_repetition_required: bool = True,
+        always_include_values: bool = False,
+    ) -> dict:
         """
         Dump to a dictionary suitable for delta usage.
         Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
