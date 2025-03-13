@@ -8,7 +8,7 @@ import warnings
 import string
 import time
 import enum
-from typing import NamedTuple, Any, List, Optional, TypeAlias
+from typing import NamedTuple, Any, List, Optional
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
@@ -817,7 +817,7 @@ class FlatDeltaRow(NamedTuple):
     __repr__ = __str__ = named_tuple_repr
 
 
-JSON: TypeAlias = dict[str, str] | list[str] | list[int] | dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+JSON = dict[str, str] | list[str] | list[int] | dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
 
 
 class SummaryNodeType(EnumBase):
