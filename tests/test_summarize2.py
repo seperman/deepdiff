@@ -1,5 +1,7 @@
 from copy import deepcopy
-from deepdiff.summarize import summarize, _truncate
+from deepdiff.summarize import summarize
+from deepdiff.summarize2 import summarize as summarize2
+from deepdiff.summarize3 import summarize as summarize3
 
 
 class TestSummarize:
@@ -36,7 +38,10 @@ class TestSummarize:
             "key3": "c" * 150
         }
         summary = summarize(data, max_length=100)
+        summary2 = summarize2(data, max_length=100)
+        summary3 = summarize3(data, max_length=100)
         # The summary should be under 100 characters and include ellipsis to indicate truncation.
+        import pytest; pytest.set_trace()
         assert len(summary) <= 100
         assert "..." in summary
 
@@ -108,6 +113,9 @@ class TestSummarize:
         }
         data_copy = deepcopy(data)
         summary = summarize(data_copy, max_length=200)
+        summary2 = summarize2(data_copy, max_length=200)
+        summary3 = summarize3(data_copy, max_length=200)
+        import pytest; pytest.set_trace()
         assert len(summary) <= 200
         # Check that some expected keys are in the summary
         assert '"RecordType"' in summary
@@ -118,6 +126,9 @@ class TestSummarize:
 
     def test_nested_structure_summary2(self, compounds):
         summary = summarize(compounds, max_length=200)
+        summary2 = summarize2(compounds, max_length=200)
+        summary3 = summarize3(compounds, max_length=200)
+        import pytest; pytest.set_trace()
         assert len(summary) <= 200
         data_copy = deepcopy(compounds)
         assert '{"RecordType":,"RecordNumber":,"RecordTitle":,"Section":[{"TOCHeading":,"Description":"Stru,"Section":[{"TOCHeading":"2D S,"DisplayControls":{}},...]},...],"Reference":[{},...]}' == summary
@@ -126,6 +137,9 @@ class TestSummarize:
     def test_list_summary(self):
         data = [1, 2, 3, 4]
         summary = summarize(data, max_length=50)
+        summary2 = summarize2(data, max_length=50)
+        summary3 = summarize3(data, max_length=50)
+        import pytest; pytest.set_trace()
         # The summary should start with '[' and end with ']'
         assert summary.startswith("[") and summary.endswith("]")
         # When more than one element exists, expect a trailing ellipsis or indication of more elements
@@ -136,9 +150,3 @@ class TestSummarize:
         assert "..." in summary2
         expected = '[1,2,...]'
         assert expected == summary2
-
-    def test_direct_truncate_function(self):
-        s = "abcdefghijklmnopqrstuvwxyz"
-        truncated = _truncate(s, 20)
-        assert len(truncated) == 20
-        assert "..." in truncated

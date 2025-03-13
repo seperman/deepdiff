@@ -22,6 +22,7 @@ class JSONNode:
         self.key = key
         self.children_list: list[JSONNode] = []
         self.children_dict: list[tuple[Any, JSONNode]] = []
+        self.value: str = ""
         if isinstance(data, dict):
             self.type = "dict"
             # Preserve insertion order: list of (key, child) pairs.
@@ -39,6 +40,15 @@ class JSONNode:
             except Exception:
                 self.value = str(data)
     
+    def __repr__(self) -> str:
+        if self.children_list:
+            return "List-[" + ",".join([str(i) for i in self.children_list]) + "]"
+        if self.children_dict:
+            return "Dict-[" + ",".join([f"{i}:{v}" for i, v in self.children_dict]) + "]"
+        return self.value
+
+    __str__ = __repr__
+
     def full_repr(self) -> str:
         """Return the full minimized JSON representation (without trimming) for this node."""
         if self.type == "primitive":
@@ -72,7 +82,7 @@ class JSONNode:
             return self._summarize_dict(budget)
         elif self.type == "list":
             return self._summarize_list(budget)
-        return self.value
+        return str(self.value)
     
     def _summarize_dict(self, budget) -> str:
         # If the dict is empty, return {}
@@ -140,12 +150,21 @@ class JSONNode:
             return full_repr
         # For lists, show only the first element and an omission indicator if more elements exist.
         suffix = ",..." if len(self.children_list) > 1 else ""
+
         inner_budget = budget - 2 - len(suffix)  # subtract brackets and suffix
-        first_summary = self.children_list[0]._summarize(inner_budget)
-        candidate = "[" + first_summary + suffix + "]"
-        if len(candidate) <= budget:
-            return candidate
-        return _truncate(candidate, budget)
+        budget_per_element: int =  min(inner_budget, max(4, inner_budget // len(self.children_list)))
+        max_element_count: int = inner_budget // budget_per_element
+        element_summaries: list[str] = []
+        for element in self.children_list[:max_element_count]:
+            element_summaries.append(element._summarize(budget_per_element))
+        # first_summary = self.children_list[0]._summarize(budget_per_element)
+        joined_elements = ",".join(element_summaries)
+        joined_elements = joined_elements.rstrip(".")
+        joined_elements = joined_elements[:inner_budget]
+        return f"[{joined_elements}{suffix}]"
+        # if len(candidate) <= budget:
+        #     return candidate
+        # return _truncate(candidate, budget)
 
 
 def summarize(data, max_length=200):

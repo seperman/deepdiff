@@ -815,3 +815,6 @@ class FlatDeltaRow(NamedTuple):
     t2_to_index: Optional[int] = None
 
     __repr__ = __str__ = named_tuple_repr
+
+
+type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
