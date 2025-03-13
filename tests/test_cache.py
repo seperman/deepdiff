@@ -37,26 +37,25 @@ class TestCache:
                         cache_size=500, cache_tuning_sample_size=500,
                         cutoff_intersection_for_pairs=1)
 
-        # stats = diff.get_stats()
-        # # Somehow just in python 3.5 the cache stats are different. Weird.
-        # if py_current_version == Decimal('3.5'):
-        #     expected_stats = {
-        #         'PASSES COUNT': 3981,
-        #         'DIFF COUNT': 19586,
-        #         'DISTANCE CACHE HIT COUNT': 11925,
-        #         'MAX PASS LIMIT REACHED': False,
-        #         'MAX DIFF LIMIT REACHED': False
-        #     }
-        # else:
-        #     expected_stats = {
-        #         'PASSES COUNT': 3960,
-        #         'DIFF COUNT': 19469,
-        #         'DISTANCE CACHE HIT COUNT': 11847,
-        #         'MAX PASS LIMIT REACHED': False,
-        #         'MAX DIFF LIMIT REACHED': False
-        #     }
-        # assert expected_stats == stats
-        import pytest; pytest.set_trace()
+        stats = diff.get_stats()
+        # Somehow just in python 3.5 the cache stats are different. Weird.
+        if py_current_version == Decimal('3.5'):
+            expected_stats = {
+                'PASSES COUNT': 3981,
+                'DIFF COUNT': 19586,
+                'DISTANCE CACHE HIT COUNT': 11925,
+                'MAX PASS LIMIT REACHED': False,
+                'MAX DIFF LIMIT REACHED': False
+            }
+        else:
+            expected_stats = {
+                'PASSES COUNT': 3960,
+                'DIFF COUNT': 19469,
+                'DISTANCE CACHE HIT COUNT': 11847,
+                'MAX PASS LIMIT REACHED': False,
+                'MAX DIFF LIMIT REACHED': False
+            }
+        assert expected_stats == stats
         assert nested_a_result == diff
         diff_of_diff = DeepDiff(nested_a_result, diff.to_dict(), ignore_order=False)
         assert not diff_of_diff
