@@ -1,5 +1,6 @@
 import math
 import datetime
+from deepdiff.base import BaseProtocol
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
@@ -11,7 +12,9 @@ from collections.abc import Mapping, Iterable
 DISTANCE_CALCS_NEEDS_CACHE = "Distance calculation can not happen once the cache is purged. Try with _cache='keep'"
 
 
-class DistanceMixin:
+
+
+class DistanceMixin(BaseProtocol):
 
     def _get_rough_distance(self):
         """

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-import inspect
+import pytz
 import logging
 import datetime
+from typing import Union
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
@@ -14,7 +15,6 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR,
                              get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
 
-from deepdiff.summarize import summarize
 from deepdiff.base import Base
 
 try:
@@ -165,6 +165,7 @@ class DeepHash(Base):
                  encodings=None,
                  ignore_encoding_errors=False,
                  ignore_iterable_order=True,
+                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -173,7 +174,7 @@ class DeepHash(Base):
                  "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func, ignore_private_variables, parent, use_enum_value "
+                 "number_to_string_func, ignore_private_variables, parent, use_enum_value, default_timezone "
                  "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
             self.hashes = hashes
@@ -190,6 +191,7 @@ class DeepHash(Base):
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED_KEY] = []
         self.use_enum_value = use_enum_value
+        self.default_timezone = default_timezone
 
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.truncate_datetime = get_truncate_datetime(truncate_datetime)
@@ -317,6 +319,7 @@ class DeepHash(Base):
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
+        from deepdiff.summarize import summarize
         return summarize(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
     def __str__(self):
@@ -349,6 +352,7 @@ class DeepHash(Base):
         if hasattr(obj, "__slots__"):
             obj_to_dict_strategies.append(lambda o: {i: getattr(o, i) for i in o.__slots__})
         else:
+            import inspect
             obj_to_dict_strategies.append(lambda o: dict(inspect.getmembers(o, lambda m: not inspect.isroutine(m))))
 
         for get_dict in obj_to_dict_strategies:
@@ -478,7 +482,7 @@ class DeepHash(Base):
 
     def _prep_datetime(self, obj):
         type_ = 'datetime'
-        obj = datetime_normalize(self.truncate_datetime, obj)
+        obj = datetime_normalize(self.truncate_datetime, obj, default_timezone=self.default_timezone)
         return KEY_TO_VAL_STR.format(type_, obj)
 
     def _prep_date(self, obj):

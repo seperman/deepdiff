@@ -296,4 +296,28 @@ Example of using group_by_sort_key
                                                        'old_value': 'Blue'}}}
 
 
+.. _default_timezone_label:
+
+Default Time Zone
+-----------------
+
+default_timezone defines the default timezone. If a datetime is timezone naive, which means it doesn't have a timezone, we assume the datetime is in this timezone. Also any datetime that has a timezone will be converted to this timezone so the datetimes can be compared properly all in the same timezone. Note that Python's default behavior assumes the default timezone is your local timezone. DeepDiff's default is UTC, not your local time zone.
+
+
+Note that if we change the default_timezone, the output timezone changes accordingly
+    >>> from deepdiff import DeepDiff
+    >>> import pytz
+    >>> from datetime import date, datetime, time, timezone
+    >>> dt_utc = datetime(2025, 2, 3, 12, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+    >>> dt_utc2 = datetime(2025, 2, 3, 11, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+    >>> dt_ny = dt_utc.astimezone(pytz.timezone('America/New_York'))
+    >>> dt_ny2 = dt_utc2.astimezone(pytz.timezone('America/New_York'))
+    >>> diff = DeepDiff(dt_ny, dt_ny2)
+    >>> diff
+    {'values_changed': {'root': {'new_value': datetime.datetime(2025, 2, 3, 11, 0, tzinfo=datetime.timezone.utc), 'old_value': datetime.datetime(2025, 2, 3, 12, 0, tzinfo=datetime.timezone.utc)}}}
+    >>> diff2 = DeepDiff(dt_ny, dt_ny2, default_timezone=pytz.timezone('America/New_York'))
+    >>> diff2
+    {'values_changed': {'root': {'new_value': datetime.datetime(2025, 2, 3, 6, 0, tzinfo=<DstTzInfo 'America/New_York' EST-1 day, 19:00:00 STD>), 'old_value': datetime.datetime(2025, 2, 3, 7, 0, tzinfo=<DstTzInfo 'America/New_York' EST-1 day, 19:00:00 STD>)}}}
+
+
 Back to :doc:`/index`

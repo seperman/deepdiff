@@ -257,7 +257,7 @@ class TestDiffLevel:
             item_repr = repr(self.lowest)
         finally:
             self.lowest.verbose_level = level
-        assert item_repr == '<root[1337].a t1:"very long text here, much lon....", t2:313>'
+        assert item_repr == '<root[1337].a t1:"very long text here, much long...e.", t2:313>'
 
     def test_repr_very_long(self):
         level = self.lowest.verbose_level
@@ -266,7 +266,7 @@ class TestDiffLevel:
             item_repr = repr(self.lowest)
         finally:
             self.lowest.verbose_level = level
-        assert item_repr == '<root[1337].a t1:"very long text here, much lon....", t2:313>'
+        assert item_repr == '<root[1337].a t1:"very long text here, much long...e.", t2:313>'
 
     def test_repetition_attribute_and_repr(self):
         t1 = [1, 1]
@@ -295,5 +295,5 @@ class TestChildRelationship:
             child="this child",
             param="some param")
         rel_repr = repr(rel)
-        expected = '<WorkingChildRelationship parent:"that parent who has a long pa....", child:"this child", param:"some param">'
+        expected = '<WorkingChildRelationship parent:"that parent who has a long pat...d.", child:"this child", param:"some param">'
         assert rel_repr == expected
