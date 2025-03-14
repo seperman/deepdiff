@@ -1,5 +1,5 @@
 import copy
-
+import datetime
 import pytest
 import os
 import io
@@ -1506,6 +1506,7 @@ class TestDeltaOther:
             'encodings': None,
             'ignore_encoding_errors': False,
             'iterable_compare_func': None,
+            'default_timezone': datetime.timezone.utc,
         }
 
         expected = {'iterable_items_added_at_indexes': {'root': {1: 1, 2: 1, 3: 1}}, 'iterable_items_removed_at_indexes': {'root': {1: 2, 2: 2}}}

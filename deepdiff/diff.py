@@ -5,6 +5,7 @@
 # You might need to run it many times since dictionaries come in different orders
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
+import pytz
 import difflib
 import logging
 import types
@@ -110,6 +111,7 @@ DEEPHASH_PARAM_KEYS = (
     'ignore_private_variables',
     'encodings',
     'ignore_encoding_errors',
+    'default_timezone',
 )
 
 
@@ -170,6 +172,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  verbose_level: int=1,
                  view: str=TEXT_VIEW,
                  zip_ordered_iterables: bool=False,
+                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
                  _parameters=None,
                  _shared_parameters=None,
                  **kwargs):
@@ -184,7 +187,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, "
-                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, "
+                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, default_timezone "
                 "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, use_log_scale, log_scale_similarity_threshold "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
@@ -205,6 +208,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.use_enum_value = use_enum_value
             self.log_scale_similarity_threshold = log_scale_similarity_threshold
             self.use_log_scale = use_log_scale
+            self.default_timezone = default_timezone
             self.threshold_to_diff_deeper = threshold_to_diff_deeper
             self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -1490,8 +1494,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_datetime(self, level, local_tree=None):
         """Diff DateTimes"""
-        level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
-        level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+        level.t1 = datetime_normalize(self.truncate_datetime, level.t1, default_timezone=self.default_timezone)
+        level.t2 = datetime_normalize(self.truncate_datetime, level.t2, default_timezone=self.default_timezone)
 
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)
@@ -1499,8 +1503,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def _diff_time(self, level, local_tree=None):
         """Diff DateTimes"""
         if self.truncate_datetime:
-            level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
-            level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+            level.t1 = datetime_normalize(self.truncate_datetime, level.t1, default_timezone=self.default_timezone)
+            level.t2 = datetime_normalize(self.truncate_datetime, level.t2, default_timezone=self.default_timezone)
 
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)
