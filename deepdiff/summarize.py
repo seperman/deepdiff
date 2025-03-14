@@ -1,3 +1,4 @@
+from typing import Tuple
 from deepdiff.helper import JSON, SummaryNodeType
 from deepdiff.serialization import json_dumps
 
@@ -56,7 +57,7 @@ def calculate_weights(node):
 # (Implementing directly the balanced summarization algorithm as above)
 
 # Balanced algorithm (simplified version):
-def shrink_tree_balanced(node_structure, max_weight: int, balance_threshold: float) -> tuple[JSON, float]:
+def shrink_tree_balanced(node_structure, max_weight: int, balance_threshold: float) -> Tuple[JSON, float]:
     node_type, node_info = node_structure
 
     if node_type is SummaryNodeType.leaf:
