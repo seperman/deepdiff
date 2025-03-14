@@ -154,7 +154,7 @@ Q: Why my datetimes are reported in UTC?
 **Answer**
 
 DeepDiff converts all datetimes into UTC. If a datetime is timezone naive, we assume it is in UTC too.
-That is different than what Python does. Python assumes your timezone naive datetime is in your local timezone.
+That is different than what Python does. Python assumes your timezone naive datetime is in your local timezone. However, you can override it to any other time zone such as your :ref:`default_timezone_label`.
 
     >>> from deepdiff import DeepDiff
     >>> from datetime import datetime, timezone
@@ -170,6 +170,7 @@ That is different than what Python does. Python assumes your timezone naive date
     {}
     >>> d1 == d3
     False
+
 
 ---------
 

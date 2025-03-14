@@ -31,6 +31,14 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 8-4-0
+--------------
+
+    - default_timezone can be passed now to set your default timezone to something other than UTC.
+    - New summarization algorithm that produces valid json
+    - Better type hint support
+
+
 DeepDiff 8-3-0
 --------------
 
