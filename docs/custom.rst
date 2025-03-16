@@ -180,14 +180,16 @@ Define A Custom Operator
 
 To define an custom operator, you just need to inherit *BaseOperator* or *BaseOperatorPlus*.
 
-*BaseOperatorPlus* is our new base operator that can be subclassed and provides the structure to build any custom operator.
-*BaseOperator* is our older base operator that was designed mainly for simple string based regex comparison.
+    - *BaseOperatorPlus* is our new base operator that can be subclassed and provides the structure to build any custom operator.
+    - *BaseOperator* is our older base class for creating custom operators. It was designed mainly for simple string based regex comparison.
+
 
 Base Operator Plus
-------------------
+..................
 
 *BaseOperatorPlus* is our new base operator that can be subclassed and provides the structure to build any custom operator.
 
+.. code-block:: python
 
     class BaseOperatorPlus(metaclass=ABCMeta):
 
@@ -216,74 +218,8 @@ Base Operator Plus
             pass
 
 
-**Example 1: We don't care about the exact GUID values. As long as pairs of strings match GUID regex, we want them to be considered as equals
-    >>> import re
-    ... from typing import Any
-    ... from deepdiff import DeepDiff
-    ... from deepdiff.operator import BaseOperatorPlus
-    ...
-    ...
-    ...
-    ... d1 = {
-    ...     "Name": "SUB_OBJECT_FILES",
-    ...     "Values": {
-    ...         "Value": [
-    ...             "{f254498b-b752-4f35-bef5-6f1844b61eb7}",
-    ...             "{7fb2a550-1849-45c0-b273-9aa5e4eb9f2b}",
-    ...             "{a9cbecc0-21dc-49ce-8b2c-d36352dae139}"
-    ...         ]
-    ...     }
-    ... }
-    ...
-    ... d2 = {
-    ...     "Name": "SUB_OBJECT_FILES",
-    ...     "Values": {
-    ...         "Value": [
-    ...             "{e5d18917-1a2c-4abe-b601-8ec002629953}",
-    ...             "{ea71ba1f-1339-4fae-bc28-a9ce9b8a8c67}",
-    ...             "{66bb6192-9cd2-4074-8be1-f2ac52877c70}",
-    ...         ]
-    ...     }
-    ... }
-    ...
-    ...
-    ...
-    ... class RemoveGUIDsOperator(BaseOperatorPlus):
-    ...     _pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
-    ...     _substitute = "guid"
-    ...
-    ...     def match(self, level) -> bool:
-    ...         return isinstance(level.t1, str) and isinstance(level.t2, str)
-    ...
-    ...     @classmethod
-    ...     def _remove_pattern(cls, t: str):
-    ...         return re.sub(cls._pattern, cls._substitute, t)
-    ...
-    ...     def give_up_diffing(self, level, diff_instance):
-    ...         t1 = self._remove_pattern(level.t1)
-    ...         t2 = self._remove_pattern(level.t2)
-    ...         return t1 == t2
-    ...
-    ...     def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
-    ...         """
-    ...         Used for ignore_order=True
-    ...         """
-    ...         if isinstance(obj, str):
-    ...             return self._remove_pattern(obj)
-    ...         return obj
-    ...
-    ...
-    ... operator = RemoveGUIDsOperator()
-    ...
-    ... diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
-    ... diff1
-    ...
-    ...
-    ... diff2 = DeepDiff(d1, d2, ignore_order=True, custom_operators=[operator], log_stacktrace=True)
-    ... diff2
-    ...
-    ...
-    {}
+**Example 1: We don't care about the exact GUID values. As long as pairs of strings match GUID regex, we want them to be considered as equals**
+
     >>> import re
     ... from typing import Any
     ... from deepdiff import DeepDiff
@@ -340,24 +276,22 @@ Base Operator Plus
     ...
     ... operator = RemoveGUIDsOperator()
     ...
-    ... diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
+    >>> diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
     ... diff1
-    ...
     {}
     >>> diff2 = DeepDiff(d1, d2, ignore_order=True, custom_operators=[operator], log_stacktrace=True)
     ... diff2
-    ...
-    ...
     {}
-
 
 
 
 Base Operator
--------------
+.............
 
-*BaseOperator* is our older base operator that was designed mainly for simple string based regex comparison.
+*BaseOperator* is our older base class for creating custom operators. It was designed mainly for simple string based regex comparison.
 
+
+.. code-block:: python
 
     class BaseOperator:
 
