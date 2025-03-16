@@ -1132,11 +1132,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             apply_hash=True,
             **self.deephash_parameters,
         )
-        # try:
-        # except Exception as e:  # pragma: no cover
-        #     import pytest; pytest.set_trace()
-        #     self.log_err("Can not produce a hash for iterable %s. %s" %
-        #                  (level.path(), e))
         return local_hashes
 
     @staticmethod

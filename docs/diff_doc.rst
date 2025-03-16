@@ -157,6 +157,9 @@ log_frequency_in_sec: Integer, default = 0
 log_scale_similarity_threshold: float, default = 0.1
     :ref:`use_log_scale_label` along with :ref:`log_scale_similarity_threshold_label` can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
 
+log_stacktrace: Boolean, default = False
+    If True, we log the stacktrace when logging errors. Otherwise we only log the error message.
+
 max_passes: Integer, default = 10000000
     :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.
 
