@@ -2,7 +2,7 @@
 import pytz
 import logging
 import datetime
-from typing import Union
+from typing import Union, Optional, Any, List
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
@@ -141,31 +141,32 @@ class DeepHash(Base):
     def __init__(self,
                  obj,
                  *,
-                 hashes=None,
-                 exclude_types=None,
-                 exclude_paths=None,
-                 include_paths=None,
-                 exclude_regex_paths=None,
-                 hasher=None,
-                 ignore_repetition=True,
-                 significant_digits=None,
-                 truncate_datetime=None,
-                 number_format_notation="f",
                  apply_hash=True,
-                 ignore_type_in_groups=None,
-                 ignore_string_type_changes=False,
-                 ignore_numeric_type_changes=False,
-                 ignore_type_subclasses=False,
-                 ignore_string_case=False,
-                 use_enum_value=False,
-                 exclude_obj_callback=None,
-                 number_to_string_func=None,
-                 ignore_private_variables=True,
-                 parent="root",
+                 custom_operators: Optional[List[Any]] =None,
+                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
                  encodings=None,
+                 exclude_obj_callback=None,
+                 exclude_paths=None,
+                 exclude_regex_paths=None,
+                 exclude_types=None,
+                 hasher=None,
+                 hashes=None,
                  ignore_encoding_errors=False,
                  ignore_iterable_order=True,
-                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
+                 ignore_numeric_type_changes=False,
+                 ignore_private_variables=True,
+                 ignore_repetition=True,
+                 ignore_string_case=False,
+                 ignore_string_type_changes=False,
+                 ignore_type_in_groups=None,
+                 ignore_type_subclasses=False,
+                 include_paths=None,
+                 number_format_notation="f",
+                 number_to_string_func=None,
+                 parent="root",
+                 significant_digits=None,
+                 truncate_datetime=None,
+                 use_enum_value=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -192,7 +193,6 @@ class DeepHash(Base):
         self.hashes[UNPROCESSED_KEY] = []
         self.use_enum_value = use_enum_value
         self.default_timezone = default_timezone
-
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.truncate_datetime = get_truncate_datetime(truncate_datetime)
         self.number_format_notation = number_format_notation
@@ -216,6 +216,7 @@ class DeepHash(Base):
         self.encodings = encodings
         self.ignore_encoding_errors = ignore_encoding_errors
         self.ignore_iterable_order = ignore_iterable_order
+        self.custom_operators = custom_operators
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
@@ -505,6 +506,13 @@ class DeepHash(Base):
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main hash method"""
         counts = 1
+        if self.custom_operators is not None:
+            for operator in self.custom_operators:
+                func = getattr(operator, 'normalize_value_for_hashing', None)
+                if func is None:
+                    raise NotImplementedError(f"{operator.__class__.__name__} needs to define a normalize_value_for_hashing method to be compatible with ignore_order=True or iterable_compare_func.".format(operator))
+                else:
+                    obj = func(parent, obj)
 
         if isinstance(obj, booleanTypes):
             obj = self._prep_bool(obj)

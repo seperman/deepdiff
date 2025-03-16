@@ -178,46 +178,214 @@ Define A Custom Operator
 ------------------------
 
 
-To define an custom operator, you just need to inherit a *BaseOperator* and
+To define an custom operator, you just need to inherit *BaseOperator* or *BaseOperatorPlus*.
 
-    * implement a give_up_diffing method
-        * give_up_diffing(level: DiffLevel, diff_instance: DeepDiff) -> boolean
+*BaseOperatorPlus* is our new base operator that can be subclassed and provides the structure to build any custom operator.
+*BaseOperator* is our older base operator that was designed mainly for simple string based regex comparison.
 
-          If it returns True, then we will give up diffing the two objects.
-          You may or may not use the diff_instance.custom_report_result within this function
-          to report any diff. If you decide not to report anything, and this
-          function returns True, then the objects are basically skipped in the results.
+Base Operator Plus
+------------------
 
-    * pass regex_paths and types that will be used to decide if the objects are matched to the init method.
-      once the objects are matched, then the give_up_diffing will be run to compare them.
-
-In fact you don't even have to subclass the base operator.
-
-This is all that is expected from the operator, a match function that takes the level and a give_up_diffing function that takes the level and diff_instance.
+*BaseOperatorPlus* is our new base operator that can be subclassed and provides the structure to build any custom operator.
 
 
-.. code-block:: python
+    class BaseOperatorPlus(metaclass=ABCMeta):
 
-    def _use_custom_operator(self, level):
-        """
-        For each level we check all custom operators.
-        If any one of them was a match for the level, we run the diff of the operator.
-        If the operator returned True, the operator must have decided these objects should not
-        be compared anymore. It might have already reported their results.
-        In that case the report will appear in the final results of this diff.
-        Otherwise basically the 2 objects in the level are being omitted from the results.
-        """
+        @abstractmethod
+        def match(self, level) -> bool:
+            """
+            Given a level which includes t1 and t2 in the tree view, is this operator a good match to compare t1 and t2?
+            If yes, we will run the give_up_diffing to compare t1 and t2 for this level.
+            """
+            pass
 
-        for operator in self.custom_operators:
-            if operator.match(level):
-                prevent_default = operator.give_up_diffing(level=level, diff_instance=self)
-                if prevent_default:
-                    return True
+        @abstractmethod
+        def give_up_diffing(self, level, diff_instance: float) -> bool:
+            """
+            Given a level which includes t1 and t2 in the tree view, and the "distance" between l1 and l2.
+            do we consider t1 and t2 to be equal or not. The distance is a number between zero to one and is calculated by DeepDiff to measure how similar objects are.
+            """
 
-        return False
+        @abstractmethod
+        def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+            """
+            You can use this function to normalize values for ignore_order=True
+
+            For example, you may want to turn all the words to be lowercase. Then you return obj.lower()
+            """
+            pass
 
 
-**Example 1: An operator that mapping L2:distance as diff criteria and reports the distance**
+**Example 1: We don't care about the exact GUID values. As long as pairs of strings match GUID regex, we want them to be considered as equals
+    >>> import re
+    ... from typing import Any
+    ... from deepdiff import DeepDiff
+    ... from deepdiff.operator import BaseOperatorPlus
+    ...
+    ...
+    ...
+    ... d1 = {
+    ...     "Name": "SUB_OBJECT_FILES",
+    ...     "Values": {
+    ...         "Value": [
+    ...             "{f254498b-b752-4f35-bef5-6f1844b61eb7}",
+    ...             "{7fb2a550-1849-45c0-b273-9aa5e4eb9f2b}",
+    ...             "{a9cbecc0-21dc-49ce-8b2c-d36352dae139}"
+    ...         ]
+    ...     }
+    ... }
+    ...
+    ... d2 = {
+    ...     "Name": "SUB_OBJECT_FILES",
+    ...     "Values": {
+    ...         "Value": [
+    ...             "{e5d18917-1a2c-4abe-b601-8ec002629953}",
+    ...             "{ea71ba1f-1339-4fae-bc28-a9ce9b8a8c67}",
+    ...             "{66bb6192-9cd2-4074-8be1-f2ac52877c70}",
+    ...         ]
+    ...     }
+    ... }
+    ...
+    ...
+    ...
+    ... class RemoveGUIDsOperator(BaseOperatorPlus):
+    ...     _pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+    ...     _substitute = "guid"
+    ...
+    ...     def match(self, level) -> bool:
+    ...         return isinstance(level.t1, str) and isinstance(level.t2, str)
+    ...
+    ...     @classmethod
+    ...     def _remove_pattern(cls, t: str):
+    ...         return re.sub(cls._pattern, cls._substitute, t)
+    ...
+    ...     def give_up_diffing(self, level, diff_instance):
+    ...         t1 = self._remove_pattern(level.t1)
+    ...         t2 = self._remove_pattern(level.t2)
+    ...         return t1 == t2
+    ...
+    ...     def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+    ...         """
+    ...         Used for ignore_order=True
+    ...         """
+    ...         if isinstance(obj, str):
+    ...             return self._remove_pattern(obj)
+    ...         return obj
+    ...
+    ...
+    ... operator = RemoveGUIDsOperator()
+    ...
+    ... diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
+    ... diff1
+    ...
+    ...
+    ... diff2 = DeepDiff(d1, d2, ignore_order=True, custom_operators=[operator], log_stacktrace=True)
+    ... diff2
+    ...
+    ...
+    {}
+    >>> import re
+    ... from typing import Any
+    ... from deepdiff import DeepDiff
+    ... from deepdiff.operator import BaseOperatorPlus
+    ...
+    ...
+    ... d1 = {
+    ...     "Name": "SUB_OBJECT_FILES",
+    ...     "Values": {
+    ...         "Value": [
+    ...             "{f254498b-b752-4f35-bef5-6f1844b61eb7}",
+    ...             "{7fb2a550-1849-45c0-b273-9aa5e4eb9f2b}",
+    ...             "{a9cbecc0-21dc-49ce-8b2c-d36352dae139}"
+    ...         ]
+    ...     }
+    ... }
+    ...
+    ... d2 = {
+    ...     "Name": "SUB_OBJECT_FILES",
+    ...     "Values": {
+    ...         "Value": [
+    ...             "{e5d18917-1a2c-4abe-b601-8ec002629953}",
+    ...             "{ea71ba1f-1339-4fae-bc28-a9ce9b8a8c67}",
+    ...             "{66bb6192-9cd2-4074-8be1-f2ac52877c70}",
+    ...         ]
+    ...     }
+    ... }
+    ...
+    ...
+    ... class RemoveGUIDsOperator(BaseOperatorPlus):
+    ...     _pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+    ...     _substitute = "guid"
+    ...
+    ...     def match(self, level) -> bool:
+    ...         return isinstance(level.t1, str) and isinstance(level.t2, str)
+    ...
+    ...     @classmethod
+    ...     def _remove_pattern(cls, t: str):
+    ...         return re.sub(cls._pattern, cls._substitute, t)
+    ...
+    ...     def give_up_diffing(self, level, diff_instance):
+    ...         t1 = self._remove_pattern(level.t1)
+    ...         t2 = self._remove_pattern(level.t2)
+    ...         return t1 == t2
+    ...
+    ...     def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+    ...         """
+    ...         Used for ignore_order=True
+    ...         """
+    ...         if isinstance(obj, str):
+    ...             return self._remove_pattern(obj)
+    ...         return obj
+    ...
+    ...
+    ... operator = RemoveGUIDsOperator()
+    ...
+    ... diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
+    ... diff1
+    ...
+    {}
+    >>> diff2 = DeepDiff(d1, d2, ignore_order=True, custom_operators=[operator], log_stacktrace=True)
+    ... diff2
+    ...
+    ...
+    {}
+
+
+
+
+Base Operator
+-------------
+
+*BaseOperator* is our older base operator that was designed mainly for simple string based regex comparison.
+
+
+    class BaseOperator:
+
+        def __init__(self, regex_paths:Optional[List[str]]=None, types:Optional[List[type]]=None):
+            if regex_paths:
+                self.regex_paths = convert_item_or_items_into_compiled_regexes_else_none(regex_paths)
+            else:
+                self.regex_paths = None
+            self.types = types
+
+        def match(self, level) -> bool:
+            if self.regex_paths:
+                for pattern in self.regex_paths:
+                    matched = re.search(pattern, level.path()) is not None
+                    if matched:
+                        return True
+            if self.types:
+                for type_ in self.types:
+                    if isinstance(level.t1, type_) and isinstance(level.t2, type_):
+                        return True
+            return False
+
+        def give_up_diffing(self, level, diff_instance) -> bool:
+            raise NotImplementedError('Please implement the diff function.')
+
+
+
+**Example 2: An operator that mapping L2:distance as diff criteria and reports the distance**
 
     >>> import math
     >>>
@@ -263,7 +431,7 @@ This is all that is expected from the operator, a match function that takes the 
     {'distance_too_far': {"root['coordinates'][0]": {'l2_distance': 1.4142135623730951}, "root['coordinates'][1]": {'l2_distance': 113.13708498984761}}}
 
 
-**Example 2: If the objects are subclasses of a certain type, only compare them if their list attributes are not equal sets**
+**Example 3: If the objects are subclasses of a certain type, only compare them if their list attributes are not equal sets**
 
     >>> class CustomClass:
     ...     def __init__(self, d: dict, l: list):
@@ -294,7 +462,7 @@ This is all that is expected from the operator, a match function that takes the 
     {'dictionary_item_added': [root.dict['a'], root.dict['b']], 'dictionary_item_removed': [root.dict['c'], root.dict['d']], 'values_changed': {"root.dict['list'][3]": {'new_value': 4, 'old_value': 2}}}
     >>>
 
-**Example 3: Only diff certain paths**
+**Example 4: Only diff certain paths**
 
     >>> from deepdiff import DeepDiff
     >>> class MyOperator:
@@ -314,7 +482,7 @@ This is all that is expected from the operator, a match function that takes the 
     ... ])
     {'values_changed': {"root['a'][1]": {'new_value': 22, 'old_value': 11}}}
 
-**Example 4: Give up further diffing once the first diff is found**
+**Example 5: Give up further diffing once the first diff is found**
 
 Sometimes all you care about is that there is a difference between 2 objects and not all the details of what exactly is different.
 In that case you may want to stop diffing as soon as the first diff is found.

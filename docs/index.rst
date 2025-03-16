@@ -34,6 +34,7 @@ What Is New
 DeepDiff 8-4-0
 --------------
 
+    - Adding BaseOperatorPlus base class for custom operators
     - default_timezone can be passed now to set your default timezone to something other than UTC.
     - New summarization algorithm that produces valid json
     - Better type hint support

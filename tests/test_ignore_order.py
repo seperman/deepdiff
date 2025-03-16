@@ -634,11 +634,12 @@ class TestIgnoreOrder:
     @mock.patch('deepdiff.diff.logger')
     @mock.patch('deepdiff.diff.DeepHash')
     def test_diff_when_hash_fails(self, mock_DeepHash, mock_logger):
-        mock_DeepHash.side_effect = Exception('Boom!')
+        mock_DeepHash.side_effect = ValueError('Boom!')
         t1 = {"blah": {4}, 2: 1337}
         t2 = {"blah": {4}, 2: 1337}
-        DeepDiff(t1, t2, ignore_order=True)
-        assert mock_logger.error.called
+        with pytest.raises(ValueError) as exp:
+            DeepDiff(t1, t2, ignore_order=True)
+        assert 'Boom!' == str(exp.value)
 
     def test_bool_vs_number(self):
         t1 = {
