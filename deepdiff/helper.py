@@ -8,7 +8,8 @@ import warnings
 import string
 import time
 import enum
-from typing import NamedTuple, Any, List, Optional
+import pytz
+from typing import NamedTuple, Any, List, Optional, Dict, Union
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
@@ -605,11 +606,17 @@ def literal_eval_extended(item):
         raise
 
 
-def time_to_seconds(t):
+def time_to_seconds(t:datetime.time) -> int:
     return (t.hour * 60 + t.minute) * 60 + t.second
 
 
-def datetime_normalize(truncate_datetime, obj):
+def datetime_normalize(
+    truncate_datetime:Union[str, None],
+    obj:Union[datetime.datetime, datetime.time],
+    default_timezone: Union[
+        datetime.timezone, pytz.tzinfo.BaseTzInfo
+    ] = datetime.timezone.utc,
+) -> Any:
     if truncate_datetime:
         if truncate_datetime == 'second':
             obj = obj.replace(microsecond=0)
@@ -621,11 +628,11 @@ def datetime_normalize(truncate_datetime, obj):
             obj = obj.replace(hour=0, minute=0, second=0, microsecond=0)
     if isinstance(obj, datetime.datetime):
         if has_timezone(obj):
-            obj = obj.astimezone(datetime.timezone.utc)
+            obj = obj.astimezone(default_timezone)
         else:
-            obj = obj.replace(tzinfo=datetime.timezone.utc)
+            obj = obj.replace(tzinfo=default_timezone)
     elif isinstance(obj, datetime.time):
-        obj = time_to_seconds(obj)
+        return time_to_seconds(obj)
     return obj
 
 
@@ -643,7 +650,7 @@ def has_timezone(dt):
     return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
 
-def get_truncate_datetime(truncate_datetime):
+def get_truncate_datetime(truncate_datetime) -> Union[str, None]:
     """
     Validates truncate_datetime value
     """
@@ -785,6 +792,7 @@ class FlatDataAction(EnumBase):
     attribute_added = 'attribute_added'
     unordered_iterable_item_added = 'unordered_iterable_item_added'
     unordered_iterable_item_removed = 'unordered_iterable_item_removed'
+    initiated = "initiated"
 
 
 OPCODE_TAG_TO_FLAT_DATA_ACTION = {
@@ -797,7 +805,7 @@ OPCODE_TAG_TO_FLAT_DATA_ACTION = {
 FLAT_DATA_ACTION_TO_OPCODE_TAG = {v: i for i, v in OPCODE_TAG_TO_FLAT_DATA_ACTION.items()}
 
 
-UnkownValueCode = 'unknown___'
+UnkownValueCode: str = 'unknown___'
 
 
 class FlatDeltaRow(NamedTuple):
@@ -814,3 +822,12 @@ class FlatDeltaRow(NamedTuple):
     t2_to_index: Optional[int] = None
 
     __repr__ = __str__ = named_tuple_repr
+
+
+JSON = Union[Dict[str, str], List[str], List[int], Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
+
+
+class SummaryNodeType(EnumBase):
+    dict = 'dict'
+    list = 'list'
+    leaf = 'leaf'

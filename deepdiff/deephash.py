@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-import inspect
+import pytz
 import logging
 import datetime
+from typing import Union, Optional, Any, List
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
@@ -14,7 +15,6 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR,
                              get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
 
-from deepdiff.summarize import summarize
 from deepdiff.base import Base
 
 try:
@@ -141,30 +141,32 @@ class DeepHash(Base):
     def __init__(self,
                  obj,
                  *,
-                 hashes=None,
-                 exclude_types=None,
-                 exclude_paths=None,
-                 include_paths=None,
-                 exclude_regex_paths=None,
-                 hasher=None,
-                 ignore_repetition=True,
-                 significant_digits=None,
-                 truncate_datetime=None,
-                 number_format_notation="f",
                  apply_hash=True,
-                 ignore_type_in_groups=None,
-                 ignore_string_type_changes=False,
-                 ignore_numeric_type_changes=False,
-                 ignore_type_subclasses=False,
-                 ignore_string_case=False,
-                 use_enum_value=False,
-                 exclude_obj_callback=None,
-                 number_to_string_func=None,
-                 ignore_private_variables=True,
-                 parent="root",
+                 custom_operators: Optional[List[Any]] =None,
+                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
                  encodings=None,
+                 exclude_obj_callback=None,
+                 exclude_paths=None,
+                 exclude_regex_paths=None,
+                 exclude_types=None,
+                 hasher=None,
+                 hashes=None,
                  ignore_encoding_errors=False,
                  ignore_iterable_order=True,
+                 ignore_numeric_type_changes=False,
+                 ignore_private_variables=True,
+                 ignore_repetition=True,
+                 ignore_string_case=False,
+                 ignore_string_type_changes=False,
+                 ignore_type_in_groups=None,
+                 ignore_type_subclasses=False,
+                 include_paths=None,
+                 number_format_notation="f",
+                 number_to_string_func=None,
+                 parent="root",
+                 significant_digits=None,
+                 truncate_datetime=None,
+                 use_enum_value=False,
                  **kwargs):
         if kwargs:
             raise ValueError(
@@ -173,7 +175,7 @@ class DeepHash(Base):
                  "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
                  "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
-                 "number_to_string_func, ignore_private_variables, parent, use_enum_value "
+                 "number_to_string_func, ignore_private_variables, parent, use_enum_value, default_timezone "
                  "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
             self.hashes = hashes
@@ -190,7 +192,7 @@ class DeepHash(Base):
         self.hasher = default_hasher if hasher is None else hasher
         self.hashes[UNPROCESSED_KEY] = []
         self.use_enum_value = use_enum_value
-
+        self.default_timezone = default_timezone
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
         self.truncate_datetime = get_truncate_datetime(truncate_datetime)
         self.number_format_notation = number_format_notation
@@ -214,6 +216,7 @@ class DeepHash(Base):
         self.encodings = encodings
         self.ignore_encoding_errors = ignore_encoding_errors
         self.ignore_iterable_order = ignore_iterable_order
+        self.custom_operators = custom_operators
 
         self._hash(obj, parent=parent, parents_ids=frozenset({get_id(obj)}))
 
@@ -317,6 +320,7 @@ class DeepHash(Base):
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
+        from deepdiff.summarize import summarize
         return summarize(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
     def __str__(self):
@@ -349,6 +353,7 @@ class DeepHash(Base):
         if hasattr(obj, "__slots__"):
             obj_to_dict_strategies.append(lambda o: {i: getattr(o, i) for i in o.__slots__})
         else:
+            import inspect
             obj_to_dict_strategies.append(lambda o: dict(inspect.getmembers(o, lambda m: not inspect.isroutine(m))))
 
         for get_dict in obj_to_dict_strategies:
@@ -478,7 +483,7 @@ class DeepHash(Base):
 
     def _prep_datetime(self, obj):
         type_ = 'datetime'
-        obj = datetime_normalize(self.truncate_datetime, obj)
+        obj = datetime_normalize(self.truncate_datetime, obj, default_timezone=self.default_timezone)
         return KEY_TO_VAL_STR.format(type_, obj)
 
     def _prep_date(self, obj):
@@ -501,6 +506,13 @@ class DeepHash(Base):
     def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
         """The main hash method"""
         counts = 1
+        if self.custom_operators is not None:
+            for operator in self.custom_operators:
+                func = getattr(operator, 'normalize_value_for_hashing', None)
+                if func is None:
+                    raise NotImplementedError(f"{operator.__class__.__name__} needs to define a normalize_value_for_hashing method to be compatible with ignore_order=True or iterable_compare_func.".format(operator))
+                else:
+                    obj = func(parent, obj)
 
         if isinstance(obj, booleanTypes):
             obj = self._prep_bool(obj)

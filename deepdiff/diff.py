@@ -5,6 +5,7 @@
 # You might need to run it many times since dictionaries come in different orders
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
+import pytz
 import difflib
 import logging
 import types
@@ -12,7 +13,7 @@ import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
@@ -110,6 +111,8 @@ DEEPHASH_PARAM_KEYS = (
     'ignore_private_variables',
     'encodings',
     'ignore_encoding_errors',
+    'default_timezone',
+    'custom_operators',
 )
 
 
@@ -128,10 +131,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  custom_operators: Optional[List[Any]] =None,
                  cutoff_distance_for_pairs: float=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
                  cutoff_intersection_for_pairs: float=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
+                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
                  encodings: Optional[List[str]]=None,
                  exclude_obj_callback: Optional[Callable]=None,
                  exclude_obj_callback_strict: Optional[Callable]=None,
-                 exclude_paths: Union[str, List[str], None]=None,
+                 exclude_paths: Union[str, List[str], Set[str], FrozenSet[str], None]=None,
                  exclude_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
                  exclude_types: Optional[List[Any]]=None,
                  get_deep_distance: bool=False,
@@ -154,6 +158,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  include_paths: Union[str, List[str], None]=None,
                  iterable_compare_func: Optional[Callable]=None,
                  log_frequency_in_sec: int=0,
+                 log_scale_similarity_threshold: float=0.1,
+                 log_stacktrace: bool=False,
                  math_epsilon: Optional[float]=None,
                  max_diffs: Optional[int]=None,
                  max_passes: int=10000000,
@@ -162,11 +168,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  progress_logger: Callable=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
-                 use_log_scale: bool=False,
-                 log_scale_similarity_threshold: float=0.1,
                  threshold_to_diff_deeper: float = 0.33,
                  truncate_datetime: Optional[str]=None,
                  use_enum_value: bool=False,
+                 use_log_scale: bool=False,
                  verbose_level: int=1,
                  view: str=TEXT_VIEW,
                  zip_ordered_iterables: bool=False,
@@ -183,8 +188,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
-                "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, "
-                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, "
+                "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, log_stacktrace,"
+                "math_epsilon, iterable_compare_func, use_enum_value, _original_type, threshold_to_diff_deeper, default_timezone "
                 "ignore_order_func, custom_operators, encodings, ignore_encoding_errors, use_log_scale, log_scale_similarity_threshold "
                 "_parameters and _shared_parameters.") % ', '.join(kwargs.keys()))
 
@@ -205,6 +210,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.use_enum_value = use_enum_value
             self.log_scale_similarity_threshold = log_scale_similarity_threshold
             self.use_log_scale = use_log_scale
+            self.default_timezone = default_timezone
+            self.log_stacktrace = log_stacktrace
             self.threshold_to_diff_deeper = threshold_to_diff_deeper
             self.ignore_string_type_changes = ignore_string_type_changes
             self.ignore_type_in_groups = self.get_ignore_types_in_groups(
@@ -272,6 +279,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
             self.cache_size = cache_size
             _parameters = self.__dict__.copy()
             _parameters['group_by'] = None  # overwriting since these parameters will be passed on to other passes.
+            if log_stacktrace:
+                self.log_err = logger.exception
+            else:
+                self.log_err = logger.error
 
         # Non-Root
         if _shared_parameters:
@@ -732,7 +743,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self, level,
         t1_from_index=None, t1_to_index=None,
         t2_from_index=None, t2_to_index=None
-    ):
+    ) -> List[Tuple[Tuple[int, int], Tuple[Any, Any]]]:
         """
         Default compare if `iterable_compare_func` is not provided.
         This will compare in sequence order.
@@ -752,7 +763,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
         self, level,
         t1_from_index=None, t1_to_index=None,
         t2_from_index=None, t2_to_index=None
-    ):
+    ) -> List[Tuple[Tuple[int, int], Tuple[Any, Any]]]:
         """
         Given a level get matching pairs. This returns list of two tuples in the form:
         [
@@ -1084,19 +1095,22 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                 # It only includes the ones needed when comparing iterables.
                 # The self.hashes dictionary gets shared between different runs of DeepHash
                 # So that any object that is already calculated to have a hash is not re-calculated.
-                deep_hash = DeepHash(item,
-                                     hashes=self.hashes,
-                                     parent=parent,
-                                     apply_hash=True,
-                                     **self.deephash_parameters,
-                                     )
+                deep_hash = DeepHash(
+                    item,
+                    hashes=self.hashes,
+                    parent=parent,
+                    apply_hash=True,
+                    **self.deephash_parameters,
+                 )
             except UnicodeDecodeError as err:
                 err.reason = f"Can not produce a hash for {level.path()}: {err.reason}"
                 raise
-            except Exception as e:  # pragma: no cover
-                logger.error("Can not produce a hash for %s."
-                             "Not counting this object.\n %s" %
-                             (level.path(), e))
+            except NotImplementedError:
+                raise
+            # except Exception as e:  # pragma: no cover
+            #     logger.error("Can not produce a hash for %s."
+            #                  "Not counting this object.\n %s" %
+            #                  (level.path(), e))
             else:
                 try:
                     item_hash = deep_hash[item]
@@ -1104,24 +1118,20 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                     pass
                 else:
                     if item_hash is unprocessed:  # pragma: no cover
-                        logger.warning("Item %s was not processed while hashing "
+                        self.log_err("Item %s was not processed while hashing "
                                        "thus not counting this object." %
                                        level.path())
                     else:
                         self._add_hash(hashes=local_hashes, item_hash=item_hash, item=item, i=i)
 
         # Also we hash the iterables themselves too so that we can later create cache keys from those hashes.
-        try:
-            DeepHash(
-                obj,
-                hashes=self.hashes,
-                parent=level.path(),
-                apply_hash=True,
-                **self.deephash_parameters,
-            )
-        except Exception as e:  # pragma: no cover
-            logger.error("Can not produce a hash for iterable %s. %s" %
-                         (level.path(), e))
+        DeepHash(
+            obj,
+            hashes=self.hashes,
+            parent=level.path(),
+            apply_hash=True,
+            **self.deephash_parameters,
+        )
         return local_hashes
 
     @staticmethod
@@ -1490,8 +1500,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
 
     def _diff_datetime(self, level, local_tree=None):
         """Diff DateTimes"""
-        level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
-        level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+        level.t1 = datetime_normalize(self.truncate_datetime, level.t1, default_timezone=self.default_timezone)
+        level.t2 = datetime_normalize(self.truncate_datetime, level.t2, default_timezone=self.default_timezone)
 
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)
@@ -1499,8 +1509,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
     def _diff_time(self, level, local_tree=None):
         """Diff DateTimes"""
         if self.truncate_datetime:
-            level.t1 = datetime_normalize(self.truncate_datetime, level.t1)
-            level.t2 = datetime_normalize(self.truncate_datetime, level.t2)
+            level.t1 = datetime_normalize(self.truncate_datetime, level.t1, default_timezone=self.default_timezone)
+            level.t2 = datetime_normalize(self.truncate_datetime, level.t2, default_timezone=self.default_timezone)
 
         if level.t1 != level.t2:
             self._report_result('values_changed', level, local_tree=local_tree)

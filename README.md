@@ -23,6 +23,13 @@ Tested on Python 3.8+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 8-4-0
+
+- Adding BaseOperatorPlus base class for custom operators
+- default_timezone can be passed now to set your default timezone to something other than UTC.
+- New summarization algorithm that produces valid json
+- Better type hint support
+
 DeepDiff 8-3-0
 
 - Fixed some static typing issues

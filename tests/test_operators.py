@@ -1,8 +1,10 @@
+import re
 import math
-
-from typing import List
+import pytest
+from copy import deepcopy
+from typing import List, Any
 from deepdiff import DeepDiff
-from deepdiff.operator import BaseOperator, PrefixOrSuffixOperator
+from deepdiff.operator import BaseOperator, PrefixOrSuffixOperator, BaseOperatorPlus
 
 
 class TestOperators:
@@ -235,12 +237,12 @@ class TestOperators:
         expected = {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
         assert expected == ddiff
 
-        ddiff2 = DeepDiff(t1, t2, ignore_order=True, custom_operators=[
-            PrefixOrSuffixOperator()
-        ])
-
-        expected2 = {'values_changed': {"root['key1'][2]": {'new_value': 'jill', 'old_value': 'jack'}}}
-        assert expected2 == ddiff2
+        with pytest.raises(NotImplementedError) as exp:
+            DeepDiff(t1, t2, ignore_order=True, custom_operators=[
+                PrefixOrSuffixOperator()
+            ])
+        expected2 = 'PrefixOrSuffixOperator needs to define a normalize_value_for_hashing method to be compatible with ignore_order=True or iterable_compare_func.'
+        assert expected2 == str(exp.value)
 
     def test_custom_operator3_small_numbers(self):
         x = [2.0000000000000027, 2.500000000000005, 2.000000000000002, 3.000000000000001]
@@ -253,7 +255,7 @@ class TestOperators:
                 'root[3]': {'new_value': 3.0000000000000027, 'old_value': 3.000000000000001}}}
         assert expected == result
 
-        class CustomCompare(BaseOperator):
+        class CustomCompare(BaseOperatorPlus):
             def __init__(self, tolerance, types):
                 self.tolerance = tolerance
                 self.types = types
@@ -270,6 +272,10 @@ class TestOperators:
                     diff_instance.custom_report_result('diff', level, custom_report)
                 return True
 
+            def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+                return obj
+
+
         def compare_func(x, y, level):
             return True
 
@@ -279,3 +285,144 @@ class TestOperators:
 
         result3 = DeepDiff(x, y, custom_operators=operators, zip_ordered_iterables=True)
         assert {} == result3, "We should get the same result as result2 when zip_ordered_iterables is True."
+
+    def test_custom_operator_and_ignore_order1_using_base_operator_plus(self):
+
+        d1 = {
+            "Name": "SUB_OBJECT_FILES",
+            "Values": {
+                "Value": [
+                    "{f254498b-b752-4f35-bef5-6f1844b61eb7}",
+                    "{7fb2a550-1849-45c0-b273-9aa5e4eb9f2b}",
+                    "{3a614c62-4252-48eb-b279-1450ee8af182}",
+                    "{208f22c4-c256-4311-9a45-e6c37d343458}",
+                    "{1fcf5d37-ef19-43a7-a1ad-d17c7c1713c6}",
+                ]
+            }
+        }
+
+        d2 = {
+            "Name": "SUB_OBJECT_FILES",
+            "Values": {
+                "Value": [
+                    "{e5d18917-1a2c-4abe-b601-8ec002629953}",
+                    "{ea71ba1f-1339-4fae-bc28-a9ce9b8a8c67}",
+                    "{66bb6192-9cd2-4074-8be1-f2ac52877c70}",
+                    "{0c88b900-3755-4d10-93ef-b6a96dbcba90}",
+                    "{e39fdfc5-be6c-4f97-9345-9a8286381fe7}"
+                ]
+            }
+        }
+
+
+        class RemoveGUIDsOperator(BaseOperatorPlus):
+            _pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+            _substitute = "guid"
+
+            def match(self, level) -> bool:
+                return isinstance(level.t1, str) and isinstance(level.t2, str)
+
+            @classmethod
+            def _remove_pattern(cls, t: str):
+                return re.sub(cls._pattern, cls._substitute, t)
+
+            def give_up_diffing(self, level, diff_instance):
+                t1 = self._remove_pattern(level.t1)
+                t2 = self._remove_pattern(level.t2)
+                return t1 == t2
+
+            def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+                """
+                Used for ignore_order=True
+                """
+                if isinstance(obj, str):
+                    return self._remove_pattern(obj)
+                return obj
+
+
+        operator = RemoveGUIDsOperator()
+
+        diff1 = DeepDiff(d1, d2, custom_operators=[operator], log_stacktrace=True)
+        assert not diff1
+
+
+        diff2 = DeepDiff(d1, d2, ignore_order=True, custom_operators=[operator], log_stacktrace=True)
+        assert not diff2
+
+
+    def test_custom_operator_and_ignore_order2(self):
+        d1 = {
+            "Entity": {
+                "Property": {
+                    "Name": "SUB_OBJECT_FILES",
+                    "Values": {
+                        "Value": [
+                            "{f254498b-b752-4f35-bef5-6f1844b61eb7}",
+                            "{7fb2a550-1849-45c0-b273-9aa5e4eb9f2b}",
+                            "{3a614c62-4252-48eb-b279-1450ee8af182}",
+                            "{208f22c4-c256-4311-9a45-e6c37d343458}",
+                            "{1fcf5d37-ef19-43a7-a1ad-d17c7c1713c6}",
+                            "{a9cbecc0-21dc-49ce-8b2c-d36352dae139}"
+                        ]
+                    }
+                }
+            }
+        }
+
+        d2 = {
+            "Entity": {
+                "Property": {
+                    "Name": "SUB_OBJECT_FILES",
+                    "Values": {
+                        "Value": [
+                            "{e5d18917-1a2c-4abe-b601-8ec002629953}",
+                            "{ea71ba1f-1339-4fae-bc28-a9ce9b8a8c67}",
+                            "{d7778018-a7b5-4246-8caa-f590138d99e5}",
+                            "{66bb6192-9cd2-4074-8be1-f2ac52877c70}",
+                            "{0c88b900-3755-4d10-93ef-b6a96dbcba90}",
+                            "{e39fdfc5-be6c-4f97-9345-9a8286381fe7}"
+                        ]
+                    }
+                }
+            }
+        }
+
+        class RemovePatternOperator(BaseOperator):
+            _pattern: str = ""
+            _substitute: str = ""
+
+            @classmethod
+            def _remove_pattern(cls, t: str):
+                return re.sub(cls._pattern, cls._substitute, t)
+
+            def give_up_diffing(self, level, diff_instance):
+                if isinstance(level.t1, str) and isinstance(level.t2, str):
+                    t1 = self._remove_pattern(level.t1)
+                    t2 = self._remove_pattern(level.t2)
+                    return t1 == t2
+                return False
+
+        class RemoveGUIDsOperator(RemovePatternOperator):
+            _pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"
+            _substitute = "guid"
+
+        diff1 = DeepDiff(deepcopy(d1), deepcopy(d2), ignore_order=False, custom_operators=[RemoveGUIDsOperator(types=[str])])
+        assert not diff1
+
+        with pytest.raises(NotImplementedError) as exp:
+            DeepDiff(deepcopy(d1), deepcopy(d2), ignore_order=True, custom_operators=[RemoveGUIDsOperator(types=[str])])
+        expected2 = 'RemoveGUIDsOperator needs to define a normalize_value_for_hashing method to be compatible with ignore_order=True or iterable_compare_func.'
+        assert expected2 == str(exp.value)
+
+
+        # --------- Let's implement the normalize_value_for_hashing to make it work with ignore_order=True ---------
+
+        class RemoveGUIDsOperatorIgnoreOrderReady(RemoveGUIDsOperator):
+            def normalize_value_for_hashing(self, parent: Any, obj: Any) -> Any:
+                if isinstance(obj, str):
+                    return self._remove_pattern(obj)
+                return obj
+
+        diff3 = DeepDiff(deepcopy(d1), deepcopy(d2), ignore_order=True, custom_operators=[RemoveGUIDsOperatorIgnoreOrderReady(types=[str])])
+        assert not diff3, "We shouldn't have a diff because we have normalized the string values to be all the same vlues."
+

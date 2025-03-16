@@ -14,7 +14,10 @@ import collections  # NOQA
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
-from typing import Callable, Optional, Union
+from typing import (
+    Callable, Optional, Union,
+    overload, Literal, Any,
+)
 from deepdiff.helper import (
     strings,
     get_type,
@@ -199,7 +202,7 @@ class SerializationMixin:
             **kwargs,
         )
 
-    def to_dict(self, view_override=None):
+    def to_dict(self, view_override: Optional[str]=None) -> dict:
         """
         convert the result to a python dictionary. You can override the view type by passing view_override.
 
@@ -213,7 +216,12 @@ class SerializationMixin:
         view = view_override if view_override else self.view  # type: ignore
         return dict(self._get_view_results(view))  # type: ignore
 
-    def _to_delta_dict(self, directed=True, report_repetition_required=True, always_include_values=False):
+    def _to_delta_dict(
+        self,
+        directed: bool = True,
+        report_repetition_required: bool = True,
+        always_include_values: bool = False,
+    ) -> dict:
         """
         Dump to a dictionary suitable for delta usage.
         Unlike to_dict, this is not dependent on the original view that the user chose to create the diff.
@@ -337,8 +345,8 @@ class _RestrictedUnpickler(pickle.Unpickler):
         # Forbid everything else.
         raise ForbiddenModule(FORBIDDEN_MODULE_MSG.format(module_dot_class)) from None
 
-    def persistent_load(self, persistent_id):
-        if persistent_id == "<<NoneType>>":
+    def persistent_load(self, pid):
+        if pid == "<<NoneType>>":
             return type(None)
 
 
@@ -642,9 +650,40 @@ class JSONDecoder(json.JSONDecoder):
         return obj
 
 
+
+@overload
 def json_dumps(
-    item,
-    default_mapping=None,
+    item: Any,
+    **kwargs,
+) -> str:
+    ...
+
+
+@overload
+def json_dumps(
+    item: Any,
+    default_mapping:Optional[dict],
+    force_use_builtin_json: bool,
+    return_bytes:Literal[True],
+    **kwargs,
+) -> bytes:
+    ...
+
+
+@overload
+def json_dumps(
+    item: Any,
+    default_mapping:Optional[dict],
+    force_use_builtin_json: bool,
+    return_bytes:Literal[False],
+    **kwargs,
+) -> str:
+    ...
+
+
+def json_dumps(
+    item: Any,
+    default_mapping:Optional[dict]=None,
     force_use_builtin_json: bool = False,
     return_bytes: bool = False,
     **kwargs,

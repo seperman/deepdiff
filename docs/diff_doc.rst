@@ -39,6 +39,9 @@ cache_tuning_sample_size : int >= 0, default = 0
 custom_operators : BaseOperator subclasses, default = None
     :ref:`custom_operators_label` if you are considering whether they are fruits or not. In that case, you can pass a *custom_operators* for the job.
 
+default_timezone : datetime.timezone subclasses or pytz datetimes, default = datetime.timezone.utc
+    :ref:`default_timezone_label` defines the default timezone. If a datetime is timezone naive, which means it doesn't have a timezone, we assume the datetime is in this timezone. Also any datetime that has a timezone will be converted to this timezone so the datetimes can be compared properly all in the same timezone. Note that Python's default behavior assumes the default timezone is your local timezone. DeepDiff's default is UTC, not your local time zone.
+
 encodings: List, default = None
     :ref:`encodings_label` Character encodings to iterate through when we convert bytes into strings. You may want to pass an explicit list of encodings in your objects if you start getting UnicodeDecodeError from DeepHash. Also check out :ref:`ignore_encoding_errors_label` if you can get away with ignoring these errors and don't want to bother with an explicit list of encodings but it will come at the price of slightly less accuracy of the final results. Example: encodings=["utf-8", "latin-1"]
 
@@ -153,6 +156,9 @@ log_frequency_in_sec: Integer, default = 0
 
 log_scale_similarity_threshold: float, default = 0.1
     :ref:`use_log_scale_label` along with :ref:`log_scale_similarity_threshold_label` can be used to ignore small changes in numbers by comparing their differences in logarithmic space. This is different than ignoring the difference based on significant digits.
+
+log_stacktrace: Boolean, default = False
+    If True, we log the stacktrace when logging errors. Otherwise we only log the error message.
 
 max_passes: Integer, default = 10000000
     :ref:`max_passes_label` defined the maximum number of passes to run on objects to pin point what exactly is different. This is only used when ignore_order=True. A new pass is started each time 2 iterables are compared in a way that every single item that is different from the first one is compared to every single item that is different in the second iterable.

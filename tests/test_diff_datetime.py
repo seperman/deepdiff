@@ -91,6 +91,30 @@ class TestDiffDatetime:
         t2 = [dt_ny, dt_utc, dt_ny]
         assert not DeepDiff(t1, t2, ignore_order=True)
 
+    def test_diffs_datetimes_in_different_timezones(self):
+        dt_utc = datetime(2025, 2, 3, 12, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+        dt_utc2 = datetime(2025, 2, 3, 11, 0, 0, tzinfo=pytz.utc)  # UTC timezone
+        dt_ny = dt_utc.astimezone(pytz.timezone('America/New_York'))
+        dt_ny2 = dt_utc2.astimezone(pytz.timezone('America/New_York'))
+        diff = DeepDiff(dt_ny, dt_ny2)
+        assert {
+            "values_changed": {
+                "root": {
+                    "new_value": dt_utc2,
+                    "old_value": dt_utc,
+                }
+            }
+        } == diff
+        diff2 = DeepDiff(dt_ny, dt_ny2, default_timezone=pytz.timezone('America/New_York'))
+        assert {
+            "values_changed": {
+                "root": {
+                    "new_value": dt_ny2,
+                    "old_value": dt_ny,
+                }
+            }
+        } == diff2
+
     def test_datetime_within_array_with_timezone_diff(self):
         d1 = [datetime(2020, 8, 31, 13, 14, 1)]
         d2 = [datetime(2020, 8, 31, 13, 14, 1, tzinfo=timezone.utc)]
