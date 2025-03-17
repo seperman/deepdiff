@@ -22,7 +22,10 @@ def calculate_weights(node):
         weight = 0
         children_weights = {}
         for k, v in node.items():
-            edge_weight = len(k)
+            try:
+                edge_weight = len(k)
+            except TypeError:
+                edge_weight = 1
             child_weight, child_structure = calculate_weights(v)
             total_weight = edge_weight + child_weight
             weight += total_weight
@@ -133,6 +136,9 @@ def greedy_tree_summarization_balanced(json_data: JSON, max_weight: int, balance
 
 
 def summarize(data: JSON, max_length:int=200, balance_threshold:float=0.6) -> str:
-    return json_dumps(
-        greedy_tree_summarization_balanced(data, max_length, balance_threshold)
-    )
+    try:
+        return json_dumps(
+            greedy_tree_summarization_balanced(data, max_length, balance_threshold)
+        )
+    except Exception:
+        return str(data)

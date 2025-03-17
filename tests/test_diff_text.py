@@ -2252,3 +2252,9 @@ class TestDeepDiffText:
 
         diff2 = DeepDiff({}, {1:1, 2:2})
         assert [] == diff2.affected_root_keys
+
+    def test_range1(self):
+        range1 = range(0, 10)
+        range2 = range(0, 8)
+        diff = DeepDiff(range1, range2)
+        assert {'iterable_item_removed': {'root[8]': 8, 'root[9]': 9}} == diff

@@ -5,7 +5,7 @@ from deepdiff.helper import SetOrdered
 import logging
 
 from deepdiff.helper import (
-    strings, numbers, add_to_frozen_set, get_doc, dict_, RE_COMPILED_TYPE
+    strings, numbers, add_to_frozen_set, get_doc, dict_, RE_COMPILED_TYPE, ipranges
 )
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ class DeepSearch(dict):
             matched_values=self.__set_or_dict(),
             unprocessed=[])
         self.use_regexp = use_regexp
-        if not strict_checking and isinstance(item, numbers):
+        if not strict_checking and (isinstance(item, numbers) or isinstance(item, ipranges)):
             item = str(item)
         if self.use_regexp:
             try:
@@ -311,6 +311,9 @@ class DeepSearch(dict):
 
         elif isinstance(obj, strings) and isinstance(item, numbers):
             return
+
+        elif isinstance(obj, ipranges):
+            self.__search_str(str(obj), item, parent)
 
         elif isinstance(obj, numbers):
             self.__search_numbers(obj, item, parent)

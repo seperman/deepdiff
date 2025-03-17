@@ -4,11 +4,13 @@ import pytest
 import pytz
 import logging
 import datetime
+import ipaddress
+from typing import Union
 from pathlib import Path
 from collections import namedtuple
 from functools import partial
 from enum import Enum
-from deepdiff import DeepHash
+from deepdiff import DeepDiff, DeepHash
 from deepdiff.deephash import (
     prepare_string_for_hashing, unprocessed,
     UNPROCESSED_KEY, BoolObj, HASH_LOOKUP_ERR_MSG, combine_hashes_lists)
@@ -999,10 +1001,39 @@ class TestOtherHashFuncs:
         (7, b"First have a cup of potatos. Then \xc3\x28 cup of flour", None, False, UnicodeDecodeError, EXPECTED_MESSAGE3),
     ])
     def test_hash_encodings(self, test_num, item, encodings, ignore_encoding_errors, expected_result, expected_message):
-        if UnicodeDecodeError == expected_result:
+        if UnicodeDecodeError == expected_result:  # NOQA
             with pytest.raises(expected_result) as exc_info:
                 DeepHash(item, encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
             assert expected_message == str(exc_info.value), f"test_encodings test #{test_num} failed."
         else:
             result = DeepHash(item, encodings=encodings, ignore_encoding_errors=ignore_encoding_errors)
             assert expected_result == result, f"test_encodings test #{test_num} failed."
+
+    def test_ip_addresses(self):
+
+        class ClassWithIp:
+            """Class containing single data member to demonstrate deepdiff infinite iterate over IPv6Interface"""
+
+            def __init__(self, addr: str):
+                self.field: Union[
+                    ipaddress.IPv4Network,
+                    ipaddress.IPv6Network,
+                    ipaddress.IPv4Interface,
+                    ipaddress.IPv6Interface,
+                ] = ipaddress.IPv6Network(addr)
+
+
+        obj1 = ClassWithIp("2002:db8::/30")
+        obj1_hash = DeepHashPrep(obj1)
+        repr(obj1_hash)  # shouldn't raise error
+        assert r"objClassWithIp:{str:field:iprange:2002:db8::/30}" == obj1_hash[obj1]
+        obj2 = ClassWithIp("2001:db8::/32")
+        diff = DeepDiff(obj1, obj2)
+        assert {
+            "values_changed": {
+                "root.field": {
+                    "new_value": ipaddress.IPv6Network("2001:db8::/32"),
+                    "old_value": ipaddress.IPv6Network("2002:db8::/30"),
+                }
+            }
+        } == diff

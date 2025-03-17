@@ -1,6 +1,6 @@
 import math
 import datetime
-from deepdiff.base import BaseProtocol
+from typing import TYPE_CHECKING, Callable, Protocol, Any
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
@@ -8,15 +8,38 @@ from deepdiff.helper import (
     CannotCompare)
 from collections.abc import Mapping, Iterable
 
+if TYPE_CHECKING:
+    from deepdiff.diff import DeepDiffProtocol
+
+    class DistanceProtocol(DeepDiffProtocol, Protocol):
+        hashes: dict
+        deephash_parameters: dict
+        iterable_compare_func: Callable | None
+        math_epsilon: float
+        cutoff_distance_for_pairs: float
+
+        def __get_item_rough_length(self, item, parent:str="root") -> float:
+            ...
+
+        def _to_delta_dict(
+            self,
+            directed: bool = True,
+            report_repetition_required: bool = True,
+            always_include_values: bool = False,
+        ) -> dict:
+            ...
+
+        def __calculate_item_deephash(self, item: Any) -> None:
+            ...
+
+
 
 DISTANCE_CALCS_NEEDS_CACHE = "Distance calculation can not happen once the cache is purged. Try with _cache='keep'"
 
 
+class DistanceMixin:
 
-
-class DistanceMixin(BaseProtocol):
-
-    def _get_rough_distance(self):
+    def _get_rough_distance(self: "DistanceProtocol"):
         """
         Gives a numeric value for the distance of t1 and t2 based on how many operations are needed to convert
         one to the other.
@@ -51,7 +74,7 @@ class DistanceMixin(BaseProtocol):
 
         return diff_length / (t1_len + t2_len)
 
-    def __get_item_rough_length(self, item, parent='root'):
+    def __get_item_rough_length(self: "DistanceProtocol", item, parent='root'):
         """
         Get the rough length of an item.
         It is used as a part of calculating the rough distance between objects.
@@ -69,7 +92,7 @@ class DistanceMixin(BaseProtocol):
             length = DeepHash.get_key(self.hashes, key=item, default=None, extract_index=1)
         return length
 
-    def __calculate_item_deephash(self, item):
+    def __calculate_item_deephash(self: "DistanceProtocol", item: Any) -> None:
         DeepHash(
             item,
             hashes=self.hashes,
@@ -79,8 +102,7 @@ class DistanceMixin(BaseProtocol):
         )
 
     def _precalculate_distance_by_custom_compare_func(
-            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
-
+            self: "DistanceProtocol", hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
         pre_calced_distances = dict_()
         for added_hash in hashes_added:
             for removed_hash in hashes_removed:
@@ -99,7 +121,7 @@ class DistanceMixin(BaseProtocol):
         return pre_calced_distances
 
     def _precalculate_numpy_arrays_distance(
-            self, hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
+            self: "DistanceProtocol", hashes_added, hashes_removed, t1_hashtable, t2_hashtable, _original_type):
 
         # We only want to deal with 1D arrays.
         if isinstance(t2_hashtable[next(iter(hashes_added))].item, (np_ndarray, list)):
@@ -203,7 +225,7 @@ def _get_numbers_distance(num1, num2, max_=1, use_log_scale=False, log_scale_sim
         return 0
     if use_log_scale:
         distance = logarithmic_distance(num1, num2)
-        if distance < logarithmic_distance:
+        if distance < 0:
             return 0
         return distance
     if not isinstance(num1, float):
@@ -246,7 +268,7 @@ def numpy_apply_log_keep_sign(array, offset=MATH_LOG_OFFSET):
     return signed_log_values
 
 
-def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1):
+def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1) -> float:
     """
     A threshold of 0.1 translates to about 10.5% difference.
     A threshold of 0.5 translates to about 65% difference.
@@ -255,7 +277,7 @@ def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1):
     return logarithmic_distance(a, b) < threshold
 
 
-def logarithmic_distance(a: numbers, b: numbers):
+def logarithmic_distance(a: numbers, b: numbers) -> float:
     # Apply logarithm to the absolute values and consider the sign
     a = float(a)
     b = float(b)
