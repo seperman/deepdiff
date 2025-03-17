@@ -5,7 +5,6 @@
 # You might need to run it many times since dictionaries come in different orders
 # every time you run the docstrings.
 # However the docstring expects it in a specific order in order to pass!
-import pytz
 import difflib
 import logging
 import types
@@ -13,7 +12,7 @@ import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet, TYPE_CHECKING
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
@@ -41,6 +40,10 @@ from deepdiff.model import (
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
+
+if TYPE_CHECKING:
+    from pytz.tzinfo import BaseTzInfo
+
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +134,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
                  custom_operators: Optional[List[Any]] =None,
                  cutoff_distance_for_pairs: float=CUTOFF_DISTANCE_FOR_PAIRS_DEFAULT,
                  cutoff_intersection_for_pairs: float=CUTOFF_INTERSECTION_FOR_PAIRS_DEFAULT,
-                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
+                 default_timezone:Union[datetime.timezone, "BaseTzInfo"]=datetime.timezone.utc,
                  encodings: Optional[List[str]]=None,
                  exclude_obj_callback: Optional[Callable]=None,
                  exclude_obj_callback_strict: Optional[Callable]=None,

@@ -8,13 +8,15 @@ import warnings
 import string
 import time
 import enum
-import pytz
-from typing import NamedTuple, Any, List, Optional, Dict, Union
+from typing import NamedTuple, Any, List, Optional, Dict, Union, TYPE_CHECKING
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
 from orderly_set import StableSetEq as SetOrderedBase  # median: 1.0867 s for cache test, 5.63s for all tests
 from threading import Timer
+
+if TYPE_CHECKING:
+    from pytz.tzinfo import BaseTzInfo
 
 
 class np_type:
@@ -614,7 +616,7 @@ def datetime_normalize(
     truncate_datetime:Union[str, None],
     obj:Union[datetime.datetime, datetime.time],
     default_timezone: Union[
-        datetime.timezone, pytz.tzinfo.BaseTzInfo
+        datetime.timezone, "BaseTzInfo"
     ] = datetime.timezone.utc,
 ) -> Any:
     if truncate_datetime:

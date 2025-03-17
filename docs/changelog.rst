@@ -5,6 +5,13 @@ Changelog
 
 DeepDiff Changelog
 
+- v8-4-1
+    - Adding BaseOperatorPlus base class for custom operators
+    - default_timezone can be passed now to set your default timezone to something other than UTC.
+    - New summarization algorithm that produces valid json
+    - Better type hint support
+    - Breaking change in DeepHash where we raise Exception instead of logging if we can't hash a value.
+
 - v8-3-0
     - Fixed some static typing issues
     - Added the summarize module for better repr of nested values

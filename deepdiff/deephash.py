@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-import pytz
 import logging
 import datetime
-from typing import Union, Optional, Any, List
+from typing import Union, Optional, Any, List, TYPE_CHECKING
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
@@ -16,6 +15,10 @@ from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, a
                              get_truncate_datetime, dict_, add_root_to_paths, PydanticBaseModel)
 
 from deepdiff.base import Base
+
+if TYPE_CHECKING:
+    from pytz.tzinfo import BaseTzInfo
+
 
 try:
     import pandas
@@ -143,7 +146,7 @@ class DeepHash(Base):
                  *,
                  apply_hash=True,
                  custom_operators: Optional[List[Any]] =None,
-                 default_timezone:Union[datetime.timezone, datetime.timezone, pytz.tzinfo.BaseTzInfo]=datetime.timezone.utc,
+                 default_timezone:Union[datetime.timezone, "BaseTzInfo"]=datetime.timezone.utc,
                  encodings=None,
                  exclude_obj_callback=None,
                  exclude_paths=None,
