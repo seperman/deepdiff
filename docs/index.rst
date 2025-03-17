@@ -31,13 +31,14 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
-DeepDiff 8-4-0
+DeepDiff 8-4-1
 --------------
 
     - Adding BaseOperatorPlus base class for custom operators
     - default_timezone can be passed now to set your default timezone to something other than UTC.
     - New summarization algorithm that produces valid json
     - Better type hint support
+    - Breaking change in DeepHash where we raise Exception instead of logging if we can't hash a value.
 
 
 DeepDiff 8-3-0
