@@ -12,7 +12,7 @@ import datetime
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet, TYPE_CHECKING
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet, TYPE_CHECKING, Protocol
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
@@ -119,7 +119,17 @@ DEEPHASH_PARAM_KEYS = (
 )
 
 
-class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, Base):
+class DeepDiffProtocol(Protocol):
+    t1: Any
+    t2: Any
+    cutoff_distance_for_pairs: float
+    use_log_scale: bool
+    log_scale_similarity_threshold: float
+    view: str
+
+
+
+class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, Base):
     __doc__ = doc
 
     CACHE_AUTO_ADJUST_THRESHOLD = 0.25
