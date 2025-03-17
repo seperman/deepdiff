@@ -8,7 +8,8 @@ import warnings
 import string
 import time
 import enum
-from typing import NamedTuple, Any, List, Optional, Dict, Union, TYPE_CHECKING
+import ipaddress
+from typing import NamedTuple, Any, List, Optional, Dict, Union, TYPE_CHECKING, Tuple
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
@@ -184,9 +185,10 @@ bytes_type = bytes
 only_complex_number = (complex,) + numpy_complex_numbers
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
 datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
+ipranges = (ipaddress.IPv4Interface, ipaddress.IPv6Interface, ipaddress.IPv4Network, ipaddress.IPv6Network)
 uuids = (uuid.UUID, )
 times = (datetime.datetime, datetime.time)
-numbers = only_numbers + datetimes
+numbers: Tuple = only_numbers + datetimes
 booleans = (bool, np_bool_)
 
 basic_types = strings + numbers + uuids + booleans + (type(None), )

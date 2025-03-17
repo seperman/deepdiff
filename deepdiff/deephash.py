@@ -8,7 +8,7 @@ from hashlib import sha1, sha256
 from pathlib import Path
 from enum import Enum
 from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, add_to_frozen_set,
-                             convert_item_or_items_into_set_else_none, get_doc,
+                             convert_item_or_items_into_set_else_none, get_doc, ipranges,
                              convert_item_or_items_into_compiled_regexes_else_none,
                              get_id, type_is_subclass_of_type_group, type_in_type_group,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR,
@@ -142,7 +142,7 @@ class DeepHash(Base):
     __doc__ = doc
 
     def __init__(self,
-                 obj,
+                 obj: Any,
                  *,
                  apply_hash=True,
                  custom_operators: Optional[List[Any]] =None,
@@ -484,6 +484,11 @@ class DeepHash(Base):
                                         number_format_notation=self.number_format_notation)
         return KEY_TO_VAL_STR.format(type_, obj)
 
+    def _prep_ipranges(self, obj):
+        type_ = 'iprange'
+        obj = str(obj)
+        return KEY_TO_VAL_STR.format(type_, obj)
+
     def _prep_datetime(self, obj):
         type_ = 'datetime'
         obj = datetime_normalize(self.truncate_datetime, obj, default_timezone=self.default_timezone)
@@ -557,6 +562,9 @@ class DeepHash(Base):
 
         elif isinstance(obj, numbers):  # type: ignore
             result = self._prep_number(obj)
+
+        elif isinstance(obj, ipranges):
+            result = self._prep_ipranges(obj)
 
         elif isinstance(obj, MutableMapping):
             result, counts = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)

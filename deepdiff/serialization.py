@@ -32,6 +32,7 @@ from deepdiff.helper import (
     pydantic_base_model_type,
     PydanticBaseModel,
     NotPresent,
+    ipranges,
 )
 from deepdiff.model import DeltaResult
 
@@ -112,7 +113,8 @@ TYPE_STR_TO_TYPE = {
     'SetOrdered': SetOrdered,
     'namedtuple': collections.namedtuple,
     'OrderedDict': collections.OrderedDict,
-    'Pattern': re.Pattern,    
+    'Pattern': re.Pattern,
+    'iprange': str,
 }
 
 

@@ -1,4 +1,4 @@
-from typing import Protocol, Any
+from typing import Any
 from deepdiff.helper import strings, numbers, SetOrdered
 
 
@@ -6,16 +6,7 @@ DEFAULT_SIGNIFICANT_DIGITS_WHEN_IGNORE_NUMERIC_TYPES = 12
 TYPE_STABILIZATION_MSG = 'Unable to stabilize the Numpy array {} due to {}. Please set ignore_order=False.'
 
 
-class BaseProtocol(Protocol):
-    t1: Any
-    t2: Any
-    cutoff_distance_for_pairs: float
-    use_log_scale: bool
-    log_scale_similarity_threshold: float
-    view: str
-
-
-class Base(BaseProtocol):
+class Base:
     numbers = numbers
     strings = strings
 

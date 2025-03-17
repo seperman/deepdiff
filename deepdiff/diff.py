@@ -27,7 +27,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, ListItemRemove
                              np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
                              TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
-                             PydanticBaseModel, Opcode, SetOrdered)
+                             PydanticBaseModel, Opcode, SetOrdered, ipranges)
 from deepdiff.serialization import SerializationMixin
 from deepdiff.distance import DistanceMixin, logarithmic_similarity
 from deepdiff.model import (
@@ -1511,6 +1511,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             if t1_s != t2_s:
                 self._report_result('values_changed', level, local_tree=local_tree)
 
+    def _diff_ipranges(self, level, local_tree=None):
+        """Diff IP ranges"""
+        if str(level.t1) != str(level.t2):
+            self._report_result('values_changed', level, local_tree=local_tree)
+
     def _diff_datetime(self, level, local_tree=None):
         """Diff DateTimes"""
         level.t1 = datetime_normalize(self.truncate_datetime, level.t1, default_timezone=self.default_timezone)
@@ -1704,6 +1709,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         elif isinstance(level.t1, datetime.datetime):
             self._diff_datetime(level, local_tree=local_tree)
+
+        elif isinstance(level.t1, ipranges):
+            self._diff_ipranges(level, local_tree=local_tree)
 
         elif isinstance(level.t1, (datetime.date, datetime.timedelta, datetime.time)):
             self._diff_time(level, local_tree=local_tree)
