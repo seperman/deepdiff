@@ -11,6 +11,7 @@ DeepDiff Changelog
     - New summarization algorithm that produces valid json
     - Better type hint support
     - Breaking change in DeepHash where we raise Exception instead of logging if we can't hash a value.
+   - Added the log_stacktrace parameter to DeepDiff. When True, it will log the stacktrace along with the error.
 
 - v8-3-0
     - Fixed some static typing issues
