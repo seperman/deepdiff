@@ -31,6 +31,14 @@ The DeepDiff library includes the following modules:
 What Is New
 ***********
 
+DeepDiff 8-4-2
+--------------
+
+    - fixes the type hints for the base
+    - fixes summarize so if json dumps fails, we can still get a repr of the results
+    - adds ipaddress support
+
+
 DeepDiff 8-4-1
 --------------
 

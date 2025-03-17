@@ -1,5 +1,10 @@
 # DeepDiff Change log
 
+- v8-4-2
+    - fixes the type hints for the base
+    - fixes summarize so if json dumps fails, we can still get a repr of the results
+    - adds ipaddress support
+
 - v8-4-1
     - Adding BaseOperatorPlus base class for custom operators
     - default_timezone can be passed now to set your default timezone to something other than UTC.
