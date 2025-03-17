@@ -306,11 +306,14 @@ class DeepSearch(dict):
         if self.__skip_this(item, parent):
             return
 
-        elif isinstance(obj, strings) and isinstance(item, (strings, RE_COMPILED_TYPE, ipranges)):
+        elif isinstance(obj, strings) and isinstance(item, (strings, RE_COMPILED_TYPE)):
             self.__search_str(obj, item, parent)
 
         elif isinstance(obj, strings) and isinstance(item, numbers):
             return
+
+        elif isinstance(obj, ipranges):
+            self.__search_str(str(obj), item, parent)
 
         elif isinstance(obj, numbers):
             self.__search_numbers(obj, item, parent)

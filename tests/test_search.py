@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 import pytest
+import ipaddress
+import logging
+from typing import Union
 from deepdiff import DeepSearch, grep
 from datetime import datetime
-import logging
 logging.disable(logging.CRITICAL)
 
 item = "somewhere"
@@ -18,6 +20,19 @@ class CustomClass:
 
     def __repr__(self):
         return self.__str__()
+
+
+class ClassWithIp:
+    """Class containing single data member to demonstrate deepdiff infinite iterate over IPv6Interface"""
+
+    def __init__(self, addr: str):
+        self.field: Union[
+            ipaddress.IPv4Network,
+            ipaddress.IPv6Network,
+            ipaddress.IPv4Interface,
+            ipaddress.IPv6Interface,
+        ] = ipaddress.IPv6Network(addr)
+
 
 
 class TestDeepSearch:
@@ -501,3 +516,7 @@ class TestGrep:
         item = "some.*"
         result = {"matched_values": {"root[3]"}}
         assert obj | grep(item, verbose_level=1, use_regexp=True) == result
+
+    def test_search_ip_addresses(self):
+        obj1 = [ClassWithIp("2002:db8::/30"),  ClassWithIp("2002:db8::/32")]
+        assert obj1 | grep("2002:db8::/32") == {'matched_values': ['root[1].field']}
