@@ -733,13 +733,17 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
                 ignore_private_variables and key.startswith('__') and not key.startswith(private_var_prefix)
             ):
                 del result[key]
+        if isinstance(obj, PydanticBaseModel):
+            getter = lambda x, y: getattr(type(x), y)
+        else:
+            getter = getattr
         for key in dir(obj):
             if key not in result and key not in ignore_keys and (
                     not ignore_private_variables or (
                         ignore_private_variables and not key.startswith('__') and not key.startswith(private_var_prefix)
                     )
             ):
-                value = getattr(obj, key)
+                value = getter(obj, key)
                 if not callable(value):
                     result[key] = value
     return result
