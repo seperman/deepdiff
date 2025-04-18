@@ -393,9 +393,6 @@ class TestDeepDiffPretty:
         (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array)
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
-        if test_num == 8 and py_current_version < 3.8:
-            print(f"Skipping test_json_dumps_and_loads #{test_num} on Python {py_current_version}")
-            return
         serialized = json_dumps(value)
         back = json_loads(serialized)
         if func_to_convert_back:

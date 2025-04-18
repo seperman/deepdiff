@@ -1,22 +1,22 @@
 -r requirements.txt
 -r requirements-cli.txt
-bump2version==1.0.1
-jsonpickle==4.0.1
-coverage==7.6.10
-ipdb==0.13.13
-numpy==2.2.2
-pytest==8.3.4
-pytest-cov==6.0.0
-python-dotenv==1.0.1
-flake8==7.1.1
-python-dateutil==2.9.0.post0
-orjson==3.10.15
-wheel==0.45.1
-tomli==2.2.1
-tomli-w==1.2.0
-pydantic==2.10.6
-pytest-benchmark==5.1.0
-pandas==2.2.3
-polars==1.21.0
-setuptools==75.8.0
-types-setuptools==75.8.0
+bump2version~=1.0.1
+jsonpickle~=4.0.1
+coverage~=7.6.10
+ipdb~=0.13.13
+numpy~=2.2.2; python_version >= '3.10'
+numpy~=2.0; python_version < '3.10'
+pytest~=8.3.4
+pytest-cov~=6.0.0
+python-dotenv~=1.0.1
+flake8~=7.1.1
+python-dateutil~=2.9.0.post0
+orjson~=3.10.15
+wheel~=0.45.1
+tomli~=2.2.1
+tomli-w~=1.2.0
+pydantic~=2.10.6
+pytest-benchmark~=5.1.0
+pandas~=2.2.3
+polars~=1.21.0
+setuptools~=75.8.0; python_version > '3.8'
