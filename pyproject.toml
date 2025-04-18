@@ -1,0 +1,147 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "deepdiff"
+version = "8.4.2"
+dependencies = [
+  "orderly-set>=5.3.0,<6",
+]
+requires-python = ">=3.9"
+authors = [
+  { name = "Seperman", email = "sep@zepworks.com" }
+]
+maintainers = [
+  { name = "Seperman", email = "sep@zepworks.com" }
+]
+description = "Deep Difference and Search of any Python object/data. Recreate objects by adding adding deltas to each other."
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = []
+classifiers = [
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: MIT License"
+]
+
+# `dependency-groups` would make this a lot cleaner, in theory.
+[project.optional-dependencies]
+coverage = [
+  "coverage~=7.6.0"
+]
+cli = [
+  "click~=8.1.0",
+  "pyyaml~=6.0.0"
+]
+dev = [
+  "bump2version~=1.0.0",
+  "jsonpickle~=4.0.0",
+  "ipdb~=0.13.0",
+  "numpy~=2.2.0; python_version >= '3.10'",
+  "numpy~=2.0; python_version < '3.10'",
+  "python-dateutil~=2.9.0",
+  "orjson~=3.10.0",
+  "tomli~=2.2.0",
+  "tomli-w~=1.2.0",
+  "pandas~=2.2.0",
+  "polars~=1.21.0",
+]
+docs = [
+  # We use the html style that is not supported in Sphinx 7 anymore.
+  "Sphinx~=6.2.0",
+  "sphinx-sitemap~=2.6.0",
+  "sphinxemoji~=0.3.0"
+]
+static = [
+  "flake8~=7.1.0",
+  "flake8-pyproject~=1.2.3",
+  "pydantic~=2.10.0",
+  "types-setuptools~=75.8.0",
+]
+test = [
+  "pytest~=8.3.0",
+  "pytest-benchmark~=5.1.0",
+  "pytest-cov~=6.0.0",
+  "python-dotenv~=1.0.0",
+]
+
+[project.scripts]
+deep = "deepdiff.commands:cli"
+
+[project.urls]
+Homepage = "https://zepworks.com/deepdiff/"
+Documentation = "https://zepworks.com/deepdiff/"
+Repository = "https://github.com/seperman/deepdiff"
+Issues = "https://github.com/seperman/deepdiff/issues"
+
+[tool.coverage.run]
+branch = true
+source = ["."]
+
+[tool.flake8]
+max-line-length = 120
+builtins = "json"
+statistics = true
+ignore = "E202"
+exclude = "./data,./src,.svn,CVS,.bzr,.hg,.git,__pycache__"
+
+[tool.pytest.ini_options]
+addopts = "--pdbcls=IPython.terminal.debugger:Pdb"
+
+[tool.setuptools]
+packages = ["deepdiff"]
+
+[tool.setuptools.package-metadata]
+deepdiff = ["py.typed"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+min_version = 4.0
+env_list =
+    flake8
+    # XXX: this needs work.
+    #mypy
+    py39
+    py310
+    py311
+    py312
+    py313
+
+[testenv]
+deps =
+    .[cli]
+    .[coverage]
+    .[dev]
+    .[static]
+    .[test]
+commands =
+    python -m pytest --cov=deepdiff --cov-report term-missing {posargs:-vv tests}
+
+[testenv:flake8]
+deps =
+    .[cli]
+    .[dev]
+    .[static]
+commands =
+    python -m flake8 {posargs:deepdiff}
+
+[testenv:mypy]
+deps =
+    .[cli]
+    .[dev]
+    .[static]
+    .[test]
+    mypy
+commands =
+    python -m mypy --install-types --non-interactive {posargs:deepdiff}
+"""
