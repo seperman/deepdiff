@@ -221,10 +221,11 @@ class TextResult(ResultDict):
 
     def _from_tree_iterable_item_moved(self, tree):
         if 'iterable_item_moved' in tree and self.verbose_level > 1:
+
             for change in tree['iterable_item_moved']:
-                the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
+                the_changed = {'new_path': change.path(use_t2=True, reporting_move=True), 'value': change.t2}
                 self['iterable_item_moved'][change.path(
-                    force=FORCE_DEFAULT)] = the_changed
+                    force=FORCE_DEFAULT, use_t2=False, reporting_move=True)] = the_changed
 
     def _from_tree_unprocessed(self, tree):
         if 'unprocessed' in tree:
@@ -428,11 +429,11 @@ class DeltaResult(TextResult):
         if 'iterable_item_moved' in tree:
             for change in tree['iterable_item_moved']:
                 if (
-                    change.up.path(force=FORCE_DEFAULT) not in self["_iterable_opcodes"]
+                    change.up.path(force=FORCE_DEFAULT, reporting_move=True) not in self["_iterable_opcodes"]
                 ):
-                    the_changed = {'new_path': change.path(use_t2=True), 'value': change.t2}
+                    the_changed = {'new_path': change.path(use_t2=True, reporting_move=True), 'value': change.t2}
                     self['iterable_item_moved'][change.path(
-                        force=FORCE_DEFAULT)] = the_changed
+                        force=FORCE_DEFAULT, reporting_move=True)] = the_changed
 
 
 class DiffLevel:
@@ -673,7 +674,7 @@ class DiffLevel:
             return next_rel.param
         return notpresent
 
-    def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str'):
+    def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str', reporting_move=False):
         """
         A python syntax string describing how to descend to this level, assuming the top level object is called root.
         Returns None if the path is not representable as a string.
@@ -699,6 +700,9 @@ class DiffLevel:
         :param output_format: The format of the output. The options are 'str' which is the default and produces a
                               string representation of the path or 'list' to produce a list of keys and attributes
                               that produce the path.
+
+        :param reporting_move: This should be set to true if and only if we are reporting on iterable_item_moved.
+                               All other cases should leave this set to False.
         """
         # TODO: We could optimize this by building on top of self.up's path if it is cached there
         cache_key = "{}{}{}{}".format(force, get_parent_too, use_t2, output_format)
@@ -720,7 +724,16 @@ class DiffLevel:
         # traverse all levels of this relationship
         while level and level is not self:
             # get this level's relationship object
-            if use_t2:
+            if level.additional.get("moved") and not reporting_move:
+                # To ensure we can properly replay items such as values_changed in items that may have moved, we
+                # need to make sure that all paths are reported relative to t2 if a level has reported a move.
+                # If we are reporting a move, the path is already correct and does not need to be swapped.
+                # Additional context of "moved" is only ever set if using iterable_compare_func and a move has taken place.
+                level_use_t2 = not use_t2
+            else:
+                level_use_t2 = use_t2
+
+            if level_use_t2:
                 next_rel = level.t2_child_rel or level.t1_child_rel
             else:
                 next_rel = level.t1_child_rel or level.t2_child_rel  # next relationship object to get a formatted param from
