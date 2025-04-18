@@ -68,6 +68,9 @@ force : Boolean, default=False
 always_include_values : Boolean, default=False
     :ref:`always_include_values_label` is used to make sure the delta objects includes the values that were changed. Sometime Delta tries to be efficient not include the values when it can get away with it. By setting this parameter to True, you ensure that the Delta object will include the values.
 
+fill : Any, default=No Fill
+    :ref:`delta_fill` This is only relevant if `force` is set. This parameter only applies when force is set and trying to fill an existing array. If the index of the array being applied is larger than the length of the array this value will be used to fill empty spaces of the array to extend it in order to add the new value. If this parameter is not set, the items will get dropped and the array not extended.
+
 
 **Returns**
 

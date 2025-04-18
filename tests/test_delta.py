@@ -2131,6 +2131,48 @@ class TestDeltaCompareFunc:
         expected = {'x': {'y': {3: 4}}, 'q': {'t': 0.5}}
         assert expected == result
 
+    def test_delta_force_fill(self):
+        t1 = {
+            'x': {
+                'y': [{"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}]
+            },
+            'q': {
+                'r': 'abc',
+            }
+        }
+
+        t2 = {
+            'x': {
+                'y': [{"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}]
+            },
+            'q': {
+                'r': 'abc',
+                't': 0.5,
+            }
+        }
+
+        diff = DeepDiff(t1, t2)
+
+        delta = Delta(diff=diff, force=True)
+        result = {"x": {"y": [1,]}} + delta
+        expected = {'x': {'y': [1]}, 'q': {'t': 0.5}}
+        assert expected == result
+
+
+        delta = Delta(diff=diff, force=True, fill=None)
+        result = {"x": {"y": [1,]}} + delta
+        expected = {'x': {'y': [1, None, None, None, {"b": "c"}, {"b": "c"}, {"b": "c"}]}, 'q': {'t': 0.5}}
+        assert expected == result
+
+
+        def fill_func(obj, value, path):
+            return value.copy()
+
+        delta = Delta(diff=diff, force=True, fill=fill_func)
+        result = {"x": {"y": [1,]}} + delta
+        expected = {'x': {'y': [1, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}, {"b": "c"}]}, 'q': {'t': 0.5}}
+        assert expected == result
+
     def test_flatten_dict_with_one_key_added(self):
         t1 = {"field1": {"joe": "Joe"}}
         t2 = {"field1": {"joe": "Joe Nobody"}, "field2": {"jimmy": "Jimmy"}}
