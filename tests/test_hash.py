@@ -196,6 +196,19 @@ class TestDeepHash:
         a_hash = DeepHash(a)[a]
         assert not( a_hash is unprocessed)
 
+    def test_numpy_datetime64(self):
+        now_dt = datetime.datetime.now()
+        now = np.datetime64(now_dt)
+        later = np.datetime64(now_dt + datetime.timedelta(seconds=10))
+        a = b = now
+        a_hash = DeepHash(a)
+        b_hash = DeepHash(b)
+        assert a_hash[a] == b_hash[b]
+
+        later_hash = DeepHash(later)
+        assert a_hash[a] != later_hash[later]
+
+
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""
 
