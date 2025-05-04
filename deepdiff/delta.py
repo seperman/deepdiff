@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import List, Dict, IO, Callable, Set, Union, Optional
+from typing import List, Dict, IO, Callable, Set, Union, Optional, Any
 from functools import partial, cmp_to_key
 from collections.abc import Mapping
 from copy import deepcopy
@@ -86,6 +86,7 @@ class Delta:
         always_include_values: bool=False,
         iterable_compare_func_was_used: Optional[bool]=None,
         force: bool=False,
+        fill: Any=not_found,
     ):
         # for pickle deserializer:
         if hasattr(deserializer, '__code__') and 'safe_to_import' in set(deserializer.__code__.co_varnames):
@@ -158,6 +159,7 @@ class Delta:
         self.serializer = serializer
         self.deserializer = deserializer
         self.force = force
+        self.fill = fill
         if force:
             self.get_nested_obj = _get_nested_obj_and_force
         else:
@@ -285,6 +287,13 @@ class Delta:
                     obj[elem] = value
                 except IndexError:
                     if elem == len(obj):
+                        obj.append(value)
+                    elif self.fill is not not_found and elem > len(obj):
+                        while len(obj) < elem:
+                            if callable(self.fill):
+                                obj.append(self.fill(obj, value, path_for_err_reporting))
+                            else:
+                                obj.append(self.fill)
                         obj.append(value)
                     else:
                         self._raise_or_log(ELEM_NOT_FOUND_TO_ADD_MSG.format(elem, path_for_err_reporting))
