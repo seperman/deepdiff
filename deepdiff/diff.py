@@ -952,11 +952,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
 
                     if self.iterable_compare_func:
-                        # Intentionally setting j as the first child relationship param in cases of a moved item.
-                        # If the item was moved using an iterable_compare_func then we want to make sure that the index
-                        # is relative to t2.
-                        reference_param1 = j
-                        reference_param2 = i
+                        # Mark additional context denoting that we have moved an item.
+                        # This will allow for correctly setting paths relative to t2 when using an iterable_compare_func
+                        level.additional["moved"] = True
+
                     else:
                         continue
 
