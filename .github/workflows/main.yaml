@@ -25,39 +25,28 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Install nox
-        run: pip install nox
-      - name: Upgrade setuptools & wheel (for all venvs)
-        run: pip install --upgrade setuptools wheel
-
       - name: Lint with flake8
-        if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
+        if: ${{ matrix.python-version == '3.12' }}
         run: |
-          nox -e flake8 -- \
-            deepdiff \
-            --count --select=E9,F63,F7,F82 \
-            --show-source --statistics
-          nox -e flake8 -- \
-            deepdiff \
-            --count --exit-zero \
-            --max-complexity=26 --max-line-length=250 \
-            --statistics
+          nox -s flake8 -- deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
+          nox -s flake8 -- deepdiff --count --exit-zero --max-complexity=26 --max-line-length=250 --statistics
 
-      - name: Test with pytest (coverage)
-        if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
+      - name: Test with pytest (no coverage)
+        if: ${{ matrix.python-version != '3.12' }}
         run: |
-          nox -e pytest -- \
+          nox -s pytest-${{ matrix.python-version }} -- --benchmark-disable tests/
+
+      - name: Test with pytest (+ coverage)
+        if: ${{ matrix.python-version == '3.12' }}
+        run: |
+          nox -s pytest-${{ matrix.python-version }} -- \
             --benchmark-disable \
             --cov-report=xml \
             --cov=deepdiff \
             tests/ --runslow
 
-      - name: Test with pytest (no coverage)
-        if: ${{ matrix.python-version != env.DEFAULT_PYTHON }}
-        run: nox -e pytest -- --benchmark-disable tests/
-
       - name: Upload coverage
-        if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
+        if: ${{ matrix.python-version == '3.12' }}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
