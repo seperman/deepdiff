@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "deepdiff"
 version = "8.4.2"
 dependencies = [
-  "orderly-set>=5.3.0,<6",
+  "orderly-set>=5.4.1,<6",
 ]
 requires-python = ">=3.9"
 authors = [
@@ -54,6 +54,7 @@ dev = [
   "tomli-w~=1.2.0",
   "pandas~=2.2.0",
   "polars~=1.21.0",
+  "nox==2025.5.1",
 ]
 docs = [
   # We use the html style that is not supported in Sphinx 7 anymore.
@@ -72,6 +73,9 @@ test = [
   "pytest-benchmark~=5.1.0",
   "pytest-cov~=6.0.0",
   "python-dotenv~=1.0.0",
+]
+optimize = [
+  "orjson",
 ]
 
 [project.scripts]
