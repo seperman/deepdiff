@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "deepdiff"
-version = "8.4.2"
+version = "8.5.0"
 dependencies = [
   "orderly-set>=5.4.1,<6",
 ]
