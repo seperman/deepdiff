@@ -25,6 +25,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
+      - name: Install nox
+        run: pip install nox==2025.5.1
+      - name: Upgrade setuptools & wheel (for all venvs)
+        run: pip install --upgrade setuptools wheel
+
       - name: Lint with flake8
         if: ${{ matrix.python-version == '3.12' }}
         run: |
