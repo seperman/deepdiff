@@ -32,7 +32,6 @@ from deepdiff.helper import (
     pydantic_base_model_type,
     PydanticBaseModel,
     NotPresent,
-    ipranges,
 )
 from deepdiff.model import DeltaResult
 
