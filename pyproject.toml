@@ -2,6 +2,9 @@
 requires = ["flit_core >=3.11,<4"]
 build-backend = "flit_core.buildapi"
 
+[tool.flit.include]
+paths = ["deepdiff/py.typed"]
+
 [project]
 name = "deepdiff"
 version = "8.5.0"
@@ -66,7 +69,6 @@ static = [
   "flake8~=7.1.0",
   "flake8-pyproject~=1.2.3",
   "pydantic~=2.10.0",
-  "types-setuptools~=75.8.0",
 ]
 test = [
   "pytest~=8.3.0",
@@ -100,9 +102,3 @@ exclude = "./data,./src,.svn,CVS,.bzr,.hg,.git,__pycache__"
 
 [tool.pytest.ini_options]
 addopts = "--pdbcls=IPython.terminal.debugger:Pdb"
-
-[tool.setuptools]
-packages = ["deepdiff"]
-
-[tool.setuptools.package-metadata]
-deepdiff = ["py.typed"]
