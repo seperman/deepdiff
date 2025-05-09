@@ -2,9 +2,6 @@
 requires = ["flit_core >=3.11,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.include]
-paths = ["deepdiff/py.typed"]
-
 [project]
 name = "deepdiff"
 version = "8.5.0"
