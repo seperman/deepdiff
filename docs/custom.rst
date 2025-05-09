@@ -202,7 +202,7 @@ Base Operator Plus
             pass
 
         @abstractmethod
-        def give_up_diffing(self, level, diff_instance: float) -> bool:
+        def give_up_diffing(self, level, diff_instance: "DeepDiff") -> bool:
             """
             Given a level which includes t1 and t2 in the tree view, and the "distance" between l1 and l2.
             do we consider t1 and t2 to be equal or not. The distance is a number between zero to one and is calculated by DeepDiff to measure how similar objects are.

@@ -58,6 +58,7 @@ except ImportError:  # pragma: no cover. The case without Numpy is tested locall
     np_complex128 = np_type  # pragma: no cover.
     np_cdouble = np_type  # pragma: no cover.
     np_complexfloating = np_type  # pragma: no cover.
+    np_datetime64 = np_type  # pragma: no cover.
 else:
     np_array_factory = np.array
     np_ndarray = np.ndarray
@@ -80,6 +81,7 @@ else:
     np_complex128 = np.complex128
     np_cdouble = np.cdouble  # np.complex_ is an alias for np.cdouble and is being removed by NumPy 2.0
     np_complexfloating = np.complexfloating
+    np_datetime64 = np.datetime64
 
 numpy_numbers = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
@@ -93,6 +95,7 @@ numpy_complex_numbers = (
 
 numpy_dtypes = set(numpy_numbers)
 numpy_dtypes.add(np_bool_)  # type: ignore
+numpy_dtypes.add(np_datetime64)  # type: ignore
 
 numpy_dtype_str_to_type = {
     item.__name__: item for item in numpy_dtypes
@@ -184,10 +187,10 @@ unicode_type = str
 bytes_type = bytes
 only_complex_number = (complex,) + numpy_complex_numbers
 only_numbers = (int, float, complex, Decimal) + numpy_numbers
-datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time)
+datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time, np_datetime64)
 ipranges = (ipaddress.IPv4Interface, ipaddress.IPv6Interface, ipaddress.IPv4Network, ipaddress.IPv6Network)
 uuids = (uuid.UUID, )
-times = (datetime.datetime, datetime.time)
+times = (datetime.datetime, datetime.time,np_datetime64)
 numbers: Tuple = only_numbers + datetimes
 booleans = (bool, np_bool_)
 
@@ -733,13 +736,17 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
                 ignore_private_variables and key.startswith('__') and not key.startswith(private_var_prefix)
             ):
                 del result[key]
+        if isinstance(obj, PydanticBaseModel):
+            getter = lambda x, y: getattr(type(x), y)
+        else:
+            getter = getattr
         for key in dir(obj):
             if key not in result and key not in ignore_keys and (
                     not ignore_private_variables or (
                         ignore_private_variables and not key.startswith('__') and not key.startswith(private_var_prefix)
                     )
             ):
-                value = getattr(obj, key)
+                value = getter(obj, key)
                 if not callable(value):
                     result[key] = value
     return result

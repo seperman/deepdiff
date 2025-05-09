@@ -1,8 +1,10 @@
 import re
-from typing import Any, Optional, List
+from typing import Any, Optional, List, TYPE_CHECKING
 from abc import ABCMeta, abstractmethod
 from deepdiff.helper import convert_item_or_items_into_compiled_regexes_else_none
 
+if TYPE_CHECKING:
+    from deepdiff import DeepDiff
 
 
 class BaseOperatorPlus(metaclass=ABCMeta):
@@ -16,7 +18,7 @@ class BaseOperatorPlus(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def give_up_diffing(self, level, diff_instance: float) -> bool:
+    def give_up_diffing(self, level, diff_instance: "DeepDiff") -> bool:
         """
         Given a level which includes t1 and t2 in the tree view, and the "distance" between l1 and l2.
         do we consider t1 and t2 to be equal or not. The distance is a number between zero to one and is calculated by DeepDiff to measure how similar objects are.

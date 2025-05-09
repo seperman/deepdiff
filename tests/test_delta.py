@@ -1880,14 +1880,59 @@ class TestDeltaCompareFunc:
         assert compare_func_t2 == recreated_t2
 
     def test_compare_func_with_duplicates_removed(self):
-        t1 = [{'id': 1, 'val': 1}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}, {'id': 3, 'val': 3}]
-        t2 = [{'id': 3, 'val': 3}, {'id': 2, 'val': 2}, {'id': 1, 'val': 3}]
+        t1 = [
+            {
+                'id': 1,
+                'val': 1,
+                "nested": [
+                    {"id": 1, "val": 1},
+                    {"id": 2, "val": 2},
+                ]
+            },
+            {
+                'id': 2,
+                'val': 2
+            },
+            {
+                'id': 1,
+                'val': 3
+            },
+            {
+                'id': 3,
+                'val': 3
+            }
+        ]
+        t2 = [
+            {
+                'id': 3,
+                'val': 3
+            },
+            {
+                'id': 2,
+                'val': 2
+            },
+            {
+                'id': 1,
+                'val': 3,
+                "nested":[
+                    {
+                        "id": 2,
+                        "val": 3
+                    },
+                ]
+            }
+        ]
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         expected = {
             "iterable_item_removed": {
                 "root[2]": {
                     "id": 1,
                     "val": 3
+                },
+
+                "root[2]['nested'][0]": {
+                    "id": 1,
+                    "val": 1
                 }
             },
             "iterable_item_moved": {
@@ -1895,6 +1940,14 @@ class TestDeltaCompareFunc:
                     "new_path": "root[2]",
                     "value": {
                         "id": 1,
+                        "val": 3,
+                        "nested": [{"id": 2, "val": 3}, ]
+                    },
+                },
+                "root[0]['nested'][1]": {
+                    "new_path": "root[2]['nested'][0]",
+                    "value": {
+                        "id": 2,
                         "val": 3
                     }
                 },
@@ -1907,6 +1960,11 @@ class TestDeltaCompareFunc:
                 }
             },
             'values_changed': {
+                "root[2]['nested'][0]['val']": {
+                    'new_path': "root[0]['nested'][1]['val']",
+                    'new_value': 3,
+                    'old_value': 2
+                },
                 "root[2]['val']": {
                     'new_value': 3,
                     'old_value': 1,
@@ -1914,6 +1972,7 @@ class TestDeltaCompareFunc:
                 }
             },
         }
+
         assert expected == ddiff
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
@@ -1922,10 +1981,14 @@ class TestDeltaCompareFunc:
         flat_result = delta.to_flat_rows()
         flat_expected = [
             {'path': [2, 'val'], 'value': 3, 'action': 'values_changed', 'type': int, 'new_path': [0, 'val']},
+            {'path': [2, 'nested', 0, 'val'], 'value': 3, 'action': 'values_changed', 'type': int, 'new_path': [0, 'nested', 1, 'val']},
+            {'path': [2, 'nested', 0], 'value': {'id': 1, 'val': 1}, 'action': 'iterable_item_removed', 'type': dict},
             {'path': [2], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
-            {'path': [0], 'value': {'id': 1, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
+            {'path': [0], 'value': {'id': 1, 'val': 3, 'nested': [{'id': 2, 'val': 3}]}, 'action': 'iterable_item_removed', 'type': dict},
+            {'path': [0, 'nested', 1], 'value': {'id': 2, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
             {'path': [3], 'value': {'id': 3, 'val': 3}, 'action': 'iterable_item_removed', 'type': dict},
-            {'path': [0], 'action': 'iterable_item_moved', 'value': {'id': 1, 'val': 3}, 'new_path': [2], 'type': dict},
+            {'path': [0], 'action': 'iterable_item_moved', 'value': {'id': 1, 'val': 3, 'nested': [{'id': 2, 'val': 3}]}, 'new_path': [2], 'type': dict},
+            {'path': [0, 'nested', 1], 'value': {'id': 2, 'val': 3}, 'action': 'iterable_item_moved', 'type': dict, 'new_path': [2, 'nested', 0]},
             {'path': [3], 'action': 'iterable_item_moved', 'value': {'id': 3, 'val': 3}, 'new_path': [0], 'type': dict},
         ]
         flat_expected = [FlatDeltaRow(**i) for i in flat_expected]
@@ -1942,11 +2005,20 @@ class TestDeltaCompareFunc:
                 },
                 'root[0]': {
                     'id': 1,
-                    'val': 3
+                    'val': 3,
+                    'nested': [{'id': 2, 'val': 3}]
                 },
                 'root[3]': {
                     'id': 3,
                     'val': 3
+                },
+                "root[2]['nested'][0]": {
+                    "id": 1,
+                    "val": 1
+                },
+                "root[0]['nested'][1]": {
+                    "id": 2,
+                    "val": 3
                 }
             },
             'iterable_item_moved': {
@@ -1954,6 +2026,14 @@ class TestDeltaCompareFunc:
                     'new_path': 'root[2]',
                     'value': {
                         'id': 1,
+                        'val': 3,
+                        'nested': [{'id': 2, 'val': 3}]
+                    }
+                },
+                "root[0]['nested'][1]": {
+                    'new_path': "root[2]['nested'][0]",
+                    'value': {
+                        'id': 2,
                         'val': 3
                     }
                 },
@@ -1968,8 +2048,12 @@ class TestDeltaCompareFunc:
             'values_changed': {
                 "root[2]['val']": {
                     'new_value': 3,
-                    'new_path': "root[0]['val']"
-                }
+                    'new_path': "root[0]['val']",
+                },
+                "root[2]['nested'][0]['val']": {
+                    'new_path': "root[0]['nested'][1]['val']",
+                    'new_value': 3,
+                },
             }
         }
         assert expected_delta_dict == delta_again.diff
@@ -2102,6 +2186,168 @@ class TestDeltaCompareFunc:
         ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
         delta = Delta(ddiff)
         recreated_t2 = t1 + delta
+        assert t2 == recreated_t2
+
+    def test_compare_func_deep_nested_changes(self):
+
+        t1 = {
+            "Locations": [
+                {
+                    "id": "c4fa7b12-f365-42a9-9544-3efc11963558",
+                    "Items": [
+                        {
+                            "id": "2399528f-2556-4e2c-bf9b-c8ea17bc323f"
+                        },
+                        {
+                            "id": "2399528f-2556-4e2c-bf9b-c8ea17bc323f1",
+                        },
+                        {
+                            "id": "2399528f-2556-4e2c-bf9b-c8ea17bc323f2"
+                        },
+                        {
+                            "id": "2399528f-2556-4e2c-bf9b-c8ea17bc323f3"
+                        }
+                    ]
+                },
+                {
+                    "id": "d9095676-bc41-4cbf-9fd2-7148bb26bcc4",
+                    "Items": [
+                        {
+                            "id": "26b78305-df71-40c0-8e98-dcd40b7f716d"
+                        },
+                        {
+                            "id": "3235125d-0110-4d0e-847a-24912cf73feb"
+                        },
+                        {
+                            "id": "7699552a-add9-4338-aeb9-662bec14c175"
+                        },
+                        {
+                            "id": "015e74f0-2c2a-45c0-a172-21758d14bf3a"
+                        }
+                    ]
+                },
+                {
+                    "id": "41b38757-8984-47fd-890d-8c4ed18c3c47",
+                    "Items": [
+                        {
+                            "id": "494e839e-37b1-4cac-b1dc-a44f3e6e7ada"
+                        },
+                        {
+                            "id": "60547ca6-3ef0-4b67-8826-2c7b76e67011"
+                        },
+                        {
+                            "id": "cee762a0-fbd8-48bb-ba92-be32cf3cf250"
+                        },
+                        {
+                            "id": "7a0da2b7-c1e6-45b4-8810-fec7b4b6186d"
+                        }
+                    ]
+                },
+                {
+                    "id": "c0be071a-5457-497d-9a78-ff7cb561d4d3",
+                    "Items": [
+                        {
+                            "id": "e54dcdff-ec99-4941-92eb-c12bb3cbeb91"
+                        }
+                    ]
+                },
+                {
+                    "id": "dfe4b37b-8df3-4dc6-8686-0588937fbe10",
+                    "Items": [
+                        {
+                            "id": "27a574ae-08db-47f9-a9dc-18df59287f4d"
+                        },
+                        {
+                            "id": "23edf031-8c4e-43d6-b5bf-4d5ee9008a36",
+                            "Containers": [
+                                {"id": "1", "val": 1},
+                                {"id": "2", "val": 2},
+                                {"id": "3", "val": 3},
+                            ]
+                        },
+                        {
+                            "id": "e1e54643-23ee-496d-b7d2-de67c4bb7d68"
+                        },
+                        {
+                            "id": "2f910da3-8cd0-4cf5-81c9-23668fc9477f"
+                        },
+                        {
+                            "id": "5e36d258-2a82-49ee-b4fc-db0a8c28b404"
+                        },
+                        {
+                            "id": "4bf2ce8d-05ed-4718-a529-8c9e4704e38f"
+                        },
+                    ]
+                },
+            ]
+        }
+
+        t2 = {
+            "Locations": [
+                {
+                    "id": "41b38757-8984-47fd-890d-8c4ed18c3c47",
+                    "Items": [
+                        {
+                            "id": "60547ca6-3ef0-4b67-8826-2c7b76e67011"
+                        },
+                        {
+                            "id": "cee762a0-fbd8-48bb-ba92-be32cf3cf250"
+                        },
+                        {
+                            "id": "7a0da2b7-c1e6-45b4-8810-fec7b4b6186d"
+                        }
+                    ]
+                },
+                {
+                    "id": "c0be071a-5457-497d-9a78-ff7cb561d4d3",
+                    "Items": [
+                        {
+                            "id": "e54dcdff-ec99-4941-92eb-c12bb3cbeb91"
+                        }
+                    ]
+                },
+                {
+                    "id": "dfe4b37b-8df3-4dc6-8686-0588937fbe10",
+                    "Items": [
+                        {
+                            "id": "27a574ae-08db-47f9-a9dc-18df59287f4d"
+                        },
+                        {
+                            "id": "27a574ae-08db-47f9-a9dc-88df59287f4d"
+                        },
+                        {
+                            "id": "23edf031-8c4e-43d6-b5bf-4d5ee9008a36",
+                            "Containers": [
+                                {"id": "1", "val": 1},
+                                {"id": "3", "val": 3},
+                                {"id": "2", "val": 2},
+                            ]
+                        },
+                        {
+                            "id": "e1e54643-23ee-496d-b7d2-de67c4bb7d68"
+                        },
+                        {
+                            "id": "2f910da3-8cd0-4cf5-81c9-23668fc9477f"
+                        },
+                        {
+                            "id": "5e36d258-2a82-49ee-b4fc-db0a8c28b404"
+                        },
+                        {
+                            "id": "4bf2ce8d-05ed-4718-a529-8c9e4704e38f"
+                        },
+                    ]
+                },
+            ]
+        }
+
+        ddiff = DeepDiff(t1, t2, iterable_compare_func=self.compare_func, verbose_level=2)
+
+        delta2 = Delta(ddiff)
+        expected_move_1 = {'new_path': "root['Locations'][2]['Items'][2]['Containers'][2]", 'value': {'id': '2', 'val': 2}}
+        expected_move_2 = {'new_path': "root['Locations'][2]['Items'][2]['Containers'][1]", 'value': {'id': '3', 'val': 3}}
+        assert ddiff["iterable_item_moved"]["root['Locations'][4]['Items'][1]['Containers'][1]"] == expected_move_1
+        assert ddiff["iterable_item_moved"]["root['Locations'][4]['Items'][1]['Containers'][2]"] == expected_move_2
+        recreated_t2 = t1 + delta2
         assert t2 == recreated_t2
 
     def test_delta_force1(self):

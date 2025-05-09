@@ -615,7 +615,7 @@ JSON_CONVERTOR = {
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:
-    JSON_CONVERTOR[PydanticBaseModel] = lambda x: x.dict()
+    JSON_CONVERTOR[PydanticBaseModel] = lambda x: x.model_dump()
 
 
 def json_convertor_default(default_mapping=None):

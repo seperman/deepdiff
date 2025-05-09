@@ -1,61 +1,60 @@
-name: Unit Tests
+name: CI
 
 on:
-  push:
-    branches: [ "master", "dev" ]
-  pull_request:
-    branches: [ "master", "dev" ]
+  push:    { branches: [master, dev] }
+  pull_request: { branches: [master, dev] }
 
 jobs:
   build:
-    env:
-      DEFAULT_PYTHON: 3.12
     runs-on: ubuntu-latest
+    env:
+      DEFAULT_PYTHON: '3.12'
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        architecture: ["x64"]
+        python-version: ['3.9','3.10','3.11','3.12','3.13']
+        architecture: ['x64']
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Python ${{ matrix.python-version }} on ${{ matrix.architecture }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.architecture }}
-    - name: Cache pip
-      env:
-        PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
-      uses: actions/cache@v4
-      with:
-        restore-keys: |
-          ${{ runner.os }}-
-    - name: Upgrade setuptools
-      if: matrix.python-version >= 3.12
-      run: |
-        # workaround for 3.12, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
-        pip install --upgrade setuptools
-    - name: Lint with flake8
-      if: matrix.python-version == ${{ env.DEFAULT_PYTHON }}
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        nox -e flake8 -- deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        nox -e flake8 -- deepdiff --count --exit-zero --max-complexity=26 --max-line-length=250 --statistics
-    - name: Test with pytest and get the coverage
-      if: matrix.python-version == ${{ env.DEFAULT_PYTHON }}
-      run: |
-        nox -e pytest -s -- --benchmark-disable --cov-report=xml --cov=deepdiff tests/ --runslow
-    - name: Test with pytest and no coverage report
-      if: matrix.python-version != ${{ env.DEFAULT_PYTHON }}
-      run: |
-        nox -e pytest -s -- --benchmark-disable tests/
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      if: matrix.python-version == ${{ env.DEFAULT_PYTHON }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      with:
-        file: ./coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
-        env_vars: OS,PYTHON
-        fail_ci_if_error: true
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install nox
+        run: pip install nox==2025.5.1
+      - name: Upgrade setuptools & wheel (for all venvs)
+        run: pip install --upgrade setuptools wheel
+
+      - name: Lint with flake8
+        if: ${{ matrix.python-version == '3.12' }}
+        run: |
+          nox -s flake8 -- deepdiff --count --select=E9,F63,F7,F82 --show-source --statistics
+          nox -s flake8 -- deepdiff --count --exit-zero --max-complexity=26 --max-line-length=250 --statistics
+
+      - name: Test with pytest (no coverage)
+        if: ${{ matrix.python-version != '3.12' }}
+        run: |
+          nox -s pytest-${{ matrix.python-version }} -- --benchmark-disable tests/
+
+      - name: Test with pytest (+ coverage)
+        if: ${{ matrix.python-version == '3.12' }}
+        run: |
+          nox -s pytest-${{ matrix.python-version }} -- \
+            --benchmark-disable \
+            --cov-report=xml \
+            --cov=deepdiff \
+            tests/ --runslow
+
+      - name: Upload coverage
+        if: ${{ matrix.python-version == '3.12' }}
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: coverage.xml
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true

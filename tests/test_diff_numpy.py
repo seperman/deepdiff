@@ -143,6 +143,25 @@ NUMPY_CASES = {
             }
         },
     },
+    'numpy_datetime_equal': {
+        't1': np.datetime64('2023-07-05T10:11:12'),
+        't2': np.datetime64('2023-07-05T10:11:12'),
+        'deepdiff_kwargs': {},
+        'expected_result': {},
+    },
+    'numpy_datetime_unequal': {
+        't1': np.datetime64('2023-07-05T10:11:12'),
+        't2': np.datetime64('2024-07-05T10:11:12'),
+        'deepdiff_kwargs': {},
+        'expected_result': {
+            'values_changed': {
+                'root': {
+                    'new_value': np.datetime64('2024-07-05T10:11:12'),
+                    'old_value': np.datetime64('2023-07-05T10:11:12'),
+                }
+            },
+        },
+    },
 }
 
 
