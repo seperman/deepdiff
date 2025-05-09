@@ -111,6 +111,13 @@ and polars support.
   function) to prefix every output when using the pretty() call.
 - `David Hotham <https://github.com/dimbleby>`__ for relaxing
   orderly-set dependency via #486
+- `dtorres-sf <https://github.com/dtorres-sf>`__ for the fix for moving
+  nested tables when using iterable_compare_func.
+- `Jim Cipar <https://github.com/jcipar>`__ for the fix recursion depth
+  limit when hashing numpy.datetime64
+- `Enji Cooper <https://github.com/ngie-eign>`__ for converting legacy
+  setuptools use to pyproject.toml
+
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com
 .. _Victor Hahn Castell: http://hahncastell.de

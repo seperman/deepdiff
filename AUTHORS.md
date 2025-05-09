@@ -72,3 +72,6 @@ Authors in order of the timeline of their contributions:
 - [Doron Behar](https://github.com/doronbehar) for fixing DeepHash for numpy booleans via #496 
 - [Aaron D. Marasco](https://github.com/AaronDMarasco) for adding print() options which allows a user-defined string (or callback function) to prefix every output when using the pretty() call.
 - [David Hotham](https://github.com/dimbleby) for relaxing orderly-set dependency via #486 
+- [dtorres-sf](https://github.com/dtorres-sf) for the fix for moving nested tables when using iterable_compare_func.
+- [Jim Cipar](https://github.com/jcipar) for the fix recursion depth limit when hashing numpy.datetime64
+- [Enji Cooper](https://github.com/ngie-eign) for converting legacy setuptools use to pyproject.toml

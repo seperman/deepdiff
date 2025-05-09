@@ -5,6 +5,13 @@ Changelog
 
 DeepDiff Changelog
 
+- v8-5-0
+    - Updating deprecated pydantic calls
+    - Switching to pyproject.toml
+    - Fix for moving nested tables when using iterable_compare_func.  by 
+    - Fix recursion depth limit when hashing numpy.datetime64
+    - Moving from legacy setuptools use to pyproject.toml
+
 - v8-4-2
     - fixes the type hints for the base
     - fixes summarize so if json dumps fails, we can still get a repr of the results
