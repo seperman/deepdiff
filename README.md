@@ -23,48 +23,20 @@ Tested on Python 3.9+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 8-5-0
+
+- Updating deprecated pydantic calls
+- Switching to pyproject.toml
+- Fix for moving nested tables when using iterable_compare_func.  by 
+- Fix recursion depth limit when hashing numpy.datetime64
+- Moving from legacy setuptools use to pyproject.toml
+
+
 DeepDiff 8-4-2
 
 - fixes the type hints for the base
 - fixes summarize so if json dumps fails, we can still get a repr of the results
 - adds ipaddress support
-
-DeepDiff 8-4-1
-
-- Adding BaseOperatorPlus base class for custom operators
-- default_timezone can be passed now to set your default timezone to something other than UTC.
-- New summarization algorithm that produces valid json
-- Better type hint support
-- Breaking change in DeepHash where we raise Exception instead of logging if we can't hash a value.
-- Added the log_stacktrace parameter to DeepDiff. When True, it will log the stacktrace along with the error.
-
-DeepDiff 8-3-0
-
-- Fixed some static typing issues
-- Added the summarize module for better repr of nested values
-
-DeepDiff 8-2-0
-
-- Small optimizations so we don't load functions that are not needed
-- Updated the minimum version of Orderly-set 
-- Normalize all datetimes into UTC. Assume timezone naive datetimes are UTC. 
-
-DeepDiff 8-1-0
-
-- Removing deprecated lines from setup.py
-- Added `prefix` option to `pretty()`
-- Fixes hashing of numpy boolean values.
-- Fixes __slots__ comparison when the attribute doesn't exist.
-- Relaxing orderly-set reqs
-- Added Python 3.13 support
-- Only lower if clean_key is instance of str #504
-- Fixes issue where the key deep_distance is not returned when both compared items are equal #510
-- Fixes exclude_paths fails to work in certain cases
-- exclude_paths fails to work #509
-- Fixes to_json() method chokes on standard json.dumps() kwargs such as sort_keys
-- to_dict() method chokes on standard json.dumps() kwargs  #490
-- Fixes accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty
-- Fixes accessing the affected_root_keys property on the diff object returned by DeepDiff fails when one of the dicts is empty #508
 
 
 ## Installation
