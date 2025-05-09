@@ -34,6 +34,9 @@ jobs:
       run: |
         # workaround for 3.12, SEE: https://github.com/pypa/setuptools/issues/3661#issuecomment-1813845177
         pip install --upgrade setuptools
+    - name: Install nox
+      run: |
+        pip install nox==2025.05.01
     - name: Lint with flake8
       if: matrix.python-version == ${{ env.DEFAULT_PYTHON }}
       run: |
