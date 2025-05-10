@@ -25,7 +25,7 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, ListItemRemove
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
-                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, COLORED_VIEW, detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
                              PydanticBaseModel, Opcode, SetOrdered, ipranges)
 from deepdiff.serialization import SerializationMixin
@@ -40,6 +40,7 @@ from deepdiff.model import (
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
+from deepdiff.colored_view import ColoredView
 
 if TYPE_CHECKING:
     from pytz.tzinfo import BaseTzInfo
@@ -365,7 +366,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
             self.tree.remove_empty_keys()
             view_results = self._get_view_results(self.view)
-            self.update(view_results)
+            if self.view == COLORED_VIEW:
+                self._colored_view = view_results
+            else:
+                self.update(view_results)
         finally:
             if self.is_root:
                 if cache_purge_level:
@@ -1759,6 +1763,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             result.remove_empty_keys()
         elif view == DELTA_VIEW:
             result = self._to_delta_dict(report_repetition_required=False)
+        elif view == COLORED_VIEW:
+            result = ColoredView(self.t2, tree_results=self.tree, verbose_level=self.verbose_level)
         else:
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
@@ -1898,6 +1904,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     if root_key is not notpresent:
                         result.add(root_key)
         return result
+
+    def __str__(self):
+        if hasattr(self, '_colored_view') and self.view == COLORED_VIEW:
+            return str(self._colored_view)
+        return super().__str__()
 
 
 if __name__ == "__main__":  # pragma: no cover
