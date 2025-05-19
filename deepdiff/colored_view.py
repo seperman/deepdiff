@@ -17,10 +17,11 @@ RESET = '\033[0m'
 class ColoredView:
     """A view that shows JSON with color-coded differences."""
 
-    def __init__(self, t2, tree_results, verbose_level=1):
+    def __init__(self, t2, tree_results, verbose_level=1, compact=False):
         self.t2 = t2
         self.tree = tree_results
         self.verbose_level = verbose_level
+        self.compact = compact
         self.diff_paths = self._collect_diff_paths()
 
     def _collect_diff_paths(self) -> Dict[str, str]:
@@ -63,11 +64,16 @@ class ColoredView:
                     removed[literal_eval(key_suffix[1:-1])] = value[1]
         return removed
 
+    def _has_differences(self, path_prefix: str) -> bool:
+        """Check if a path prefix has any differences under it."""
+        return any(diff_path.startswith(path_prefix + "[") for diff_path in self.diff_paths)
+
     def _colorize_json(self, obj: Any, path: str = 'root', indent: int = 0) -> str:
         """Recursively colorize JSON based on differences, with pretty-printing."""
         INDENT = '  '
         current_indent = INDENT * indent
         next_indent = INDENT * (indent + 1)
+
         if path in self.diff_paths and path not in self._colorize_skip_paths:
             diff_type, old, new = self.diff_paths[path]
             if diff_type == 'changed':
@@ -76,6 +82,9 @@ class ColoredView:
                 return f"{GREEN}{self._format_value(new)}{RESET}"
             elif diff_type == 'removed':
                 return f"{RED}{self._format_value(old)}{RESET}"
+
+        if isinstance(obj, (dict, list)) and self.compact and not self._has_differences(path):
+            return '{...}' if isinstance(obj, dict) else '[...]'
 
         if isinstance(obj, dict):
             if not obj:
@@ -99,6 +108,7 @@ class ColoredView:
             removed_map = self._get_path_removed(path)
             for index in removed_map:
                 self._colorize_skip_paths.add(f"{path}[{index}]")
+
             items = []
             index = 0
             for value in obj:

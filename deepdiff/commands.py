@@ -54,8 +54,8 @@ def cli():
 @click.option('--significant-digits', required=False, default=None, type=int, show_default=True)
 @click.option('--truncate-datetime', required=False, type=click.Choice(['second', 'minute', 'hour', 'day'], case_sensitive=True), show_default=True, default=None)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
+@click.option('--view', required=False, type=click.Choice(['-', 'colored', 'colored_compact'], case_sensitive=True), show_default=True, default="-")
 @click.option('--debug', is_flag=True, show_default=False)
-@click.option('--view', required=False, type=click.Choice(['tree', 'colored'], case_sensitive=True), show_default=True, default="text")
 def diff(
     *args, **kwargs
 ):
@@ -113,7 +113,7 @@ def diff(
         sys.stdout.buffer.write(delta.dumps())
     else:
         try:
-            if kwargs["view"] == 'colored':
+            if kwargs["view"] in {'colored', 'colored_compact'}:
                 print(diff)
             else:
                 print(diff.to_json(indent=2))

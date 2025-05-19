@@ -1,5 +1,5 @@
 from deepdiff import DeepDiff
-from deepdiff.helper import COLORED_VIEW
+from deepdiff.helper import COLORED_VIEW, COLORED_COMPACT_VIEW
 from deepdiff.colored_view import RED, GREEN, RESET
 
 def test_colored_view_basic():
@@ -137,4 +137,175 @@ def test_colored_view_with_empty_diff():
   "a": 1,
   "b": 2
 }'''
+    assert result == expected
+
+def test_compact_view_basic():
+    t1 = {
+        "name": "John",
+        "age": 30,
+        "gender": "male",
+        "scores": [1, 2, 3],
+        "address": {
+            "city": "New York",
+            "zip": "10001",
+            "details": {
+                "type": "apartment",
+                "floor": 5
+            }
+        },
+        "hobbies": ["reading", {"sport": "tennis", "level": "advanced"}]
+    }
+
+    t2 = {
+        "name": "John",
+        "age": 31,  # Changed
+        "scores": [1, 2, 4],  # Changed
+        "address": {
+            "city": "Boston",  # Changed
+            "zip": "10001",
+            "details": {
+                "type": "apartment",
+                "floor": 5
+            }
+        },
+        "team": "abc",  # Added
+        "hobbies": ["reading", {"sport": "tennis", "level": "advanced"}]
+    }
+
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    result = str(diff)
+
+    expected = f'''{{
+  "name": "John",
+  "age": {RED}30{RESET} -> {GREEN}31{RESET},
+  "scores": [
+    1,
+    2,
+    {RED}3{RESET} -> {GREEN}4{RESET}
+  ],
+  "address": {{
+    "city": {RED}"New York"{RESET} -> {GREEN}"Boston"{RESET},
+    "zip": "10001",
+    "details": {{...}}
+  }},
+  {GREEN}"team": {GREEN}"abc"{RESET}{RESET},
+  "hobbies": [...],
+  {RED}"gender": {RED}"male"{RESET}{RESET}
+}}'''
+    assert result == expected
+
+def test_compact_view_nested_changes():
+    t1 = {
+        "level1": {
+            "unchanged1": {
+                "deep1": True,
+                "deep2": [1, 2, 3]
+            },
+            "level2": {
+                "a": 1,
+                "b": "test",
+                "c": [1, 2, 3],
+                "d": {"x": 1, "y": 2}
+            },
+            "unchanged2": [1, 2, {"a": 1}]
+        }
+    }
+
+    t2 = {
+        "level1": {
+            "unchanged1": {
+                "deep1": True,
+                "deep2": [1, 2, 3]
+            },
+            "level2": {
+                "a": 2,  # Changed
+                "b": "test",
+                "c": [1, 2, 4],  # Changed
+                "d": {"x": 1, "y": 3}  # Changed
+            },
+            "unchanged2": [1, 2, {"a": 1}]
+        }
+    }
+
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    result = str(diff)
+
+    expected = f'''{{
+  "level1": {{
+    "unchanged1": {{...}},
+    "level2": {{
+      "a": {RED}1{RESET} -> {GREEN}2{RESET},
+      "b": "test",
+      "c": [
+        1,
+        2,
+        {RED}3{RESET} -> {GREEN}4{RESET}
+      ],
+      "d": {{
+        "x": 1,
+        "y": {RED}2{RESET} -> {GREEN}3{RESET}
+      }}
+    }},
+    "unchanged2": [...]
+  }}
+}}'''
+    assert result == expected
+
+def test_compact_view_no_changes():
+    # Test with dict
+    t1 = {"a": 1, "b": [1, 2], "c": {"x": True}}
+    t2 = {"a": 1, "b": [1, 2], "c": {"x": True}}
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    assert str(diff) == "{...}"
+
+    # Test with list
+    t1 = [1, {"a": 1}, [1, 2]]
+    t2 = [1, {"a": 1}, [1, 2]]
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    assert str(diff) == "[...]"
+
+def test_compact_view_list_changes():
+    t1 = [1, {"a": 1, "b": {"x": 1, "y": 2}}, [1, 2, {"z": 3}]]
+    t2 = [1, {"a": 2, "b": {"x": 1, "y": 2}}, [1, 2, {"z": 3}]]
+
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    result = str(diff)
+
+    expected = f'''[
+  1,
+  {{
+    "a": {RED}1{RESET} -> {GREEN}2{RESET},
+    "b": {{...}}
+  }},
+  [...]
+]'''
+    assert result == expected
+
+def test_compact_view_primitive_siblings():
+    t1 = {
+        "changed": 1,
+        "str_sibling": "hello",
+        "int_sibling": 42,
+        "bool_sibling": True,
+        "nested_sibling": {"a": 1, "b": 2}
+    }
+
+    t2 = {
+        "changed": 2,
+        "str_sibling": "hello",
+        "int_sibling": 42,
+        "bool_sibling": True,
+        "nested_sibling": {"a": 1, "b": 2}
+    }
+
+    diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
+    result = str(diff)
+
+    expected = f'''{{
+  "changed": {RED}1{RESET} -> {GREEN}2{RESET},
+  "str_sibling": "hello",
+  "int_sibling": 42,
+  "bool_sibling": true,
+  "nested_sibling": {{...}}
+}}'''
     assert result == expected
