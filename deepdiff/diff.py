@@ -1907,6 +1907,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                         result.add(root_key)
         return result
 
+    def __bool__(self):
+        if hasattr(self, '_colored_view') and self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
+            return bool(self.tree)  # Use the tree for boolean evaluation, not the view
+        return super().__bool__()
+
     def __str__(self):
         if hasattr(self, '_colored_view') and self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
             return str(self._colored_view)

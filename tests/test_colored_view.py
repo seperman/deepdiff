@@ -309,3 +309,28 @@ def test_compact_view_primitive_siblings():
   "nested_sibling": {{...}}
 }}'''
     assert result == expected
+
+
+def test_colored_view_bool_evaluation():
+    # Test COLORED_VIEW
+    # Scenario 1: No differences
+    t1_no_diff = {"a": 1, "b": 2}
+    t2_no_diff = {"a": 1, "b": 2}
+    diff_no_diff_colored = DeepDiff(t1_no_diff, t2_no_diff, view=COLORED_VIEW)
+    assert not bool(diff_no_diff_colored), "bool(diff) should be False when no diffs (colored view)"
+
+    # Scenario 2: With differences
+    t1_with_diff = {"a": 1, "b": 2}
+    t2_with_diff = {"a": 1, "b": 3}
+    diff_with_diff_colored = DeepDiff(t1_with_diff, t2_with_diff, view=COLORED_VIEW)
+    assert bool(diff_with_diff_colored), "bool(diff) should be True when diffs exist (colored view)"
+
+    # Test COLORED_COMPACT_VIEW
+    # Scenario 1: No differences
+    diff_no_diff_compact = DeepDiff(t1_no_diff, t2_no_diff, view=COLORED_COMPACT_VIEW)
+    assert not bool(diff_no_diff_compact), "bool(diff) should be False when no diffs (compact view)"
+
+    # Scenario 2: With differences
+    diff_with_diff_compact = DeepDiff(t1_with_diff, t2_with_diff, view=COLORED_COMPACT_VIEW)
+    assert bool(diff_with_diff_compact), "bool(diff) should be True when diffs exist (compact view)"
+
