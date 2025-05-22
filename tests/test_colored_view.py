@@ -2,6 +2,7 @@ from deepdiff import DeepDiff
 from deepdiff.helper import COLORED_VIEW, COLORED_COMPACT_VIEW
 from deepdiff.colored_view import RED, GREEN, RESET
 
+
 def test_colored_view_basic():
     t1 = {
         "name": "John",
@@ -45,6 +46,7 @@ def test_colored_view_basic():
 }}'''
     assert result == expected
 
+
 def test_colored_view_nested_changes():
     t1 = {
         "level1": {
@@ -80,6 +82,7 @@ def test_colored_view_nested_changes():
 }}'''
     assert result == expected
 
+
 def test_colored_view_list_changes():
     t1 = [1, 2, 3, 4]
     t2 = [1, 5, 3, 6]
@@ -94,6 +97,7 @@ def test_colored_view_list_changes():
   {RED}4{RESET} -> {GREEN}6{RESET}
 ]'''
     assert result == expected
+
 
 def test_colored_view_list_deletions():
     t1 = [1, 2, 3, 4, 5, 6]
@@ -112,7 +116,59 @@ def test_colored_view_list_deletions():
 ]'''
     assert result == expected
 
-def test_colored_view_with_ignore_order():
+
+def test_colored_view_list_additions():
+    t1 = [2, 4]
+    t2 = [1, 2, 3, 4, 5]
+
+    diff = DeepDiff(t1, t2, view=COLORED_VIEW)
+    result = str(diff)
+
+    expected = f'''[
+  {GREEN}1{RESET},
+  2,
+  {GREEN}3{RESET},
+  4,
+  {GREEN}5{RESET}
+]'''
+    assert result == expected
+
+
+def test_colored_view_list_changes_deletions():
+    t1 = [1, 5, 7, 3, 6]
+    t2 = [1, 2, 3, 4]
+
+    diff = DeepDiff(t1, t2, view=COLORED_VIEW)
+    result = str(diff)
+
+    expected = f'''[
+  1,
+  {RED}5{RESET} -> {GREEN}2{RESET},
+  {RED}7{RESET},
+  3,
+  {RED}6{RESET} -> {GREEN}4{RESET}
+]'''
+    assert result == expected
+
+
+def test_colored_view_list_changes_additions():
+    t1 = [1, 2, 3, 4]
+    t2 = [1, 5, 7, 3, 6]
+
+    diff = DeepDiff(t1, t2, view=COLORED_VIEW)
+    result = str(diff)
+
+    expected = f'''[
+  1,
+  {RED}2{RESET} -> {GREEN}5{RESET},
+  {GREEN}7{RESET},
+  3,
+  {RED}4{RESET} -> {GREEN}6{RESET}
+]'''
+    assert result == expected
+
+
+def test_colored_view_list_no_changes_with_ignore_order():
     t1 = [1, 2, 3]
     t2 = [3, 2, 1]
 
@@ -126,7 +182,8 @@ def test_colored_view_with_ignore_order():
 ]'''
     assert result == expected
 
-def test_colored_view_with_empty_diff():
+
+def test_colored_view_no_changes():
     t1 = {"a": 1, "b": 2}
     t2 = {"a": 1, "b": 2}
 
@@ -138,6 +195,7 @@ def test_colored_view_with_empty_diff():
   "b": 2
 }'''
     assert result == expected
+
 
 def test_compact_view_basic():
     t1 = {
@@ -193,6 +251,7 @@ def test_compact_view_basic():
   {RED}"gender": {RED}"male"{RESET}{RESET}
 }}'''
     assert result == expected
+
 
 def test_compact_view_nested_changes():
     t1 = {
@@ -251,6 +310,7 @@ def test_compact_view_nested_changes():
 }}'''
     assert result == expected
 
+
 def test_compact_view_no_changes():
     # Test with dict
     t1 = {"a": 1, "b": [1, 2], "c": {"x": True}}
@@ -263,6 +323,7 @@ def test_compact_view_no_changes():
     t2 = [1, {"a": 1}, [1, 2]]
     diff = DeepDiff(t1, t2, view=COLORED_COMPACT_VIEW)
     assert str(diff) == "[...]"
+
 
 def test_compact_view_list_changes():
     t1 = [1, {"a": 1, "b": {"x": 1, "y": 2}}, [1, 2, {"z": 3}]]
@@ -280,6 +341,7 @@ def test_compact_view_list_changes():
   [...]
 ]'''
     assert result == expected
+
 
 def test_compact_view_primitive_siblings():
     t1 = {
@@ -333,4 +395,3 @@ def test_colored_view_bool_evaluation():
     # Scenario 2: With differences
     diff_with_diff_compact = DeepDiff(t1_with_diff, t2_with_diff, view=COLORED_COMPACT_VIEW)
     assert bool(diff_with_diff_compact), "bool(diff) should be True when diffs exist (compact view)"
-

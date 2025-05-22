@@ -1,9 +1,10 @@
 import json
+import os
 from ast import literal_eval
 from importlib.util import find_spec
 from typing import Any, Dict
 
-if find_spec("colorama"):
+if os.name == "nt" and find_spec("colorama"):
     import colorama
 
     colorama.init()
@@ -13,6 +14,7 @@ if find_spec("colorama"):
 RED = '\033[31m'
 GREEN = '\033[32m'
 RESET = '\033[0m'
+
 
 class ColoredView:
     """A view that shows JSON with color-coded differences."""
@@ -127,7 +129,7 @@ class ColoredView:
     def __str__(self) -> str:
         """Return the colorized, pretty-printed JSON string."""
         self._colorize_skip_paths = set()
-        return self._colorize_json(self.t2, indent=0)
+        return self._colorize_json(self.t2)
 
     def __iter__(self):
         """Make the view iterable by yielding the tree results."""

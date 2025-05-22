@@ -25,7 +25,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, ListItemRemove
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
-                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, COLORED_VIEW, COLORED_COMPACT_VIEW, __dict__, add_root_to_paths,
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, COLORED_VIEW, COLORED_COMPACT_VIEW,
+                             detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
                              PydanticBaseModel, Opcode, SetOrdered, ipranges)
 from deepdiff.serialization import SerializationMixin
@@ -366,7 +367,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
             self.tree.remove_empty_keys()
             view_results = self._get_view_results(self.view)
-            if self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
+            if isinstance(view_results, ColoredView):
+                self.update(view_results.tree)
                 self._colored_view = view_results
             else:
                 self.update(view_results)
@@ -1906,11 +1908,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     if root_key is not notpresent:
                         result.add(root_key)
         return result
-
-    def __bool__(self):
-        if hasattr(self, '_colored_view') and self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
-            return bool(self.tree)  # Use the tree for boolean evaluation, not the view
-        return super().__bool__()
 
     def __str__(self):
         if hasattr(self, '_colored_view') and self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
