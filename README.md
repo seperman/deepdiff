@@ -84,6 +84,16 @@ Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 
 :mega: **Please fill out our [fast 5-question survey](https://forms.gle/E6qXexcgjoKnSzjB8)** so that we can learn how & why you use DeepDiff, and what improvements we should make. Thank you! :dancers:
 
+# Local dev
+
+1. Clone the repo
+2. Switch to the dev branch
+3. Create your own branch
+4. Install dependencies
+
+    - Method 1: Use [`uv`](https://github.com/astral-sh/uv) to install the dependencies:  `uv sync --all-extras`.
+    - Method 2: Use pip: `pip install -e ".[cli,coverage,dev,docs,static,test]"`
+
 # Contribute
 
 1. Please make your PR against the dev branch
