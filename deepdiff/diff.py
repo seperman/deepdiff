@@ -1766,9 +1766,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         elif view == DELTA_VIEW:
             result = self._to_delta_dict(report_repetition_required=False)
         elif view == COLORED_VIEW:
-            result = ColoredView(self.t2, tree_results=result, verbose_level=self.verbose_level)
+            result = ColoredView(t2=self.t2, tree_result=self.tree, compact=False)
         elif view == COLORED_COMPACT_VIEW:
-            result = ColoredView(self.t2, tree_results=result, verbose_level=self.verbose_level, compact=True)
+            result = ColoredView(t2=self.t2, tree_result=self.tree, compact=True)
         else:
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result

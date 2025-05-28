@@ -4,6 +4,9 @@ from ast import literal_eval
 from importlib.util import find_spec
 from typing import Any, Dict
 
+from deepdiff.model import TextResult, TreeResult
+
+
 if os.name == "nt" and find_spec("colorama"):
     import colorama
 
@@ -19,30 +22,31 @@ RESET = '\033[0m'
 class ColoredView:
     """A view that shows JSON with color-coded differences."""
 
-    def __init__(self, t2, tree_results, verbose_level=1, compact=False):
+    def __init__(self, t2: Any, tree_result: TreeResult, compact: bool = False):
         self.t2 = t2
-        self.tree = tree_results
-        self.verbose_level = verbose_level
+        self.tree = tree_result
         self.compact = compact
         self.diff_paths = self._collect_diff_paths()
 
     def _collect_diff_paths(self) -> Dict[str, str]:
         """Collect all paths that have differences and their types."""
+        text_result = TextResult(tree_results=self.tree, verbose_level=2)
         diff_paths = {}
-        for diff_type, items in self.tree.items():
+        for diff_type, items in text_result.items():
+            if not items:
+                continue
             try:
-                iterator = iter(items)
+                iter(items)
             except TypeError:
                 continue
-            for item in items:
-                if type(item).__name__ == "DiffLevel":
-                    path = item.path()
-                    if diff_type in ('values_changed', 'type_changes'):
-                        diff_paths[path] = ('changed', item.t1, item.t2)
-                    elif diff_type in ('dictionary_item_added', 'iterable_item_added', 'set_item_added'):
-                        diff_paths[path] = ('added', None, item.t2)
-                    elif diff_type in ('dictionary_item_removed', 'iterable_item_removed', 'set_item_removed'):
-                        diff_paths[path] = ('removed', item.t1, None)
+            for path, item in items.items():
+                if diff_type in ("values_changed", "type_changes"):
+                    changed_path = item.get("new_path") or path
+                    diff_paths[changed_path] = ("changed", item["old_value"], item["new_value"])
+                elif diff_type in ("dictionary_item_added", "iterable_item_added", "set_item_added"):
+                    diff_paths[path] = ("added", None, item)
+                elif diff_type in ("dictionary_item_removed", "iterable_item_removed", "set_item_removed"):
+                    diff_paths[path] = ("removed", item, None)
         return diff_paths
 
     def _format_value(self, value: Any) -> str:
@@ -112,14 +116,13 @@ class ColoredView:
                 self._colorize_skip_paths.add(f"{path}[{index}]")
 
             items = []
-            index = 0
-            for value in obj:
-                new_path = f"{path}[{index}]"
-                while index == next(iter(removed_map), None):
-                    items.append(f'{next_indent}{RED}{self._format_value(removed_map.pop(index))}{RESET}')
-                    index += 1
-                items.append(f'{next_indent}{self._colorize_json(value, new_path, indent + 1)}')
-                index += 1
+            remove_index = 0
+            for index, value in enumerate(obj):
+                while remove_index == next(iter(removed_map), None):
+                    items.append(f'{next_indent}{RED}{self._format_value(removed_map.pop(remove_index))}{RESET}')
+                    remove_index += 1
+                items.append(f'{next_indent}{self._colorize_json(value, f"{path}[{index}]", indent + 1)}')
+                remove_index += 1
             for value in removed_map.values():
                 items.append(f'{next_indent}{RED}{self._format_value(value)}{RESET}')
             return '[\n' + ',\n'.join(items) + f'\n{current_indent}' + ']'

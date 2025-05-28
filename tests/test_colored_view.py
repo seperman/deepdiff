@@ -183,6 +183,36 @@ def test_colored_view_list_no_changes_with_ignore_order():
     assert result == expected
 
 
+def test_colored_view_list_with_ignore_order():
+    t1 = {
+        "hobbies": [
+            "reading",
+            "hiking"
+        ]
+    }
+
+    t2 = {
+        "hobbies": [
+            "hiking",
+            "painting",
+            "coding"
+        ]
+    }
+
+    diff = DeepDiff(t1, t2, view=COLORED_VIEW, ignore_order=True)
+    result = str(diff)
+
+    expected = f'''{{
+  "hobbies": [
+    {RED}"reading"{RESET},
+    "hiking",
+    {GREEN}"painting"{RESET},
+    {GREEN}"coding"{RESET}
+  ]
+}}'''
+    assert result == expected
+
+
 def test_colored_view_no_changes():
     t1 = {"a": 1, "b": 2}
     t2 = {"a": 1, "b": 2}
