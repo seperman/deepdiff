@@ -86,6 +86,12 @@ SAFE_TO_IMPORT = {
     'collections.OrderedDict',
     're.Pattern',
     'deepdiff.helper.Opcode',
+    'ipaddress.IPv4Interface',
+    'ipaddress.IPv6Interface',
+    'ipaddress.IPv4Network',
+    'ipaddress.IPv6Network',
+    'ipaddress.IPv4Address',
+    'ipaddress.IPv6Address',
 }
 
 
