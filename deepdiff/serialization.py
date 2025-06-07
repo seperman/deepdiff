@@ -11,6 +11,7 @@ import datetime  # NOQA
 import decimal  # NOQA
 import orderly_set  # NOQA
 import collections  # NOQA
+import ipaddress
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping
@@ -121,7 +122,8 @@ TYPE_STR_TO_TYPE = {
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,
     'iprange': str,
-    'IPv4Address': str,
+    'IPv4Address': ipaddress.IPv4Address,
+    'IPv6Address': ipaddress.IPv6Address,
 }
 
 
