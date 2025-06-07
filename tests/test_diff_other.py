@@ -12,6 +12,7 @@ from deepdiff.diff import (
     PURGE_LEVEL_RANGE_MSG)
 from concurrent.futures.process import ProcessPoolExecutor
 from concurrent.futures import as_completed
+from ipaddress import IPv4Address
 
 # Only the prep part of DeepHash. We don't need to test the actual hash function.
 DeepHashPrep = partial(DeepHash, apply_hash=False)
@@ -200,3 +201,9 @@ class TestDiffOther:
             for future in as_completed(futures, timeout=10):
                 assert not future._exception
                 assert expected_result == future._result
+
+    def test_ip_address_diff(self):
+        ip1 = IPv4Address("128.0.0.1")
+        ip2 = IPv4Address("128.0.0.2")
+        diff = DeepDiff(ip1, ip2)
+        assert {'values_changed': {'root': {'new_value': IPv4Address('128.0.0.2'), 'old_value': IPv4Address('128.0.0.1')}}} == diff

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from ipaddress import IPv4Address
 import os
 import json
 import sys
@@ -9,6 +10,7 @@ from typing import NamedTuple, Optional
 from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
+from pydantic import BaseModel, IPvAnyAddress
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode, SetOrdered
 from deepdiff.serialization import (
@@ -23,6 +25,11 @@ logging.disable(logging.CRITICAL)
 
 t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+
+
+class SampleSchema(BaseModel):
+    works: bool = False
+    ips: list[IPvAnyAddress]
 
 
 class SomeStats(NamedTuple):
@@ -114,6 +121,16 @@ class TestSerialization:
 
         ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
         assert expected == ddiff.to_dict()
+
+    def test_serialize_pydantic_model(self):
+        obj = SampleSchema(
+            works=True,
+            ips=["128.0.0.1"]
+        )
+        serialized = json_dumps(obj)
+        obj_again = json_loads(serialized)
+        assert {'works': True, 'ips': ['128.0.0.1']} == obj_again
+        assert {'works': True, 'ips': [IPv4Address('128.0.0.1')]} == obj.model_dump()
 
 
 @pytest.mark.skipif(pypy3, reason='clevercsv is not supported in pypy3')

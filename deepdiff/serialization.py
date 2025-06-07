@@ -32,6 +32,7 @@ from deepdiff.helper import (
     pydantic_base_model_type,
     PydanticBaseModel,
     NotPresent,
+    ipranges,
 )
 from deepdiff.model import DeltaResult
 
@@ -114,6 +115,7 @@ TYPE_STR_TO_TYPE = {
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,
     'iprange': str,
+    'IPv4Address': str,
 }
 
 
@@ -612,6 +614,7 @@ JSON_CONVERTOR = {
     tuple: _serialize_tuple,
     Mapping: dict,
     NotPresent: str,
+    ipranges: str,
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:
