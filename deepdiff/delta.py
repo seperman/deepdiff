@@ -330,11 +330,21 @@ class Delta:
         Set the element value on an object and if necessary convert the object to the proper mutable type
         """
         if isinstance(obj, tuple):
-            # convert this object back to a tuple later
-            obj = self._coerce_obj(
-                parent, obj, path, parent_to_obj_elem,
-                parent_to_obj_action, elements,
-                to_type=list, from_type=tuple)
+            # Check if it's a NamedTuple and use _replace() to generate a new copy with the change
+            if hasattr(obj, '_fields') and hasattr(obj, '_replace'):
+                if action == GETATTR:
+                    obj = obj._replace(**{elem: new_value})
+                    if parent:
+                        self._simple_set_elem_value(obj=parent, path_for_err_reporting=path,
+                                                    elem=parent_to_obj_elem, value=obj,
+                                                    action=parent_to_obj_action)
+                return
+            else:
+                # Regular tuple - convert this object back to a tuple later
+                obj = self._coerce_obj(
+                    parent, obj, path, parent_to_obj_elem,
+                    parent_to_obj_action, elements,
+                    to_type=list, from_type=tuple)
         if elem != 0 and self.force and isinstance(obj, list) and len(obj) == 0:
             # it must have been a dictionary    
             obj = {}

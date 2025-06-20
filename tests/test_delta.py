@@ -1,5 +1,6 @@
 import copy
 import datetime
+from typing import NamedTuple
 import pytest
 import os
 import io
@@ -623,6 +624,17 @@ class TestBasicsOfDelta:
         assert flat_rows_list != old_mutated_list_missing_indexes_on_path
         assert flat_rows_list == preserved_flat_dict_list
         assert flat_rows_list == flat_rows_list_again
+
+    def test_namedtuple_add_delta(self):
+        class Point(NamedTuple):
+           x: int
+           y: int
+
+        p1 = Point(1, 1)
+        p2 = Point(1, 2)
+        diff = DeepDiff(p1, p2)
+        delta = Delta(diff)
+        assert p2 == p1 + delta
 
 
 picklalbe_obj_without_item = PicklableClass(11)
