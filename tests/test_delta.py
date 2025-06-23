@@ -636,7 +636,15 @@ class TestBasicsOfDelta:
         delta = Delta(diff)
         assert p2 == p1 + delta
 
-
+    def test_namedtuple_frozenset_add_delta(self):
+        class Article(NamedTuple):
+            tags: frozenset
+        a1 = Article(frozenset(["a" ]))
+        a2 = Article(frozenset(["a", "b"]))
+        diff = DeepDiff(a1, a2)
+        delta = Delta(diff)
+        assert a2 == a1 + delta
+ 
 picklalbe_obj_without_item = PicklableClass(11)
 del picklalbe_obj_without_item.item
 
