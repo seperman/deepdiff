@@ -195,7 +195,8 @@ class TestBasicsOfDelta:
             delta._simple_set_elem_value(
                 obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
         assert str(excinfo.value) in {"Failed to set mypath due to unhashable type: 'set'",
-                                      "Failed to set mypath due to 'set' objects are unhashable"}
+                                      "Failed to set mypath due to 'set' objects are unhashable",
+                                      "Failed to set mypath due to cannot use 'set' as a dict key (unhashable type: 'set')"}
 
     def test_simple_delete_elem(self):
         delta = Delta({}, raise_errors=True)
