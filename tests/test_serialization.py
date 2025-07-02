@@ -91,8 +91,7 @@ class TestSerialization:
         t1 = A()
         t2 = B()
         ddiff = DeepDiff(t1, t2)
-        with pytest.raises(TypeError):
-            ddiff.to_json()
+        assert r'{"type_changes":{"root":{"old_type":"A","new_type":"B","old_value":{},"new_value":{}}}}' == ddiff.to_json()
 
     def test_serialize_custom_objects_with_default_mapping(self):
         class A:
@@ -204,6 +203,18 @@ class TestPickling:
         with pytest.raises(ModuleNotFoundError) as excinfo:
             pickle_load(serialized, safe_to_import=module_dot_name)
         assert expected_msg == str(excinfo.value)
+
+
+    def test_seriaize_property(self):
+
+        class Sample:
+            @property
+            def something(self):
+                return 10
+
+        sample = Sample()
+        serialized = json_dumps(sample)
+        assert '{"something":10}' == serialized
 
 
 class TestDeepDiffPretty:

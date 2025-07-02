@@ -643,7 +643,33 @@ def json_convertor_default(default_mapping=None):
         # This is to handle reverse() which creates a generator of type list_reverseiterator
         if obj.__class__.__name__ == 'list_reverseiterator':
             return list(copy(obj))
-        raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
+        # 3) gather @property values by scanning __class__.__dict__ and bases
+        props = {}
+        for cls in obj.__class__.__mro__:
+            for name, descriptor in cls.__dict__.items():
+                if isinstance(descriptor, property) and not name.startswith('_'):
+                    try:
+                        props[name] = getattr(obj, name)
+                    except Exception:
+                        # skip properties that error out
+                        pass
+        if props:
+            return props
+
+        # 4) fallback: public __dict__ entries
+        if hasattr(obj, '__dict__'):
+            return {
+                k: v
+                for k, v in vars(obj).items()
+                if not k.startswith('_')
+            }
+
+        # 5) give up
+        raise TypeError(
+            f"Don't know how to JSON-serialize {obj!r} "
+            f"(type {type(obj).__name__}); "
+            "consider adding it to default_mapping."
+        )
 
     return _convertor
 
