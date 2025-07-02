@@ -54,6 +54,7 @@ def cli():
 @click.option('--significant-digits', required=False, default=None, type=int, show_default=True)
 @click.option('--truncate-datetime', required=False, type=click.Choice(['second', 'minute', 'hour', 'day'], case_sensitive=True), show_default=True, default=None)
 @click.option('--verbose-level', required=False, default=1, type=click.IntRange(0, 2), show_default=True)
+@click.option('--view', required=False, type=click.Choice(['tree', 'colored', 'colored_compact'], case_sensitive=True), show_default=True, default='tree')
 @click.option('--debug', is_flag=True, show_default=False)
 def diff(
     *args, **kwargs
@@ -74,6 +75,8 @@ def diff(
     t2_path = kwargs.pop("t2")
     t1_extension = t1_path.split('.')[-1]
     t2_extension = t2_path.split('.')[-1]
+    if "view" in kwargs and kwargs["view"] is None:
+        kwargs.pop("view")
 
     for name, t_path, t_extension in [('t1', t1_path, t1_extension), ('t2', t2_path, t2_extension)]:
         try:
@@ -112,7 +115,10 @@ def diff(
         sys.stdout.buffer.write(delta.dumps())
     else:
         try:
-            print(diff.to_json(indent=2))
+            if kwargs["view"] in {'colored', 'colored_compact'}:
+                print(diff)
+            else:
+                print(diff.to_json(indent=2))
         except Exception:
             pprint(diff, indent=2)
 

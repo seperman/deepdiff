@@ -9,6 +9,7 @@ You have the options of text view and tree view.
 The main difference is that the tree view has the capabilities to traverse the objects to see what objects were compared to what other objects.
 
 While the view options decide the format of the output that is mostly machine readable, regardless of the view you choose, you can get a more human readable output by using the pretty() method.
+DeepDiff also offers other specialized views such as the :doc:`colored_view` (which includes a compact variant) and :doc:`delta` view for specific use cases.
 
 .. _text_view_label:
 

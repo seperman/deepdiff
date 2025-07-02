@@ -209,6 +209,8 @@ KEY_TO_VAL_STR = "{}:{}"
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 DELTA_VIEW = '_delta'
+COLORED_VIEW = 'colored'
+COLORED_COMPACT_VIEW = 'colored_compact'
 
 ENUM_INCLUDE_KEYS = ['__objclass__', 'name', 'value']
 

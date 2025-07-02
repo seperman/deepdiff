@@ -25,7 +25,8 @@ from deepdiff.helper import (strings, bytes_type, numbers, uuids, ListItemRemove
                              type_is_subclass_of_type_group, type_in_type_group, get_doc,
                              number_to_string, datetime_normalize, KEY_TO_VAL_STR, booleans,
                              np_ndarray, np_floating, get_numpy_ndarray_rows, RepeatedTimer,
-                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, detailed__dict__, add_root_to_paths,
+                             TEXT_VIEW, TREE_VIEW, DELTA_VIEW, COLORED_VIEW, COLORED_COMPACT_VIEW,
+                             detailed__dict__, add_root_to_paths,
                              np, get_truncate_datetime, dict_, CannotCompare, ENUM_INCLUDE_KEYS,
                              PydanticBaseModel, Opcode, SetOrdered, ipranges)
 from deepdiff.serialization import SerializationMixin
@@ -40,6 +41,7 @@ from deepdiff.model import (
 from deepdiff.deephash import DeepHash, combine_hashes_lists
 from deepdiff.base import Base
 from deepdiff.lfucache import LFUCache, DummyLFU
+from deepdiff.colored_view import ColoredView
 
 if TYPE_CHECKING:
     from pytz.tzinfo import BaseTzInfo
@@ -80,7 +82,7 @@ DISTANCE_CACHE_ENABLED = 'DISTANCE CACHE ENABLED'
 PREVIOUS_DIFF_COUNT = 'PREVIOUS DIFF COUNT'
 PREVIOUS_DISTANCE_CACHE_HIT_COUNT = 'PREVIOUS DISTANCE CACHE HIT COUNT'
 CANT_FIND_NUMPY_MSG = 'Unable to import numpy. This must be a bug in DeepDiff since a numpy array is detected.'
-INVALID_VIEW_MSG = 'The only valid values for the view parameter are text and tree. But {} was passed.'
+INVALID_VIEW_MSG = "view parameter must be one of 'text', 'tree', 'delta', 'colored' or 'colored_compact'. But {} was passed."
 CUTOFF_RANGE_ERROR_MSG = 'cutoff_distance_for_pairs needs to be a positive float max 1.'
 VERBOSE_LEVEL_RANGE_MSG = 'verbose_level should be 0, 1, or 2.'
 PURGE_LEVEL_RANGE_MSG = 'cache_purge_level should be 0, 1, or 2.'
@@ -365,7 +367,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
             self.tree.remove_empty_keys()
             view_results = self._get_view_results(self.view)
-            self.update(view_results)
+            if isinstance(view_results, ColoredView):
+                self.update(view_results.tree)
+                self._colored_view = view_results
+            else:
+                self.update(view_results)
         finally:
             if self.is_root:
                 if cache_purge_level:
@@ -1759,6 +1765,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             result.remove_empty_keys()
         elif view == DELTA_VIEW:
             result = self._to_delta_dict(report_repetition_required=False)
+        elif view == COLORED_VIEW:
+            result = ColoredView(t2=self.t2, tree_result=self.tree, compact=False)
+        elif view == COLORED_COMPACT_VIEW:
+            result = ColoredView(t2=self.t2, tree_result=self.tree, compact=True)
         else:
             raise ValueError(INVALID_VIEW_MSG.format(view))
         return result
@@ -1898,6 +1908,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     if root_key is not notpresent:
                         result.add(root_key)
         return result
+
+    def __str__(self):
+        if hasattr(self, '_colored_view') and self.view in {COLORED_VIEW, COLORED_COMPACT_VIEW}:
+            return str(self._colored_view)
+        return super().__str__()
 
 
 if __name__ == "__main__":  # pragma: no cover

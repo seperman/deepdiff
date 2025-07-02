@@ -1,5 +1,8 @@
 # DeepDiff Change log
 
+- [Unreleased]
+    - Colored View: Output pretty-printed JSON with color-coded differences (added in green, removed in red, changed values show old in red and new in green).
+
 - v8-5-0
     - Updating deprecated pydantic calls
     - Switching to pyproject.toml
