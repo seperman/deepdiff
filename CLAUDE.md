@@ -16,7 +16,7 @@ DeepDiff is a Python library for deep comparison, searching, and hashing of Pyth
 ### Setup
 ```bash
 # Install with all development dependencies
-pip install -e ".[cli,coverage,dev,docs,static,test]"
+uv pip install -e ".[cli,coverage,dev,docs,static,test]"
 # OR using uv (recommended)
 uv sync --all-extras
 ```

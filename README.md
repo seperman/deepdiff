@@ -93,6 +93,7 @@ Please take a look at the [CHANGELOG](CHANGELOG.md) file.
 
     - Method 1: Use [`uv`](https://github.com/astral-sh/uv) to install the dependencies:  `uv sync --all-extras`.
     - Method 2: Use pip: `pip install -e ".[cli,coverage,dev,docs,static,test]"`
+5. Build `flit build`
 
 # Contribute
 
