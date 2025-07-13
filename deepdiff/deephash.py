@@ -488,7 +488,7 @@ class DeepHash(Base):
                                         number_format_notation=self.number_format_notation)
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_ipranges(self, obj):
+    def _prep_ipranges(self, obj) -> str:
         type_ = 'iprange'
         obj = str(obj)
         return KEY_TO_VAL_STR.format(type_, obj)
@@ -572,14 +572,7 @@ class DeepHash(Base):
 
         elif isinstance(obj, uuid.UUID):
             # Handle UUID objects (including uuid6.UUID) by using their integer value
-            result = f"uuid:{obj.int}"
-            if self.apply_hash:
-                result = self.hasher(result)
-            try:
-                self.hashes[obj] = (result, counts)
-            except TypeError:
-                self.hashes[get_id(obj)] = (result, counts)
-            return result, counts
+            result = str(obj)
 
         elif isinstance(obj, MutableMapping):
             result, counts = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)

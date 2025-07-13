@@ -55,6 +55,7 @@ dev = [
   "pandas~=2.2.0",
   "polars~=1.21.0",
   "nox==2025.5.1",
+  "uuid6==2025.0.1",
 ]
 docs = [
   # We use the html style that is not supported in Sphinx 7 anymore.
