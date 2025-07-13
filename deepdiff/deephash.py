@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 import datetime
+import uuid
 from typing import Union, Optional, Any, List, TYPE_CHECKING
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
@@ -568,6 +569,17 @@ class DeepHash(Base):
 
         elif isinstance(obj, ipranges):
             result = self._prep_ipranges(obj)
+
+        elif isinstance(obj, uuid.UUID):
+            # Handle UUID objects (including uuid6.UUID) by using their integer value
+            result = f"uuid:{obj.int}"
+            if self.apply_hash:
+                result = self.hasher(result)
+            try:
+                self.hashes[obj] = (result, counts)
+            except TypeError:
+                self.hashes[get_id(obj)] = (result, counts)
+            return result, counts
 
         elif isinstance(obj, MutableMapping):
             result, counts = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)
