@@ -163,6 +163,7 @@ class DeepHash(Base):
                  ignore_string_type_changes=False,
                  ignore_type_in_groups=None,
                  ignore_type_subclasses=False,
+                 ignore_uuid_types=False,
                  include_paths=None,
                  number_format_notation="f",
                  number_to_string_func=None,
@@ -177,7 +178,7 @@ class DeepHash(Base):
                  "The valid parameters are obj, hashes, exclude_types, significant_digits, truncate_datetime,"
                  "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
-                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
+                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case, ignore_uuid_types, "
                  "number_to_string_func, ignore_private_variables, parent, use_enum_value, default_timezone "
                  "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
@@ -203,7 +204,9 @@ class DeepHash(Base):
             ignore_type_in_groups=ignore_type_in_groups,
             ignore_string_type_changes=ignore_string_type_changes,
             ignore_numeric_type_changes=ignore_numeric_type_changes,
-            ignore_type_subclasses=ignore_type_subclasses)
+            ignore_type_subclasses=ignore_type_subclasses,
+            ignore_uuid_types=ignore_uuid_types,
+        )
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
         self.ignore_string_case = ignore_string_case

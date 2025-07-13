@@ -1508,6 +1508,7 @@ class TestDeltaOther:
             'include_obj_callback_strict': None,
             'exclude_obj_callback': None,
             'exclude_obj_callback_strict': None,
+            'ignore_uuid_types': False,
             'ignore_private_variables': True,
             'ignore_nan_inequality': False,
             'hasher': None,

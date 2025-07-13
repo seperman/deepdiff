@@ -9,6 +9,7 @@ import difflib
 import logging
 import types
 import datetime
+import uuid
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
@@ -108,6 +109,7 @@ DEEPHASH_PARAM_KEYS = (
     'number_format_notation',
     'ignore_string_type_changes',
     'ignore_numeric_type_changes',
+    'ignore_uuid_types',
     'use_enum_value',
     'ignore_type_in_groups',
     'ignore_type_subclasses',
@@ -168,6 +170,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  ignore_string_type_changes: bool=False,
                  ignore_type_in_groups: Optional[List[Tuple]]=None,
                  ignore_type_subclasses: bool=False,
+                 ignore_uuid_types: bool=False,
                  include_obj_callback: Optional[Callable]=None,
                  include_obj_callback_strict: Optional[Callable]=None,
                  include_paths: Union[str, List[str], None]=None,
@@ -199,7 +202,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 "The following parameter(s) are not valid: %s\n"
                 "The valid parameters are ignore_order, report_repetition, significant_digits, "
                 "number_format_notation, exclude_paths, include_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
-                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, truncate_datetime, "
+                "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_uuid_types, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
@@ -222,6 +225,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             self.ignore_numeric_type_changes = ignore_numeric_type_changes
             if strings == ignore_type_in_groups or strings in ignore_type_in_groups:
                 ignore_string_type_changes = True
+            # Handle ignore_uuid_types - check if uuid+str group is already in ignore_type_in_groups
+            uuid_str_group = (uuids[0], str)
+            if uuid_str_group == ignore_type_in_groups or uuid_str_group in ignore_type_in_groups:
+                ignore_uuid_types = True
+            self.ignore_uuid_types = ignore_uuid_types
             self.use_enum_value = use_enum_value
             self.log_scale_similarity_threshold = log_scale_similarity_threshold
             self.use_log_scale = use_log_scale
@@ -233,7 +241,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 ignore_type_in_groups=ignore_type_in_groups,
                 ignore_string_type_changes=ignore_string_type_changes,
                 ignore_numeric_type_changes=ignore_numeric_type_changes,
-                ignore_type_subclasses=ignore_type_subclasses)
+                ignore_type_subclasses=ignore_type_subclasses,
+                ignore_uuid_types=ignore_uuid_types)
             self.report_repetition = report_repetition
             self.exclude_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(exclude_paths))
             self.include_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(include_paths))
@@ -1710,7 +1719,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             self._diff_booleans(level, local_tree=local_tree)
 
         elif isinstance(level.t1, strings):
-            self._diff_str(level, local_tree=local_tree)
+            # Special handling when comparing string with UUID and ignore_uuid_types is True
+            if self.ignore_uuid_types and isinstance(level.t2, uuids):
+                try:
+                    # Convert string to UUID for comparison
+                    t1_uuid = uuid.UUID(level.t1)
+                    if t1_uuid.int != level.t2.int:
+                        self._report_result('values_changed', level, local_tree=local_tree)
+                except (ValueError, AttributeError):
+                    # If string is not a valid UUID, report as changed
+                    self._report_result('values_changed', level, local_tree=local_tree)
+            else:
+                self._diff_str(level, local_tree=local_tree)
 
         elif isinstance(level.t1, datetime.datetime):
             self._diff_datetime(level, local_tree=local_tree)
@@ -1722,7 +1742,18 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             self._diff_time(level, local_tree=local_tree)
 
         elif isinstance(level.t1, uuids):
-            self._diff_uuids(level, local_tree=local_tree)
+            # Special handling when comparing UUID with string and ignore_uuid_types is True
+            if self.ignore_uuid_types and isinstance(level.t2, str):
+                try:
+                    # Convert string to UUID for comparison
+                    t2_uuid = uuid.UUID(level.t2)
+                    if level.t1.int != t2_uuid.int:
+                        self._report_result('values_changed', level, local_tree=local_tree)
+                except (ValueError, AttributeError):
+                    # If string is not a valid UUID, report as changed
+                    self._report_result('values_changed', level, local_tree=local_tree)
+            else:
+                self._diff_uuids(level, local_tree=local_tree)
 
         elif isinstance(level.t1, numbers):
             self._diff_numbers(level, local_tree=local_tree, report_type_change=report_type_change)

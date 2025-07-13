@@ -21,6 +21,9 @@ uv pip install -e ".[cli,coverage,dev,docs,static,test]"
 uv sync --all-extras
 ```
 
+**Virtual Environment**: Activate with `source ~/.venvs/atlas/bin/activate` before running tests or Python commands
+
+
 ### Testing
 ```bash
 # Run tests with coverage
