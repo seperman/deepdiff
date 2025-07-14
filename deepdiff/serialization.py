@@ -623,6 +623,7 @@ JSON_CONVERTOR = {
     Mapping: dict,
     NotPresent: str,
     ipranges: str,
+    memoryview: lambda x: x.tobytes(),
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:

@@ -418,7 +418,8 @@ class TestDeepDiffPretty:
         (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
         (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
         (8, field_stats1, lambda x: SomeStats(**x)),
-        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array)
+        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array),
+        (10, memoryview(b"hello"), lambda x: memoryview(x.encode('utf-8'))),
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)
@@ -444,4 +445,3 @@ class TestDeepDiffPretty:
 
         assert '[3,2,1]' == serialized
         assert '[3,2,1]' == serialized2, "We should have copied the original list. If this returns empty, it means we exhausted the original list."
-
