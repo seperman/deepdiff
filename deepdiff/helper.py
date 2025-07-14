@@ -182,7 +182,7 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 if np and get_semvar_as_integer(np.__version__) < 1019000:
     sys.exit('The minimum required Numpy version is 1.19.0. Please upgrade your Numpy package.')
 
-strings = (str, bytes)  # which are both basestring
+strings = (str, bytes, memoryview)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
 only_complex_number = (complex,) + numpy_complex_numbers

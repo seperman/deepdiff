@@ -100,6 +100,8 @@ def prepare_string_for_hashing(
     original_type = obj.__class__.__name__
     # https://docs.python.org/3/library/codecs.html#codecs.decode
     errors_mode = 'ignore' if ignore_encoding_errors else 'strict'
+    if isinstance(obj, memoryview):
+        obj = obj.tobytes()
     if isinstance(obj, bytes):
         err = None
         encodings = ['utf-8'] if encodings is None else encodings

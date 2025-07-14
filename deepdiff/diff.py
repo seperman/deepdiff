@@ -594,6 +594,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         for key in keys:
             if self.ignore_string_type_changes and isinstance(key, bytes):
                 clean_key = key.decode('utf-8')
+            elif self.ignore_string_type_changes and isinstance(key, memoryview):
+                clean_key = key.tobytes().decode('utf-8')
             elif self.use_enum_value and isinstance(key, Enum):
                 clean_key = key.value
             elif isinstance(key, numbers):
@@ -1060,13 +1062,23 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         t1_str = level.t1
         t2_str = level.t2
 
-        if isinstance(level.t1, bytes_type):
+        if isinstance(level.t1, memoryview):
+            try:
+                t1_str = level.t1.tobytes().decode('ascii')
+            except UnicodeDecodeError:
+                do_diff = False
+        elif isinstance(level.t1, bytes_type):
             try:
                 t1_str = level.t1.decode('ascii')
             except UnicodeDecodeError:
                 do_diff = False
 
-        if isinstance(level.t2, bytes_type):
+        if isinstance(level.t2, memoryview):
+            try:
+                t2_str = level.t2.tobytes().decode('ascii')
+            except UnicodeDecodeError:
+                do_diff = False
+        elif isinstance(level.t2, bytes_type):
             try:
                 t2_str = level.t2.decode('ascii')
             except UnicodeDecodeError:
