@@ -409,6 +409,10 @@ class TestDeepDiffPretty:
         result = ddiff.pretty(prefix=prefix_callback)
         assert result == expected
 
+    def sig_to_bytes(inp: dict[str, str | bytes]):
+        inp['signature'] = inp['signature'].encode('utf-8')
+        return inp
+
     @pytest.mark.parametrize('test_num, value, func_to_convert_back', [
         (1, {'10': None}, None),
         (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}, None),
@@ -420,6 +424,7 @@ class TestDeepDiffPretty:
         (8, field_stats1, lambda x: SomeStats(**x)),
         (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array),
         (10, memoryview(b"hello"), lambda x: memoryview(x.encode('utf-8'))),
+        (11, {'file_type': 'xlsx', 'signature': b'52bd9907785'}, sig_to_bytes)
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)
