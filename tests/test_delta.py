@@ -1832,6 +1832,18 @@ class TestDeltaOther:
         delta_again = Delta(flat_rows_list=flat_expected)
         assert delta.diff == delta_again.diff
 
+    def test_delta_array_of_bytes(self):
+        t1 = []
+        t2 = [b"hello"]
+        delta = Delta(DeepDiff(t1, t2))
+        flat_result = delta.to_flat_rows()
+        flat_expected = [FlatDeltaRow(path=[0], action=FlatDataAction.iterable_item_added, value=b'hello', type=bytes)]
+        assert flat_expected == flat_result
+
+        delta_again = Delta(flat_rows_list=flat_expected)
+        assert delta.diff == delta_again.diff
+        assert t1 + delta_again == t2
+
     def test_delta_with_json_serializer(self):
         t1 = {"a": 1}
         t2 = {"a": 2}
