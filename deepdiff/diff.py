@@ -600,8 +600,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 clean_key = key.value
             elif isinstance(key, numbers):
                 type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
-                clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
-                                                  number_format_notation=self.number_format_notation)
+                if self.significant_digits is None:
+                    clean_key = key
+                else:
+                    clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
+                                                      number_format_notation=self.number_format_notation)
                 clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key

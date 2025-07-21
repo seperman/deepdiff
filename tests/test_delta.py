@@ -1835,7 +1835,10 @@ class TestDeltaOther:
     def test_delta_array_of_bytes(self):
         t1 = []
         t2 = [b"hello"]
-        delta = Delta(DeepDiff(t1, t2))
+        diff = DeepDiff(t1, t2)
+        expected_diff = {'iterable_item_added': {'root[0]': b'hello'}}
+        assert expected_diff == diff
+        delta = Delta(diff)
         flat_result = delta.to_flat_rows()
         flat_expected = [FlatDeltaRow(path=[0], action=FlatDataAction.iterable_item_added, value=b'hello', type=bytes)]
         assert flat_expected == flat_result
