@@ -332,10 +332,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             }
             self.hashes = dict_() if hashes is None else hashes
             self._numpy_paths = dict_()  # if _numpy_paths is None else _numpy_paths
+            self.group_by_keys = set()  # Track keys that originated from group_by operations
             self._shared_parameters = {
                 'hashes': self.hashes,
                 '_stats': self._stats,
                 '_distance_cache': self._distance_cache,
+                'group_by_keys': self.group_by_keys,
                 '_numpy_paths': self._numpy_paths,
                 _ENABLE_CACHE_EVERY_X_DIFF: self.cache_tuning_sample_size * 10,
             }
@@ -599,13 +601,21 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             elif self.use_enum_value and isinstance(key, Enum):
                 clean_key = key.value
             elif isinstance(key, numbers):
-                type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
-                if self.significant_digits is None:
-                    clean_key = key
+                # Skip type prefixing for keys that originated from group_by operations
+                if hasattr(self, 'group_by_keys') and key in self.group_by_keys:
+                    if self.significant_digits is None:
+                        clean_key = key
+                    else:
+                        clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
+                                                          number_format_notation=self.number_format_notation)
                 else:
-                    clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
-                                                      number_format_notation=self.number_format_notation)
-                clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
+                    type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
+                    if self.significant_digits is None:
+                        clean_key = key
+                    else:
+                        clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
+                                                          number_format_notation=self.number_format_notation)
+                    clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
             if self.ignore_string_case and isinstance(clean_key, str):
@@ -1845,8 +1855,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             for row in item_copy:
                 if isinstance(row, Mapping):
                     key1 = self._get_key_for_group_by(row, group_by_level1, item_name)
+                    # Track keys created by group_by to avoid type prefixing later
+                    if hasattr(self, 'group_by_keys'):
+                        self.group_by_keys.add(key1)
                     if group_by_level2:
                         key2 = self._get_key_for_group_by(row, group_by_level2, item_name)
+                        # Track level 2 keys as well
+                        if hasattr(self, 'group_by_keys'):
+                            self.group_by_keys.add(key2)
                         if key1 not in result:
                             result[key1] = {}
                         if self.group_by_sort_key:
