@@ -450,3 +450,8 @@ class TestDeepDiffPretty:
 
         assert '[3,2,1]' == serialized
         assert '[3,2,1]' == serialized2, "We should have copied the original list. If this returns empty, it means we exhausted the original list."
+
+    def test_dict_keys(self):
+        dic = {"foo": "bar", "apple": "too sweet"}
+        serialized = json_dumps(dic.keys())
+        assert '["foo","apple"]' == serialized

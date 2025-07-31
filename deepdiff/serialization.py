@@ -14,7 +14,7 @@ import collections  # NOQA
 import ipaddress
 from copy import deepcopy, copy
 from functools import partial
-from collections.abc import Mapping
+from collections.abc import Mapping, KeysView
 from typing import (
     Callable, Optional, Union,
     overload, Literal, Any,
@@ -93,6 +93,7 @@ SAFE_TO_IMPORT = {
     'ipaddress.IPv6Network',
     'ipaddress.IPv4Address',
     'ipaddress.IPv6Address',
+    'collections.abc.KeysView',
 }
 
 
@@ -124,6 +125,7 @@ TYPE_STR_TO_TYPE = {
     'iprange': str,
     'IPv4Address': ipaddress.IPv4Address,
     'IPv6Address': ipaddress.IPv6Address,
+    'KeysView': list,
 }
 
 
@@ -624,6 +626,7 @@ JSON_CONVERTOR = {
     NotPresent: str,
     ipranges: str,
     memoryview: lambda x: x.tobytes(),
+    KeysView: list,
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:
