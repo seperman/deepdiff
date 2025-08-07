@@ -12,6 +12,7 @@ import decimal  # NOQA
 import orderly_set  # NOQA
 import collections  # NOQA
 import ipaddress
+import base64
 from copy import deepcopy, copy
 from functools import partial
 from collections.abc import Mapping, KeysView
@@ -607,13 +608,25 @@ def _serialize_tuple(value):
     return value
 
 
+def _serialize_bytes(value):
+    """
+    Serialize bytes to JSON-compatible format.
+    First tries UTF-8 decoding for backward compatibility.
+    Falls back to base64 encoding for binary data.
+    """
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError:
+        return base64.b64encode(value).decode('ascii')
+
+
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
     SetOrdered: list,
     orderly_set.StableSetEq: list,
     set: list,
     type: lambda x: x.__name__,
-    bytes: lambda x: x.decode('utf-8'),
+    bytes: _serialize_bytes,
     datetime.datetime: lambda x: x.isoformat(),
     uuid.UUID: lambda x: str(x),
     np_float32: float,
