@@ -9,9 +9,8 @@ from dataclasses import dataclass
 from typing import List
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3, PydanticBaseModel
+from deepdiff.helper import pypy3, PydanticBaseModel, np_float64
 from tests import CustomClass
-from deepdiff.helper import np_float64
 
 
 logging.disable(logging.CRITICAL)
@@ -2258,3 +2257,18 @@ class TestDeepDiffText:
         range2 = range(0, 8)
         diff = DeepDiff(range1, range2)
         assert {'iterable_item_removed': {'root[8]': 8, 'root[9]': 9}} == diff
+
+
+    def test_group_by_that_has_integers(self):
+        """Test that group_by with integer keys doesn't add type prefixes like 'int:33'"""
+        t1 = [{'row_num_in_file': 33, 'value': 'old'}]
+        t2 = [{'row_num_in_file': 33, 'value': 'new'}]
+        
+        diff = DeepDiff(t1, t2, group_by='row_num_in_file', ignore_string_type_changes=True)
+        
+        # Verify that the diff key contains the integer 33 without type prefix
+        changes = diff.get('values_changed', {})
+        assert len(changes) == 1
+        key = list(changes.keys())[0]
+        assert "int:" not in key
+        assert "[33]" in key or "['33']" in key

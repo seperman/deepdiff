@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import re
 from collections.abc import MutableMapping, Iterable
+from typing import Any, Dict, FrozenSet, List, Pattern, Set, Union, Tuple
 from deepdiff.helper import SetOrdered
 import logging
 
@@ -8,13 +9,14 @@ from deepdiff.helper import (
     strings, numbers, add_to_frozen_set, get_doc, dict_, RE_COMPILED_TYPE, ipranges
 )
 
+
 logger = logging.getLogger(__name__)
 
 
 doc = get_doc('search_doc.rst')
 
 
-class DeepSearch(dict):
+class DeepSearch(Dict[str, Union[Dict[str, Any], SetOrdered, List[str]]]):
     r"""
     **DeepSearch**
 
@@ -80,20 +82,20 @@ class DeepSearch(dict):
 
     """
 
-    warning_num = 0
+    warning_num: int = 0
 
     def __init__(self,
-                 obj,
-                 item,
-                 exclude_paths=SetOrdered(),
-                 exclude_regex_paths=SetOrdered(),
-                 exclude_types=SetOrdered(),
-                 verbose_level=1,
-                 case_sensitive=False,
-                 match_string=False,
-                 use_regexp=False,
-                 strict_checking=True,
-                 **kwargs):
+                 obj: Any,
+                 item: Any,
+                 exclude_paths: Union[SetOrdered, Set[str], List[str]] = SetOrdered(),
+                 exclude_regex_paths: Union[SetOrdered, Set[Union[str, Pattern[str]]], List[Union[str, Pattern[str]]]] = SetOrdered(),
+                 exclude_types: Union[SetOrdered, Set[type], List[type]] = SetOrdered(),
+                 verbose_level: int = 1,
+                 case_sensitive: bool = False,
+                 match_string: bool = False,
+                 use_regexp: bool = False,
+                 strict_checking: bool = True,
+                 **kwargs: Any) -> None:
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
@@ -101,20 +103,24 @@ class DeepSearch(dict):
                 "case_sensitive, match_string and verbose_level."
             ) % ', '.join(kwargs.keys()))
 
-        self.obj = obj
-        self.case_sensitive = case_sensitive if isinstance(item, strings) else True
-        item = item if self.case_sensitive else item.lower()
-        self.exclude_paths = SetOrdered(exclude_paths)
-        self.exclude_regex_paths = [re.compile(exclude_regex_path) for exclude_regex_path in exclude_regex_paths]
-        self.exclude_types = SetOrdered(exclude_types)
-        self.exclude_types_tuple = tuple(
+        self.obj: Any = obj
+        self.case_sensitive: bool = case_sensitive if isinstance(item, strings) else True
+        item = item if self.case_sensitive else (item.lower() if isinstance(item, str) else item)
+        self.exclude_paths: SetOrdered = SetOrdered(exclude_paths)
+        self.exclude_regex_paths: List[Pattern[str]] = [re.compile(exclude_regex_path) for exclude_regex_path in exclude_regex_paths]
+        self.exclude_types: SetOrdered = SetOrdered(exclude_types)
+        self.exclude_types_tuple: tuple[type, ...] = tuple(
             exclude_types)  # we need tuple for checking isinstance
-        self.verbose_level = verbose_level
+        self.verbose_level: int = verbose_level
         self.update(
             matched_paths=self.__set_or_dict(),
             matched_values=self.__set_or_dict(),
             unprocessed=[])
-        self.use_regexp = use_regexp
+        # Type narrowing for mypy/pyright
+        self.matched_paths: Union[Dict[str, Any], SetOrdered]
+        self.matched_values: Union[Dict[str, Any], SetOrdered]
+        self.unprocessed: List[str]
+        self.use_regexp: bool = use_regexp
         if not strict_checking and (isinstance(item, numbers) or isinstance(item, ipranges)):
             item = str(item)
         if self.use_regexp:
@@ -122,10 +128,10 @@ class DeepSearch(dict):
                 item = re.compile(item)
             except TypeError as e:
                 raise TypeError(f"The passed item of {item} is not usable for regex: {e}") from None
-        self.strict_checking = strict_checking
+        self.strict_checking: bool = strict_checking
 
         # Cases where user wants to match exact string item
-        self.match_string = match_string
+        self.match_string: bool = match_string
 
         self.__search(obj, item, parents_ids=frozenset({id(obj)}))
 
@@ -134,21 +140,25 @@ class DeepSearch(dict):
         for k in empty_keys:
             del self[k]
 
-    def __set_or_dict(self):
+    def __set_or_dict(self) -> Union[Dict[str, Any], SetOrdered]:
         return dict_() if self.verbose_level >= 2 else SetOrdered()
 
-    def __report(self, report_key, key, value):
+    def __report(self, report_key: str, key: str, value: Any) -> None:
         if self.verbose_level >= 2:
-            self[report_key][key] = value
+            report_dict = self[report_key]
+            if isinstance(report_dict, dict):
+                report_dict[key] = value
         else:
-            self[report_key].add(key)
+            report_set = self[report_key]
+            if isinstance(report_set, SetOrdered):
+                report_set.add(key)
 
     def __search_obj(self,
-                     obj,
-                     item,
-                     parent,
-                     parents_ids=frozenset(),
-                     is_namedtuple=False):
+                     obj: Any,
+                     item: Any,
+                     parent: str,
+                     parents_ids: FrozenSet[int] = frozenset(),
+                     is_namedtuple: bool = False) -> None:
         """Search objects"""
         found = False
         if obj == item:
@@ -170,14 +180,16 @@ class DeepSearch(dict):
                 obj = {i: getattr(obj, i) for i in obj.__slots__}
             except AttributeError:
                 if not found:
-                    self['unprocessed'].append("%s" % parent)
+                    unprocessed = self.get('unprocessed', [])
+                    if isinstance(unprocessed, list):
+                        unprocessed.append("%s" % parent)
 
                 return
 
         self.__search_dict(
             obj, item, parent, parents_ids, print_as_attribute=True)
 
-    def __skip_this(self, item, parent):
+    def __skip_this(self, item: Any, parent: str) -> bool:
         skip = False
         if parent in self.exclude_paths:
             skip = True
@@ -191,11 +203,11 @@ class DeepSearch(dict):
         return skip
 
     def __search_dict(self,
-                      obj,
-                      item,
-                      parent,
-                      parents_ids=frozenset(),
-                      print_as_attribute=False):
+                      obj: Union[Dict[Any, Any], MutableMapping[Any, Any]],
+                      item: Any,
+                      parent: str,
+                      parents_ids: FrozenSet[int] = frozenset(),
+                      print_as_attribute: bool = False) -> None:
         """Search dictionaries"""
         if print_as_attribute:
             parent_text = "%s.%s"
@@ -238,10 +250,10 @@ class DeepSearch(dict):
                 parents_ids=parents_ids_added)
 
     def __search_iterable(self,
-                          obj,
-                          item,
-                          parent="root",
-                          parents_ids=frozenset()):
+                          obj: Iterable[Any],
+                          item: Any,
+                          parent: str = "root",
+                          parents_ids: FrozenSet[int] = frozenset()) -> None:
         """Search iterables except dictionaries, sets and strings."""
         for i, thing in enumerate(obj):
             new_parent = "{}[{}]".format(parent, i)
@@ -251,7 +263,7 @@ class DeepSearch(dict):
             if self.case_sensitive or not isinstance(thing, strings):
                 thing_cased = thing
             else:
-                thing_cased = thing.lower()
+                thing_cased = thing.lower() if isinstance(thing, str) else thing
 
             if not self.use_regexp and thing_cased == item:
                 self.__report(
@@ -264,19 +276,19 @@ class DeepSearch(dict):
                 self.__search(thing, item, "%s[%s]" %
                               (parent, i), parents_ids_added)
 
-    def __search_str(self, obj, item, parent):
+    def __search_str(self, obj: Union[str, bytes, memoryview], item: Union[str, bytes, memoryview, Pattern[str]], parent: str) -> None:
         """Compare strings"""
-        obj_text = obj if self.case_sensitive else obj.lower()
+        obj_text = obj if self.case_sensitive else (obj.lower() if isinstance(obj, str) else obj)
 
         is_matched = False
-        if self.use_regexp:
-            is_matched = item.search(obj_text)
-        elif (self.match_string and item == obj_text) or (not self.match_string and item in obj_text):
+        if self.use_regexp and isinstance(item, type(re.compile(''))):
+            is_matched = bool(item.search(str(obj_text)))
+        elif (self.match_string and str(item) == str(obj_text)) or (not self.match_string and str(item) in str(obj_text)):
             is_matched = True
         if is_matched:
             self.__report(report_key='matched_values', key=parent, value=obj)
 
-    def __search_numbers(self, obj, item, parent):
+    def __search_numbers(self, obj: Any, item: Any, parent: str) -> None:
         if (
             item == obj or (
                 not self.strict_checking and (
@@ -288,11 +300,11 @@ class DeepSearch(dict):
         ):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
-    def __search_tuple(self, obj, item, parent, parents_ids):
+    def __search_tuple(self, obj: Tuple[Any, ...], item: Any, parent: str, parents_ids: FrozenSet[int]) -> None:
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
-            obj._asdict
+            getattr(obj, '_asdict')
         # It must be a normal tuple
         except AttributeError:
             self.__search_iterable(obj, item, parent, parents_ids)
@@ -301,7 +313,7 @@ class DeepSearch(dict):
             self.__search_obj(
                 obj, item, parent, parents_ids, is_namedtuple=True)
 
-    def __search(self, obj, item, parent="root", parents_ids=frozenset()):
+    def __search(self, obj: Any, item: Any, parent: str = "root", parents_ids: FrozenSet[int] = frozenset()) -> None:
         """The main search method"""
         if self.__skip_this(item, parent):
             return
@@ -344,12 +356,12 @@ class grep:
     __doc__ = doc
 
     def __init__(self,
-                 item,
-                 **kwargs):
-        self.item = item
-        self.kwargs = kwargs
+                 item: Any,
+                 **kwargs: Any) -> None:
+        self.item: Any = item
+        self.kwargs: Dict[str, Any] = kwargs
 
-    def __ror__(self, other):
+    def __ror__(self, other: Any) -> "DeepSearch":
         return DeepSearch(obj=other, item=self.item, **self.kwargs)
 
 

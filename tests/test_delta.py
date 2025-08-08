@@ -1,5 +1,6 @@
 import copy
 import datetime
+from typing import NamedTuple
 import pytest
 import os
 import io
@@ -195,7 +196,8 @@ class TestBasicsOfDelta:
             delta._simple_set_elem_value(
                 obj={}, elem={1}, value=None, action=GET, path_for_err_reporting='mypath')
         assert str(excinfo.value) in {"Failed to set mypath due to unhashable type: 'set'",
-                                      "Failed to set mypath due to 'set' objects are unhashable"}
+                                      "Failed to set mypath due to 'set' objects are unhashable",
+                                      "Failed to set mypath due to cannot use 'set' as a dict key (unhashable type: 'set')"}
 
     def test_simple_delete_elem(self):
         delta = Delta({}, raise_errors=True)
@@ -624,7 +626,26 @@ class TestBasicsOfDelta:
         assert flat_rows_list == preserved_flat_dict_list
         assert flat_rows_list == flat_rows_list_again
 
+    def test_namedtuple_add_delta(self):
+        class Point(NamedTuple):
+           x: int
+           y: int
 
+        p1 = Point(1, 1)
+        p2 = Point(1, 2)
+        diff = DeepDiff(p1, p2)
+        delta = Delta(diff)
+        assert p2 == p1 + delta
+
+    def test_namedtuple_frozenset_add_delta(self):
+        class Article(NamedTuple):
+            tags: frozenset
+        a1 = Article(frozenset(["a" ]))
+        a2 = Article(frozenset(["a", "b"]))
+        diff = DeepDiff(a1, a2)
+        delta = Delta(diff)
+        assert a2 == a1 + delta
+ 
 picklalbe_obj_without_item = PicklableClass(11)
 del picklalbe_obj_without_item.item
 
@@ -1487,6 +1508,7 @@ class TestDeltaOther:
             'include_obj_callback_strict': None,
             'exclude_obj_callback': None,
             'exclude_obj_callback_strict': None,
+            'ignore_uuid_types': False,
             'ignore_private_variables': True,
             'ignore_nan_inequality': False,
             'hasher': None,
@@ -1809,6 +1831,21 @@ class TestDeltaOther:
 
         delta_again = Delta(flat_rows_list=flat_expected)
         assert delta.diff == delta_again.diff
+
+    def test_delta_array_of_bytes(self):
+        t1 = []
+        t2 = [b"hello"]
+        diff = DeepDiff(t1, t2)
+        expected_diff = {'iterable_item_added': {'root[0]': b'hello'}}
+        assert expected_diff == diff
+        delta = Delta(diff)
+        flat_result = delta.to_flat_rows()
+        flat_expected = [FlatDeltaRow(path=[0], action=FlatDataAction.iterable_item_added, value=b'hello', type=bytes)]
+        assert flat_expected == flat_result
+
+        delta_again = Delta(flat_rows_list=flat_expected)
+        assert delta.diff == delta_again.diff
+        assert t1 + delta_again == t2
 
     def test_delta_with_json_serializer(self):
         t1 = {"a": 1}

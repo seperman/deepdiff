@@ -7,6 +7,7 @@ include *.txt
 include *.sh
 include pytest.ini
 include *.py
+exclude uv.lock
 recursive-include docs/ *.rst
 recursive-include docs/ *.png
 recursive-include tests *.csv

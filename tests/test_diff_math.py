@@ -110,3 +110,17 @@ class TestDiffMath:
         }
         assert res == expected
         # assert "math_epsilon will be ignored." in caplog.text
+
+    def test_ignore_numeric_type_changes_with_numeric_keys_and_no_significant_digits(self):
+        """Test that ignore_numeric_type_changes works with numeric keys when significant_digits is None.
+        
+        This test covers the bug fix in _get_clean_to_keys_mapping where significant_digits=None
+        caused a crash when number_to_string was called without the required parameter.
+        """
+        # Test case with numeric keys and ignore_numeric_type_changes=True, significant_digits=None
+        d1 = {1: "value1", 2.5: "value2"}  
+        d2 = {1.0: "value1", 2.5: "value2"}  # int vs float keys
+        
+        # This should not crash and should treat 1 and 1.0 as the same key
+        result = DeepDiff(d1, d2, ignore_numeric_type_changes=True, significant_digits=None)
+        assert result == {}

@@ -132,6 +132,7 @@ References
    deephash
    delta
    extract
+   colored_view
    commandline
    changelog
    authors

@@ -1,17 +1,21 @@
 import logging
 from collections.abc import Mapping
 from copy import copy
+from typing import Any, Dict, List, Optional, Set, Union, Literal, Type, TYPE_CHECKING
 from deepdiff.helper import (
     RemapDict, strings, notpresent, get_type, numpy_numbers, np, literal_eval_extended,
     dict_, SetOrdered)
 from deepdiff.path import stringify_element
 
+if TYPE_CHECKING:
+    from deepdiff.diff import DeepDiff
+
 logger = logging.getLogger(__name__)
 
-FORCE_DEFAULT = 'fake'
-UP_DOWN = {'up': 'down', 'down': 'up'}
+FORCE_DEFAULT: Literal['fake'] = 'fake'
+UP_DOWN: Dict[str, str] = {'up': 'down', 'down': 'up'}
 
-REPORT_KEYS = {
+REPORT_KEYS: Set[str] = {
     "type_changes",
     "dictionary_item_added",
     "dictionary_item_removed",
@@ -27,7 +31,7 @@ REPORT_KEYS = {
     "repetition_change",
 }
 
-CUSTOM_FIELD = "__internal:custom:extra_info"
+CUSTOM_FIELD: str = "__internal:custom:extra_info"
 
 
 class DoesNotExist(Exception):
@@ -36,7 +40,7 @@ class DoesNotExist(Exception):
 
 class ResultDict(RemapDict):
 
-    def remove_empty_keys(self):
+    def remove_empty_keys(self) -> None:
         """
         Remove empty keys from this object. Should always be called after the result is final.
         :return:
@@ -48,11 +52,11 @@ class ResultDict(RemapDict):
 
 
 class TreeResult(ResultDict):
-    def __init__(self):
+    def __init__(self) -> None:
         for key in REPORT_KEYS:
             self[key] = SetOrdered()
 
-    def mutual_add_removes_to_become_value_changes(self):
+    def mutual_add_removes_to_become_value_changes(self) -> None:
         """
         There might be the same paths reported in the results as removed and added.
         In such cases they should be reported as value_changes.
@@ -84,12 +88,16 @@ class TreeResult(ResultDict):
         if 'iterable_item_added' in self and not iterable_item_added:
             del self['iterable_item_added']
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> SetOrdered:
         if item not in self:
             self[item] = SetOrdered()
-        return self.get(item)
+        result = self.get(item)
+        if result is None:
+            result = SetOrdered()
+            self[item] = result
+        return result
 
-    def __len__(self):
+    def __len__(self) -> int:
         length = 0
         for value in self.values():
             if isinstance(value, SetOrdered):
@@ -100,9 +108,9 @@ class TreeResult(ResultDict):
 
 
 class TextResult(ResultDict):
-    ADD_QUOTES_TO_STRINGS = True
+    ADD_QUOTES_TO_STRINGS: bool = True
 
-    def __init__(self, tree_results=None, verbose_level=1):
+    def __init__(self, tree_results: Optional['TreeResult'] = None, verbose_level: int = 1) -> None:
         self.verbose_level = verbose_level
         # TODO: centralize keys
         self.update({
@@ -124,10 +132,10 @@ class TextResult(ResultDict):
         if tree_results:
             self._from_tree_results(tree_results)
 
-    def __set_or_dict(self):
+    def __set_or_dict(self) -> Union[Dict[str, Any], SetOrdered]:
         return {} if self.verbose_level >= 2 else SetOrdered()
 
-    def _from_tree_results(self, tree):
+    def _from_tree_results(self, tree: 'TreeResult') -> None:
         """
         Populate this object by parsing an existing reference-style result dictionary.
         :param tree: A TreeResult
@@ -149,7 +157,7 @@ class TextResult(ResultDict):
         self._from_tree_deep_distance(tree)
         self._from_tree_custom_results(tree)
 
-    def _from_tree_default(self, tree, report_type, ignore_if_in_iterable_opcodes=False):
+    def _from_tree_default(self, tree: 'TreeResult', report_type: str, ignore_if_in_iterable_opcodes: bool = False) -> None:
         if report_type in tree:
                 
             for change in tree[report_type]:  # report each change
@@ -291,9 +299,9 @@ class TextResult(ResultDict):
 
 
 class DeltaResult(TextResult):
-    ADD_QUOTES_TO_STRINGS = False
+    ADD_QUOTES_TO_STRINGS: bool = False
 
-    def __init__(self, tree_results=None, ignore_order=None, always_include_values=False, _iterable_opcodes=None):
+    def __init__(self, tree_results: Optional['TreeResult'] = None, ignore_order: Optional[bool] = None, always_include_values: bool = False, _iterable_opcodes: Optional[Dict[str, Any]] = None) -> None:
         self.ignore_order = ignore_order
         self.always_include_values = always_include_values
 
@@ -517,15 +525,15 @@ class DiffLevel:
     """
 
     def __init__(self,
-                 t1,
-                 t2,
-                 down=None,
-                 up=None,
-                 report_type=None,
-                 child_rel1=None,
-                 child_rel2=None,
-                 additional=None,
-                 verbose_level=1):
+                 t1: Any,
+                 t2: Any,
+                 down: Optional['DiffLevel'] = None,
+                 up: Optional['DiffLevel'] = None,
+                 report_type: Optional[str] = None,
+                 child_rel1: Optional['ChildRelationship'] = None,
+                 child_rel2: Optional['ChildRelationship'] = None,
+                 additional: Optional[Dict[str, Any]] = None,
+                 verbose_level: int = 1) -> None:
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -581,7 +589,7 @@ class DiffLevel:
 
         self.verbose_level = verbose_level
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.verbose_level:
             from deepdiff.summarize import summarize
 
@@ -596,7 +604,7 @@ class DiffLevel:
             result = "<{}>".format(self.path())
         return result
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any) -> None:
         # Setting up or down, will set the opposite link in this linked list.
         if key in UP_DOWN and value is not None:
             self.__dict__[key] = value
@@ -605,15 +613,15 @@ class DiffLevel:
         else:
             self.__dict__[key] = value
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         yield self.t1
         yield self.t2
 
     @property
-    def repetition(self):
+    def repetition(self) -> Dict[str, Any]:
         return self.additional['repetition']
 
-    def auto_generate_child_rel(self, klass, param, param2=None):
+    def auto_generate_child_rel(self, klass: Type['ChildRelationship'], param: Any, param2: Optional[Any] = None) -> None:
         """
         Auto-populate self.child_rel1 and self.child_rel2.
         This requires self.down to be another valid DiffLevel object.
@@ -630,7 +638,7 @@ class DiffLevel:
                 klass=klass, parent=self.t2, child=self.down.t2, param=param if param2 is None else param2)  # type: ignore
 
     @property
-    def all_up(self):
+    def all_up(self) -> 'DiffLevel':
         """
         Get the root object of this comparison.
         (This is a convenient wrapper for following the up attribute as often as you can.)
@@ -642,7 +650,7 @@ class DiffLevel:
         return level
 
     @property
-    def all_down(self):
+    def all_down(self) -> 'DiffLevel':
         """
         Get the leaf object of this comparison.
         (This is a convenient wrapper for following the down attribute as often as you can.)
@@ -654,10 +662,10 @@ class DiffLevel:
         return level
 
     @staticmethod
-    def _format_result(root, result):
+    def _format_result(root: str, result: Optional[str]) -> Optional[str]:
         return None if result is None else "{}{}".format(root, result)
 
-    def get_root_key(self, use_t2=False):
+    def get_root_key(self, use_t2: bool = False) -> Any:
         """
         Get the path's root key value for this change
 
@@ -674,7 +682,7 @@ class DiffLevel:
             return next_rel.param
         return notpresent
 
-    def path(self, root="root", force=None, get_parent_too=False, use_t2=False, output_format='str', reporting_move=False):
+    def path(self, root: str = "root", force: Optional[str] = None, get_parent_too: bool = False, use_t2: bool = False, output_format: Literal['str', 'list'] = 'str', reporting_move: bool = False) -> Any:
         """
         A python syntax string describing how to descend to this level, assuming the top level object is called root.
         Returns None if the path is not representable as a string.
@@ -765,18 +773,18 @@ class DiffLevel:
                 output = (self._format_result(root, parent), param, self._format_result(root, result))  # type: ignore
             else:
                 self._path[cache_key] = result
-                output = self._format_result(root, result)
+                output = self._format_result(root, result) if isinstance(result, (str, type(None))) else None
         else:
             output = result
         return output
 
     def create_deeper(self,
-                      new_t1,
-                      new_t2,
-                      child_relationship_class,
-                      child_relationship_param=None,
-                      child_relationship_param2=None,
-                      report_type=None):
+                      new_t1: Any,
+                      new_t2: Any,
+                      child_relationship_class: Type['ChildRelationship'],
+                      child_relationship_param: Optional[Any] = None,
+                      child_relationship_param2: Optional[Any] = None,
+                      report_type: Optional[str] = None) -> 'DiffLevel':
         """
         Start a new comparison level and correctly link it to this one.
         :rtype: DiffLevel
@@ -791,12 +799,12 @@ class DiffLevel:
         return result
 
     def branch_deeper(self,
-                      new_t1,
-                      new_t2,
-                      child_relationship_class,
-                      child_relationship_param=None,
-                      child_relationship_param2=None,
-                      report_type=None):
+                      new_t1: Any,
+                      new_t2: Any,
+                      child_relationship_class: Type['ChildRelationship'],
+                      child_relationship_param: Optional[Any] = None,
+                      child_relationship_param2: Optional[Any] = None,
+                      report_type: Optional[str] = None) -> 'DiffLevel':
         """
         Branch this comparison: Do not touch this comparison line, but create a new one with exactly the same content,
         just one level deeper.
@@ -807,7 +815,7 @@ class DiffLevel:
         return branch.create_deeper(new_t1, new_t2, child_relationship_class,
                                     child_relationship_param, child_relationship_param2, report_type)
 
-    def copy(self):
+    def copy(self) -> 'DiffLevel':
         """
         Get a deep copy of this comparision line.
         :return: The leaf ("downmost") object of the copy.
@@ -850,20 +858,20 @@ class ChildRelationship:
 
     # Format to a be used for representing param.
     # E.g. for a dict, this turns a formatted param param "42" into "[42]".
-    param_repr_format = None
+    param_repr_format: Optional[str] = None
 
     # This is a hook allowing subclasses to manipulate param strings.
     # :param string: Input string
     # :return: Manipulated string, as appropriate in this context.
-    quote_str = None
+    quote_str: Optional[str] = None
 
     @staticmethod
-    def create(klass, parent, child, param=None):
+    def create(klass: Type['ChildRelationship'], parent: Any, child: Any, param: Optional[Any] = None) -> 'ChildRelationship':
         if not issubclass(klass, ChildRelationship):
             raise TypeError
         return klass(parent, child, param)
 
-    def __init__(self, parent, child, param=None):
+    def __init__(self, parent: Any, child: Any, param: Optional[Any] = None) -> None:
         # The parent object of this relationship, e.g. a dict
         self.parent = parent
 
@@ -873,7 +881,7 @@ class ChildRelationship:
         # A subclass-dependent parameter describing how to get from parent to child, e.g. the key in a dict
         self.param = param
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         from deepdiff.summarize import summarize
 
         name = "<{} parent:{}, child:{}, param:{}>"
@@ -882,7 +890,7 @@ class ChildRelationship:
         param = summarize(self.param, max_length=15)
         return name.format(self.__class__.__name__, parent, child, param)
 
-    def get_param_repr(self, force=None):
+    def get_param_repr(self, force: Optional[str] = None) -> Optional[str]:
         """
         Returns a formatted param python parsable string describing this relationship,
         or None if the relationship is not representable as a string.
@@ -899,7 +907,7 @@ class ChildRelationship:
         """
         return self.stringify_param(force)
 
-    def stringify_param(self, force=None):
+    def stringify_param(self, force: Optional[str] = None) -> Optional[str]:
         """
         Convert param to a string. Return None if there is no string representation.
         This is called by get_param_repr()
@@ -946,13 +954,13 @@ class ChildRelationship:
 
 
 class DictRelationship(ChildRelationship):
-    param_repr_format = "[{}]"
-    quote_str = "'{}'"
+    param_repr_format: Optional[str] = "[{}]"
+    quote_str: Optional[str] = "'{}'"
 
 
 class NumpyArrayRelationship(ChildRelationship):
-    param_repr_format = "[{}]"
-    quote_str = None
+    param_repr_format: Optional[str] = "[{}]"
+    quote_str: Optional[str] = None
 
 
 class SubscriptableIterableRelationship(DictRelationship):
@@ -970,9 +978,9 @@ class SetRelationship(InaccessibleRelationship):
 
 class NonSubscriptableIterableRelationship(InaccessibleRelationship):
 
-    param_repr_format = "[{}]"
+    param_repr_format: Optional[str] = "[{}]"
 
-    def get_param_repr(self, force=None):
+    def get_param_repr(self, force: Optional[str] = None) -> Optional[str]:
         if force == 'yes':
             result = "(unrepresentable)"
         elif force == 'fake' and self.param:
@@ -984,4 +992,4 @@ class NonSubscriptableIterableRelationship(InaccessibleRelationship):
 
 
 class AttributeRelationship(ChildRelationship):
-    param_repr_format = ".{}"
+    param_repr_format: Optional[str] = ".{}"

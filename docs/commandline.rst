@@ -72,6 +72,9 @@ to get the options:
       --significant-digits INTEGER
       --truncate-datetime [second|minute|hour|day]
       --verbose-level INTEGER RANGE   [default: 1]
+      --view [-|colored|colored_compact]
+                                      [default: -]
+                                      Format for displaying differences.
       --help                          Show this message and exit.
 
 
@@ -108,6 +111,12 @@ The path is perhaps more readable now: `root['Molotov']['zip']`. It is more clea
 
 .. Note::
     The parameters in the deep diff commandline are a subset of those in :ref:`deepdiff_module_label` 's Python API.
+
+To output in a specific format, for example the colored compact view (see :doc:`colored_view` for output details):
+
+.. code-block:: bash
+
+    $ deep diff t1.json t2.json --view colored_compact
 
 
 .. _deep_grep_command:

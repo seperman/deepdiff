@@ -1,11 +1,11 @@
 import math
 import datetime
-from typing import TYPE_CHECKING, Callable, Protocol, Any
+from typing import TYPE_CHECKING, Callable, Protocol, Any, Union, Optional
 from deepdiff.deephash import DeepHash
 from deepdiff.helper import (
     DELTA_VIEW, numbers, strings, add_to_frozen_set, not_found, only_numbers, np, np_float64, time_to_seconds,
     cartesian_product_numpy, np_ndarray, np_array_factory, get_homogeneous_numpy_compatible_type_of_seq, dict_,
-    CannotCompare)
+    CannotCompare, NumberType)
 from collections.abc import Mapping, Iterable
 
 if TYPE_CHECKING:
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
     class DistanceProtocol(DeepDiffProtocol, Protocol):
         hashes: dict
         deephash_parameters: dict
-        iterable_compare_func: Callable | None
-        math_epsilon: float
+        iterable_compare_func: Optional[Callable]
+        math_epsilon: Optional[float]
         cutoff_distance_for_pairs: float
 
         def __get_item_rough_length(self, item, parent:str="root") -> float:
@@ -268,7 +268,7 @@ def numpy_apply_log_keep_sign(array, offset=MATH_LOG_OFFSET):
     return signed_log_values
 
 
-def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1) -> float:
+def logarithmic_similarity(a: NumberType, b: NumberType, threshold: float=0.1) -> float:
     """
     A threshold of 0.1 translates to about 10.5% difference.
     A threshold of 0.5 translates to about 65% difference.
@@ -277,7 +277,7 @@ def logarithmic_similarity(a: numbers, b: numbers, threshold: float=0.1) -> floa
     return logarithmic_distance(a, b) < threshold
 
 
-def logarithmic_distance(a: numbers, b: numbers) -> float:
+def logarithmic_distance(a: NumberType, b: NumberType) -> float:
     # Apply logarithm to the absolute values and consider the sign
     a = float(a)
     b = float(b)

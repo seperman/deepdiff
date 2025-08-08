@@ -11,9 +11,11 @@ import datetime  # NOQA
 import decimal  # NOQA
 import orderly_set  # NOQA
 import collections  # NOQA
+import ipaddress
+import base64
 from copy import deepcopy, copy
 from functools import partial
-from collections.abc import Mapping
+from collections.abc import Mapping, KeysView
 from typing import (
     Callable, Optional, Union,
     overload, Literal, Any,
@@ -32,6 +34,7 @@ from deepdiff.helper import (
     pydantic_base_model_type,
     PydanticBaseModel,
     NotPresent,
+    ipranges,
 )
 from deepdiff.model import DeltaResult
 
@@ -85,6 +88,13 @@ SAFE_TO_IMPORT = {
     'collections.OrderedDict',
     're.Pattern',
     'deepdiff.helper.Opcode',
+    'ipaddress.IPv4Interface',
+    'ipaddress.IPv6Interface',
+    'ipaddress.IPv4Network',
+    'ipaddress.IPv6Network',
+    'ipaddress.IPv4Address',
+    'ipaddress.IPv6Address',
+    'collections.abc.KeysView',
 }
 
 
@@ -114,6 +124,9 @@ TYPE_STR_TO_TYPE = {
     'OrderedDict': collections.OrderedDict,
     'Pattern': re.Pattern,
     'iprange': str,
+    'IPv4Address': ipaddress.IPv4Address,
+    'IPv6Address': ipaddress.IPv6Address,
+    'KeysView': list,
 }
 
 
@@ -595,13 +608,25 @@ def _serialize_tuple(value):
     return value
 
 
+def _serialize_bytes(value):
+    """
+    Serialize bytes to JSON-compatible format.
+    First tries UTF-8 decoding for backward compatibility.
+    Falls back to base64 encoding for binary data.
+    """
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError:
+        return base64.b64encode(value).decode('ascii')
+
+
 JSON_CONVERTOR = {
     decimal.Decimal: _serialize_decimal,
     SetOrdered: list,
     orderly_set.StableSetEq: list,
     set: list,
     type: lambda x: x.__name__,
-    bytes: lambda x: x.decode('utf-8'),
+    bytes: _serialize_bytes,
     datetime.datetime: lambda x: x.isoformat(),
     uuid.UUID: lambda x: str(x),
     np_float32: float,
@@ -612,6 +637,9 @@ JSON_CONVERTOR = {
     tuple: _serialize_tuple,
     Mapping: dict,
     NotPresent: str,
+    ipranges: str,
+    memoryview: lambda x: x.tobytes(),
+    KeysView: list,
 }
 
 if PydanticBaseModel is not pydantic_base_model_type:
@@ -632,7 +660,33 @@ def json_convertor_default(default_mapping=None):
         # This is to handle reverse() which creates a generator of type list_reverseiterator
         if obj.__class__.__name__ == 'list_reverseiterator':
             return list(copy(obj))
-        raise TypeError('We do not know how to convert {} of type {} for json serialization. Please pass the default_mapping parameter with proper mapping of the object to a basic python type.'.format(obj, type(obj)))
+        # 3) gather @property values by scanning __class__.__dict__ and bases
+        props = {}
+        for cls in obj.__class__.__mro__:
+            for name, descriptor in cls.__dict__.items():
+                if isinstance(descriptor, property) and not name.startswith('_'):
+                    try:
+                        props[name] = getattr(obj, name)
+                    except Exception:
+                        # skip properties that error out
+                        pass
+        if props:
+            return props
+
+        # 4) fallback: public __dict__ entries
+        if hasattr(obj, '__dict__'):
+            return {
+                k: v
+                for k, v in vars(obj).items()
+                if not k.startswith('_')
+            }
+
+        # 5) give up
+        raise TypeError(
+            f"Don't know how to JSON-serialize {obj!r} "
+            f"(type {type(obj).__name__}); "
+            "consider adding it to default_mapping."
+        )
 
     return _convertor
 

@@ -9,7 +9,8 @@ import string
 import time
 import enum
 import ipaddress
-from typing import NamedTuple, Any, List, Optional, Dict, Union, TYPE_CHECKING, Tuple
+from typing import NamedTuple, Any, List, Optional, Dict, Union, TYPE_CHECKING, Tuple, Iterable, Iterator, Set, FrozenSet, Callable, Pattern, Type, TypeVar, Generic, Literal, overload
+from collections.abc import Mapping, Sequence, Generator
 from ast import literal_eval
 from decimal import Decimal, localcontext, InvalidOperation as InvalidDecimalOperation
 from itertools import repeat
@@ -29,7 +30,7 @@ class pydantic_base_model_type:
 
 
 class SetOrdered(SetOrderedBase):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(list(self))
 
 
@@ -83,21 +84,21 @@ else:
     np_complexfloating = np.complexfloating
     np_datetime64 = np.datetime64
 
-numpy_numbers = (
+numpy_numbers: Tuple[Type[Any], ...] = (
     np_int8, np_int16, np_int32, np_int64, np_uint8,
     np_uint16, np_uint32, np_uint64, np_intp, np_uintp,
     np_float32, np_float64, np_double, np_floating, np_complex64,
     np_complex128, np_cdouble,)
 
-numpy_complex_numbers = (
+numpy_complex_numbers: Tuple[Type[Any], ...] = (
     np_complexfloating, np_complex64, np_complex128, np_cdouble,
 )
 
-numpy_dtypes = set(numpy_numbers)
+numpy_dtypes: Set[Type[Any]] = set(numpy_numbers)
 numpy_dtypes.add(np_bool_)  # type: ignore
 numpy_dtypes.add(np_datetime64)  # type: ignore
 
-numpy_dtype_str_to_type = {
+numpy_dtype_str_to_type: Dict[str, Type[Any]] = {
     item.__name__: item for item in numpy_dtypes
 }
 
@@ -112,28 +113,28 @@ logger = logging.getLogger(__name__)
 py_major_version = sys.version_info.major
 py_minor_version = sys.version_info.minor
 
-py_current_version = Decimal("{}.{}".format(py_major_version, py_minor_version))
+py_current_version: Decimal = Decimal("{}.{}".format(py_major_version, py_minor_version))
 
 py2 = py_major_version == 2
 py3 = py_major_version == 3
 py4 = py_major_version == 4
 
 
-NUMERICS = frozenset(string.digits)
+NUMERICS: FrozenSet[str] = frozenset(string.digits)
 
 
 class EnumBase(str, enum.Enum):
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         We need to add a single quotes so we can easily copy the value when we do ipdb.
         """
         return f"'{self.name}'"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
-def _int_or_zero(value):
+def _int_or_zero(value: str) -> int:
     """
     Tries to extract some number from a string.
 
@@ -151,19 +152,19 @@ def _int_or_zero(value):
         return 0
 
 
-def get_semvar_as_integer(version):
+def get_semvar_as_integer(version: str) -> int:
     """
     Converts:
 
     '1.23.5' to 1023005
     """
-    version = version.split('.')
-    if len(version) > 3:
-        version = version[:3]
-    elif len(version) < 3:
-        version.extend(['0'] * (3 - len(version)))
+    version_parts = version.split('.')
+    if len(version_parts) > 3:
+        version_parts = version_parts[:3]
+    elif len(version_parts) < 3:
+        version_parts.extend(['0'] * (3 - len(version_parts)))
 
-    return sum([10**(i * 3) * _int_or_zero(v) for i, v in enumerate(reversed(version))])
+    return sum([10**(i * 3) * _int_or_zero(v) for i, v in enumerate(reversed(version_parts))])
 
 
 # we used to use OrderedDictPlus when dictionaries in Python were not ordered.
@@ -182,22 +183,24 @@ pypy3 = py3 and hasattr(sys, "pypy_translation_info")
 if np and get_semvar_as_integer(np.__version__) < 1019000:
     sys.exit('The minimum required Numpy version is 1.19.0. Please upgrade your Numpy package.')
 
-strings = (str, bytes)  # which are both basestring
+strings: Tuple[Type[str], Type[bytes], Type[memoryview]] = (str, bytes, memoryview)  # which are both basestring
 unicode_type = str
 bytes_type = bytes
-only_complex_number = (complex,) + numpy_complex_numbers
-only_numbers = (int, float, complex, Decimal) + numpy_numbers
-datetimes = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time, np_datetime64)
-ipranges = (ipaddress.IPv4Interface, ipaddress.IPv6Interface, ipaddress.IPv4Network, ipaddress.IPv6Network)
-uuids = (uuid.UUID, )
-times = (datetime.datetime, datetime.time,np_datetime64)
-numbers: Tuple = only_numbers + datetimes
-booleans = (bool, np_bool_)
+only_complex_number: Tuple[Type[Any], ...] = (complex,) + numpy_complex_numbers
+only_numbers: Tuple[Type[Any], ...] = (int, float, complex, Decimal) + numpy_numbers
+datetimes: Tuple[Type[Any], ...] = (datetime.datetime, datetime.date, datetime.timedelta, datetime.time, np_datetime64)
+ipranges: Tuple[Type[Any], ...] = (ipaddress.IPv4Interface, ipaddress.IPv6Interface, ipaddress.IPv4Network, ipaddress.IPv6Network, ipaddress.IPv4Address, ipaddress.IPv6Address)
+uuids: Tuple[Type[uuid.UUID]] = (uuid.UUID, )
+times: Tuple[Type[Any], ...] = (datetime.datetime, datetime.time, np_datetime64)
+numbers: Tuple[Type[Any], ...] = only_numbers + datetimes
+# Type alias for use in type annotations
+NumberType = Union[int, float, complex, Decimal, datetime.datetime, datetime.date, datetime.timedelta, datetime.time, Any]
+booleans: Tuple[Type[bool], Type[Any]] = (bool, np_bool_)
 
-basic_types = strings + numbers + uuids + booleans + (type(None), )
+basic_types: Tuple[Type[Any], ...] = strings + numbers + uuids + booleans + (type(None), )
 
 class IndexedHash(NamedTuple):
-    indexes: List
+    indexes: List[Any]
     item: Any
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -209,11 +212,13 @@ KEY_TO_VAL_STR = "{}:{}"
 TREE_VIEW = 'tree'
 TEXT_VIEW = 'text'
 DELTA_VIEW = '_delta'
+COLORED_VIEW = 'colored'
+COLORED_COMPACT_VIEW = 'colored_compact'
 
-ENUM_INCLUDE_KEYS = ['__objclass__', 'name', 'value']
+ENUM_INCLUDE_KEYS: List[str] = ['__objclass__', 'name', 'value']
 
 
-def short_repr(item, max_length=15):
+def short_repr(item: Any, max_length: int = 15) -> str:
     """Short representation of item if it is too long"""
     item = repr(item)
     if len(item) > max_length:
@@ -227,7 +232,7 @@ class ListItemRemovedOrAdded:  # pragma: no cover
 
 
 class OtherTypes:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Error: {}".format(self.__class__.__name__)  # pragma: no cover
 
     __str__ = __repr__
@@ -252,7 +257,7 @@ class NotPresent:  # pragma: no cover
     We previously used None for this but this caused problem when users actually added and removed None. Srsly guys? :D
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'not present'  # pragma: no cover
 
     __str__ = __repr__
@@ -307,22 +312,21 @@ class indexed_set(set):
     """
 
 
-def add_to_frozen_set(parents_ids, item_id):
+def add_to_frozen_set(parents_ids: FrozenSet[int], item_id: int) -> FrozenSet[int]:
     return parents_ids | {item_id}
 
 
-def convert_item_or_items_into_set_else_none(items):
+def convert_item_or_items_into_set_else_none(items: Union[str, Iterable[str], None]) -> Optional[Set[str]]:
     if items:
-        if isinstance(items, strings):
-            items = {items}
+        if isinstance(items, str):
+            return {items}
         else:
-            items = set(items)
+            return set(items)
     else:
-        items = None
-    return items
+        return None
 
 
-def add_root_to_paths(paths):
+def add_root_to_paths(paths: Optional[Iterable[str]]) -> Optional[SetOrdered]:
     """
     Sometimes the users want to just pass
     [key] instead of root[key] for example.
@@ -350,24 +354,25 @@ def add_root_to_paths(paths):
 RE_COMPILED_TYPE = type(re.compile(''))
 
 
-def convert_item_or_items_into_compiled_regexes_else_none(items):
+def convert_item_or_items_into_compiled_regexes_else_none(items: Union[str, Pattern[str], Iterable[Union[str, Pattern[str]]], None]) -> Optional[List[Pattern[str]]]:
     if items:
-        if isinstance(items, (strings, RE_COMPILED_TYPE)):
-            items = [items]
-        items = [i if isinstance(i, RE_COMPILED_TYPE) else re.compile(i) for i in items]
+        if isinstance(items, (str, RE_COMPILED_TYPE)):
+            items_list = [items]  # type: ignore
+        else:
+            items_list = list(items)  # type: ignore
+        return [i if isinstance(i, RE_COMPILED_TYPE) else re.compile(i) for i in items_list]
     else:
-        items = None
-    return items
+        return None
 
 
-def get_id(obj):
+def get_id(obj: Any) -> str:
     """
     Adding some characters to id so they are not just integers to reduce the risk of collision.
     """
     return "{}{}".format(ID_PREFIX, id(obj))
 
 
-def get_type(obj):
+def get_type(obj: Any) -> Type[Any]:
     """
     Get the type of object or if it is a class, return the class itself.
     """
@@ -376,21 +381,21 @@ def get_type(obj):
     return obj if type(obj) is type else type(obj)
 
 
-def numpy_dtype_string_to_type(dtype_str):
+def numpy_dtype_string_to_type(dtype_str: str) -> Type[Any]:
     return numpy_dtype_str_to_type[dtype_str]
 
 
-def type_in_type_group(item, type_group):
+def type_in_type_group(item: Any, type_group: Tuple[Type[Any], ...]) -> bool:
     return get_type(item) in type_group
 
 
-def type_is_subclass_of_type_group(item, type_group):
+def type_is_subclass_of_type_group(item: Any, type_group: Tuple[Type[Any], ...]) -> bool:
     return isinstance(item, type_group) \
         or (isinstance(item, type) and issubclass(item, type_group)) \
         or type_in_type_group(item, type_group)
 
 
-def get_doc(doc_filename):
+def get_doc(doc_filename: str) -> str:
     try:
         with open(os.path.join(current_dir, '../docs/', doc_filename), 'r') as doc_file:
             doc = doc_file.read()
@@ -399,13 +404,13 @@ def get_doc(doc_filename):
     return doc
 
 
-number_formatting = {
+number_formatting: Dict[str, str] = {
     "f": r'{:.%sf}',
     "e": r'{:.%se}',
 }
 
 
-def number_to_string(number, significant_digits, number_format_notation="f"):
+def number_to_string(number: Any, significant_digits: int, number_format_notation: Literal['f', 'e'] = 'f') -> Any:
     """
     Convert numbers to string considering significant digits.
     """
@@ -448,7 +453,7 @@ def number_to_string(number, significant_digits, number_format_notation="f"):
         number = round(number=number, ndigits=significant_digits)  # type: ignore
 
         if significant_digits == 0:
-            number = int(number)
+            number = int(number)  # type: ignore
 
     if number == 0.0:
         # Special case for 0: "-0.xx" should compare equal to "0.xx"
@@ -474,7 +479,7 @@ class DeepDiffDeprecationWarning(DeprecationWarning):
     pass
 
 
-def cartesian_product(a, b):
+def cartesian_product(a: Iterable[Tuple[Any, ...]], b: Iterable[Any]) -> Iterator[Tuple[Any, ...]]:
     """
     Get the Cartesian product of two iterables
 
@@ -489,7 +494,7 @@ def cartesian_product(a, b):
             yield i + (j,)
 
 
-def cartesian_product_of_shape(dimentions, result=None):
+def cartesian_product_of_shape(dimentions: Iterable[int], result: Optional[Tuple[Tuple[Any, ...], ...]] = None) -> Iterator[Tuple[Any, ...]]:
     """
     Cartesian product of a dimentions iterable.
     This is mainly used to traverse Numpy ndarrays.
@@ -499,18 +504,18 @@ def cartesian_product_of_shape(dimentions, result=None):
     if result is None:
         result = ((),)  # a tuple with an empty tuple
     for dimension in dimentions:
-        result = cartesian_product(result, range(dimension))
-    return result
+        result = tuple(cartesian_product(result, range(dimension)))
+    return iter(result)
 
 
-def get_numpy_ndarray_rows(obj, shape=None):
+def get_numpy_ndarray_rows(obj: Any, shape: Optional[Tuple[int, ...]] = None) -> Generator[Tuple[Tuple[int, ...], Any], None, None]:
     """
     Convert a multi dimensional numpy array to list of rows
     """
     if shape is None:
-        shape = obj.shape
+        shape = obj.shape  # type: ignore
 
-    dimentions = shape[:-1]
+    dimentions = shape[:-1] if shape else ()
     for path_tuple in cartesian_product_of_shape(dimentions):
         result = obj
         for index in path_tuple:
@@ -520,12 +525,12 @@ def get_numpy_ndarray_rows(obj, shape=None):
 
 class _NotFound:
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return False
 
     __req__ = __eq__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'not found'
 
     __str__ = __repr__
@@ -542,7 +547,7 @@ class RepeatedTimer:
     https://stackoverflow.com/a/38317060/1497443
     """
 
-    def __init__(self, interval, function, *args, **kwargs):
+    def __init__(self, interval: float, function: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         self._timer = None
         self.interval = interval
         self.function = function
@@ -552,22 +557,22 @@ class RepeatedTimer:
         self.is_running = False
         self.start()
 
-    def _get_duration_sec(self):
+    def _get_duration_sec(self) -> int:
         return int(time.time() - self.start_time)
 
-    def _run(self):
+    def _run(self) -> None:
         self.is_running = False
         self.start()
         self.function(*self.args, **self.kwargs)
 
-    def start(self):
+    def start(self) -> None:
         self.kwargs.update(duration=self._get_duration_sec())
         if not self.is_running:
             self._timer = Timer(self.interval, self._run)
             self._timer.start()
             self.is_running = True
 
-    def stop(self):
+    def stop(self) -> int:
         duration = self._get_duration_sec()
         if self._timer is not None:
             self._timer.cancel()
@@ -575,30 +580,30 @@ class RepeatedTimer:
         return duration
 
 
-def _eval_decimal(params):
+def _eval_decimal(params: str) -> Decimal:
     return Decimal(params)
 
 
-def _eval_datetime(params):
-    params = f'({params})'
-    params = literal_eval(params)
-    return datetime.datetime(*params)
+def _eval_datetime(params: str) -> datetime.datetime:
+    params_with_parens = f'({params})'
+    params_tuple = literal_eval(params_with_parens)
+    return datetime.datetime(*params_tuple)  # type: ignore
 
 
-def _eval_date(params):
-    params = f'({params})'
-    params = literal_eval(params)
-    return datetime.date(*params)
+def _eval_date(params: str) -> datetime.date:
+    params_with_parens = f'({params})'
+    params_tuple = literal_eval(params_with_parens)
+    return datetime.date(*params_tuple)  # type: ignore
 
 
-LITERAL_EVAL_PRE_PROCESS = [
+LITERAL_EVAL_PRE_PROCESS: List[Tuple[str, str, Callable[[str], Any]]] = [
     ('Decimal(', ')', _eval_decimal),
     ('datetime.datetime(', ')', _eval_datetime),
     ('datetime.date(', ')', _eval_date),
 ]
 
 
-def literal_eval_extended(item):
+def literal_eval_extended(item: str) -> Any:
     """
     An extended version of literal_eval
     """
@@ -613,7 +618,7 @@ def literal_eval_extended(item):
         raise
 
 
-def time_to_seconds(t:datetime.time) -> int:
+def time_to_seconds(t: datetime.time) -> int:
     return (t.hour * 60 + t.minute) * 60 + t.second
 
 
@@ -643,7 +648,7 @@ def datetime_normalize(
     return obj
 
 
-def has_timezone(dt):
+def has_timezone(dt: datetime.datetime) -> bool:
     """
     Function to check if a datetime object has a timezone
 
@@ -657,7 +662,7 @@ def has_timezone(dt):
     return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
 
-def get_truncate_datetime(truncate_datetime) -> Union[str, None]:
+def get_truncate_datetime(truncate_datetime: Union[str, None]) -> Union[str, None]:
     """
     Validates truncate_datetime value
     """
@@ -666,7 +671,7 @@ def get_truncate_datetime(truncate_datetime) -> Union[str, None]:
     return truncate_datetime
 
 
-def cartesian_product_numpy(*arrays):
+def cartesian_product_numpy(*arrays: Any) -> Any:
     """
     Cartesian product of Numpy arrays by Paul Panzer
     https://stackoverflow.com/a/49445693/1497443
@@ -680,7 +685,7 @@ def cartesian_product_numpy(*arrays):
     return arr.reshape(la, -1).T
 
 
-def diff_numpy_array(A, B):
+def diff_numpy_array(A: Any, B: Any) -> Any:
     """
     Numpy Array A - B
     return items in A that are not in B
@@ -690,14 +695,14 @@ def diff_numpy_array(A, B):
     return A[~np.isin(A, B)]  # type: ignore
 
 
-PYTHON_TYPE_TO_NUMPY_TYPE = {
+PYTHON_TYPE_TO_NUMPY_TYPE: Dict[Type[Any], Type[Any]] = {
     int: np_int64,
     float: np_float64,
     Decimal: np_float64
 }
 
 
-def get_homogeneous_numpy_compatible_type_of_seq(seq):
+def get_homogeneous_numpy_compatible_type_of_seq(seq: Sequence[Any]) -> Union[Type[Any], Literal[False]]:
     """
     Return with the numpy dtype if the array can be converted to a non-object numpy array.
     Originally written by mgilson https://stackoverflow.com/a/13252348/1497443
@@ -706,13 +711,16 @@ def get_homogeneous_numpy_compatible_type_of_seq(seq):
     iseq = iter(seq)
     first_type = type(next(iseq))
     if first_type in {int, float, Decimal}:
-        type_ = first_type if all((type(x) is first_type) for x in iseq) else False
-        return PYTHON_TYPE_TO_NUMPY_TYPE.get(type_, False)
+        type_match = first_type if all((type(x) is first_type) for x in iseq) else False
+        if type_match:
+            return PYTHON_TYPE_TO_NUMPY_TYPE.get(type_match, False)
+        else:
+            return False
     else:
         return False
 
 
-def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset(), include_keys=None):
+def detailed__dict__(obj: Any, ignore_private_variables: bool = True, ignore_keys: FrozenSet[str] = frozenset(), include_keys: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Get the detailed dictionary of an object.
 
@@ -752,7 +760,7 @@ def detailed__dict__(obj, ignore_private_variables=True, ignore_keys=frozenset()
     return result
 
 
-def named_tuple_repr(self):
+def named_tuple_repr(self: NamedTuple) -> str:
     fields = []
     for field, value in self._asdict().items():
         # Only include fields that do not have their default value

@@ -1,14 +1,18 @@
 #!/usr/bin/env python
+from ipaddress import IPv4Address
 import os
 import json
 import sys
 import pytest
 import datetime
 import numpy as np
-from typing import NamedTuple, Optional
+import hashlib
+import base64
+from typing import NamedTuple, Optional, Union, List, Dict
 from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
+from pydantic import BaseModel, IPvAnyAddress
 from deepdiff import DeepDiff
 from deepdiff.helper import pypy3, py_current_version, np_ndarray, Opcode, SetOrdered
 from deepdiff.serialization import (
@@ -23,6 +27,11 @@ logging.disable(logging.CRITICAL)
 
 t1 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": [1, 2, 3]}}
 t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
+
+
+class SampleSchema(BaseModel):
+    works: bool = False
+    ips: List[IPvAnyAddress]
 
 
 class SomeStats(NamedTuple):
@@ -84,8 +93,7 @@ class TestSerialization:
         t1 = A()
         t2 = B()
         ddiff = DeepDiff(t1, t2)
-        with pytest.raises(TypeError):
-            ddiff.to_json()
+        assert r'{"type_changes":{"root":{"old_type":"A","new_type":"B","old_value":{},"new_value":{}}}}' == ddiff.to_json()
 
     def test_serialize_custom_objects_with_default_mapping(self):
         class A:
@@ -114,6 +122,16 @@ class TestSerialization:
 
         ddiff = DeepDiff(t1, t2, verbose_level=verbose_level)
         assert expected == ddiff.to_dict()
+
+    def test_serialize_pydantic_model(self):
+        obj = SampleSchema(
+            works=True,
+            ips=["128.0.0.1"]
+        )
+        serialized = json_dumps(obj)
+        obj_again = json_loads(serialized)
+        assert {'works': True, 'ips': ['128.0.0.1']} == obj_again
+        assert {'works': True, 'ips': [IPv4Address('128.0.0.1')]} == obj.model_dump()
 
 
 @pytest.mark.skipif(pypy3, reason='clevercsv is not supported in pypy3')
@@ -187,6 +205,18 @@ class TestPickling:
         with pytest.raises(ModuleNotFoundError) as excinfo:
             pickle_load(serialized, safe_to_import=module_dot_name)
         assert expected_msg == str(excinfo.value)
+
+
+    def test_seriaize_property(self):
+
+        class Sample:
+            @property
+            def something(self):
+                return 10
+
+        sample = Sample()
+        serialized = json_dumps(sample)
+        assert '{"something":10}' == serialized
 
 
 class TestDeepDiffPretty:
@@ -381,6 +411,10 @@ class TestDeepDiffPretty:
         result = ddiff.pretty(prefix=prefix_callback)
         assert result == expected
 
+    def sig_to_bytes(inp: Dict[str, Union[str, bytes]]):
+        inp['signature'] = inp['signature'].encode('utf-8')
+        return inp
+
     @pytest.mark.parametrize('test_num, value, func_to_convert_back', [
         (1, {'10': None}, None),
         (2, {"type_changes": {"root": {"old_type": None, "new_type": list, "new_value": ["你好", 2, 3, 5]}}}, None),
@@ -390,7 +424,9 @@ class TestDeepDiffPretty:
         (6, datetime.datetime(2023, 10, 11), datetime.datetime.fromisoformat),
         (7, datetime.datetime.utcnow(), datetime.datetime.fromisoformat),
         (8, field_stats1, lambda x: SomeStats(**x)),
-        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array)
+        (9, np.array([[ 101, 3533, 1998, 4532, 2024, 3415, 1012,  102]]), np.array),
+        (10, memoryview(b"hello"), lambda x: memoryview(x.encode('utf-8'))),
+        (11, {'file_type': 'xlsx', 'signature': b'52bd9907785'}, sig_to_bytes)
     ])
     def test_json_dumps_and_loads(self, test_num, value, func_to_convert_back):
         serialized = json_dumps(value)
@@ -417,3 +453,117 @@ class TestDeepDiffPretty:
         assert '[3,2,1]' == serialized
         assert '[3,2,1]' == serialized2, "We should have copied the original list. If this returns empty, it means we exhausted the original list."
 
+    def test_dict_keys(self):
+        dic = {"foo": "bar", "apple": "too sweet"}
+        serialized = json_dumps(dic.keys())
+        assert '["foo","apple"]' == serialized
+
+    def test_non_utf8_bytes_serialization(self):
+        """Test that non-UTF-8 bytes are properly base64 encoded"""
+        # Create binary data that cannot be decoded as UTF-8
+        binary_data = b'\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f'
+        
+        # Verify it's not UTF-8 decodable
+        with pytest.raises(UnicodeDecodeError):
+            binary_data.decode('utf-8')
+        
+        # Test serialization
+        test_data = {"binary": binary_data}
+        serialized = json_dumps(test_data)
+        
+        # Should contain base64 encoded data
+        expected_b64 = base64.b64encode(binary_data).decode('ascii')
+        assert expected_b64 in serialized
+        
+        # Should be deserializable
+        deserialized = json_loads(serialized)
+        assert deserialized == {"binary": expected_b64}
+
+    def test_hash_bytes_serialization(self):
+        """Test serialization of hash-like binary data (blake3, sha256, etc.)"""
+        # Generate various hash-like byte sequences
+        test_cases = [
+            hashlib.md5(b"test").digest(),
+            hashlib.sha1(b"test").digest(),
+            hashlib.sha256(b"test").digest(),
+            hashlib.sha512(b"test").digest()[:16],  # Truncated
+            b'\xff\xfe\xfd\xfc' * 8,  # Artificial binary pattern
+        ]
+        
+        for i, hash_bytes in enumerate(test_cases):
+            test_data = {"hash": hash_bytes}
+            
+            # Should not raise UnicodeDecodeError
+            serialized = json_dumps(test_data)
+            assert serialized  # Should produce valid JSON
+            
+            # Should contain base64 if not UTF-8 decodable, or string if UTF-8 decodable
+            try:
+                utf8_decoded = hash_bytes.decode('utf-8')
+                # If UTF-8 decodable, should be in JSON as string
+                assert utf8_decoded in serialized
+            except UnicodeDecodeError:
+                # If not UTF-8 decodable, should be base64 encoded
+                expected_b64 = base64.b64encode(hash_bytes).decode('ascii')
+                assert expected_b64 in serialized
+
+    def test_mixed_utf8_and_binary_bytes(self):
+        """Test data structure with both UTF-8 decodable and binary bytes"""
+        test_data = {
+            "utf8_text": b"hello world",  # UTF-8 decodable
+            "binary_hash": hashlib.sha256(b"secret").digest(),  # Binary
+            "empty_bytes": b"",  # Edge case
+            "utf8_unicode": "café".encode('utf-8'),  # UTF-8 with unicode
+            "non_utf8_byte": b"\xff\xfe\xfd",  # Non-UTF-8 bytes
+        }
+        
+        # Should serialize without errors
+        serialized = json_dumps(test_data)
+        deserialized = json_loads(serialized)
+        
+        # UTF-8 decodable bytes should remain as strings
+        assert "hello world" in serialized
+        assert deserialized["utf8_text"] == "hello world"
+        
+        # Unicode UTF-8 should work
+        assert deserialized["utf8_unicode"] == "café"
+        
+        # Binary data should be base64 encoded
+        expected_hash_b64 = base64.b64encode(test_data["binary_hash"]).decode('ascii')
+        assert expected_hash_b64 in serialized
+        assert deserialized["binary_hash"] == expected_hash_b64
+        
+        # Empty bytes should be empty string
+        assert deserialized["empty_bytes"] == ""
+        
+        # Non-UTF-8 bytes should be base64 encoded
+        expected_non_utf8_b64 = base64.b64encode(test_data["non_utf8_byte"]).decode('ascii')
+        assert expected_non_utf8_b64 in serialized
+        assert deserialized["non_utf8_byte"] == expected_non_utf8_b64
+
+    def test_bytes_in_deepdiff_serialization(self):
+        """Test that bytes work correctly in DeepDiff JSON serialization"""
+        t1 = {
+            "text": b"hello",
+            "hash": hashlib.sha256(b"data1").digest(),
+        }
+        t2 = {
+            "text": b"world", 
+            "hash": hashlib.sha256(b"data2").digest(),
+        }
+        
+        diff = DeepDiff(t1, t2)
+        
+        # Should serialize without errors
+        json_output = diff.to_json()
+        assert json_output
+        
+        # Should contain both UTF-8 decoded strings and base64 encoded hashes
+        assert "hello" in json_output
+        assert "world" in json_output
+        
+        # Hash values should be base64 encoded
+        expected_hash1 = base64.b64encode(t1["hash"]).decode('ascii') 
+        expected_hash2 = base64.b64encode(t2["hash"]).decode('ascii')
+        assert expected_hash1 in json_output
+        assert expected_hash2 in json_output

@@ -330,11 +330,21 @@ class Delta:
         Set the element value on an object and if necessary convert the object to the proper mutable type
         """
         if isinstance(obj, tuple):
-            # convert this object back to a tuple later
-            obj = self._coerce_obj(
-                parent, obj, path, parent_to_obj_elem,
-                parent_to_obj_action, elements,
-                to_type=list, from_type=tuple)
+            # Check if it's a NamedTuple and use _replace() to generate a new copy with the change
+            if hasattr(obj, '_fields') and hasattr(obj, '_replace'):
+                if action == GETATTR:
+                    obj = obj._replace(**{elem: new_value})
+                    if parent:
+                        self._simple_set_elem_value(obj=parent, path_for_err_reporting=path,
+                                                    elem=parent_to_obj_elem, value=obj,
+                                                    action=parent_to_obj_action)
+                return
+            else:
+                # Regular tuple - convert this object back to a tuple later
+                obj = self._coerce_obj(
+                    parent, obj, path, parent_to_obj_elem,
+                    parent_to_obj_action, elements,
+                    to_type=list, from_type=tuple)
         if elem != 0 and self.force and isinstance(obj, list) and len(obj) == 0:
             # it must have been a dictionary    
             obj = {}
@@ -709,7 +719,12 @@ class Delta:
             obj = self._get_elem_and_compare_to_old_value(
                 parent, path_for_err_reporting=path, expected_old_value=None, elem=elem, action=action, forced_old_value=set())
             new_value = getattr(obj, func)(value)
-            self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
+            if hasattr(parent, '_fields') and hasattr(parent, '_replace'):
+                # Handle parent NamedTuple by creating a new instance with _replace(). Will not work with nested objects.
+                new_parent = parent._replace(**{elem: new_value})
+                self.root = new_parent
+            else:
+                self._simple_set_elem_value(parent, path_for_err_reporting=path, elem=elem, value=new_value, action=action)
 
     def _do_ignore_order_get_old(self, obj, remove_indexes_per_path, fixed_indexes_values, path_for_err_reporting):
         """

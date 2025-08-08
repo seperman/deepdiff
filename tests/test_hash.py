@@ -2,6 +2,7 @@
 import re
 import pytest
 import pytz
+import uuid6
 import logging
 import datetime
 import ipaddress
@@ -208,6 +209,28 @@ class TestDeepHash:
         later_hash = DeepHash(later)
         assert a_hash[a] != later_hash[later]
 
+    def test_uuid6_hash_positive(self):
+        """Positive test case: Same UUID objects should produce the same hash."""
+        uuid_obj = uuid6.uuid7()
+        hash1 = DeepHash(uuid_obj)
+        hash2 = DeepHash(uuid_obj)
+        assert hash1[uuid_obj] == hash2[uuid_obj]
+
+        import uuid
+        regular_uuid = uuid.uuid4()
+        hash_regular = DeepHash(regular_uuid)
+        assert hash_regular[regular_uuid] is not unprocessed
+
+    def test_uuid6_deepdiff_negative(self):
+        """Negative test case: DeepDiff should detect differences between sets containing different UUID objects."""
+        dummy_id_1 = uuid6.uuid7()
+        dummy_id_2 = uuid6.uuid7()
+        set1 = {dummy_id_1}
+        set2 = {dummy_id_1, dummy_id_2}
+        diff = DeepDiff(set1, set2)
+        assert diff != {}
+        assert 'set_item_added' in diff
+        assert str(dummy_id_2) in str(diff)
 
 class TestDeepHashPrep:
     """DeepHashPrep Tests covering object serialization."""

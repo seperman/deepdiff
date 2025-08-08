@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 import logging
 import datetime
-from typing import Union, Optional, Any, List, TYPE_CHECKING
+import uuid
+from typing import Union, Optional, Any, List, TYPE_CHECKING, Dict, Tuple, Set, Callable, Iterator, Generator, TypeVar, Protocol
 from collections.abc import Iterable, MutableMapping
 from collections import defaultdict
 from hashlib import sha1, sha256
 from pathlib import Path
 from enum import Enum
+import re
 from deepdiff.helper import (strings, numbers, times, unprocessed, not_hashed, add_to_frozen_set,
                              convert_item_or_items_into_set_else_none, get_doc, ipranges,
                              convert_item_or_items_into_compiled_regexes_else_none,
@@ -18,53 +20,65 @@ from deepdiff.base import Base
 
 if TYPE_CHECKING:
     from pytz.tzinfo import BaseTzInfo
+    import pandas as pd
+    import polars as pl
+    import numpy as np
+
+# Type aliases for better readability
+HashableType = Union[str, int, float, bytes, bool, tuple, frozenset, type(None)]
+HashResult = Union[str, Any]  # Can be string hash or unprocessed marker
+HashTuple = Tuple[HashResult, int]  # (hash_result, count)
+HashesDict = Dict[Any, Union[HashTuple, List[Any]]]  # Special case for UNPROCESSED_KEY
+PathType = Union[str, List[str], Set[str]]
+RegexType = Union[str, re.Pattern[str], List[Union[str, re.Pattern[str]]]]
+NumberToStringFunc = Callable[..., str]  # More flexible for different number_to_string implementations
 
 
 try:
     import pandas
 except ImportError:
-    pandas = False
+    pandas = False  # type: ignore
 
 try:
     import polars
 except ImportError:
-    polars = False
+    polars = False  # type: ignore
 try:
     import numpy as np
-    booleanTypes = (bool, np.bool_)
+    booleanTypes: Tuple[type, ...] = (bool, np.bool_)  # type: ignore
 except ImportError:
-    booleanTypes = bool
+    booleanTypes = (bool,)  # type: ignore
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
-UNPROCESSED_KEY = object()
+UNPROCESSED_KEY: object = object()
 
-EMPTY_FROZENSET = frozenset()
+EMPTY_FROZENSET: frozenset = frozenset()
 
-INDEX_VS_ATTRIBUTE = ('[%s]', '.%s')
-
-
-HASH_LOOKUP_ERR_MSG = '{} is not one of the hashed items.'
+INDEX_VS_ATTRIBUTE: Tuple[str, str] = ('[%s]', '.%s')
 
 
-def sha256hex(obj):
+HASH_LOOKUP_ERR_MSG: str = '{} is not one of the hashed items.'
+
+
+def sha256hex(obj: Union[str, bytes]) -> str:
     """Use Sha256 as a cryptographic hash."""
     if isinstance(obj, str):
         obj = obj.encode('utf-8')
     return sha256(obj).hexdigest()
 
 
-def sha1hex(obj):
+def sha1hex(obj: Union[str, bytes]) -> str:
     """Use Sha1 as a cryptographic hash."""
     if isinstance(obj, str):
         obj = obj.encode('utf-8')
     return sha1(obj).hexdigest()
 
 
-default_hasher = sha256hex
+default_hasher: Callable[[Union[str, bytes]], str] = sha256hex
 
 
-def combine_hashes_lists(items, prefix):
+def combine_hashes_lists(items: List[List[str]], prefix: Union[str, bytes]) -> str:
     """
     Combines lists of hashes into one hash
     This can be optimized in future.
@@ -87,18 +101,20 @@ class BoolObj(Enum):
 
 
 def prepare_string_for_hashing(
-        obj,
-        ignore_string_type_changes=False,
-        ignore_string_case=False,
-        encodings=None,
-        ignore_encoding_errors=False,
-):
+        obj: Union[str, bytes, memoryview],
+        ignore_string_type_changes: bool = False,
+        ignore_string_case: bool = False,
+        encodings: Optional[List[str]] = None,
+        ignore_encoding_errors: bool = False,
+) -> str:
     """
     Clean type conversions
     """
     original_type = obj.__class__.__name__
     # https://docs.python.org/3/library/codecs.html#codecs.decode
     errors_mode = 'ignore' if ignore_encoding_errors else 'strict'
+    if isinstance(obj, memoryview):
+        obj = obj.tobytes()
     if isinstance(obj, bytes):
         err = None
         encodings = ['utf-8'] if encodings is None else encodings
@@ -132,7 +148,7 @@ def prepare_string_for_hashing(
         obj = KEY_TO_VAL_STR.format(original_type, obj)
     if ignore_string_case:
         obj = obj.lower()
-    return obj
+    return str(obj)
 
 
 doc = get_doc('deephash_doc.rst')
@@ -140,44 +156,72 @@ doc = get_doc('deephash_doc.rst')
 
 class DeepHash(Base):
     __doc__ = doc
+    
+    # Class attributes
+    hashes: Dict[Any, Any]
+    exclude_types_tuple: Tuple[type, ...]
+    ignore_repetition: bool
+    exclude_paths: Optional[Set[str]]
+    include_paths: Optional[Set[str]]
+    exclude_regex_paths: Optional[List[re.Pattern[str]]]
+    hasher: Callable[[Union[str, bytes]], str]
+    use_enum_value: bool
+    default_timezone: Union[datetime.timezone, "BaseTzInfo"]
+    significant_digits: Optional[int]
+    truncate_datetime: Optional[str]
+    number_format_notation: str
+    ignore_type_in_groups: Any
+    ignore_string_type_changes: bool
+    ignore_numeric_type_changes: bool
+    ignore_string_case: bool
+    exclude_obj_callback: Optional[Callable[[Any, str], bool]]
+    apply_hash: bool
+    type_check_func: Callable[[type, Any], bool]
+    number_to_string: Any
+    ignore_private_variables: bool
+    encodings: Optional[List[str]]
+    ignore_encoding_errors: bool
+    ignore_iterable_order: bool
+    custom_operators: Optional[List[Any]]
 
     def __init__(self,
                  obj: Any,
                  *,
-                 apply_hash=True,
-                 custom_operators: Optional[List[Any]] =None,
-                 default_timezone:Union[datetime.timezone, "BaseTzInfo"]=datetime.timezone.utc,
-                 encodings=None,
-                 exclude_obj_callback=None,
-                 exclude_paths=None,
-                 exclude_regex_paths=None,
-                 exclude_types=None,
-                 hasher=None,
-                 hashes=None,
-                 ignore_encoding_errors=False,
-                 ignore_iterable_order=True,
-                 ignore_numeric_type_changes=False,
-                 ignore_private_variables=True,
-                 ignore_repetition=True,
-                 ignore_string_case=False,
-                 ignore_string_type_changes=False,
-                 ignore_type_in_groups=None,
-                 ignore_type_subclasses=False,
-                 include_paths=None,
-                 number_format_notation="f",
-                 number_to_string_func=None,
-                 parent="root",
-                 significant_digits=None,
-                 truncate_datetime=None,
-                 use_enum_value=False,
-                 **kwargs):
+                 apply_hash: bool = True,
+                 custom_operators: Optional[List[Any]] = None,
+                 default_timezone: Union[datetime.timezone, "BaseTzInfo"] = datetime.timezone.utc,
+                 encodings: Optional[List[str]] = None,
+                 exclude_obj_callback: Optional[Callable[[Any, str], bool]] = None,
+                 exclude_paths: Optional[PathType] = None,
+                 exclude_regex_paths: Optional[RegexType] = None,
+                 exclude_types: Optional[Union[List[type], Set[type], Tuple[type, ...]]] = None,
+                 hasher: Optional[Callable[[Union[str, bytes]], str]] = None,
+                 hashes: Optional[Union[Dict[Any, Any], "DeepHash"]] = None,
+                 ignore_encoding_errors: bool = False,
+                 ignore_iterable_order: bool = True,
+                 ignore_numeric_type_changes: bool = False,
+                 ignore_private_variables: bool = True,
+                 ignore_repetition: bool = True,
+                 ignore_string_case: bool = False,
+                 ignore_string_type_changes: bool = False,
+                 ignore_type_in_groups: Any = None,
+                 ignore_type_subclasses: bool = False,
+                 ignore_uuid_types: bool = False,
+                 include_paths: Optional[PathType] = None,
+                 number_format_notation: str = "f",
+                 number_to_string_func: Optional[NumberToStringFunc] = None,
+                 parent: str = "root",
+                 significant_digits: Optional[int] = None,
+                 truncate_datetime: Optional[str] = None,
+                 use_enum_value: bool = False,
+                 **kwargs) -> None:
         if kwargs:
             raise ValueError(
                 ("The following parameter(s) are not valid: %s\n"
                  "The valid parameters are obj, hashes, exclude_types, significant_digits, truncate_datetime,"
                  "exclude_paths, include_paths, exclude_regex_paths, hasher, ignore_repetition, "
                  "number_format_notation, apply_hash, ignore_type_in_groups, ignore_string_type_changes, "
-                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case "
+                 "ignore_numeric_type_changes, ignore_type_subclasses, ignore_string_case, ignore_uuid_types, "
                  "number_to_string_func, ignore_private_variables, parent, use_enum_value, default_timezone "
                  "encodings, ignore_encoding_errors") % ', '.join(kwargs.keys()))
         if isinstance(hashes, MutableMapping):
@@ -193,7 +237,7 @@ class DeepHash(Base):
         self.include_paths = add_root_to_paths(convert_item_or_items_into_set_else_none(include_paths))
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
         self.hasher = default_hasher if hasher is None else hasher
-        self.hashes[UNPROCESSED_KEY] = []
+        self.hashes[UNPROCESSED_KEY] = []  # type: ignore
         self.use_enum_value = use_enum_value
         self.default_timezone = default_timezone
         self.significant_digits = self.get_significant_digits(significant_digits, ignore_numeric_type_changes)
@@ -203,7 +247,9 @@ class DeepHash(Base):
             ignore_type_in_groups=ignore_type_in_groups,
             ignore_string_type_changes=ignore_string_type_changes,
             ignore_numeric_type_changes=ignore_numeric_type_changes,
-            ignore_type_subclasses=ignore_type_subclasses)
+            ignore_type_subclasses=ignore_type_subclasses,
+            ignore_uuid_types=ignore_uuid_types,
+        )
         self.ignore_string_type_changes = ignore_string_type_changes
         self.ignore_numeric_type_changes = ignore_numeric_type_changes
         self.ignore_string_case = ignore_string_case
@@ -228,14 +274,14 @@ class DeepHash(Base):
         else:
             del self.hashes[UNPROCESSED_KEY]
 
-    sha256hex = sha256hex
-    sha1hex = sha1hex
+    sha256hex: Callable[[Union[str, bytes]], str] = sha256hex
+    sha1hex: Callable[[Union[str, bytes]], str] = sha1hex
 
-    def __getitem__(self, obj, extract_index=0):
+    def __getitem__(self, obj: Any, extract_index: Optional[int] = 0) -> Any:
         return self._getitem(self.hashes, obj, extract_index=extract_index, use_enum_value=self.use_enum_value)
 
     @staticmethod
-    def _getitem(hashes, obj, extract_index=0, use_enum_value=False):
+    def _getitem(hashes: Dict[Any, Any], obj: Any, extract_index: Optional[int] = 0, use_enum_value: bool = False) -> Any:
         """
         extract_index is zero for hash and 1 for count and None to get them both.
         To keep it backward compatible, we only get the hash by default so it is set to zero by default.
@@ -249,7 +295,7 @@ class DeepHash(Base):
         elif use_enum_value and isinstance(obj, Enum):
             key = obj.value
 
-        result_n_count = (None, 0)
+        result_n_count: Tuple[Any, int] = (None, 0)  # type: ignore
 
         try:
             result_n_count = hashes[key]
@@ -265,7 +311,7 @@ class DeepHash(Base):
 
         return result_n_count if extract_index is None else result_n_count[extract_index]
 
-    def __contains__(self, obj):
+    def __contains__(self, obj: Any) -> bool:
         result = False
         try:
             result = obj in self.hashes
@@ -275,7 +321,7 @@ class DeepHash(Base):
             result = get_id(obj) in self.hashes
         return result
 
-    def get(self, key, default=None, extract_index=0):
+    def get(self, key: Any, default: Any = None, extract_index: Optional[int] = 0) -> Any:
         """
         Get method for the hashes dictionary.
         It can extract the hash for a given key that is already calculated when extract_index=0
@@ -284,7 +330,7 @@ class DeepHash(Base):
         return self.get_key(self.hashes, key, default=default, extract_index=extract_index)
 
     @staticmethod
-    def get_key(hashes, key, default=None, extract_index=0, use_enum_value=False):
+    def get_key(hashes: Dict[Any, Any], key: Any, default: Any = None, extract_index: Optional[int] = 0, use_enum_value: bool = False) -> Any:
         """
         get_key method for the hashes dictionary.
         It can extract the hash for a given key that is already calculated when extract_index=0
@@ -296,7 +342,7 @@ class DeepHash(Base):
             result = default
         return result
 
-    def _get_objects_to_hashes_dict(self, extract_index=0):
+    def _get_objects_to_hashes_dict(self, extract_index: Optional[int] = 0) -> Dict[Any, Any]:
         """
         A dictionary containing only the objects to hashes,
         or a dictionary of objects to the count of items that went to build them.
@@ -310,7 +356,7 @@ class DeepHash(Base):
                 result[key] = value[extract_index]
         return result
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, DeepHash):
             return self.hashes == other.hashes
         else:
@@ -319,29 +365,29 @@ class DeepHash(Base):
 
     __req__ = __eq__
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Hide the counts since it will be confusing to see them when they are hidden everywhere else.
         """
         from deepdiff.summarize import summarize
         return summarize(self._get_objects_to_hashes_dict(extract_index=0), max_length=500)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self._get_objects_to_hashes_dict(extract_index=0))
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.hashes)
 
-    def keys(self):
+    def keys(self) -> Any:
         return self.hashes.keys()
 
-    def values(self):
+    def values(self) -> Generator[Any, None, None]:
         return (i[0] for i in self.hashes.values())  # Just grab the item and not its count
 
-    def items(self):
+    def items(self) -> Generator[Tuple[Any, Any], None, None]:
         return ((i, v[0]) for i, v in self.hashes.items())
 
-    def _prep_obj(self, obj, parent, parents_ids=EMPTY_FROZENSET, is_namedtuple=False, is_pydantic_object=False):
+    def _prep_obj(self, obj: Any, parent: str, parents_ids: frozenset = EMPTY_FROZENSET, is_namedtuple: bool = False, is_pydantic_object: bool = False) -> HashTuple:
         """prepping objects"""
         original_type = type(obj) if not isinstance(obj, type) else obj
 
@@ -366,7 +412,7 @@ class DeepHash(Base):
             except AttributeError:
                 pass
         else:
-            self.hashes[UNPROCESSED_KEY].append(obj)
+            self.hashes[UNPROCESSED_KEY].append(obj)  # type: ignore
             return (unprocessed, 0)
         obj = d
 
@@ -375,7 +421,7 @@ class DeepHash(Base):
         result = "nt{}".format(result) if is_namedtuple else "obj{}".format(result)
         return result, counts
 
-    def _skip_this(self, obj, parent):
+    def _skip_this(self, obj: Any, parent: str) -> bool:
         skip = False
         if self.exclude_paths and parent in self.exclude_paths:
             skip = True
@@ -395,7 +441,7 @@ class DeepHash(Base):
             skip = True
         return skip
 
-    def _prep_dict(self, obj, parent, parents_ids=EMPTY_FROZENSET, print_as_attribute=False, original_type=None):
+    def _prep_dict(self, obj: Union[Dict[Any, Any], MutableMapping], parent: str, parents_ids: frozenset = EMPTY_FROZENSET, print_as_attribute: bool = False, original_type: Optional[type] = None) -> HashTuple:
 
         result = []
         counts = 1
@@ -434,7 +480,7 @@ class DeepHash(Base):
             type_str = 'dict'
         return "{}:{{{}}}".format(type_str, result), counts
 
-    def _prep_iterable(self, obj, parent, parents_ids=EMPTY_FROZENSET):
+    def _prep_iterable(self, obj: Iterable[Any], parent: str, parents_ids: frozenset = EMPTY_FROZENSET) -> HashTuple:
 
         counts = 1
         result = defaultdict(int)
@@ -469,40 +515,40 @@ class DeepHash(Base):
 
         return result, counts
 
-    def _prep_bool(self, obj):
+    def _prep_bool(self, obj: bool) -> BoolObj:
         return BoolObj.TRUE if obj else BoolObj.FALSE
 
 
-    def _prep_path(self, obj):
+    def _prep_path(self, obj: Path) -> str:
         type_ = obj.__class__.__name__
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_number(self, obj):
+    def _prep_number(self, obj: Union[int, float, complex]) -> str:
         type_ = "number" if self.ignore_numeric_type_changes else obj.__class__.__name__
         if self.significant_digits is not None:
             obj = self.number_to_string(obj, significant_digits=self.significant_digits,
-                                        number_format_notation=self.number_format_notation)
+                                        number_format_notation=self.number_format_notation)  # type: ignore
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_ipranges(self, obj):
+    def _prep_ipranges(self, obj) -> str:
         type_ = 'iprange'
         obj = str(obj)
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_datetime(self, obj):
+    def _prep_datetime(self, obj: datetime.datetime) -> str:
         type_ = 'datetime'
         obj = datetime_normalize(self.truncate_datetime, obj, default_timezone=self.default_timezone)
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_date(self, obj):
+    def _prep_date(self, obj: datetime.date) -> str:
         type_ = 'datetime'  # yes still datetime but it doesn't need normalization
         return KEY_TO_VAL_STR.format(type_, obj)
 
-    def _prep_tuple(self, obj, parent, parents_ids):
+    def _prep_tuple(self, obj: tuple, parent: str, parents_ids: frozenset) -> HashTuple:
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
-            obj._asdict
+            obj._asdict  # type: ignore
         # It must be a normal tuple
         except AttributeError:
             result, counts = self._prep_iterable(obj=obj, parent=parent, parents_ids=parents_ids)
@@ -511,7 +557,7 @@ class DeepHash(Base):
             result, counts = self._prep_obj(obj, parent, parents_ids=parents_ids, is_namedtuple=True)
         return result, counts
 
-    def _hash(self, obj, parent, parents_ids=EMPTY_FROZENSET):
+    def _hash(self, obj: Any, parent: str, parents_ids: frozenset = EMPTY_FROZENSET) -> HashTuple:
         """The main hash method"""
         counts = 1
         if self.custom_operators is not None:
@@ -555,7 +601,7 @@ class DeepHash(Base):
             result = self._prep_path(obj)
 
         elif isinstance(obj, times):
-            result = self._prep_datetime(obj)
+            result = self._prep_datetime(obj)  # type: ignore
 
         elif isinstance(obj, datetime.date):
             result = self._prep_date(obj)
@@ -565,6 +611,10 @@ class DeepHash(Base):
 
         elif isinstance(obj, ipranges):
             result = self._prep_ipranges(obj)
+
+        elif isinstance(obj, uuid.UUID):
+            # Handle UUID objects (including uuid6.UUID) by using their integer value
+            result = str(obj.int)
 
         elif isinstance(obj, MutableMapping):
             result, counts = self._prep_dict(obj=obj, parent=parent, parents_ids=parents_ids)
@@ -596,7 +646,7 @@ class DeepHash(Base):
             result, counts = self._prep_obj(obj=obj, parent=parent, parents_ids=parents_ids)
 
         if result is not_hashed:  # pragma: no cover
-            self.hashes[UNPROCESSED_KEY].append(obj)
+            self.hashes[UNPROCESSED_KEY].append(obj)  # type: ignore
 
         elif result is unprocessed:
             pass
@@ -606,7 +656,7 @@ class DeepHash(Base):
                 result_cleaned = result
             else:
                 result_cleaned = prepare_string_for_hashing(
-                    result, ignore_string_type_changes=self.ignore_string_type_changes,
+                    str(result), ignore_string_type_changes=self.ignore_string_type_changes,
                     ignore_string_case=self.ignore_string_case)
             result = self.hasher(result_cleaned)
 

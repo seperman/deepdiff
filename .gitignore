@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+.venv
 build/
 develop-eggs/
 dist/
@@ -71,3 +72,6 @@ temp*
 .env
 
 pyrightconfig.json
+
+# direnv file
+.envrc

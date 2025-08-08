@@ -243,6 +243,47 @@ ignore_type_subclasses: Boolean, default = False
     {'values_changed': {'root.x': {'new_value': 3, 'old_value': 1}}, 'attribute_removed': [root.y]}
 
 
+.. _ignore_uuid_types_label:
+
+Ignore UUID Types
+------------------
+
+ignore_uuid_types: Boolean, default = False
+    Whether to ignore UUID vs string type differences when comparing. When set to True, comparing a UUID object with its string representation will not report as a type change.
+
+Without ignore_uuid_types:
+    >>> import uuid
+    >>> from deepdiff import DeepDiff
+    >>> test_uuid = uuid.UUID('12345678-1234-5678-1234-567812345678')
+    >>> uuid_str = '12345678-1234-5678-1234-567812345678'
+    >>> DeepDiff(test_uuid, uuid_str)
+    {'type_changes': {'root': {'old_type': <class 'uuid.UUID'>, 'new_type': <class 'str'>, 'old_value': UUID('12345678-1234-5678-1234-567812345678'), 'new_value': '12345678-1234-5678-1234-567812345678'}}}
+
+With ignore_uuid_types=True:
+    >>> DeepDiff(test_uuid, uuid_str, ignore_uuid_types=True)
+    {}
+
+This works in both directions:
+    >>> DeepDiff(uuid_str, test_uuid, ignore_uuid_types=True)
+    {}
+
+The parameter works with nested structures like dictionaries and lists:
+    >>> dict1 = {'id': test_uuid, 'name': 'test'}
+    >>> dict2 = {'id': uuid_str, 'name': 'test'}
+    >>> DeepDiff(dict1, dict2, ignore_uuid_types=True)
+    {}
+
+Note that if the UUID and string represent different values, it will still report as a value change:
+    >>> different_uuid = uuid.UUID('87654321-4321-8765-4321-876543218765')
+    >>> DeepDiff(different_uuid, uuid_str, ignore_uuid_types=True)
+    {'values_changed': {'root': {'old_value': UUID('87654321-4321-8765-4321-876543218765'), 'new_value': '12345678-1234-5678-1234-567812345678'}}}
+
+This parameter can be combined with other ignore flags:
+    >>> data1 = {'id': test_uuid, 'name': 'TEST', 'count': 42}
+    >>> data2 = {'id': uuid_str, 'name': 'test', 'count': 42.0}
+    >>> DeepDiff(data1, data2, ignore_uuid_types=True, ignore_string_case=True, ignore_numeric_type_changes=True)
+    {}
+
 
 .. _ignore_string_case_label:
 
