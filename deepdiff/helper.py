@@ -193,6 +193,8 @@ ipranges: Tuple[Type[Any], ...] = (ipaddress.IPv4Interface, ipaddress.IPv6Interf
 uuids: Tuple[Type[uuid.UUID]] = (uuid.UUID, )
 times: Tuple[Type[Any], ...] = (datetime.datetime, datetime.time, np_datetime64)
 numbers: Tuple[Type[Any], ...] = only_numbers + datetimes
+# Type alias for use in type annotations
+NumberType = Union[int, float, complex, Decimal, datetime.datetime, datetime.date, datetime.timedelta, datetime.time, Any]
 booleans: Tuple[Type[bool], Type[Any]] = (bool, np_bool_)
 
 basic_types: Tuple[Type[Any], ...] = strings + numbers + uuids + booleans + (type(None), )

@@ -8,7 +8,7 @@ import datetime
 import numpy as np
 import hashlib
 import base64
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union, List, Dict
 from pickle import UnpicklingError
 from decimal import Decimal
 from collections import Counter
@@ -31,7 +31,7 @@ t2 = {1: 1, 2: 2, 3: 3, 4: {"a": "hello", "b": "world\n\n\nEnd"}}
 
 class SampleSchema(BaseModel):
     works: bool = False
-    ips: list[IPvAnyAddress]
+    ips: List[IPvAnyAddress]
 
 
 class SomeStats(NamedTuple):
@@ -411,7 +411,7 @@ class TestDeepDiffPretty:
         result = ddiff.pretty(prefix=prefix_callback)
         assert result == expected
 
-    def sig_to_bytes(inp: dict[str, str | bytes]):
+    def sig_to_bytes(inp: Dict[str, Union[str, bytes]]):
         inp['signature'] = inp['signature'].encode('utf-8')
         return inp
 

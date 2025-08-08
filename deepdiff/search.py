@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import re
 from collections.abc import MutableMapping, Iterable
-from typing import Any, Dict, FrozenSet, List, Pattern, Set, Union
+from typing import Any, Dict, FrozenSet, List, Pattern, Set, Union, Tuple
 from deepdiff.helper import SetOrdered
 import logging
 
@@ -300,7 +300,7 @@ class DeepSearch(Dict[str, Union[Dict[str, Any], SetOrdered, List[str]]]):
         ):
             self.__report(report_key='matched_values', key=parent, value=obj)
 
-    def __search_tuple(self, obj: tuple[Any, ...], item: Any, parent: str, parents_ids: FrozenSet[int]) -> None:
+    def __search_tuple(self, obj: Tuple[Any, ...], item: Any, parent: str, parents_ids: FrozenSet[int]) -> None:
         # Checking to see if it has _fields. Which probably means it is a named
         # tuple.
         try:
