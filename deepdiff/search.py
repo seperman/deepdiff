@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import re
 from collections.abc import MutableMapping, Iterable
-from typing import Any, Dict, FrozenSet, List, Optional, Pattern, Set, Union, TYPE_CHECKING
+from typing import Any, Dict, FrozenSet, List, Pattern, Set, Union
 from deepdiff.helper import SetOrdered
 import logging
 
@@ -9,8 +9,6 @@ from deepdiff.helper import (
     strings, numbers, add_to_frozen_set, get_doc, dict_, RE_COMPILED_TYPE, ipranges
 )
 
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
