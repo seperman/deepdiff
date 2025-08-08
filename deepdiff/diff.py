@@ -13,7 +13,7 @@ import uuid
 from enum import Enum
 from copy import deepcopy
 from math import isclose as is_close
-from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet, TYPE_CHECKING, Protocol
+from typing import List, Dict, Callable, Union, Any, Pattern, Tuple, Optional, Set, FrozenSet, TYPE_CHECKING, Protocol, Literal
 from collections.abc import Mapping, Iterable, Sequence
 from collections import defaultdict
 from inspect import getmembers
@@ -67,7 +67,7 @@ doc = get_doc('diff_doc.rst')
 PROGRESS_MSG = "DeepDiff {} seconds in progress. Pass #{}, Diff #{}"
 
 
-def _report_progress(_stats, progress_logger, duration):
+def _report_progress(_stats: Dict[str, Any], progress_logger: Callable[[str], None], duration: float) -> None:
     """
     Report the progress every few seconds.
     """
@@ -130,6 +130,7 @@ class DeepDiffProtocol(Protocol):
     use_log_scale: bool
     log_scale_similarity_threshold: float
     view: str
+    math_epsilon: Optional[float]
 
 
 
@@ -141,7 +142,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
     def __init__(self,
                  t1: Any,
                  t2: Any,
-                 _original_type=None,
+                 _original_type: Optional[Any]=None,
                  cache_purge_level: int=1,
                  cache_size: int=0,
                  cache_tuning_sample_size: int=0,
@@ -154,12 +155,12 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  exclude_obj_callback_strict: Optional[Callable]=None,
                  exclude_paths: Union[str, List[str], Set[str], FrozenSet[str], None]=None,
                  exclude_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
-                 exclude_types: Optional[List[Any]]=None,
+                 exclude_types: Optional[List[type]]=None,
                  get_deep_distance: bool=False,
                  group_by: Union[str, Tuple[str, str], None]=None,
                  group_by_sort_key: Union[str, Callable, None]=None,
                  hasher: Optional[Callable]=None,
-                 hashes: Optional[Dict]=None,
+                 hashes: Optional[Dict[Any, Any]]=None,
                  ignore_encoding_errors: bool=False,
                  ignore_nan_inequality: bool=False,
                  ignore_numeric_type_changes: bool=False,
@@ -168,7 +169,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  ignore_private_variables: bool=True,
                  ignore_string_case: bool=False,
                  ignore_string_type_changes: bool=False,
-                 ignore_type_in_groups: Optional[List[Tuple]]=None,
+                 ignore_type_in_groups: Optional[List[Tuple[Any, ...]]]=None,
                  ignore_type_subclasses: bool=False,
                  ignore_uuid_types: bool=False,
                  include_obj_callback: Optional[Callable]=None,
@@ -181,9 +182,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  math_epsilon: Optional[float]=None,
                  max_diffs: Optional[int]=None,
                  max_passes: int=10000000,
-                 number_format_notation: str="f",
+                 number_format_notation: Literal["f", "e"]="f",
                  number_to_string_func: Optional[Callable]=None,
-                 progress_logger: Callable=logger.info,
+                 progress_logger: Callable[[str], None]=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
                  threshold_to_diff_deeper: float = 0.33,
@@ -193,8 +194,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  verbose_level: int=1,
                  view: str=TEXT_VIEW,
                  zip_ordered_iterables: bool=False,
-                 _parameters=None,
-                 _shared_parameters=None,
+                 _parameters: Optional[Dict[str, Any]]=None,
+                 _shared_parameters: Optional[Dict[str, Any]]=None,
                  **kwargs):
         super().__init__()
         if kwargs:
@@ -443,8 +444,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             self.tree[report_type].add(level)
 
     @staticmethod
-    def _dict_from_slots(object):
-        def unmangle(attribute):
+    def _dict_from_slots(object: Any) -> Dict[str, Any]:
+        def unmangle(attribute: str) -> str:
             if attribute.startswith('__') and attribute != '__weakref__':
                 return '_{type}{attribute}'.format(
                     type=type(object).__name__,
@@ -469,7 +470,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         return {i: getattr(object, key) for i in all_slots if hasattr(object, key := unmangle(i))}
 
-    def _diff_enum(self, level, parents_ids=frozenset(), local_tree=None):
+    def _diff_enum(self, level: Any, parents_ids: FrozenSet[int]=frozenset(), local_tree: Optional[Any]=None) -> None:
         t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
         t2 = detailed__dict__(level.t2, include_keys=ENUM_INCLUDE_KEYS)
 
@@ -483,9 +484,11 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             local_tree=local_tree,
         )
 
-    def _diff_obj(self, level, parents_ids=frozenset(), is_namedtuple=False, local_tree=None, is_pydantic_object=False):
+    def _diff_obj(self, level: Any, parents_ids: FrozenSet[int]=frozenset(), is_namedtuple: bool=False, local_tree: Optional[Any]=None, is_pydantic_object: bool=False) -> None:
         """Difference of 2 objects"""
         processing_error = False
+        t1: Optional[Dict[str, Any]] = None
+        t2: Optional[Dict[str, Any]] = None
         try:
             if is_namedtuple:
                 t1 = level.t1._asdict()
@@ -504,7 +507,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 t2 = {k: v for k, v in getmembers(level.t2) if not callable(v)}
         except AttributeError:
             processing_error = True
-        if processing_error is True:
+        if processing_error is True or t1 is None or t2 is None:
             self._report_result('unprocessed', level, local_tree=local_tree)
             return
 
@@ -518,7 +521,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             local_tree=local_tree,
         )
 
-    def _skip_this(self, level):
+    def _skip_this(self, level: Any) -> bool:
         """
         Check whether this comparison should be skipped because one of the objects to compare meets exclusion criteria.
         :rtype: bool
@@ -559,7 +562,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         return skip
 
-    def _skip_this_key(self, level, key):
+    def _skip_this_key(self, level: Any, key: Any) -> bool:
         # if include_paths is not set, than treet every path as included
         if self.include_paths is None:
             return False
@@ -585,7 +588,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             up = up.up
         return True
 
-    def _get_clean_to_keys_mapping(self, keys, level):
+    def _get_clean_to_keys_mapping(self, keys: Any, level: Any) -> Dict[Any, Any]:
         """
         Get a dictionary of cleaned value of keys to the keys themselves.
         This is mainly used to transform the keys when the type changes of keys should be ignored.
@@ -607,14 +610,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                         clean_key = key
                     else:
                         clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
-                                                          number_format_notation=self.number_format_notation)
+                                                          number_format_notation=self.number_format_notation)  # type: ignore  # type: ignore
                 else:
                     type_ = "number" if self.ignore_numeric_type_changes else key.__class__.__name__
                     if self.significant_digits is None:
                         clean_key = key
                     else:
                         clean_key = self.number_to_string(key, significant_digits=self.significant_digits,
-                                                          number_format_notation=self.number_format_notation)
+                                                          number_format_notation=self.number_format_notation)  # type: ignore  # type: ignore
                     clean_key = KEY_TO_VAL_STR.format(type_, clean_key)
             else:
                 clean_key = key
@@ -630,14 +633,14 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
     def _diff_dict(
         self,
-        level,
-        parents_ids=frozenset([]),
-        print_as_attribute=False,
-        override=False,
-        override_t1=None,
-        override_t2=None,
-        local_tree=None,
-    ):
+        level: Any,
+        parents_ids: FrozenSet[int]=frozenset([]),
+        print_as_attribute: bool=False,
+        override: bool=False,
+        override_t1: Optional[Any]=None,
+        override_t2: Optional[Any]=None,
+        local_tree: Optional[Any]=None,
+    ) -> None:
         """Difference of 2 dictionaries"""
         if override:
             # for special stuff like custom objects and named tuples we receive preprocessed t1 and t2
@@ -735,7 +738,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 )
             self._diff(next_level, parents_ids_added, local_tree=local_tree)
 
-    def _diff_set(self, level, local_tree=None):
+    def _diff_set(self, level: Any, local_tree: Optional[Any]=None) -> None:
         """Difference of sets"""
         t1_hashtable = self._create_hashtable(level, 't1')
         t2_hashtable = self._create_hashtable(level, 't2')
@@ -766,7 +769,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             self._report_result('set_item_removed', change_level, local_tree=local_tree)
 
     @staticmethod
-    def _iterables_subscriptable(t1, t2):
+    def _iterables_subscriptable(t1: Any, t2: Any) -> bool:
         try:
             if getattr(t1, '__getitem__') and getattr(t2, '__getitem__'):
                 return True
@@ -775,7 +778,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         except AttributeError:
             return False
 
-    def _diff_iterable(self, level, parents_ids=frozenset(), _original_type=None, local_tree=None):
+    def _diff_iterable(self, level: Any, parents_ids: FrozenSet[int]=frozenset(), _original_type: Optional[type]=None, local_tree: Optional[Any]=None) -> None:
         """Difference of iterables"""
         if (self.ignore_order_func and self.ignore_order_func(level)) or self.ignore_order:
             self._diff_iterable_with_deephash(level, parents_ids, _original_type=_original_type, local_tree=local_tree)
@@ -919,7 +922,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 local_tree=local_tree,
             )
 
-    def _all_values_basic_hashable(self, iterable):
+    def _all_values_basic_hashable(self, iterable: Iterable[Any]) -> bool:
         """
         Are all items basic hashable types?
         Or there are custom types too?
@@ -1540,10 +1543,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             # For Decimals, format seems to round 2.5 to 2 and 3.5 to 4 (to closest even number)
             t1_s = self.number_to_string(level.t1,
                                          significant_digits=self.significant_digits,
-                                         number_format_notation=self.number_format_notation)
+                                         number_format_notation=self.number_format_notation)  # type: ignore
             t2_s = self.number_to_string(level.t2,
                                          significant_digits=self.significant_digits,
-                                         number_format_notation=self.number_format_notation)
+                                         number_format_notation=self.number_format_notation)  # type: ignore
 
             t1_s = KEY_TO_VAL_STR.format(t1_type, t1_s)
             t2_s = KEY_TO_VAL_STR.format(t2_type, t2_s)

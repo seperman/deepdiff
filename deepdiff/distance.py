@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         hashes: dict
         deephash_parameters: dict
         iterable_compare_func: Callable | None
-        math_epsilon: float
+        math_epsilon: float | None
         cutoff_distance_for_pairs: float
 
         def __get_item_rough_length(self, item, parent:str="root") -> float:

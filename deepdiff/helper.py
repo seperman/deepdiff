@@ -310,7 +310,7 @@ class indexed_set(set):
     """
 
 
-def add_to_frozen_set(parents_ids: FrozenSet[str], item_id: str) -> FrozenSet[str]:
+def add_to_frozen_set(parents_ids: FrozenSet[int], item_id: int) -> FrozenSet[int]:
     return parents_ids | {item_id}
 
 
