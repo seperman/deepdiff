@@ -21,25 +21,50 @@ uv pip install -e ".[cli,coverage,dev,docs,static,test]"
 uv sync --all-extras
 ```
 
-**Virtual Environment**: Activate with `source ~/.venvs/atlas/bin/activate` before running tests or Python commands
+**Virtual Environment**: Activate with `source ~/.venvs/deep/bin/activate` before running tests or Python commands
 
 
 ### Testing
 ```bash
 # Run tests with coverage
-pytest --cov=deepdiff --cov-report term-missing
+source ~/.venvs/deep/bin/activate && pytest --cov=deepdiff --cov-report term-missing
 
 # Run tests including slow ones
-pytest --cov=deepdiff --runslow
+source ~/.venvs/deep/bin/activate && pytest --cov=deepdiff --runslow
 
 # Run single test file
-pytest tests/test_diff_text.py
+source ~/.venvs/deep/bin/activate && pytest tests/test_diff_text.py
 
-# Run tests across multiple Python versions
-nox -s pytest
+# Run tests across multiple Python versions. No need to use this unless getting ready for creating a new build
+source ~/.venvs/deep/bin/activate && nox -s pytest
 ```
 
-### Quality Checks
+### **Type Checking with Pyright:**
+Always use this pattern for type checking:
+```bash
+source ~/.venvs/deep/bin/activate && pyright {file_path}
+```
+
+Examples:
+- `source ~/.venvs/deep/bin/activate && pyright deepdiff/diff.py` - Type check specific file
+- `source ~/.venvs/deep/bin/activate && pyright deepdiff/` - Type check entire module
+- `source ~/.venvs/deep/bin/activate && pyright .` - Type check entire repo
+
+
+### Common Pitfalls to Avoid
+
+1. **Forgetting Virtual Environment**: ALWAYS activate venv before ANY Python command:
+   ```bash
+   source ~/.venvs/deep/bin/activate
+   ```
+2. **Running pytest without venv**: This will cause import errors. Always use:
+   ```bash
+   source ~/.venvs/deep/bin/activate && pytest
+   ```
+3. **Running module commands without venv**: Commands like `capi run`, `cettings shell`, etc. all require venv to be activated first
+
+
+### Slow quality checks only to run before creating a build
 ```bash
 # Linting (max line length: 120)
 nox -s flake8
@@ -50,6 +75,7 @@ nox -s mypy
 # Run all quality checks
 nox
 ```
+
 
 ## Architecture
 
