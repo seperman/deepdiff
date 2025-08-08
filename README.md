@@ -23,6 +23,28 @@ Tested on Python 3.9+ and PyPy3.
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
 
+DeepDiff 8-6-0
+
+- Added Colored View thanks to @mauvilsa 
+- Added support for applying deltas to NamedTuple thanks to @paulsc 
+- Fixed test_delta.py with Python 3.14 thanks to @Romain-Geissler-1A
+- Added python property serialization to json
+- Added ip address serialization
+- Switched to UV from pip
+- Added Claude.md
+- Added uuid hashing thanks to @akshat62
+- Added `ignore_uuid_types` flag to DeepDiff to avoid type reports when comparing UUID and string.
+- Added comprehensive type hints across the codebase (multiple commits for better type safety)
+- Added support for memoryview serialization
+- Added support for bytes serialization (non-UTF8 compatible)
+- Fixed bug where group_by with numbers would leak type info into group path reports
+- Fixed bug in `_get_clean_to_keys_mapping without` explicit significant digits
+- Added support for python dict key serialization
+- Enhanced support for IP address serialization with safe module imports
+- Added development tooling improvements (pyright config, .envrc example)
+- Updated documentation and development instructions
+
+
 DeepDiff 8-5-0
 
 - Updating deprecated pydantic calls

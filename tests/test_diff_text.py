@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import List
 from decimal import Decimal
 from deepdiff import DeepDiff
-from deepdiff.helper import pypy3, PydanticBaseModel, SetOrdered, np_float64
+from deepdiff.helper import pypy3, PydanticBaseModel, np_float64
 from tests import CustomClass
 
 

@@ -121,6 +121,10 @@ ignore_type_subclasses: Boolean, default = False
     ignore_type_subclasses was incorrectly doing the reverse of its job up until DeepDiff 6.7.1
     Please make sure to flip it in your use cases, when upgrading from older versions to 7.0.0 or above.
 
+ignore_uuid_types: Boolean, default = False
+    :ref:`ignore_uuid_types_label`
+    Whether to ignore UUID vs string type differences when comparing. When set to True, comparing a UUID object with its string representation will not report as a type change.
+
 ignore_string_case: Boolean, default = False
     :ref:`ignore_string_case_label`
     Whether to be case-sensitive or not when comparing strings. By settings ignore_string_case=False, strings will be compared case-insensitively.
