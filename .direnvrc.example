@@ -1,0 +1,11 @@
+function load_venv () {
+    ACTUAL_VENV_PATH="$HOME/.venvs/$1"
+
+    if [ -d "$ACTUAL_VENV_PATH" ] && [ -f "$ACTUAL_VENV_PATH/bin/activate" ]; then
+      echo "direnv: Activating $ACTUAL_VENV_PATH..."
+      source "$ACTUAL_VENV_PATH/bin/activate"
+      export UV_PROJECT_ENVIRONMENT="$ACTUAL_VENV_PATH"
+    else
+      echo "direnv: Virtual environment at $ACTUAL_VENV_PATH not found or is incomplete."
+    fi
+}
