@@ -896,8 +896,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 child_relationship_class=child_relationship_class,
                 local_tree=local_tree_pass,
             )
+            has_moves = bool(local_tree_pass['iterable_item_moved'])
             # Sometimes DeepDiff's old iterable diff does a better job than DeepDiff
-            if len(local_tree_pass) > 1:
+            if len(local_tree_pass) > 1 and not has_moves:
                 local_tree_pass2 = TreeResult()
                 self._diff_by_forming_pairs_and_comparing_one_by_one(
                     level,
@@ -910,6 +911,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     local_tree_pass = local_tree_pass2
                 else:
                     self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
+            else:
+                self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
             for report_type, levels in local_tree_pass.items():
                 if levels:
                     self.tree[report_type] |= levels
@@ -1015,32 +1018,28 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         opcodes = seq.get_opcodes()
         opcodes_with_values = []
+        replace_opcodes: List[Opcode] = []
 
-        # TODO: this logic should be revisted so we detect reverse operations
-        # like when a replacement happens at index X and a reverse replacement happens at index Y
-        # in those cases we have a "iterable_item_moved" operation.
         for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcodes:
             if tag == 'equal':
-                opcodes_with_values.append(Opcode(
-                    tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index,
-                ))
+                opcodes_with_values.append(
+                    Opcode(tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index)
+                )
                 continue
-            # print('{:7}   t1[{}:{}] --> t2[{}:{}] {!r:>8} --> {!r}'.format(
-            #     tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index, level.t1[t1_from_index:t1_to_index], level.t2[t2_from_index:t2_to_index]))
 
-            opcodes_with_values.append(Opcode(
-                tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index,
-                old_values = level.t1[t1_from_index: t1_to_index],
-                new_values = level.t2[t2_from_index: t2_to_index],
-            ))
+            opcode = Opcode(
+                tag,
+                t1_from_index,
+                t1_to_index,
+                t2_from_index,
+                t2_to_index,
+                old_values=level.t1[t1_from_index:t1_to_index],
+                new_values=level.t2[t2_from_index:t2_to_index],
+            )
+            opcodes_with_values.append(opcode)
 
             if tag == 'replace':
-                self._diff_by_forming_pairs_and_comparing_one_by_one(
-                    level, local_tree=local_tree, parents_ids=parents_ids,
-                    _original_type=_original_type, child_relationship_class=child_relationship_class,
-                    t1_from_index=t1_from_index, t1_to_index=t1_to_index,
-                    t2_from_index=t2_from_index, t2_to_index=t2_to_index,
-                )
+                replace_opcodes.append(opcode)
             elif tag == 'delete':
                 for index, x in enumerate(level.t1[t1_from_index:t1_to_index]):
                     change_level = level.branch_deeper(
@@ -1061,6 +1060,62 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                         child_relationship_param2=index + t2_from_index,
                     )
                     self._report_result('iterable_item_added', change_level, local_tree=local_tree)
+
+        used: Set[int] = set()
+        for i, opcode_a in enumerate(replace_opcodes):
+            if i in used:
+                continue
+            for j in range(i + 1, len(replace_opcodes)):
+                opcode_b = replace_opcodes[j]
+                if j in used:
+                    continue
+                if (
+                    opcode_a.old_values == opcode_b.new_values
+                    and opcode_a.new_values == opcode_b.old_values
+                    and len(opcode_a.old_values or []) == len(opcode_b.old_values or [])
+                ):
+                    length = len(opcode_a.old_values or [])
+                    for offset in range(length):
+                        val_a = opcode_a.old_values[offset]
+                        new_index_a = opcode_b.t2_from_index + offset
+                        change_level = level.branch_deeper(
+                            val_a,
+                            val_a,
+                            child_relationship_class=child_relationship_class,
+                            child_relationship_param=opcode_a.t1_from_index + offset,
+                            child_relationship_param2=new_index_a,
+                        )
+                        self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
+
+                        val_b = opcode_b.old_values[offset]
+                        new_index_b = opcode_a.t2_from_index + offset
+                        change_level = level.branch_deeper(
+                            val_b,
+                            val_b,
+                            child_relationship_class=child_relationship_class,
+                            child_relationship_param=opcode_b.t1_from_index + offset,
+                            child_relationship_param2=new_index_b,
+                        )
+                        self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
+
+                    used.update({i, j})
+                    break
+
+        for idx, opcode in enumerate(replace_opcodes):
+            if idx in used:
+                continue
+            self._diff_by_forming_pairs_and_comparing_one_by_one(
+                level,
+                local_tree=local_tree,
+                parents_ids=parents_ids,
+                _original_type=_original_type,
+                child_relationship_class=child_relationship_class,
+                t1_from_index=opcode.t1_from_index,
+                t1_to_index=opcode.t1_to_index,
+                t2_from_index=opcode.t2_from_index,
+                t2_to_index=opcode.t2_to_index,
+            )
+
         return opcodes_with_values
 
 
