@@ -896,8 +896,9 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 child_relationship_class=child_relationship_class,
                 local_tree=local_tree_pass,
             )
+            has_moves = bool(local_tree_pass['iterable_item_moved'])
             # Sometimes DeepDiff's old iterable diff does a better job than DeepDiff
-            if len(local_tree_pass) > 1:
+            if len(local_tree_pass) > 1 and not has_moves:
                 local_tree_pass2 = TreeResult()
                 self._diff_by_forming_pairs_and_comparing_one_by_one(
                     level,
@@ -910,6 +911,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     local_tree_pass = local_tree_pass2
                 else:
                     self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
+            else:
+                self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
             for report_type, levels in local_tree_pass.items():
                 if levels:
                     self.tree[report_type] |= levels
