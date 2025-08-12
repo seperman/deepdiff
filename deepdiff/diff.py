@@ -906,7 +906,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     child_relationship_class=child_relationship_class,
                     local_tree=local_tree_pass2,
                 )
-                if len(local_tree_pass) >= len(local_tree_pass2):
+                if len(local_tree_pass) > len(local_tree_pass2):
                     local_tree_pass = local_tree_pass2
                 else:
                     self._iterable_opcodes[level.path(force=FORCE_DEFAULT)] = opcodes_with_values
@@ -1071,6 +1071,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                     and opcode_a.new_values == opcode_b.old_values
                     and len(opcode_a.old_values or []) == len(opcode_b.old_values or [])
                 ):
+                    # Mark both opcodes as consumed before any further processing
+                    used.update({i, j})
                     length = len(opcode_a.old_values or [])
                     for offset in range(length):
                         val_a = opcode_a.old_values[offset]
@@ -1095,7 +1097,6 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                         )
                         self._report_result('iterable_item_moved', change_level, local_tree=local_tree)
 
-                    used.update({i, j})
                     break
 
         for idx, opcode in enumerate(replace_opcodes):
