@@ -17,6 +17,18 @@
 
 Tested on Python 3.9+ and PyPy3.
 
+### Detect moved items in lists
+
+DeepDiff reports items that only change position in an ordered iterable under
+the ``iterable_item_moved`` key:
+
+```python
+>>> from deepdiff import DeepDiff
+>>> DeepDiff([1, 2, 3, 4], [4, 2, 3, 1], verbose_level=2)
+{'iterable_item_moved': {'root[0]': {'new_path': 'root[3]', 'value': 1},
+                         'root[3]': {'new_path': 'root[0]', 'value': 4}}}
+```
+
 - **[Documentation](https://zepworks.com/deepdiff/8.6.0/)**
 
 ## What is new?
