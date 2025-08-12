@@ -106,6 +106,14 @@ List difference
     >>> pprint (ddiff, indent = 2)
     {'iterable_item_removed': {"root[4]['b'][2]": 3, "root[4]['b'][3]": 4}}
 
+List item moved
+    >>> t1 = [1, 2, 3, 4]
+    >>> t2 = [4, 2, 3, 1]
+    >>> pprint(DeepDiff(t1, t2, verbose_level=2), indent=2)
+    { 'iterable_item_moved': {
+        'root[0]': {'new_path': 'root[3]', 'value': 1},
+        'root[3]': {'new_path': 'root[0]', 'value': 4}}}
+
 List that contains dictionary:
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:1, 2:2}]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, {1:3}]}}
