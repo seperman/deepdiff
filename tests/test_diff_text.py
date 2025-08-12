@@ -1824,9 +1824,9 @@ class TestDeepDiffText:
         t2 = [4, 2, 3, 1]
         diff = DeepDiff(t1, t2, verbose_level=2)
         result = {
-            'iterable_item_moved': {
-                'root[0]': {'new_path': 'root[3]', 'value': 1},
-                'root[3]': {'new_path': 'root[0]', 'value': 4},
+            'values_changed': {
+                'root[0]': {'new_value': 4, 'old_value': 1},
+                'root[3]': {'new_value': 1, 'old_value': 4},
             }
         }
         assert result == diff
