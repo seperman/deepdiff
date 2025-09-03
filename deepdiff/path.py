@@ -117,6 +117,7 @@ def _path_to_elements(path, root_element=DEFAULT_FIRST_ELEMENT):
 
 def _get_nested_obj(obj, elements, next_element=None):
     for (elem, action) in elements:
+        check_elem(elem)
         if action == GET:
             obj = obj[elem]
         elif action == GETATTR:
@@ -134,11 +135,17 @@ def _guess_type(elements, elem, index, next_element):
     return {}
 
 
+def check_elem(elem):
+    if isinstance(elem, str) and elem.startswith("__") and elem.endswith("__"):
+        raise ValueError("traversing dunder attributes is not allowed")
+
+
 def _get_nested_obj_and_force(obj, elements, next_element=None):
     prev_elem = None
     prev_action = None
     prev_obj = obj
     for index, (elem, action) in enumerate(elements):
+        check_elem(elem)
         _prev_obj = obj
         if action == GET:
             try:
