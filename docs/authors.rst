@@ -117,6 +117,7 @@ and polars support.
   limit when hashing numpy.datetime64
 - `Enji Cooper <https://github.com/ngie-eign>`__ for converting legacy
   setuptools use to pyproject.toml
+- `Diogo Correia <https://github.com/diogotcorreia>`__ for reporting security vulnerability in Delta and DeepDiff that could allow remote code execution.
 
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com

@@ -17,7 +17,7 @@ from deepdiff.helper import (
 )
 from deepdiff.path import (
     _path_to_elements, _get_nested_obj, _get_nested_obj_and_force,
-    GET, GETATTR, parse_path, stringify_path,
+    GET, GETATTR, check_elem, parse_path, stringify_path,
 )
 from deepdiff.anyset import AnySet
 from deepdiff.summarize import summarize
@@ -237,6 +237,11 @@ class Delta:
         forced_old_value=None,
         next_element=None,
     ):
+        try:
+            check_elem(elem)
+        except ValueError as error:
+            self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path_for_err_reporting, error))
+            return not_found
         # if forced_old_value is not None:
         try:
             if action == GET:
@@ -536,6 +541,7 @@ class Delta:
                 obj = self
                 # obj = self.get_nested_obj(obj=self, elements=elements[:-1])
             elem, action = elements[-1]  # type: ignore
+            check_elem(elem)
         except Exception as e:
             self._raise_or_log(UNABLE_TO_GET_ITEM_MSG.format(path, e))
             return None

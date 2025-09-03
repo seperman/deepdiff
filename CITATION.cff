@@ -5,6 +5,6 @@ authors:
   given-names: "Sep"
   orcid: "https://orcid.org/0009-0009-5828-4345"
 title: "DeepDiff"
-version: 8.6.0
+version: 8.6.1
 date-released: 2024
 url: "https://github.com/seperman/deepdiff"
