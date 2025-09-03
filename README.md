@@ -1,4 +1,4 @@
-# DeepDiff v 8.6.0
+# DeepDiff v 8.6.1
 
 ![Downloads](https://img.shields.io/pypi/dm/deepdiff.svg?style=flat)
 ![Python Versions](https://img.shields.io/pypi/pyversions/deepdiff.svg?style=flat)
@@ -17,11 +17,14 @@
 
 Tested on Python 3.9+ and PyPy3.
 
-- **[Documentation](https://zepworks.com/deepdiff/8.6.0/)**
+- **[Documentation](https://zepworks.com/deepdiff/8.6.1/)**
 
 ## What is new?
 
 Please check the [ChangeLog](CHANGELOG.md) file for the detailed information.
+
+DeepDiff 8-6-1
+- Patched security vulnerability in the Delta class which was vulnerable to class pollution via its constructor, and when combined with a gadget available in DeltaDiff itself, it could lead to Denial of Service and Remote Code Execution (via insecure Pickle deserialization).
 
 DeepDiff 8-6-0
 

@@ -5,6 +5,9 @@ Changelog
 
 DeepDiff Changelog
 
+- v8-6-1
+   - Patched security vulnerability in the Delta class which was vulnerable to class pollution via its constructor, and when combined with a gadget available in DeltaDiff itself, it could lead to Denial of Service and Remote Code Execution (via insecure Pickle deserialization).
+
 - v8-6-0
    - Added Colored View thanks to @mauvilsa
    - Added support for applying deltas to NamedTuple thanks to @paulsc

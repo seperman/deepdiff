@@ -75,3 +75,4 @@ Authors in order of the timeline of their contributions:
 - [dtorres-sf](https://github.com/dtorres-sf) for the fix for moving nested tables when using iterable_compare_func.
 - [Jim Cipar](https://github.com/jcipar) for the fix recursion depth limit when hashing numpy.datetime64
 - [Enji Cooper](https://github.com/ngie-eign) for converting legacy setuptools use to pyproject.toml
+- [Diogo Correia](https://github.com/diogotcorreia) for reporting security vulnerability in Delta and DeepDiff that could allow remote code execution.
