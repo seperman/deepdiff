@@ -739,8 +739,8 @@ def detailed__dict__(obj: Any, ignore_private_variables: bool = True, ignore_key
     else:
         result = obj.__dict__.copy()  # A shallow copy
         private_var_prefix = f"_{obj.__class__.__name__}__"  # The semi private variables in Python get this prefix
-        for key in ignore_keys:
-            if key in result or (
+        for key in obj.__dict__:
+            if key in ignore_keys or (
                 ignore_private_variables and key.startswith('__') and not key.startswith(private_var_prefix)
             ):
                 del result[key]
