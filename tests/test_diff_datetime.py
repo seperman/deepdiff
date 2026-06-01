@@ -123,3 +123,22 @@ class TestDiffDatetime:
         assert not DeepDiff(d1, d2)
         assert not DeepDiff(d1, d2, ignore_order=True)
         assert not DeepDiff(d1, d2, truncate_datetime='second')
+
+    def test_datetime_dict_key_with_ignore_flags(self):
+        # Using a datetime/date as a dict key together with flags that clean the
+        # keys (ignore_numeric_type_changes / ignore_string_case /
+        # ignore_string_type_changes) used to raise
+        # "TypeError: type datetime.datetime doesn't define __round__ method"
+        # because the keys were routed through number_to_string, which only
+        # handles real numbers.
+        dt = datetime(2020, 5, 17, 22, 15)
+        assert not DeepDiff({dt: 10.0}, {dt: 10}, ignore_numeric_type_changes=True)
+        # date objects (no time component) too
+        assert not DeepDiff(
+            {date(2020, 5, 17): 10.0},
+            {date(2020, 5, 17): 10},
+            ignore_numeric_type_changes=True,
+        )
+        # the other key-cleaning flags must not raise either
+        assert not DeepDiff({dt: 1}, {dt: 1}, ignore_string_case=True)
+        assert not DeepDiff({dt: 1}, {dt: 1}, ignore_string_type_changes=True)

@@ -475,7 +475,12 @@ def number_to_string(number: Any, significant_digits: int, number_format_notatio
     except KeyError:
         raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
 
-    if not isinstance(number, numbers):  # type: ignore
+    if not isinstance(number, only_numbers):  # type: ignore
+        # `numbers` also includes datetime types (they are orderable), but those
+        # cannot be reduced to significant digits via round(); leave any
+        # non-numeric value (datetimes, dates, etc.) unchanged. Otherwise using
+        # e.g. a datetime as a dict key together with ignore_numeric_type_changes
+        # raised "TypeError: type datetime.datetime doesn't define __round__".
         return number
     elif isinstance(number, Decimal):
         with localcontext() as ctx:
