@@ -52,6 +52,27 @@ class TestDiffDatetime:
         }
         assert res == expected
 
+    def test_truncate_datetime_with_date(self):
+        # truncate_datetime used to crash on date objects because a date has no
+        # time component and date.replace() rejects second/microsecond kwargs.
+        d1 = {"a": date(2020, 5, 17)}
+        d2 = {"a": date(2020, 5, 17)}
+        for truncate in ("second", "minute", "hour", "day"):
+            assert DeepDiff(d1, d2, truncate_datetime=truncate) == {}
+
+        d1 = {"a": date(2020, 5, 17)}
+        d2 = {"a": date(2020, 5, 18)}
+        res = DeepDiff(d1, d2, truncate_datetime="minute")
+        expected = {
+            "values_changed": {
+                "root['a']": {
+                    "new_value": date(2020, 5, 18),
+                    "old_value": date(2020, 5, 17),
+                }
+            }
+        }
+        assert res == expected
+
     def test_time_diff(self):
         """Testing for the correct setting and usage of epsilon."""
         d1 = {"a": time(10, 11, 12)}

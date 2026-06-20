@@ -685,12 +685,15 @@ def time_to_seconds(t: datetime.time) -> int:
 
 def datetime_normalize(
     truncate_datetime:Union[str, None],
-    obj:Union[datetime.datetime, datetime.time],
+    obj:Union[datetime.datetime, datetime.date, datetime.time],
     default_timezone: Union[
         datetime.timezone, "BaseTzInfo"
     ] = datetime.timezone.utc,
 ) -> Any:
-    if truncate_datetime:
+    # A pure date has no time component, so truncation does not apply to it
+    # (and date.replace() does not accept hour/minute/second/microsecond).
+    # datetime is a subclass of date, so target datetime/time explicitly.
+    if truncate_datetime and isinstance(obj, (datetime.datetime, datetime.time)):
         if truncate_datetime == 'second':
             obj = obj.replace(microsecond=0)
         elif truncate_datetime == 'minute':
