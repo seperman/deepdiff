@@ -181,8 +181,13 @@ class Delta:
             self.root = deepcopy(other)
         self._do_pre_process()
         self._do_values_changed()
-        self._do_set_item_added()
+        # NOTE: set removals must happen BEFORE set additions. When a removed
+        # element is equal to and hashes equal to an added element (e.g. False
+        # and 0), adding first lets ``set.union`` keep the existing member, so
+        # the new element is never inserted and the later removal drops it --
+        # mirroring the reverse order of operations used for iterables below.
         self._do_set_item_removed()
+        self._do_set_item_added()
         self._do_type_changes()
         # NOTE: the remove iterable action needs to happen BEFORE
         # all the other iterables to match the reverse of order of operations in DeepDiff

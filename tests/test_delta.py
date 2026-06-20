@@ -1858,6 +1858,20 @@ class TestDeltaOther:
         delta_again = Delta(flat_rows_list=flat_expected)
         assert delta.diff == delta_again.diff
 
+    @pytest.mark.parametrize('t1, t2', [
+        ({False}, {0}),
+        ({0}, {False}),
+        ({1.0}, {1}),
+        ({False, 100}, {0, 'x'}),
+    ])
+    def test_delta_set_replace_equal_hashing_member(self, t1, t2):
+        # When a removed set element is equal to and hashes equal to an added
+        # one (e.g. False/0, 1.0/1), applying the Delta must still round-trip.
+        # Additions used to run before removals, so set.union kept the old
+        # member and the new element was dropped, leaving an empty/short set.
+        delta = Delta(DeepDiff(t1, t2))
+        assert t1 + delta == t2
+
     def test_delta_array_of_bytes(self):
         t1 = []
         t2 = [b"hello"]
