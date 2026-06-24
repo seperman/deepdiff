@@ -1877,6 +1877,29 @@ class TestDeepDiffText:
     def test_ignore_nan_inequality(self, t1, t2, params, expected_result):
         assert expected_result == list(DeepDiff(t1, t2, **params).keys())
 
+    @pytest.mark.parametrize('t1, t2, params', [
+        (float('nan'), float('nan'), {'significant_digits': 0}),
+        (float('nan'), float('nan'), {'significant_digits': 2}),
+        (float('inf'), float('inf'), {'significant_digits': 0}),
+        (float('inf'), float('inf'), {'significant_digits': 2}),
+        (float('-inf'), float('-inf'), {'significant_digits': 0}),
+        (float('-inf'), float('-inf'), {'significant_digits': 2}),
+        ({'a': float('nan'), 'b': 1.5}, {'a': float('nan'), 'b': 2.7},
+         {'significant_digits': 0}),
+        ({'a': float('inf')}, {'a': float('inf')},
+         {'significant_digits': 0}),
+    ])
+    def test_significant_digits_with_nan_inf(self, t1, t2, params):
+        """
+        Test that significant_digits does not crash with NaN or Inf values.
+        Regression test for ValueError/OverflowError when converting NaN/Inf
+        to int in number_to_string with significant_digits=0.
+        """
+        try:
+            DeepDiff(t1, t2, **params)
+        except (ValueError, OverflowError) as e:
+            pytest.fail(f"DeepDiff with {params} on {t1!r} raised {type(e).__name__}: {e}")
+
     @pytest.mark.parametrize('ignore_order, ignore_private_variables, expected', [
         (True, True, {}),
         (False, True, {}),

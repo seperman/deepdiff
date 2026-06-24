@@ -1,6 +1,7 @@
 import sys
 import re
 import os
+import math
 import datetime
 import uuid
 import logging
@@ -513,7 +514,7 @@ def number_to_string(number: Any, significant_digits: int, number_format_notatio
     else:
         number = round(number=number, ndigits=significant_digits)  # type: ignore
 
-        if significant_digits == 0:
+        if significant_digits == 0 and math.isfinite(number):  # type: ignore
             number = int(number)  # type: ignore
 
     if number == 0.0:
