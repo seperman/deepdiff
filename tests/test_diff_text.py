@@ -823,6 +823,22 @@ class TestDeepDiffText:
         result = {}
         assert result == ddiff
 
+    def test_dict_from_slots_of_subclass_with_mangled_attribute(self):
+        # A mangled slot (e.g. ``__id``) declared on a parent class is stored
+        # under the parent's mangled name, so it must be unmangled using the
+        # declaring class, not the concrete instance type. Otherwise a subclass
+        # instance silently loses the parent-defined slot. See #506.
+        class ClassA:
+            __slots__ = ('__id',)
+
+            def __init__(self, id):
+                self.__id = id
+
+        class ClassB(ClassA):
+            pass
+
+        assert DeepDiff._dict_from_slots(ClassA(5)) == {'__id': 5}
+        assert DeepDiff._dict_from_slots(ClassB(5)) == {'__id': 5}
 
     def test_custom_class_changes_none_when_ignore_type(self):
         ddiff1 = DeepDiff({'a': None}, {'a': 1}, ignore_type_subclasses=True, ignore_type_in_groups=[(int, float)])
