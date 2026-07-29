@@ -1094,7 +1094,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         opcodes = seq.get_opcodes()
         opcodes_with_values = []
 
-        # TODO: this logic should be revisted so we detect reverse operations
+        # TODO: this logic should be revisited so we detect reverse operations
         # like when a replacement happens at index X and a reverse replacement happens at index Y
         # in those cases we have a "iterable_item_moved" operation.
         for tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index in opcodes:
