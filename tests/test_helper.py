@@ -198,6 +198,35 @@ class TestHelper:
         with pytest.raises(ValueError):
             number_to_string(10, significant_digits=4, number_format_notation='blah')
 
+
+
+    def test_number_to_string_with_datetime_key(self):
+        """Regression for #550: datetime used as dict key must not raise TypeError.
+
+        number_to_string() includes datetimes in the `numbers` tuple for
+        comparison purposes, but datetime objects don't implement __round__.
+        The fix adds an early-return branch for datetimes so they pass
+        through unchanged without reaching round().
+        """
+        import datetime
+        dt = datetime.datetime(2020, 5, 17, 22, 15)
+        date = datetime.date(2020, 5, 17)
+        td = datetime.timedelta(hours=1)
+        t = datetime.time(22, 15)
+        # None of these should raise
+        assert number_to_string(dt, significant_digits=5) == dt
+        assert number_to_string(date, significant_digits=5) == date
+        assert number_to_string(td, significant_digits=5) == td
+        assert number_to_string(t, significant_digits=5) == t
+
+    def test_deepdiff_with_datetime_key_and_ignore_numeric(self):
+        """Integration: DeepDiff with datetime key and ignore_numeric_type_changes=True (#550)."""
+        import datetime
+        from deepdiff import DeepDiff
+        d1 = {datetime.datetime(2020, 5, 17, 22, 15): 10.0}
+        d2 = {datetime.datetime(2020, 5, 17, 22, 15): 10}
+        diff = DeepDiff(d1, d2, ignore_numeric_type_changes=True)
+        assert diff == {}, f"Expected empty diff, got: {diff}"
     def test_cartesian_product_of_shape(self):
         result = list(cartesian_product_of_shape([2, 1, 3]))
         assert [(0, 0, 0), (0, 0, 1), (0, 0, 2), (1, 0, 0), (1, 0, 1), (1, 0, 2)] == result
