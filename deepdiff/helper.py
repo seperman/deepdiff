@@ -510,6 +510,11 @@ def number_to_string(number: Any, significant_digits: int, number_format_notatio
                 )
             )  # type: ignore
         )
+    elif isinstance(number, datetimes):
+        # datetime/date/timedelta/time objects are used as dict keys but do not
+        # support __round__. They are already unique enough for comparison, so
+        # return them unchanged (no string formatting needed for key identity).
+        return number
     else:
         number = round(number=number, ndigits=significant_digits)  # type: ignore
 
