@@ -1,5 +1,8 @@
 # DeepDiff Change log
 
+- Unreleased
+    - Fixed `number_to_string` raising `ValueError` for complex numbers with a negative imaginary part
+
 - v9-1-0
     - Added multiprocessing support for DeepDiff: parallel distance computation and parallel subtree diffing with aggregated worker stats, deterministic ordering, and automatic fallback to serial when unsafe (e.g. `custom_operators`, `*_obj_callback`, `ignore_order_func`)
     - Added wildcard/glob pattern support for `exclude_paths` and `include_paths` thanks to [akshat62](https://github.com/akshat62)
