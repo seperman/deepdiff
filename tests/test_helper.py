@@ -184,6 +184,10 @@ class TestHelper:
                                  (-0j, 0.2j, 5, "e", ('0.00000e+0', '0.00000e+0+2.00000e-1j')),
                                  (-0j, 0.2j, 0, "f", True),
                                  (-0j, 0.2j, 0, "e", True),
+                                 (1-1j, 1-1j, 1, "f", True),
+                                 (1-1j, 1.2-1.2j, 1, "f", ('1.0-1.0j', '1.2-1.2j')),
+                                 (1-1j, 1.2-1.2j, 1, "e", ('1.0e+0-1.0e+0j', '1.2e+0-1.2e+0j')),
+                                 (-1-1j, -1.2-1.2j, 1, "f", ('-1.0-1.0j', '-1.2-1.2j')),
                              ])
     def test_number_to_string_complex_digits(self, t1, t2, significant_digits, number_format_notation, expected_result):
         st1 = number_to_string(t1, significant_digits=significant_digits, number_format_notation=number_format_notation)

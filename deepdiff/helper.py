@@ -496,19 +496,21 @@ def number_to_string(number: Any, significant_digits: int, number_format_notatio
             number = int(number)
     elif isinstance(number, only_complex_number):  # type: ignore
         # Case for complex numbers.
+        real = number_to_string(
+            number=number.real,  # type: ignore
+            significant_digits=significant_digits,
+            number_format_notation=number_format_notation
+        )
+        imag = number_to_string(
+            number=number.imag,  # type: ignore
+            significant_digits=significant_digits,
+            number_format_notation=number_format_notation
+        )
+        # A negative imaginary part already carries its own sign. Adding another
+        # one produces a malformed string such as "1.0+-1.0j" that complex() rejects.
+        sign = '' if str(imag).startswith('-') else '+'
         number = number.__class__(
-            "{real}+{imag}j".format(  # type: ignore
-                real=number_to_string(
-                    number=number.real,  # type: ignore
-                    significant_digits=significant_digits,
-                    number_format_notation=number_format_notation
-                ),
-                imag=number_to_string(
-                    number=number.imag,  # type: ignore
-                    significant_digits=significant_digits,
-                    number_format_notation=number_format_notation
-                )
-            )  # type: ignore
+            "{real}{sign}{imag}j".format(real=real, sign=sign, imag=imag)  # type: ignore
         )
     else:
         number = round(number=number, ndigits=significant_digits)  # type: ignore
