@@ -64,6 +64,51 @@ class TestDeepDiffText:
                 }
                 }} == DeepDiff(t1, t2, verbose_level=0)
 
+    def test_item_type_change_in_list(self):
+        """A type change between two equal-comparing items (e.g. 2 and 2.0)
+        inside a list must be reported, consistently with scalars and dicts.
+
+        SequenceMatcher considers 2 == 2.0 "equal", which used to make the
+        difference disappear entirely for lists while DeepDiff(2, 2.0) and
+        DeepDiff({'a': 2}, {'a': 2.0}) both reported a type change (issue #605).
+        """
+        t1 = [2]
+        t2 = [2.0]
+        ddiff = DeepDiff(t1, t2)
+        assert {
+            'type_changes': {
+                "root[0]": {
+                    "old_value": 2,
+                    "old_type": int,
+                    "new_value": 2.0,
+                    "new_type": float
+                }
+            }
+        } == ddiff
+        # consistent with the scalar and dict equivalents
+        assert ddiff['type_changes']["root[0]"]["old_type"] is \
+            DeepDiff(2, 2.0)['type_changes']["root"]["old_type"]
+
+    def test_item_type_change_in_list_among_unchanged_items(self):
+        t1 = [1, 2, 3]
+        t2 = [1, 2.0, 3]
+        ddiff = DeepDiff(t1, t2)
+        assert {
+            'type_changes': {
+                "root[1]": {
+                    "old_value": 2,
+                    "old_type": int,
+                    "new_value": 2.0,
+                    "new_type": float
+                }
+            }
+        } == ddiff
+
+    def test_item_type_change_in_list_ignored_when_requested(self):
+        t1 = [2]
+        t2 = [2.0]
+        assert DeepDiff(t1, t2, ignore_numeric_type_changes=True) == {}
+
     def test_item_type_change_for_strings_ignored_by_default(self):
         """ ignore_string_type_changes = True by default """
 

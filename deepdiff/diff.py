@@ -1102,6 +1102,22 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 opcodes_with_values.append(Opcode(
                     tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index,
                 ))
+                # SequenceMatcher considers items "equal" when they compare equal
+                # (e.g. 2 == 2.0), even when their types differ. Recurse into _diff
+                # for such pairs so that type changes are reported for iterable items
+                # the same way they are for scalars and dict values (issue #605).
+                for index in range(t1_to_index - t1_from_index):
+                    x = level.t1[t1_from_index + index]
+                    y = level.t2[t2_from_index + index]
+                    if get_type(x) != get_type(y):
+                        change_level = level.branch_deeper(
+                            x,
+                            y,
+                            child_relationship_class=child_relationship_class,
+                            child_relationship_param=index + t1_from_index,
+                            child_relationship_param2=index + t2_from_index,
+                        )
+                        self._diff(change_level, parents_ids, local_tree=local_tree)
                 continue
             # print('{:7}   t1[{}:{}] --> t2[{}:{}] {!r:>8} --> {!r}'.format(
             #     tag, t1_from_index, t1_to_index, t2_from_index, t2_to_index, level.t1[t1_from_index:t1_to_index], level.t2[t2_from_index:t2_to_index]))
