@@ -503,10 +503,13 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
     @staticmethod
     def _dict_from_slots(object: Any) -> Dict[str, Any]:
-        def unmangle(attribute: str) -> str:
+        def unmangle(attribute: str, klass: type) -> str:
+            # A mangled slot (e.g. ``__id``) is stored under the name of the
+            # class that declared it, not the concrete instance type, so a
+            # subclass instance would otherwise lose a parent-defined slot (#506).
             if attribute.startswith('__') and attribute != '__weakref__':
                 return '_{type}{attribute}'.format(
-                    type=type(object).__name__,
+                    type=klass.__name__,
                     attribute=attribute
                 )
             return attribute
@@ -522,11 +525,15 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             slots = getattr(type_in_mro, '__slots__', None)
             if slots:
                 if isinstance(slots, strings):
-                    all_slots.append(slots)
+                    all_slots.append((type_in_mro, slots))
                 else:
-                    all_slots.extend(slots)
+                    all_slots.extend((type_in_mro, i) for i in slots)
 
-        return {i: getattr(object, key) for i in all_slots if hasattr(object, key := unmangle(i))}
+        return {
+            i: getattr(object, key)
+            for (klass, i) in all_slots
+            if hasattr(object, key := unmangle(i, klass))
+        }
 
     def _diff_enum(self, level: Any, parents_ids: FrozenSet[int]=frozenset(), local_tree: Optional[Any]=None) -> None:
         t1 = detailed__dict__(level.t1, include_keys=ENUM_INCLUDE_KEYS)
