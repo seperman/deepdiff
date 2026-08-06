@@ -1,5 +1,5 @@
 import pytz
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from deepdiff import DeepDiff
 
 
@@ -123,3 +123,17 @@ class TestDiffDatetime:
         assert not DeepDiff(d1, d2)
         assert not DeepDiff(d1, d2, ignore_order=True)
         assert not DeepDiff(d1, d2, truncate_datetime='second')
+
+    def test_truncate_datetime_with_date_and_timedelta(self):
+        """truncate_datetime must not be applied to types that cannot be truncated."""
+        for truncate_datetime in ('second', 'minute', 'hour', 'day'):
+            d1 = {"a": date(2020, 5, 17)}
+            d2 = {"a": date(2020, 5, 17)}
+            assert not DeepDiff(d1, d2, truncate_datetime=truncate_datetime)
+
+            d2 = {"a": date(2020, 5, 18)}
+            assert DeepDiff(d1, d2, truncate_datetime=truncate_datetime)
+
+            d1 = {"a": timedelta(days=1)}
+            d2 = {"a": timedelta(days=2)}
+            assert DeepDiff(d1, d2, truncate_datetime=truncate_datetime)

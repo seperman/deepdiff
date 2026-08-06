@@ -690,7 +690,7 @@ def datetime_normalize(
         datetime.timezone, "BaseTzInfo"
     ] = datetime.timezone.utc,
 ) -> Any:
-    if truncate_datetime:
+    if truncate_datetime and isinstance(obj, (datetime.datetime, datetime.time)):
         if truncate_datetime == 'second':
             obj = obj.replace(microsecond=0)
         elif truncate_datetime == 'minute':
