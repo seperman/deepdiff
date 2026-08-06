@@ -311,6 +311,8 @@ def parse_path(path, root_element=DEFAULT_FIRST_ELEMENT, include_actions=False):
 
 
 def stringify_element(param, quote_str=None):
+    if isinstance(param, (bytes, memoryview)):
+        return repr(param)
     has_quote = "'" in param
     has_double_quote = '"' in param
     if has_quote and has_double_quote and not quote_str:
