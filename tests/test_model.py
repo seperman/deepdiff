@@ -268,6 +268,24 @@ class TestDiffLevel:
             self.lowest.verbose_level = level
         assert item_repr == '<root[1337].a t1:"very long text here, much long...e.", t2:313>'
 
+    def test_repr_custom_t1_t2_names(self):
+        node = DiffLevel(2, 3, t1_name="before", t2_name="after")
+        assert repr(node) == "<root before:2, after:3>"
+
+    def test_custom_t1_t2_names_propagate_to_children(self):
+        diff = DeepDiff({'a': {'b': 1}}, {'a': {'b': 2}}, view='tree',
+                        t1_name='expected', t2_name='actual')
+        level = diff['values_changed'][0]
+        assert repr(level) == "<root['a']['b'] expected:1, actual:2>"
+
+    def test_default_t1_t2_names_unchanged(self):
+        diff = DeepDiff({'a': 1}, {'a': 2}, view='tree')
+        assert repr(diff['values_changed'][0]) == "<root['a'] t1:1, t2:2>"
+
+    def test_custom_t1_t2_names_do_not_affect_text_view(self):
+        diff = DeepDiff({'a': 1}, {'a': 2}, t1_name='before', t2_name='after')
+        assert diff == {'values_changed': {"root['a']": {'new_value': 2, 'old_value': 1}}}
+
     def test_repetition_attribute_and_repr(self):
         t1 = [1, 1]
         t2 = [1]
