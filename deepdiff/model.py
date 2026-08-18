@@ -533,7 +533,9 @@ class DiffLevel:
                  child_rel1: Optional['ChildRelationship'] = None,
                  child_rel2: Optional['ChildRelationship'] = None,
                  additional: Optional[Dict[str, Any]] = None,
-                 verbose_level: int = 1) -> None:
+                 verbose_level: int = 1,
+                 t1_name: str = "t1",
+                 t2_name: str = "t2") -> None:
         """
         :param child_rel1: Either:
                             - An existing ChildRelationship object describing the "down" relationship for t1; or
@@ -589,6 +591,11 @@ class DiffLevel:
 
         self.verbose_level = verbose_level
 
+        # Labels used for t1 and t2 when this level is represented as a string.
+        # Customizable so the tree view repr can use meaningful names, e.g. "before"/"after".
+        self.t1_name = t1_name
+        self.t2_name = t2_name
+
     def __repr__(self) -> str:
         if self.verbose_level:
             from deepdiff.summarize import summarize
@@ -599,7 +606,8 @@ class DiffLevel:
             else:
                 t1_repr = summarize(self.t1, max_length=35)
                 t2_repr = summarize(self.t2, max_length=35)
-                result = "<{} t1:{}, t2:{}>".format(self.path(), t1_repr, t2_repr)
+                result = "<{} {}:{}, {}:{}>".format(
+                    self.path(), self.t1_name, t1_repr, self.t2_name, t2_repr)
         else:
             result = "<{}>".format(self.path())
         return result
@@ -792,7 +800,8 @@ class DiffLevel:
         """
         level = self.all_down
         result = DiffLevel(
-            new_t1, new_t2, down=None, up=level, report_type=report_type, verbose_level=self.verbose_level)
+            new_t1, new_t2, down=None, up=level, report_type=report_type, verbose_level=self.verbose_level,
+            t1_name=self.t1_name, t2_name=self.t2_name)
         level.down = result
         level.auto_generate_child_rel(
             klass=child_relationship_class, param=child_relationship_param, param2=child_relationship_param2)

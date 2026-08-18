@@ -110,6 +110,15 @@ Value of an item has changed (Tree View)
     >>> changed.up
     <root t1:{1: 1, 2: 2,...}, t2:{1: 1, 2: 4,...}>
 
+Custom labels for the compared objects (Tree View)
+    The ``t1`` and ``t2`` labels shown in the string representation can be renamed via the ``t1_name`` and ``t2_name`` parameters. This is handy when the two objects have meaningful roles such as "before" and "after".
+
+    >>> t1 = {1:1, 2:2, 3:3}
+    >>> t2 = {1:1, 2:4, 3:3}
+    >>> ddiff = DeepDiff(t1, t2, view='tree', t1_name="before", t2_name="after")
+    >>> ddiff
+    {'values_changed': [<root[2] before:2, after:4>]}
+
 List difference (Tree View)
     >>> t1 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2, 3, 4]}}
     >>> t2 = {1:1, 2:2, 3:3, 4:{"a":"hello", "b":[1, 2]}}

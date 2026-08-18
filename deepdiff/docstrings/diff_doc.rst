@@ -199,6 +199,12 @@ significant_digits : int >= 0, default=None
 truncate_datetime: string, default = None
     :ref:`truncate_datetime_label` can take value one of 'second', 'minute', 'hour', 'day' and truncate with this value datetime objects before hashing it
 
+t1_name: string, default = "t1"
+    The label used for the first object when a level of the tree view is represented as a string. For example, passing ``t1_name="before"`` turns ``<root['a'] t1:1, t2:2>`` into ``<root['a'] before:1, t2:2>``. This only affects the ``repr`` of tree view levels; it has no effect on the text view or the comparison itself.
+
+t2_name: string, default = "t2"
+    The label used for the second object when a level of the tree view is represented as a string. See ``t1_name`` above.
+
 threshold_to_diff_deeper: float, default = 0.33
     :ref:`threshold_to_diff_deeper_label` is a number between 0 and 1. When comparing dictionaries that have a small intersection of keys, we will report the dictionary as a new_value instead of reporting individual keys changed. If you set it to zero, you get the same results as DeepDiff 7.0.1 and earlier, which means this feature is disabled. The new default is 0.33 which means if less that one third of keys between dictionaries intersect, report it as a new object.
 

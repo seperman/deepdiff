@@ -130,6 +130,7 @@ Authors in order of the timeline of their contributions:
 - `akshat62 <https://github.com/akshat62>`__ for adding Fraction numeric support.
 - `akshat62 <https://github.com/akshat62>`__ for adding wildcard/glob pattern support for ``exclude_paths`` and ``include_paths``.
 - `mgorny <https://github.com/mgorny>`__ for adding missing files to sdist and removing obsolete ``MANIFEST.in``.
+- `ChrisJr404 <https://github.com/ChrisJr404>`__ for adding ``t1_name``/``t2_name`` to rename the tree view's ``t1``/``t2`` labels.
 
 
 .. _Sep Dehpour (Seperman): http://www.zepworks.com

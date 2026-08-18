@@ -201,6 +201,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  progress_logger: Callable[[str], None]=logger.info,
                  report_repetition: bool=False,
                  significant_digits: Optional[int]=None,
+                 t1_name: str="t1",
+                 t2_name: str="t2",
                  threshold_to_diff_deeper: float = 0.33,
                  truncate_datetime: Optional[str]=None,
                  use_enum_value: bool=False,
@@ -223,6 +225,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 "number_format_notation, exclude_paths, include_paths, exclude_types, exclude_regex_paths, ignore_type_in_groups, "
                 "ignore_string_type_changes, ignore_numeric_type_changes, ignore_type_subclasses, ignore_uuid_types, truncate_datetime, "
                 "ignore_private_variables, ignore_nan_inequality, number_to_string_func, verbose_level, "
+                "t1_name, t2_name, "
                 "view, hasher, hashes, max_passes, max_diffs, zip_ordered_iterables, "
                 "cutoff_distance_for_pairs, cutoff_intersection_for_pairs, log_frequency_in_sec, cache_size, "
                 "cache_tuning_sample_size, get_deep_distance, group_by, group_by_sort_key, cache_purge_level, log_stacktrace,"
@@ -233,6 +236,10 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         if _parameters:
             self.__dict__.update(_parameters)
+            # Backward compatibility: t1_name/t2_name may be absent from an
+            # externally-supplied _parameters dict, so fall back to the defaults.
+            self.t1_name = _parameters.get('t1_name', t1_name)
+            self.t2_name = _parameters.get('t2_name', t2_name)
         else:
             self.custom_operators = custom_operators or []
             self.ignore_order = ignore_order
@@ -309,6 +316,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                 self.verbose_level = verbose_level
             else:
                 raise ValueError(VERBOSE_LEVEL_RANGE_MSG)
+            self.t1_name = t1_name
+            self.t2_name = t2_name
             if cache_purge_level not in {0, 1, 2}:
                 raise ValueError(PURGE_LEVEL_RANGE_MSG)
             self.view = view
@@ -400,7 +409,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         self.t2 = t2
 
         try:
-            root = DiffLevel(t1, t2, verbose_level=self.verbose_level)
+            root = DiffLevel(t1, t2, verbose_level=self.verbose_level,
+                             t1_name=self.t1_name, t2_name=self.t2_name)
             # _original_type is only used to pass the original type of the data. Currently only used for numpy arrays.
             # The reason is that we convert the numpy array to python list and then later for distance calculations
             # we convert only the the last dimension of it into numpy arrays.
