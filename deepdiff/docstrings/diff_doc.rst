@@ -77,6 +77,10 @@ include_paths: list, default = None
     List of the only paths to include in the report. If only one item is in the list, you can pass it as a string.
     Supports :ref:`wildcard_paths_label`: use ``[*]`` to match one segment or ``[**]`` to match any depth.
 
+include_regex_paths: list, default = None
+    :ref:`include_regex_paths_label`
+    List of string regex paths or compiled regex path objects to limit the report to. Only paths matching one of the regexes, or living under a matching path, are reported. If only one item, you can pass it as a string or a regex compiled object.
+
 include_obj_callback: function, default = None
     :ref:`include_obj_callback_label`
     A function that takes the object and its path and returns a Boolean. If True is returned, the object is included in the results, otherwise it is excluded.
