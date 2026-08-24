@@ -1,6 +1,7 @@
 # DeepDiff Change log
 
 - Unreleased
+    - Added `include_regex_paths` to DeepDiff, the counterpart of `exclude_regex_paths`, so you can limit the report to paths matching one or more regexes (issue #395)
     - Fixed missing type changes between equal-comparing items inside ordered iterables, e.g. `DeepDiff([2], [2.0])` now reports the `int` → `float` change like `DeepDiff(2, 2.0)` and `DeepDiff({'a': 2}, {'a': 2.0})` already do (issue #605).
 
 - v9-1-0

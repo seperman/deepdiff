@@ -186,6 +186,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
                  include_obj_callback: Optional[Callable]=None,
                  include_obj_callback_strict: Optional[Callable]=None,
                  include_paths: Union[str, List[str], None]=None,
+                 include_regex_paths: Union[str, List[str], Pattern[str], List[Pattern[str]], None]=None,
                  iterable_compare_func: Optional[Callable]=None,
                  log_frequency_in_sec: int=0,
                  log_scale_similarity_threshold: float=0.1,
@@ -216,6 +217,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         # that may receive _parameters without these keys.
         self.exclude_glob_paths = None
         self.include_glob_paths = None
+        self.include_regex_paths = None
         if kwargs:
             raise ValueError((
                 "The following parameter(s) are not valid: %s\n"
@@ -271,6 +273,7 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
             _include_exact, self.include_glob_paths = separate_wildcard_and_exact_paths(_include_set)
             self.include_paths = add_root_to_paths(_include_exact)
             self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
+            self.include_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(include_regex_paths)
             self.exclude_types = set(exclude_types) if exclude_types else None
             self.exclude_types_tuple = tuple(exclude_types) if exclude_types else None  # we need tuple for checking isinstance
             self.ignore_type_subclasses = ignore_type_subclasses
@@ -455,6 +458,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         if not self._skip_this(change_level):
             if self._skip_report_for_include_glob(change_level):
                 return
+            if self._skip_report_for_include_regex(change_level):
+                return
             change_level.report_type = report_type
             tree = self.tree if local_tree is None else local_tree
             tree[report_type].add(change_level)
@@ -475,6 +480,8 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
 
         if not self._skip_this(level):
             if self._skip_report_for_include_glob(level):
+                return
+            if self._skip_report_for_include_regex(level):
                 return
             level.report_type = report_type
             level.additional[CUSTOM_FIELD] = extra_info
@@ -499,6 +506,21 @@ class DeepDiff(ResultDict, SerializationMixin, DistanceMixin, DeepDiffProtocol, 
         for gp in self.include_glob_paths:
             if gp.match_or_is_descendant(level_path):
                 return False
+        return True
+
+    def _skip_report_for_include_regex(self, level):
+        """When include_regex_paths is set, only keep a change whose path, or the
+        path of one of its ancestors, matches one of the patterns. Matching an
+        ancestor keeps its whole subtree, mirroring how exclude_regex_paths drops
+        one."""
+        if not self.include_regex_paths:
+            return False
+        up = level
+        while up is not None:
+            up_path = up.path()
+            if any(regex.search(up_path) for regex in self.include_regex_paths):
+                return False
+            up = up.up
         return True
 
     @staticmethod
