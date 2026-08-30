@@ -68,11 +68,15 @@ For example:
     >>>
     >>> diff = DeepDiff(t1, t2, ignore_order=True, cache_size=5000, cutoff_intersection_for_pairs=1)
     >>> pprint(diff.get_stats())
-    {'DIFF COUNT': 37,
-     'DISTANCE CACHE HIT COUNT': 0,
+    {'DIFF COUNT': 54,
+     'DISTANCE CACHE HIT COUNT': 9,
      'MAX DIFF LIMIT REACHED': False,
      'MAX PASS LIMIT REACHED': False,
-     'PASSES COUNT': 7}
+     'PASSES COUNT': 7,
+     'WORKER BATCH COUNT': 0,
+     'WORKER DIFF COUNT': 0,
+     'WORKER DISTANCE CACHE HIT COUNT': 0,
+     'WORKER PASSES COUNT': 0}
 
 
 Back to :doc:`/index`
