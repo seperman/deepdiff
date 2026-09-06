@@ -83,6 +83,11 @@ Approximate number comparison (significant_digits after the decimal point in sci
 Number To String Function
 -------------------------
 
+The default formatter rounds numeric values only. Date, time, datetime,
+timedelta, and NumPy datetime values pass through unchanged, including when
+dictionary-key comparison uses numeric precision or ignores numeric types.
+Numeric precision does not round or merge distinct temporal keys.
+
 number_to_string_func : function, default=None
     In many cases DeepDiff converts numbers to strings in order to compare them. For example when ignore_order=True, when significant digits parameter is defined or when the ignore_numeric_type_changes=True.
     In its simplest form, the number_to_string_func is "{:.Xf}".format(Your Number) where X is the significant digits and the number_format_notation is left as the default of "f" meaning fixed point.

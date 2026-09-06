@@ -1,5 +1,7 @@
 import pytz
-from datetime import date, datetime, time, timezone
+import pytest
+import numpy as np
+from datetime import date, datetime, time, timedelta, timezone
 from deepdiff import DeepDiff
 
 
@@ -123,3 +125,37 @@ class TestDiffDatetime:
         assert not DeepDiff(d1, d2)
         assert not DeepDiff(d1, d2, ignore_order=True)
         assert not DeepDiff(d1, d2, truncate_datetime='second')
+
+
+@pytest.mark.parametrize("key, other_key", [
+    (datetime(2020, 5, 17, 22, 15), datetime(2020, 5, 17, 22, 15, 0, 1)),
+    (datetime(2020, 5, 17, tzinfo=timezone.utc), datetime(2020, 5, 17, microsecond=1, tzinfo=timezone.utc)),
+    (date(2020, 5, 17), date(2020, 5, 18)),
+    (time(22, 15), time(22, 15, microsecond=1)),
+    (timedelta(seconds=1), timedelta(seconds=1, microseconds=1)),
+    (np.datetime64('2020-05-17T22:15:00.000000'), np.datetime64('2020-05-17T22:15:00.000001')),
+])
+@pytest.mark.parametrize("flag", [
+    "ignore_numeric_type_changes", "ignore_string_case", "ignore_string_type_changes",
+])
+@pytest.mark.parametrize("ignore_order", [False, True])
+def test_temporal_dict_keys_preserve_identity_with_numeric_precision(key, other_key, flag, ignore_order):
+    """Key cleaning must not round temporal keys or merge distinct instants."""
+    t1 = {key: 1, other_key: 2}
+    t2 = {key: 1, other_key: 3}
+    if ignore_order:
+        t1, t2 = [t1], [t2]
+    result = DeepDiff(t1, t2, significant_digits=0, view='tree', ignore_order=ignore_order, **{flag: True})
+    assert set(result) == {'values_changed'}
+    changes = list(result['values_changed'])
+    assert len(changes) == 1
+    assert changes[0].t1 == 2
+    assert changes[0].t2 == 3
+    assert changes[0].up.t1 == {key: 1, other_key: 2}
+    assert changes[0].up.t2 == {key: 1, other_key: 3}
+
+
+def test_datetime_key_with_ignored_numeric_value_types():
+    """Reproduce issue 550 through the public comparison API."""
+    key = datetime(2020, 5, 17, 22, 15)
+    assert DeepDiff({key: 10.0}, {key: 10}, ignore_numeric_type_changes=True) == {}

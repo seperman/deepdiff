@@ -304,3 +304,17 @@ class TestHelper:
     def test_get_semvar_as_integer(self, test_num, value, expected):
         result = get_semvar_as_integer(value)
         assert expected == result, f"test_get_semvar_as_integer #{test_num} failed."
+
+
+@pytest.mark.parametrize("value", [
+    datetime.datetime(2020, 5, 17, microsecond=123456),
+    datetime.date(2020, 5, 17),
+    datetime.time(22, 15, microsecond=123456),
+    datetime.timedelta(seconds=1, microseconds=123456),
+    np.datetime64('2020-05-17T22:15:00.123456'),
+])
+@pytest.mark.parametrize("significant_digits", [0, 3, 55])
+@pytest.mark.parametrize("number_format_notation", ['f', 'e'])
+def test_number_to_string_preserves_temporal_objects(value, significant_digits, number_format_notation):
+    """Non-numeric temporal values pass through the shared formatter unchanged."""
+    assert number_to_string(value, significant_digits, number_format_notation) is value

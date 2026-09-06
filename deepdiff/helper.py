@@ -468,14 +468,17 @@ number_formatting: Dict[str, str] = {
 
 def number_to_string(number: Any, significant_digits: int, number_format_notation: Literal['f', 'e'] = 'f') -> Any:
     """
-    Convert numbers to string considering significant digits.
+    Convert numeric values to strings considering significant digits.
+
+    Temporal objects belong to the broader comparison ``numbers`` group, but
+    are not numeric values to round. Preserve them like other non-numeric input.
     """
     try:
         using = number_formatting[number_format_notation]
     except KeyError:
         raise ValueError("number_format_notation got invalid value of {}. The valid values are 'f' and 'e'".format(number_format_notation)) from None
 
-    if not isinstance(number, numbers):  # type: ignore
+    if not isinstance(number, only_numbers):  # type: ignore
         return number
     elif isinstance(number, Decimal):
         with localcontext() as ctx:
